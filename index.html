@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>まなびの基板</title>
+<meta name="theme-color" content="#0A1526">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pcb:#0A1526; --pcb-2:#0E1D33; --pcb-3:#132743;
+  --silk:#C7D3E3; --silk-dim:#6E819B;
+  --copper:#B87333; --current:#6EF2D4;
+  --rail:34px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(1200px 600px at 78% -8%, rgba(110,242,212,.09), transparent 60%),
+    linear-gradient(180deg,var(--pcb) 0%, #08111F 100%);
+  background-attachment:fixed;
+  color:var(--silk);
+  font-family:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif;
+  font-size:16px;line-height:1.75;-webkit-text-size-adjust:100%;min-height:100dvh;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(199,211,227,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(199,211,227,.045) 1px,transparent 1px);
+  background-size:16px 16px;
+  mask-image:radial-gradient(circle at 50% 25%,#000 18%,transparent 76%);
+  -webkit-mask-image:radial-gradient(circle at 50% 25%,#000 18%,transparent 76%);
+}
+.wrap{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:28px 20px 72px;}
+
+.silkline{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  font-family:"Share Tech Mono",ui-monospace,monospace;
+  font-size:11px;letter-spacing:.22em;color:var(--silk-dim);text-transform:uppercase;
+  border-bottom:1px dashed rgba(184,115,51,.45);padding-bottom:10px;
+}
+.who{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:.06em;}
+.who b{color:var(--current);font-weight:400;}
+.linkbtn{
+  background:none;border:none;color:var(--silk-dim);cursor:pointer;
+  font-family:inherit;font-size:11px;letter-spacing:.1em;text-decoration:underline;padding:0;
+}
+.linkbtn:hover{color:#EAF2FB;}
+
+h1{
+  font-family:"DotGothic16","Zen Kaku Gothic New",sans-serif;
+  font-size:clamp(30px,8vw,46px);line-height:1.15;margin:22px 0 6px;
+  letter-spacing:.06em;color:#EAF2FB;text-shadow:0 0 22px rgba(110,242,212,.22);font-weight:400;
+}
+.lede{margin:0 0 22px;color:var(--silk-dim);font-size:14px;max-width:44ch;}
+
+/* ── ニックネーム設定 ─────────────────────── */
+.namecard{
+  border:1px solid var(--current);border-radius:5px;
+  background:rgba(110,242,212,.07);padding:16px 18px;margin:0 0 26px;
+}
+.namecard h2{
+  font-family:"DotGothic16",sans-serif;font-size:18px;font-weight:400;
+  margin:0 0 4px;color:#EAF2FB;letter-spacing:.04em;
+}
+.namecard p{margin:0 0 12px;font-size:13px;color:var(--silk-dim);}
+.namerow{display:flex;gap:8px;flex-wrap:wrap;}
+.namerow input{
+  flex:1;min-width:150px;background:rgba(10,21,38,.7);
+  border:1px solid rgba(199,211,227,.25);border-radius:3px;
+  color:#EAF2FB;font-family:inherit;font-size:16px;padding:9px 12px;
+}
+.namerow input:focus{outline:2px solid var(--current);outline-offset:1px;}
+.primary{
+  background:var(--current);color:var(--pcb);border:none;border-radius:3px;cursor:pointer;
+  font-family:"DotGothic16",sans-serif;font-size:15px;letter-spacing:.1em;padding:9px 22px;
+}
+.primary:hover{filter:brightness(1.12);}
+
+/* ── 通電メーター ─────────────────────────── */
+.meter{border:1px solid rgba(199,211,227,.16);background:rgba(10,21,38,.6);
+  border-radius:4px;padding:12px 14px;margin-bottom:34px;}
+.meter-top{display:flex;justify-content:space-between;align-items:baseline;
+  font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:.18em;
+  color:var(--silk-dim);margin-bottom:9px;}
+.meter-top b{font-size:22px;color:var(--current);letter-spacing:.02em;font-weight:400;
+  text-shadow:0 0 14px rgba(110,242,212,.5);}
+.leds{display:flex;gap:3px;}
+.led{flex:1;height:12px;border-radius:1px;background:rgba(199,211,227,.09);
+  box-shadow:inset 0 0 0 1px rgba(199,211,227,.07);}
+.led.on{background:var(--current);box-shadow:0 0 9px rgba(110,242,212,.7);}
+
+/* ── 基板 ─────────────────────────────────── */
+.board{position:relative;padding-left:var(--rail);}
+.bus{position:absolute;left:9px;top:14px;bottom:14px;width:3px;overflow:hidden;border-radius:2px;
+  background:linear-gradient(180deg,rgba(184,115,51,.15),var(--copper),rgba(184,115,51,.15));}
+.bus::after{content:"";position:absolute;left:-1px;width:5px;height:70px;filter:blur(1px);
+  background:linear-gradient(180deg,transparent,var(--current),transparent);
+  animation:flow 4.2s linear infinite;}
+@keyframes flow{from{top:-70px;}to{top:100%;}}
+
+.modules{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:18px;}
+.module{position:relative;}
+.module::before{content:"";position:absolute;left:calc(var(--rail) * -1 + 10px);top:30px;
+  width:24px;height:2px;background:rgba(184,115,51,.55);}
+.module::after{content:"";position:absolute;left:calc(var(--rail) * -1 + 4px);top:25px;
+  width:12px;height:12px;border-radius:50%;background:var(--pcb-2);
+  box-shadow:inset 0 0 0 2px rgba(184,115,51,.7);transition:background .3s,box-shadow .3s;}
+.module.lit::after{background:var(--accent);box-shadow:inset 0 0 0 2px var(--accent),0 0 12px var(--accent);}
+
+.chip{background:linear-gradient(150deg,var(--pcb-2),var(--pcb-3));
+  border:1px solid rgba(199,211,227,.13);border-left:3px solid var(--accent);
+  border-radius:5px;padding:16px 18px 18px;transition:transform .18s,border-color .18s;}
+.chip:hover{transform:translateY(-2px);border-color:rgba(199,211,227,.28);}
+.chip-head{display:flex;align-items:center;gap:10px;font-family:"Share Tech Mono",monospace;
+  font-size:11px;letter-spacing:.16em;color:var(--silk-dim);}
+.tag{font-family:"Zen Kaku Gothic New",sans-serif;letter-spacing:.08em;color:var(--accent);
+  border:1px solid currentColor;border-radius:2px;padding:1px 7px;font-size:11px;}
+.ref{margin-left:auto;}
+.chip h2{font-family:"DotGothic16","Zen Kaku Gothic New",sans-serif;font-size:21px;
+  margin:10px 0 4px;letter-spacing:.04em;color:#EAF2FB;font-weight:400;}
+.chip p{margin:0 0 14px;font-size:13.5px;color:var(--silk-dim);}
+.bar{height:6px;border-radius:3px;background:rgba(199,211,227,.1);overflow:hidden;margin-bottom:8px;}
+.bar span{display:block;height:100%;width:0;background:var(--accent);
+  transition:width .7s cubic-bezier(.2,.7,.3,1);}
+.stat{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  font-family:"Share Tech Mono",monospace;font-size:11.5px;letter-spacing:.1em;
+  color:var(--silk-dim);margin-bottom:16px;}
+.go{display:inline-block;text-decoration:none;font-family:"DotGothic16",sans-serif;
+  font-size:15px;letter-spacing:.1em;color:var(--pcb);background:var(--accent);
+  padding:9px 22px;border-radius:3px;transition:filter .15s;}
+.go:hover{filter:brightness(1.15);}
+a:focus-visible,button:focus-visible{outline:2px solid var(--current);outline-offset:3px;}
+
+/* ── ランキング ───────────────────────────── */
+.section{margin-top:52px;}
+.section > h2{
+  font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:.24em;
+  color:var(--silk-dim);text-transform:uppercase;font-weight:400;
+  border-bottom:1px dashed rgba(184,115,51,.45);padding-bottom:9px;margin:0 0 14px;
+}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+.tab{background:none;border:1px solid rgba(199,211,227,.18);border-radius:99px;
+  color:var(--silk-dim);cursor:pointer;font-family:inherit;font-size:12.5px;padding:5px 14px;}
+.tab:hover{color:#EAF2FB;}
+.tab[aria-selected="true"]{background:var(--current);border-color:var(--current);color:var(--pcb);}
+.ranklist{list-style:none;margin:0;padding:0;}
+.ranklist li{display:flex;align-items:center;gap:12px;padding:9px 10px;
+  border-top:1px solid rgba(199,211,227,.09);font-size:14px;}
+.ranklist li.me{background:rgba(110,242,212,.09);border-radius:3px;}
+.rk{font-family:"Share Tech Mono",monospace;font-size:13px;color:var(--silk-dim);
+  min-width:32px;text-align:right;}
+.ranklist li.top .rk{color:var(--current);font-size:16px;}
+.nm{flex:1;color:#EAF2FB;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sc{font-family:"Share Tech Mono",monospace;color:var(--silk-dim);}
+.note{color:var(--silk-dim);font-size:13px;margin:14px 0 0;}
+
+/* ── 記録一覧 ─────────────────────────────── */
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th{text-align:left;font-family:"Share Tech Mono",monospace;font-weight:400;font-size:10.5px;
+  letter-spacing:.16em;color:var(--silk-dim);padding:4px 8px 8px 0;}
+td{padding:11px 8px 11px 0;border-top:1px solid rgba(199,211,227,.09);vertical-align:middle;}
+td.name{color:#EAF2FB;}
+td.right{text-align:right;font-family:"Share Tech Mono",monospace;color:var(--silk-dim);}
+.empty{color:var(--silk-dim);font-size:13.5px;padding:14px 0 6px;margin:0;}
+.reset{margin-top:18px;background:none;border:1px solid rgba(199,211,227,.2);
+  color:var(--silk-dim);border-radius:3px;padding:7px 15px;cursor:pointer;
+  font-family:inherit;font-size:12.5px;}
+.reset:hover{color:#EAF2FB;border-color:rgba(199,211,227,.45);}
+footer{margin-top:46px;font-family:"Share Tech Mono",monospace;font-size:10.5px;
+  letter-spacing:.2em;color:rgba(110,129,155,.65);}
+.hidden{display:none !important;}
+@media (max-width:520px){
+  :root{--rail:26px;}
+  .wrap{padding:20px 14px 56px;}
+  .chip{padding:14px 15px 16px;}
+  .led{height:10px;}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="silkline">
+    <span>Manabi Board</span>
+    <span class="who">
+      <span id="whoName"></span>
+      <button class="linkbtn" id="editName" type="button">名前をかえる</button>
+    </span>
+  </div>
+
+  <h1>まなびの基板</h1>
+  <p class="lede">つくった教材を、ここから全部ひらけます。<br>遊んだぶんだけ配線に電気が通ります。</p>
+
+  <section class="namecard hidden" id="nameCard">
+    <h2>ニックネームを決めよう</h2>
+    <p>ランキングにこの名前が出ます。本名は入れないでください。</p>
+    <div class="namerow">
+      <input id="nameInput" type="text" maxlength="10" placeholder="10文字まで" autocomplete="off">
+      <button class="primary" id="saveName" type="button">きめる</button>
+    </div>
+  </section>
+
+  <div class="meter">
+    <div class="meter-top"><span>Total Progress</span><b id="pct">0%</b></div>
+    <div class="leds" id="leds" aria-hidden="true"></div>
+  </div>
+
+  <main class="board">
+    <div class="bus" aria-hidden="true"></div>
+    <ul class="modules" id="modules"></ul>
+  </main>
+
+  <section class="section">
+    <h2>ランキング</h2>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <ul class="ranklist" id="ranklist"></ul>
+    <p class="note" id="rankNote"></p>
+  </section>
+
+  <section class="section">
+    <h2>これまでの記録</h2>
+    <div id="logBody"></div>
+    <button class="reset" id="resetBtn" type="button">この端末の記録を消す</button>
+  </section>
+
+  <footer>MANABI BOARD — 5 MODULES</footer>
+</div>
+
+<script src="config.js"></script>
+<script src="hub-progress.js"></script>
+<script>
+/* ===========================================================
+   file は実際のファイル名に合わせて直してください。
+   key は report({app:'...'}) と同じ文字列にします。
+   =========================================================== */
+const APPS = [
+  { key:'electricity', ref:'U1', file:'electronic.html',
+    name:'電気分野 3D LAB', subject:'理科', color:'#6EF2D4', unit:'モード', total:6,
+    desc:'クルックス管からオームの法則まで、3Dでさわって確かめる実験室。' },
+
+  { key:'english-go', ref:'U2', file:'english-go.html',
+    name:'英語でGO!', subject:'英語', color:'#A87BFF', unit:'ステージ', total:4,
+    desc:'日本語の意味を見て、制限時間内にスペルを打ちこむ単語ゲーム。' },
+
+  { key:'idiom-dungeon', ref:'U3', file:'idiom-dungeon.html',
+    name:'熟語の迷宮', subject:'英語', color:'#E0913A', unit:'コース', total:3,
+    desc:'パーツを合成して熟語をつくり、迷宮の地下を進むダンジョンRPG。' },
+
+  { key:'japan-quest', ref:'U4', file:'japan-quest.html',
+    name:'日本一周クエスト', subject:'5教科', color:'#6FD36F', unit:'エリア', total:12,
+    desc:'北海道から九州まで、5教科の問題を解きながら日本を旅するドット絵RPG。' },
+
+  { key:'science-quest', ref:'U5', file:'science-quest.html',
+    name:'サイエンスクエスト', subject:'理科', color:'#FF6B6B', unit:'階層', total:5,
+    desc:'物理・化学・生物・地学の問題でモンスターと戦う、1コマ完結のRPG。' }
+];
+
+const LED_COUNT = 24;
+const $ = id => document.getElementById(id);
+
+/* ---- ニックネーム ---------------------------------------- */
+function paintWho(){
+  const me = LearnHub.player();
+  $('whoName').textContent = me.nickname ? me.nickname : '名前なし';
+  $('nameCard').classList.toggle('hidden', !!me.nickname);
+}
+function openNameCard(){
+  $('nameCard').classList.remove('hidden');
+  $('nameInput').value = LearnHub.player().nickname || '';
+  $('nameInput').focus();
+}
+$('saveName').addEventListener('click', () => {
+  const v = $('nameInput').value.trim();
+  if (!v) { $('nameInput').focus(); return; }
+  LearnHub.setNickname(v);
+  paintWho();
+});
+$('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('saveName').click(); });
+$('editName').addEventListener('click', openNameCard);
+
+/* ---- 基板 ------------------------------------------------- */
+function label(done, total){
+  if (done <= 0) return 'はじめる';
+  if (done >= total) return 'もう一度';
+  return 'つづける';
+}
+
+function render(){
+  const saved = LearnHub.all();
+  const list = $('modules');
+  list.innerHTML = '';
+  let doneSum = 0, totalSum = 0;
+
+  APPS.forEach(app => {
+    const rec  = saved[app.key] || { done:0, best:0, plays:0 };
+    const done = Math.min(rec.done || 0, app.total);
+    doneSum += done; totalSum += app.total;
+
+    const li = document.createElement('li');
+    li.className = 'module' + (done > 0 ? ' lit' : '');
+    li.style.setProperty('--accent', app.color);
+    li.innerHTML = `
+      <div class="chip">
+        <div class="chip-head"><span class="tag">${app.subject}</span><span class="ref">${app.ref}</span></div>
+        <h2>${app.name}</h2>
+        <p>${app.desc}</p>
+        <div class="bar"><span data-w="${app.total ? done / app.total * 100 : 0}"></span></div>
+        <div class="stat">
+          <span>${done} / ${app.total} ${app.unit}</span>
+          <span>${rec.best ? '最高 ' + rec.best : '記録なし'}</span>
+        </div>
+        <a class="go" href="${app.file}">${label(done, app.total)}</a>
+      </div>`;
+    list.appendChild(li);
+  });
+
+  requestAnimationFrame(() => {
+    list.querySelectorAll('.bar span').forEach(el => { el.style.width = el.dataset.w + '%'; });
+  });
+
+  const pct = totalSum ? Math.round(doneSum / totalSum * 100) : 0;
+  $('pct').textContent = pct + '%';
+  const leds = $('leds'); leds.innerHTML = '';
+  const on = Math.round(pct / 100 * LED_COUNT);
+  for (let i = 0; i < LED_COUNT; i++){
+    const d = document.createElement('div');
+    d.className = 'led' + (i < on ? ' on' : '');
+    leds.appendChild(d);
+  }
+  renderLog(saved);
+}
+
+function renderLog(saved){
+  const box = $('logBody');
+  const rows = APPS.filter(a => saved[a.key] && saved[a.key].plays > 0);
+  if (!rows.length){
+    box.innerHTML = '<p class="empty">まだ記録がありません。どれかひらいて遊ぶと、結果がここに並びます。</p>';
+    return;
+  }
+  const cells = rows.map(app => {
+    const r = saved[app.key];
+    const d = new Date(r.updated || Date.now());
+    return `<tr>
+      <td class="name">${app.name}${r.note ? '<br><small style="color:var(--silk-dim)">' + r.note + '</small>' : ''}</td>
+      <td class="right">${Math.min(r.done || 0, app.total)}/${app.total}</td>
+      <td class="right">${r.best || '—'}</td>
+      <td class="right">${r.plays}</td>
+      <td class="right">${(d.getMonth() + 1) + '/' + d.getDate()}</td>
+    </tr>`;
+  }).join('');
+  box.innerHTML = `<table>
+    <thead><tr><th>App</th><th style="text-align:right">Progress</th>
+    <th style="text-align:right">Best</th><th style="text-align:right">Plays</th>
+    <th style="text-align:right">Last</th></tr></thead>
+    <tbody>${cells}</tbody></table>`;
+}
+
+/* ---- ランキング ------------------------------------------- */
+const RANK_TABS = [{ key:'total', name:'総合' }].concat(
+  APPS.map(a => ({ key:a.key, name:a.name }))
+);
+let currentTab = 'total';
+
+function buildTabs(){
+  const box = $('tabs');
+  box.innerHTML = '';
+  RANK_TABS.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'tab'; b.type = 'button'; b.role = 'tab';
+    b.textContent = t.name;
+    b.setAttribute('aria-selected', String(t.key === currentTab));
+    b.addEventListener('click', () => { currentTab = t.key; buildTabs(); loadRanking(); });
+    box.appendChild(b);
+  });
+}
+
+function loadRanking(){
+  const box = $('ranklist'), note = $('rankNote');
+  if (!LearnHub.online()){
+    box.innerHTML = '';
+    note.textContent = 'スプレッドシートにつなぐと、みんなの順位がここに出ます。';
+    return;
+  }
+  box.innerHTML = '<li><span class="nm">よみこみ中…</span></li>';
+  note.textContent = '';
+  const myId = LearnHub.player().id;
+
+  LearnHub.ranking(currentTab).then(data => {
+    if (!data.ok || !data.list || !data.list.length){
+      box.innerHTML = '';
+      note.textContent = data.ok
+        ? 'まだ誰も記録を出していません。いちばん乗りをねらおう。'
+        : 'いまつながりません。あとでもう一度ひらいてください。';
+      return;
+    }
+    box.innerHTML = data.list.map(r => `
+      <li class="${r.id === myId ? 'me ' : ''}${r.rank <= 3 ? 'top' : ''}">
+        <span class="rk">${r.rank}</span>
+        <span class="nm">${r.nickname}</span>
+        <span class="sc">${r.score}</span>
+      </li>`).join('');
+    const mine = data.list.find(r => r.id === myId);
+    note.textContent = mine ? 'あなたは ' + mine.rank + ' 位です。' : 'まだ上位に入っていません。';
+  });
+}
+
+/* ---- 起動 ------------------------------------------------- */
+$('resetBtn').addEventListener('click', () => {
+  if (confirm('この端末に残っている記録を消します。送信ずみのぶんは消えません。')){
+    LearnHub.reset();
+    render();
+  }
+});
+
+paintWho();
+render();
+buildTabs();
+loadRanking();
+
+window.addEventListener('storage', render);
+window.addEventListener('pageshow', () => { render(); loadRanking(); });
+</script>
+</body>
+</html>

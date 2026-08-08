@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>まなびの基板 — 計器盤</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pcb:#0A1526; --pcb-2:#0E1D33; --pcb-3:#132743;
+  --silk:#C7D3E3; --silk-dim:#6E819B;
+  --copper:#B87333; --current:#6EF2D4;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;background:linear-gradient(180deg,var(--pcb),#08111F);background-attachment:fixed;
+  color:var(--silk);font-family:"Zen Kaku Gothic New","Hiragino Sans",sans-serif;
+  font-size:15px;line-height:1.7;min-height:100dvh;
+}
+.wrap{max-width:1040px;margin:0 auto;padding:26px 20px 70px;}
+.silkline{display:flex;justify-content:space-between;align-items:center;
+  font-family:"Share Tech Mono",monospace;font-size:11px;letter-spacing:.22em;
+  color:var(--silk-dim);text-transform:uppercase;
+  border-bottom:1px dashed rgba(184,115,51,.45);padding-bottom:10px;}
+h1{font-family:"DotGothic16",sans-serif;font-weight:400;font-size:clamp(26px,6vw,38px);
+  margin:20px 0 4px;color:#EAF2FB;letter-spacing:.05em;}
+.lede{margin:0 0 24px;color:var(--silk-dim);font-size:13.5px;}
+
+.setup{border:1px solid rgba(199,211,227,.16);background:rgba(14,29,51,.7);
+  border-radius:5px;padding:16px 18px;margin-bottom:28px;}
+.setup label{display:block;font-family:"Share Tech Mono",monospace;font-size:10.5px;
+  letter-spacing:.18em;color:var(--silk-dim);margin:0 0 4px;text-transform:uppercase;}
+.setup .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+.setup .fld{flex:1;min-width:220px;margin-bottom:10px;}
+input{width:100%;background:rgba(10,21,38,.8);border:1px solid rgba(199,211,227,.22);
+  border-radius:3px;color:#EAF2FB;font-family:inherit;font-size:14px;padding:8px 11px;}
+input:focus{outline:2px solid var(--current);outline-offset:1px;}
+button{font-family:"DotGothic16",sans-serif;font-size:14px;letter-spacing:.08em;
+  border:none;border-radius:3px;cursor:pointer;padding:9px 20px;
+  background:var(--current);color:var(--pcb);}
+button:hover{filter:brightness(1.12);}
+button.ghost{background:none;border:1px solid rgba(199,211,227,.22);color:var(--silk-dim);
+  font-family:inherit;font-size:12.5px;padding:7px 15px;}
+button.ghost:hover{color:#EAF2FB;border-color:rgba(199,211,227,.45);}
+button:focus-visible,input:focus-visible{outline:2px solid var(--current);outline-offset:2px;}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:28px;}
+.kpi{border:1px solid rgba(199,211,227,.14);border-left:3px solid var(--current);
+  background:linear-gradient(150deg,var(--pcb-2),var(--pcb-3));border-radius:4px;padding:13px 15px;}
+.kpi span{display:block;font-family:"Share Tech Mono",monospace;font-size:10.5px;
+  letter-spacing:.18em;color:var(--silk-dim);text-transform:uppercase;}
+.kpi b{font-family:"DotGothic16",sans-serif;font-weight:400;font-size:28px;color:#EAF2FB;}
+
+.panel{border:1px solid rgba(199,211,227,.14);background:rgba(14,29,51,.55);
+  border-radius:5px;padding:16px 18px 12px;margin-bottom:22px;}
+.panel h2{font-family:"Share Tech Mono",monospace;font-weight:400;font-size:11px;
+  letter-spacing:.22em;color:var(--silk-dim);text-transform:uppercase;margin:0 0 14px;}
+canvas{width:100%;height:auto;display:block;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+@media (max-width:760px){.grid2{grid-template-columns:1fr;}}
+
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th{text-align:left;font-family:"Share Tech Mono",monospace;font-weight:400;font-size:10.5px;
+  letter-spacing:.15em;color:var(--silk-dim);padding:4px 10px 9px 0;cursor:pointer;
+  white-space:nowrap;}
+th:hover{color:#EAF2FB;}
+td{padding:10px 10px 10px 0;border-top:1px solid rgba(199,211,227,.09);white-space:nowrap;}
+td.name{color:#EAF2FB;}
+td.num{text-align:right;font-family:"Share Tech Mono",monospace;color:var(--silk-dim);}
+.scroll{overflow-x:auto;}
+.msg{color:var(--silk-dim);font-size:13.5px;padding:10px 0;}
+.err{color:#FF9B9B;}
+.hidden{display:none !important;}
+footer{margin-top:40px;font-family:"Share Tech Mono",monospace;font-size:10.5px;
+  letter-spacing:.2em;color:rgba(110,129,155,.6);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="silkline"><span>Manabi Board / Console</span><span id="stamp"></span></div>
+  <h1>計器盤</h1>
+  <p class="lede">スプレッドシートに集まった記録を読み出して表示します。この画面は先生用です。</p>
+
+  <section class="setup">
+    <div class="row">
+      <div class="fld">
+        <label for="ep">Apps Script の URL</label>
+        <input id="ep" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <div class="fld">
+        <label for="tk">先生用の合言葉</label>
+        <input id="tk" type="password" placeholder="ADMIN_TOKEN">
+      </div>
+      <div class="fld" style="flex:0 0 auto;">
+        <button id="load" type="button">よみこむ</button>
+      </div>
+    </div>
+    <p class="msg" id="msg">URLと合言葉はこの端末にだけ保存されます。</p>
+  </section>
+
+  <div id="view" class="hidden">
+    <div class="kpis" id="kpis"></div>
+
+    <div class="grid2">
+      <div class="panel">
+        <h2>アプリ別 平均スコア</h2>
+        <canvas id="cAvg" width="480" height="300"></canvas>
+      </div>
+      <div class="panel">
+        <h2>アプリ別 クリア率（%）</h2>
+        <canvas id="cClear" width="480" height="300"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>日ごとのプレイ回数</h2>
+      <canvas id="cDaily" width="960" height="260"></canvas>
+    </div>
+
+    <div class="panel">
+      <h2>生徒別 総合ポイント</h2>
+      <div class="scroll"><div id="table"></div></div>
+      <p style="margin:14px 0 4px;"><button class="ghost" id="csv" type="button">CSVで書き出す</button></p>
+    </div>
+  </div>
+
+  <footer>MANABI BOARD CONSOLE</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const COLORS = ['#6EF2D4','#A87BFF','#E0913A','#6FD36F','#FF6B6B','#7FB4FF'];
+const NAMES = {
+  'electricity':'電気分野 3D LAB', 'english-go':'英語でGO!', 'idiom-dungeon':'熟語の迷宮',
+  'japan-quest':'日本一周クエスト', 'science-quest':'サイエンスクエスト'
+};
+const jp = k => NAMES[k] || k;
+let DATA = null, sortKey = 'total', sortAsc = false;
+
+/* ---- 保存された接続先 ------------------------------------- */
+const SAVE = 'manabi-console:v1';
+try {
+  const s = JSON.parse(localStorage.getItem(SAVE) || '{}');
+  $('ep').value = s.ep || ''; $('tk').value = s.tk || '';
+} catch (e) {}
+
+$('load').addEventListener('click', load);
+if ($('ep').value && $('tk').value) load();
+
+function load(){
+  const ep = $('ep').value.trim(), tk = $('tk').value.trim();
+  if (!ep || !tk){ say('URLと合言葉の両方を入れてください。', true); return; }
+  localStorage.setItem(SAVE, JSON.stringify({ ep, tk }));
+  say('よみこんでいます…');
+
+  fetch(ep + '?mode=dashboard&token=' + encodeURIComponent(tk), { redirect:'follow' })
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok){
+        say(d.error === 'bad-token' ? '合言葉がちがいます。' : 'よみこめませんでした（' + d.error + '）', true);
+        return;
+      }
+      DATA = d;
+      say('最終よみこみ ' + new Date(d.at).toLocaleString('ja-JP'));
+      $('view').classList.remove('hidden');
+      draw();
+    })
+    .catch(() => say('つながりませんでした。URLと、ウェブアプリの公開設定を確かめてください。', true));
+}
+
+function say(text, isErr){
+  const m = $('msg'); m.textContent = text; m.className = 'msg' + (isErr ? ' err' : '');
+}
+
+/* ---- 描画 ------------------------------------------------- */
+function draw(){
+  const apps = DATA.apps || [], students = DATA.students || [];
+  const active = students.filter(s => s.plays > 0).length;
+  const avgAll = students.length
+    ? Math.round(students.reduce((a, s) => a + s.total, 0) / students.length) : 0;
+
+  $('kpis').innerHTML = [
+    ['生徒数', active],
+    ['プレイ回数', DATA.records],
+    ['平均 総合ポイント', avgAll],
+    ['うごいたアプリ', apps.length]
+  ].map(([k, v]) => `<div class="kpi"><span>${k}</span><b>${v}</b></div>`).join('');
+
+  bars($('cAvg'),   apps.map(a => ({ label: jp(a.app), value: a.avg })),      100);
+  bars($('cClear'), apps.map(a => ({ label: jp(a.app), value: a.clearRate })), 100);
+  line($('cDaily'), DATA.daily || []);
+  table();
+  $('stamp').textContent = new Date().toLocaleDateString('ja-JP');
+}
+
+function prep(cv){
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.width, h = Number(cv.getAttribute('height'));
+  cv.width = w * dpr; cv.height = h * dpr;
+  cv.style.height = h + 'px';
+  const g = cv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  g.font = '11px "Share Tech Mono", monospace';
+  return { g, w, h };
+}
+
+function bars(cv, rows, max){
+  const { g, w, h } = prep(cv);
+  if (!rows.length){ g.fillStyle = '#6E819B'; g.fillText('データなし', 10, 24); return; }
+  const padL = 34, padR = 10, padT = 12, padB = 74;
+  const cw = w - padL - padR, ch = h - padT - padB;
+  const top = max || Math.max(...rows.map(r => r.value), 1);
+
+  g.strokeStyle = 'rgba(199,211,227,.12)'; g.fillStyle = '#6E819B';
+  for (let i = 0; i <= 4; i++){
+    const y = padT + ch - ch * i / 4;
+    g.beginPath(); g.moveTo(padL, y); g.lineTo(w - padR, y); g.stroke();
+    g.textAlign = 'right'; g.fillText(Math.round(top * i / 4), padL - 6, y + 4);
+  }
+  const bw = cw / rows.length;
+  rows.forEach((r, i) => {
+    const bh = ch * (r.value / top);
+    const x = padL + bw * i + bw * .2;
+    g.fillStyle = COLORS[i % COLORS.length];
+    g.fillRect(x, padT + ch - bh, bw * .6, bh);
+    g.textAlign = 'center';
+    g.fillText(r.value, x + bw * .3, padT + ch - bh - 5);
+    /* 名前は斜めに */
+    g.save();
+    g.translate(x + bw * .3, padT + ch + 12);
+    g.rotate(-Math.PI / 5);
+    g.fillStyle = '#6E819B'; g.textAlign = 'right';
+    g.font = '11px "Zen Kaku Gothic New", sans-serif';
+    g.fillText(r.label, 0, 0);
+    g.restore();
+    g.font = '11px "Share Tech Mono", monospace';
+  });
+}
+
+function line(cv, rows){
+  const { g, w, h } = prep(cv);
+  if (!rows.length){ g.fillStyle = '#6E819B'; g.fillText('データなし', 10, 24); return; }
+  const padL = 34, padR = 12, padT = 14, padB = 34;
+  const cw = w - padL - padR, ch = h - padT - padB;
+  const top = Math.max(...rows.map(r => r.plays), 1);
+
+  g.strokeStyle = 'rgba(199,211,227,.12)'; g.fillStyle = '#6E819B'; g.textAlign = 'right';
+  for (let i = 0; i <= 4; i++){
+    const y = padT + ch - ch * i / 4;
+    g.beginPath(); g.moveTo(padL, y); g.lineTo(w - padR, y); g.stroke();
+    g.fillText(Math.round(top * i / 4), padL - 6, y + 4);
+  }
+  const step = rows.length > 1 ? cw / (rows.length - 1) : 0;
+  const pt = i => [padL + step * i, padT + ch - ch * (rows[i].plays / top)];
+
+  g.beginPath();
+  rows.forEach((r, i) => { const [x, y] = pt(i); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+  g.lineTo(padL + step * (rows.length - 1), padT + ch); g.lineTo(padL, padT + ch); g.closePath();
+  g.fillStyle = 'rgba(110,242,212,.12)'; g.fill();
+
+  g.beginPath();
+  rows.forEach((r, i) => { const [x, y] = pt(i); i ? g.lineTo(x, y) : g.moveTo(x, y); });
+  g.strokeStyle = '#6EF2D4'; g.lineWidth = 2; g.stroke();
+
+  g.fillStyle = '#6EF2D4';
+  rows.forEach((r, i) => { const [x, y] = pt(i); g.beginPath(); g.arc(x, y, 2.5, 0, 7); g.fill(); });
+
+  g.fillStyle = '#6E819B'; g.textAlign = 'center';
+  const every = Math.ceil(rows.length / 10);
+  rows.forEach((r, i) => { if (i % every === 0) g.fillText(r.date, pt(i)[0], h - 12); });
+}
+
+function table(){
+  const apps = (DATA.apps || []).map(a => a.app);
+  const rows = (DATA.students || []).slice().sort((a, b) => {
+    const va = sortKey === 'nickname' ? a.nickname : (sortKey === 'total' ? a.total
+              : sortKey === 'plays' ? a.plays : (a.perApp[sortKey] || 0));
+    const vb = sortKey === 'nickname' ? b.nickname : (sortKey === 'total' ? b.total
+              : sortKey === 'plays' ? b.plays : (b.perApp[sortKey] || 0));
+    const d = typeof va === 'string' ? String(va).localeCompare(vb, 'ja') : va - vb;
+    return sortAsc ? d : -d;
+  });
+
+  if (!rows.length){ $('table').innerHTML = '<p class="msg">まだ記録がありません。</p>'; return; }
+
+  const head = ['<th data-k="nickname">ニックネーム</th>',
+                '<th data-k="total" style="text-align:right">総合</th>']
+    .concat(apps.map(a => `<th data-k="${a}" style="text-align:right">${jp(a)}</th>`))
+    .concat(['<th data-k="plays" style="text-align:right">回数</th>',
+             '<th style="text-align:right">最終</th>']).join('');
+
+  const body = rows.map(s => `<tr>
+      <td class="name">${s.nickname}</td>
+      <td class="num" style="color:#6EF2D4">${s.total}</td>
+      ${apps.map(a => `<td class="num">${s.perApp[a] != null ? s.perApp[a] : '—'}</td>`).join('')}
+      <td class="num">${s.plays}</td>
+      <td class="num">${s.last ? new Date(s.last).toLocaleDateString('ja-JP') : '—'}</td>
+    </tr>`).join('');
+
+  $('table').innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+  $('table').querySelectorAll('th[data-k]').forEach(th => {
+    th.addEventListener('click', () => {
+      const k = th.dataset.k;
+      sortAsc = (k === sortKey) ? !sortAsc : false;
+      sortKey = k; table();
+    });
+  });
+}
+
+$('csv').addEventListener('click', () => {
+  const apps = (DATA.apps || []).map(a => a.app);
+  const head = ['ニックネーム', '総合'].concat(apps.map(jp)).concat(['回数', '最終プレイ']);
+  const lines = [head.join(',')].concat((DATA.students || []).map(s => [
+    '"' + String(s.nickname).replace(/"/g, '""') + '"', s.total
+  ].concat(apps.map(a => s.perApp[a] != null ? s.perApp[a] : ''))
+   .concat([s.plays, s.last ? new Date(s.last).toLocaleDateString('ja-JP') : '']).join(',')));
+
+  const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'まなびの基板_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+window.addEventListener('resize', () => { if (DATA) draw(); });
+</script>
+</body>
+</html>
