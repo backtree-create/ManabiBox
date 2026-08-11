@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>接続チェック — まなびの基板</title>
+<meta name="theme-color" content="#0B0F1A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media (max-width:640px){.row{grid-template-columns:1fr;}}
+.tests{list-style:none;margin:22px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;}
+.t{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border-radius:12px;
+  border:1px solid var(--edge);
+  background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.014));}
+.badge{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+  font-family:"Outfit",sans-serif;font-size:13px;font-weight:600;
+  background:rgba(190,205,235,.12);color:var(--muted);}
+.t.ok .badge{background:rgba(74,222,128,.18);color:var(--c-green);}
+.t.ng .badge{background:rgba(255,107,157,.18);color:var(--c-pink);}
+.t.run .badge{background:rgba(53,224,210,.18);color:var(--c-teal);}
+.t .body{min-width:0;flex:1;}
+.t b{display:block;font-size:15px;color:#fff;margin-bottom:2px;}
+.t p{margin:0;font-size:13.5px;color:var(--muted);word-break:break-word;}
+.t.ng p{color:#FFB4C8;}
+.opt{display:flex;align-items:center;gap:9px;margin-top:14px;font-size:13.5px;color:var(--muted);}
+.opt input{width:auto;}
+pre{margin:8px 0 0;padding:10px 12px;border-radius:8px;background:rgba(0,0,0,.35);
+  font-size:12px;color:var(--muted);overflow-x:auto;white-space:pre-wrap;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow"><span>Manabi Box / Check</span><a class="linkbtn" href="index.html">ハブにもどる</a></div>
+
+  <h1>接続を<span class="hl">たしかめる</span></h1>
+  <p class="lede">スプレッドシートまでの道のりを1段ずつ試して、どこで止まっているかを出します。</p>
+
+  <section class="sheet">
+    <div class="row">
+      <div>
+        <label class="fieldname" for="ep">Apps Script の URL</label>
+        <input id="ep" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <div>
+        <label class="fieldname" for="tk">生徒用の合言葉（WRITE_TOKEN）</label>
+        <input id="tk" type="text" placeholder="manabi-write-2026">
+      </div>
+    </div>
+    <label class="opt"><input id="doPost" type="checkbox">
+      ためしに1件だけ記録を送る（シートに「せつぞく確認」という行が入ります）</label>
+    <p style="margin-top:16px;"><button class="btn" id="run" type="button">ためす</button></p>
+  </section>
+
+  <ul class="tests" id="tests"></ul>
+
+  <footer>Manabi Box</footer>
+</div>
+
+<script src="config.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const cfg = window.MANABI_CONFIG || {};
+$('ep').value = cfg.endpoint || '';
+$('tk').value = cfg.token || '';
+
+const STEPS = [
+  { key:'url',  name:'URLの形をみる' },
+  { key:'ping', name:'サーバーに声をかける（ping）' },
+  { key:'apps', name:'ゲーム一覧を読む（apps）' },
+  { key:'rank', name:'ランキングを読む（ranking）' },
+  { key:'post', name:'記録を1件送ってみる' }
+];
+
+function paint(state){
+  $('tests').innerHTML = STEPS.map((s, i) => {
+    const r = state[s.key] || {};
+    const cls = r.status || '';
+    const mark = r.status === 'ok' ? '○' : r.status === 'ng' ? '×' : r.status === 'run' ? '…' : (i + 1);
+    return `<li class="t ${cls}">
+      <span class="badge">${mark}</span>
+      <span class="body"><b>${s.name}</b>
+        <p>${r.msg || 'まだ試していません'}</p>
+        ${r.detail ? `<pre>${r.detail}</pre>` : ''}
+      </span></li>`;
+  }).join('');
+}
+
+let state = {};
+paint(state);
+
+function set(key, status, msg, detail){
+  state[key] = { status, msg, detail };
+  paint(state);
+}
+
+async function getJSON(url){
+  const res = await fetch(url, { redirect:'follow' });
+  const text = await res.text();
+  try { return { ok:true, data: JSON.parse(text) }; }
+  catch (e) { return { ok:false, text: text.slice(0, 300), finalUrl: res.url }; }
+}
+
+$('run').addEventListener('click', async () => {
+  const ep = $('ep').value.trim(), tk = $('tk').value.trim();
+  state = {}; paint(state);
+
+  /* 1. URLの形 */
+  if (!ep){ set('url','ng','URLが空です。config.js の endpoint に入れるか、上の欄に貼ってください。'); return; }
+  if (ep.indexOf('/a/macros/') >= 0){
+    const dom = ep.split('/a/macros/')[1].split('/')[0];
+    set('url','ng',
+      `このURLは「${dom}」のアカウント専用です。ログインしていない生徒はアクセスできません。個人のGoogleアカウントでデプロイし直してください。`);
+    return;
+  }
+  if (!/\/exec($|\?)/.test(ep)){
+    set('url','ng','URLが /exec で終わっていません。/dev ではなく、デプロイ後に出る /exec のURLを使ってください。');
+    return;
+  }
+  set('url','ok','形は問題ありません。');
+
+  /* 2. ping */
+  set('ping','run','試しています…');
+  let r;
+  try { r = await getJSON(ep + '?mode=ping'); }
+  catch (e){
+    set('ping','ng','つながりませんでした。デプロイの「アクセスできるユーザー」が「全員」になっているか確かめてください。', String(e));
+    return;
+  }
+  if (!r.ok){
+    set('ping','ng','JSONではなくHTMLが返りました。ログイン画面に飛ばされている可能性が高いです。',
+      '返ってきた先: ' + (r.finalUrl || '不明') + '\n' + r.text);
+    return;
+  }
+  if (!r.data.ok){ set('ping','ng','サーバーが ok を返しませんでした。', JSON.stringify(r.data)); return; }
+  set('ping','ok', r.data.message || 'つながっています。');
+
+  /* 3. apps */
+  set('apps','run','試しています…');
+  r = await getJSON(ep + '?mode=apps').catch(() => ({ ok:false, text:'通信エラー' }));
+  if (!r.ok || !r.data.ok){
+    set('apps','ng','読めませんでした。code.gs が古いままかもしれません（デプロイの更新を忘れていませんか）。',
+      r.text || JSON.stringify(r.data));
+  } else if (!r.data.list.length){
+    set('apps','ok','つながりましたが、apps シートが空です。manage.html から登録すると、ここに数が出ます。');
+  } else {
+    set('apps','ok', r.data.list.length + ' 件のゲームが登録されています。',
+      r.data.list.map(a => a.key + ' … ' + a.name).join('\n'));
+  }
+
+  /* 4. ranking */
+  set('rank','run','試しています…');
+  r = await getJSON(ep + '?mode=ranking&app=total&limit=5').catch(() => ({ ok:false, text:'通信エラー' }));
+  if (!r.ok || !r.data.ok){
+    set('rank','ng','読めませんでした。', r.text || JSON.stringify(r.data));
+  } else if (!r.data.list.length){
+    set('rank','ok','つながりましたが、まだ記録が1件もありません。下の送信テストを試すか、ゲームを1回クリアしてください。');
+  } else {
+    set('rank','ok', r.data.list.length + ' 人ぶんの記録があります。',
+      r.data.list.map(x => x.rank + '位 ' + x.nickname + ' ' + x.score).join('\n'));
+  }
+
+  /* 5. post */
+  if (!$('doPost').checked){
+    set('post','', 'チェックを入れると試します。');
+    return;
+  }
+  set('post','run','送っています…');
+  try {
+    const res = await fetch(ep, {
+      method:'POST',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify({ token: tk, items: [{
+        playerId:'check-' + Date.now(), nickname:'せつぞく確認', app:'check',
+        done:1, total:1, best:1, note:'接続テスト', at: Date.now()
+      }]}),
+      redirect:'follow'
+    });
+    const text = await res.text();
+    let data; try { data = JSON.parse(text); } catch (e) {
+      set('post','ng','JSONではなくHTMLが返りました。ログイン画面に飛ばされています。', text.slice(0,300)); return;
+    }
+    if (data.ok) set('post','ok','1件書きこめました。records シートに「せつぞく確認」の行が増えているはずです。あとで消してください。');
+    else if (data.error === 'bad-token') set('post','ng','合言葉がちがいます。config.js の token と code.gs の WRITE_TOKEN を合わせてください。');
+    else set('post','ng','書きこめませんでした。', JSON.stringify(data));
+  } catch (e){
+    set('post','ng','送信できませんでした。', String(e));
+  }
+});
+</script>
+</body>
+</html>
