@@ -1,0 +1,57 @@
+[
+  {
+    "key": "electricity",
+    "name": "電気分野 3D LAB",
+    "subject": "理科",
+    "file": "electronic.html",
+    "desc": "クルックス管からオームの法則まで、3Dでさわって確かめる実験室。",
+    "unit": "モード",
+    "total": 6,
+    "color": "#35E0D2",
+    "icon": "bolt"
+  },
+  {
+    "key": "english-go",
+    "name": "英語でGO!",
+    "subject": "英語",
+    "file": "english-go.html",
+    "desc": "日本語の意味を見て、制限時間内にスペルを打ちこむ単語ゲーム。",
+    "unit": "ステージ",
+    "total": 4,
+    "color": "#8B7CFF",
+    "icon": "letters"
+  },
+  {
+    "key": "idiom-dungeon",
+    "name": "熟語の迷宮",
+    "subject": "英語",
+    "file": "idiom-dungeon.html",
+    "desc": "パーツを合成して熟語をつくり、迷宮の地下を進むダンジョンRPG。",
+    "unit": "コース",
+    "total": 3,
+    "color": "#FFA24C",
+    "icon": "maze"
+  },
+  {
+    "key": "japan-quest",
+    "name": "日本一周クエスト",
+    "subject": "5教科",
+    "file": "japan-quest.html",
+    "desc": "北海道から九州まで、5教科の問題を解きながら日本を旅するドット絵RPG。",
+    "unit": "エリア",
+    "total": 12,
+    "color": "#4ADE80",
+    "icon": "map"
+  },
+  {
+    "key": "science-quest",
+    "name": "サイエンスクエスト",
+    "subject": "理科",
+    "file": "science-quest.html",
+    "desc": "物理・化学・生物・地学の問題でモンスターと戦う、1コマ完結のRPG。",
+    "unit": "階層",
+    "total": 5,
+    "color": "#FF6B9D",
+    "icon": "flask"
+  }
+]

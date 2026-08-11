@@ -1,28 +1,29 @@
 /** ===========================================================
  *  まなびの基板 — データ集約サーバー（Google Apps Script）
  *
- *  スプレッドシートを開く → 拡張機能 → Apps Script にこの中身を貼り付け、
- *  下の2つの合言葉を書きかえてからデプロイしてください。
- *  デプロイの手順は セットアップ.md にあります。
+ *  スプレッドシートを開く → 拡張機能 → Apps Script にこの中身を貼り、
+ *  下の2つの合言葉を書きかえてからデプロイします。
+ *  手順は セットアップ.md にあります。
+ *
+ *  つくられるシート
+ *    records … 送られてきた記録をぜんぶ残す台帳
+ *    best    … 生徒 × ゲーム の最高記録（ランキングはここから作ります）
+ *    apps    … ハブに並べるゲームの一覧（manage.html から書きかえます）
  *  =========================================================== */
 
 /* 生徒アプリが記録を送るときの合言葉。config.js と同じ文字列にします */
 var WRITE_TOKEN = 'manabi-write-2026';
 
-/* 先生用ダッシュボードの合言葉。生徒に配るファイルには絶対に書かないこと */
+/* 先生用。ダッシュボードとゲーム追加に使います。生徒に配るファイルには書かないこと */
 var ADMIN_TOKEN = 'manabi-admin-2026';
 
-/* 1人1アプリあたりの満点。総合ポイントの上限は 満点 × アプリ数 */
+/* 1ゲームあたりの満点。総合ポイントの上限は 満点 × ゲーム数 */
 var MAX_SCORE = 100;
 
 /* ---------------------------------------------------------- */
 
-function ss_() {
-  return SpreadsheetApp.getActiveSpreadsheet();
-}
-
 function sheet_(name, header) {
-  var book = ss_();
+  var book = SpreadsheetApp.getActiveSpreadsheet();
   var sh = book.getSheetByName(name);
   if (!sh) {
     sh = book.insertSheet(name);
@@ -34,36 +35,39 @@ function sheet_(name, header) {
 }
 
 function records_() {
-  return sheet_('records',
-    ['日時', '生徒ID', 'ニックネーム', 'アプリ', '到達', '全体', 'スコア', 'メモ']);
+  return sheet_('records', ['日時', '生徒ID', 'ニックネーム', 'ゲーム', '到達', '全体', 'スコア', 'メモ']);
 }
-
 function best_() {
-  return sheet_('best',
-    ['生徒ID', 'ニックネーム', 'アプリ', '最高スコア', '到達', '全体', '回数', '最終プレイ']);
+  return sheet_('best', ['生徒ID', 'ニックネーム', 'ゲーム', '最高スコア', '到達', '全体', '回数', '最終プレイ']);
+}
+function apps_() {
+  return sheet_('apps', ['順番', 'キー', '名前', '教科', 'ファイル', 'せつめい', '単位', '全体数', '色', 'アイコン']);
 }
 
 function json_(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
+  return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
-
 function clean_(v, max) {
   return String(v == null ? '' : v).replace(/[\u0000-\u001F<>]/g, '').trim().slice(0, max || 40);
 }
-
 function int_(v, min, max) {
   var n = Math.round(Number(v));
   if (!isFinite(n)) n = 0;
   return Math.max(min, Math.min(max, n));
 }
 
-/* ===== 記録の受け取り ======================================= */
+/* ===== 受け取り ============================================= */
 
 function doPost(e) {
   try {
     var body = JSON.parse(e.postData.contents);
+
+    if (body.action === 'saveApps') {
+      if (body.token !== ADMIN_TOKEN) return json_({ ok: false, error: 'bad-token' });
+      return json_(saveApps_(body.apps || []));
+    }
+
     if (body.token !== WRITE_TOKEN) return json_({ ok: false, error: 'bad-token' });
 
     var items = body.items || [];
@@ -74,7 +78,7 @@ function doPost(e) {
     try {
       var saved = 0;
       for (var i = 0; i < items.length && i < 50; i++) saved += save_(items[i]) ? 1 : 0;
-      CacheService.getScriptCache().removeAll(['rank:total']);
+      clearCache_();
       return json_({ ok: true, saved: saved });
     } finally {
       lock.releaseLock();
@@ -91,14 +95,13 @@ function save_(item) {
 
   var nickname = clean_(item.nickname, 12) || 'ななし';
   var total = int_(item.total, 0, 999);
-  var done = int_(item.done, 0, total || 999);
+  var done  = int_(item.done, 0, total || 999);
   var score = int_(item.best, 0, MAX_SCORE);
-  var note = clean_(item.note, 40);
-  var when = item.at ? new Date(Number(item.at)) : new Date();
+  var note  = clean_(item.note, 40);
+  var when  = item.at ? new Date(Number(item.at)) : new Date();
 
   records_().appendRow([when, playerId, nickname, app, done, total, score, note]);
 
-  /* best シートを上書き更新（良いほうを残す） */
   var sh = best_();
   var rows = sh.getDataRange().getValues();
   for (var r = 1; r < rows.length; r++) {
@@ -118,12 +121,61 @@ function save_(item) {
   return true;
 }
 
+/* ===== ゲーム一覧 =========================================== */
+
+function listApps_() {
+  var cache = CacheService.getScriptCache();
+  var hit = cache.get('apps');
+  if (hit) return JSON.parse(hit);
+
+  var rows = apps_().getDataRange().getValues().slice(1);
+  var list = rows.filter(function (r) { return r[1] && r[2]; })
+    .sort(function (a, b) { return (Number(a[0]) || 0) - (Number(b[0]) || 0); })
+    .map(function (r) {
+      return {
+        key: String(r[1]), name: String(r[2]), subject: String(r[3] || ''),
+        file: String(r[4] || ''), desc: String(r[5] || ''), unit: String(r[6] || 'ステージ'),
+        total: Number(r[7]) || 1, color: String(r[8] || '#8B7CFF'), icon: String(r[9] || 'star')
+      };
+    });
+
+  var out = { ok: true, list: list, at: Date.now() };
+  cache.put('apps', JSON.stringify(out), 60);
+  return out;
+}
+
+function saveApps_(apps) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sh = apps_();
+    var last = sh.getLastRow();
+    if (last > 1) sh.getRange(2, 1, last - 1, 10).clearContent();
+
+    var rows = apps.slice(0, 60).filter(function (a) { return a && a.key && a.name; })
+      .map(function (a, i) {
+        return [
+          i + 1, clean_(a.key, 30), clean_(a.name, 40), clean_(a.subject, 12),
+          clean_(a.file, 80), clean_(a.desc, 120), clean_(a.unit, 10),
+          int_(a.total, 1, 999), clean_(a.color, 9), clean_(a.icon, 20)
+        ];
+      });
+
+    if (rows.length) sh.getRange(2, 1, rows.length, 10).setValues(rows);
+    CacheService.getScriptCache().remove('apps');
+    return { ok: true, saved: rows.length };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 /* ===== 読み出し ============================================= */
 
 function doGet(e) {
   var p = e.parameter || {};
   try {
     if (p.mode === 'ping') return json_({ ok: true, message: 'つながっています' });
+    if (p.mode === 'apps') return json_(listApps_());
     if (p.mode === 'ranking') return json_(ranking_(p.app || 'total', int_(p.limit || 20, 1, 100)));
     if (p.mode === 'dashboard') {
       if (p.token !== ADMIN_TOKEN) return json_({ ok: false, error: 'bad-token' });
@@ -133,6 +185,13 @@ function doGet(e) {
   } catch (err) {
     return json_({ ok: false, error: String(err) });
   }
+}
+
+function clearCache_() {
+  var cache = CacheService.getScriptCache();
+  var keys = ['rank:total:20'];
+  listApps_().list.forEach(function (a) { keys.push('rank:' + a.key + ':20'); });
+  cache.removeAll(keys);
 }
 
 function ranking_(app, limit) {
@@ -171,6 +230,8 @@ function ranking_(app, limit) {
 function dashboard_() {
   var best = best_().getDataRange().getValues().slice(1);
   var recs = records_().getDataRange().getValues().slice(1);
+  var names = {};
+  listApps_().list.forEach(function (a) { names[a.key] = a.name; });
 
   var apps = {}, students = {};
 
@@ -180,10 +241,8 @@ function dashboard_() {
     var score = Number(r[3]) || 0, done = Number(r[4]) || 0,
         total = Number(r[5]) || 0, plays = Number(r[6]) || 0;
 
-    if (!apps[app]) apps[app] = { app: app, players: 0, sum: 0, cleared: 0, plays: 0 };
-    apps[app].players++;
-    apps[app].sum += score;
-    apps[app].plays += plays;
+    if (!apps[app]) apps[app] = { players: 0, sum: 0, cleared: 0, plays: 0 };
+    apps[app].players++; apps[app].sum += score; apps[app].plays += plays;
     if (total > 0 && done >= total) apps[app].cleared++;
 
     if (!students[id]) students[id] = { nickname: nick, total: 0, plays: 0, perApp: {}, last: 0 };
@@ -197,14 +256,14 @@ function dashboard_() {
 
   var daily = {};
   recs.forEach(function (r) {
-    var d = r[0];
-    if (!(d instanceof Date)) return;
-    var key = Utilities.formatDate(d, Session.getScriptTimeZone(), 'MM/dd');
-    daily[key] = (daily[key] || 0) + 1;
+    if (!(r[0] instanceof Date)) return;
+    var k = Utilities.formatDate(r[0], Session.getScriptTimeZone(), 'MM/dd');
+    daily[k] = (daily[k] || 0) + 1;
   });
 
   return {
     ok: true,
+    names: names,
     apps: Object.keys(apps).map(function (k) {
       var a = apps[k];
       return {
@@ -225,8 +284,8 @@ function dashboard_() {
 
 /* ===== 手動メンテ =========================================== */
 
-/** メニューから実行して、シートの土台を先に作っておく用 */
+/** エディタから1回実行して、シートの土台を作っておく用 */
 function セットアップ() {
-  records_(); best_();
-  SpreadsheetApp.getUi().alert('records と best のシートを用意しました。');
+  records_(); best_(); apps_();
+  SpreadsheetApp.getUi().alert('records / best / apps のシートを用意しました。');
 }
