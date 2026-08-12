@@ -1,14 +1,47 @@
 [
   {
-    "key": "electricity",
-    "name": "電気分野 3D LAB",
+    "key": "japan-quest",
+    "name": "日本一周クエスト",
+    "subject": "5教科",
+    "file": "https://backtree-create.github.io/Resque_Japn/",
+    "desc": "北海道から九州まで、5教科の問題を解きながら日本を旅するドット絵RPG。",
+    "unit": "エリア",
+    "total": 12,
+    "color": "#4ADE80",
+    "icon": "map"
+  },
+  {
+    "key": "science-quest",
+    "name": "サイエンスクエスト",
     "subject": "理科",
-    "file": "electronic.html",
-    "desc": "クルックス管からオームの法則まで、3Dでさわって確かめる実験室。",
-    "unit": "モード",
-    "total": 6,
-    "color": "#35E0D2",
-    "icon": "bolt"
+    "file": "https://backtree-create.github.io/Science_Quest/",
+    "desc": "理科の理を武器に観測塔の五層を踏破する学習RPG。物理・化学・生物・地学の全1500問。",
+    "unit": "層",
+    "total": 5,
+    "color": "#FF6B9D",
+    "icon": "flask"
+  },
+  {
+    "key": "element-master",
+    "name": "エレメントマスター3D",
+    "subject": "化学",
+    "file": "https://backtree-create.github.io/elementgame/",
+    "desc": "原子やイオンを集めて分子や塩を合成する化学対戦ゲーム。1人用スコアアタックは全10ステージ。",
+    "unit": "ステージ",
+    "total": 10,
+    "color": "#7FB4FF",
+    "icon": "cube"
+  },
+  {
+    "key": "money-survival",
+    "name": "リアル人生サバイバル",
+    "subject": "社会",
+    "file": "https://backtree-create.github.io/RealMoneySurvival.Web/",
+    "desc": "推し活を楽しみながら、お金・税金・期待値を学ぶ人生シミュレーション。",
+    "unit": "章",
+    "total": 5,
+    "color": "#F5D76E",
+    "icon": "target"
   },
   {
     "key": "english-go",
@@ -25,33 +58,11 @@
     "key": "idiom-dungeon",
     "name": "熟語の迷宮",
     "subject": "英語",
-    "file": "idiom-dungeon.html",
-    "desc": "パーツを合成して熟語をつくり、迷宮の地下を進むダンジョンRPG。",
+    "file": "https://backtree-create.github.io/Idiom_Labyrinth/",
+    "desc": "動詞の石と前置詞の宝珠を組み合わせて英熟語を作り、扉を開いて迷宮を進む。中学範囲164語。",
     "unit": "コース",
     "total": 3,
     "color": "#FFA24C",
     "icon": "maze"
-  },
-  {
-    "key": "japan-quest",
-    "name": "日本一周クエスト",
-    "subject": "5教科",
-    "file": "https://backtree-create.github.io/Resque_Japn/",
-    "desc": "北海道から九州まで、5教科の問題を解きながら日本を旅するドット絵RPG。",
-    "unit": "エリア",
-    "total": 12,
-    "color": "#4ADE80",
-    "icon": "map"
-  },
-  {
-    "key": "science-quest",
-    "name": "サイエンスクエスト",
-    "subject": "理科",
-    "file": "science-quest.html",
-    "desc": "物理・化学・生物・地学の問題でモンスターと戦う、1コマ完結のRPG。",
-    "unit": "階層",
-    "total": 5,
-    "color": "#FF6B9D",
-    "icon": "flask"
   }
 ]
