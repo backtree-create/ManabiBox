@@ -22,7 +22,7 @@
     "icon": "flask"
   },
   {
-    "key": "element-master",
+    "key": "elementgame",
     "name": "エレメントマスター3D",
     "subject": "化学",
     "file": "https://backtree-create.github.io/elementgame/",
@@ -33,13 +33,13 @@
     "icon": "cube"
   },
   {
-    "key": "money-survival",
+    "key": "oshi-katsu-survival",
     "name": "リアル人生サバイバル",
     "subject": "社会",
     "file": "https://backtree-create.github.io/RealMoneySurvival.Web/",
-    "desc": "推し活を楽しみながら、お金・税金・期待値を学ぶ人生シミュレーション。",
+    "desc": "推し活を楽しみながら、お金・税金・期待値を学ぶ全3章の人生シミュレーション。",
     "unit": "章",
-    "total": 5,
+    "total": 3,
     "color": "#F5D76E",
     "icon": "target"
   },
@@ -65,4 +65,5 @@
     "color": "#FFA24C",
     "icon": "maze"
   }
+
 ]
