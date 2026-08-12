@@ -125,7 +125,63 @@
     addBackButton();
   }
 
-  /* ---- 4. 日本一周クエストのアダプター ---------------------- */
+  /* ---- 4. localStorage を見張る（外部ライブラリで保存するゲーム用） ---- */
+  var polls = [];
+  function watchKey(key, fn) {
+    polls.push({ key: key, fn: fn, last: null });
+  }
+  function pollOnce() {
+    for (var i = 0; i < polls.length; i++) {
+      var w = polls[i], raw = null;
+      try { raw = global.localStorage.getItem(w.key); } catch (e) {}
+      if (raw == null || raw === w.last) continue;
+      w.last = raw;
+      try { w.fn(raw); } catch (e) { log('見張り中のエラー', w.key, e); }
+    }
+  }
+  global.addEventListener('load', function () {
+    if (!polls.length) return;
+    pollOnce();
+    setInterval(pollOnce, 3000);
+    log('localStorage の見張りを開始しました', polls.map(function (w) { return w.key; }));
+  });
+
+  /* ---- 5. リアル人生サバイバルのアダプター ------------------ */
+  /* zustand が oshi-life-survival-save に状態をまるごと保存している。
+     章(chapter 1〜3)と、覚えた知識カード(全10枚)を読み取って送る。 */
+  var RM = { key: 'oshi-life-survival-save', app: 'money-survival', total: 3, cards: 10, sig: null };
+
+  watchKey(RM.key, function (raw) {
+    var st;
+    try { st = (JSON.parse(raw) || {}).state; } catch (e) { return; }
+    if (!st || !st.chapter) return;
+
+    var rec = st.records || {};
+    var got = (rec.acquiredKnowledge || []).length;
+    var best = Math.min(100, Math.round(got / RM.cards * 100));
+    /* 章の途中はまだクリアしていないので、結果画面に着いたぶんだけ数える */
+    var done = st.screen === 'result' ? st.chapter : st.chapter - 1;
+    if (done < 0) done = 0;
+
+    var sig = done + '/' + best;
+    if (sig === RM.sig) return;
+    RM.sig = sig;
+
+    var note = '第' + st.chapter + '章';
+    if (st.finalMissionResolved) {
+      note = st.finalMissionAttendance === 'vip' ? 'VIP席で最終ミッション達成'
+           : st.finalMissionAttendance === 'general' ? '一般席で最終ライブに参加'
+           : '最終ライブを見送り生活を守った';
+    } else if (st.screen === 'result') {
+      note = '第' + st.chapter + '章 終了';
+    }
+    global.manabiReport({
+      app: RM.app, done: done, total: RM.total, best: best,
+      note: note + '・知識 ' + got + '/' + RM.cards
+    });
+  });
+
+  /* ---- 6. 日本一周クエストのアダプター ---------------------- */
   /* 表：5エリア＋東京　裏：5エリア＋東京　= ぜんぶで12 */
   var JQ = { key: 'nihon_quest_save', app: 'japan-quest', total: 12, sig: null };
 
