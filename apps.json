@@ -33,7 +33,7 @@
     "icon": "cube"
   },
   {
-    "key": "oshi-life-survival",
+    "key": "money-survival",
     "name": "リアル人生サバイバル",
     "subject": "社会",
     "file": "https://backtree-create.github.io/RealMoneySurvival.Web/",
@@ -64,5 +64,16 @@
     "total": 3,
     "color": "#FFA24C",
     "icon": "maze"
+  },
+  {
+    "key": "stone-quest",
+    "name": "STONE QUEST",
+    "subject": "理科",
+    "file": "https://backtree-create.github.io/stone-quest/",
+    "desc": "石化した世界を科学の知識で復興する2DドットRPG。理科クイズで14の技術を研究し、原始から現代文明を目指す。",
+    "unit": "技術",
+    "total": 14,
+    "color": "#4FD1C5",
+    "icon": "flask"
   }
 ]
