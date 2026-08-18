@@ -23,6 +23,24 @@
     touch-action:manipulation;}
   #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
   canvas{display:block;background:#0b0604;border-radius:6px;}
+  /* 自前の「もどる」ボタン(ManabiBox配下に置くと manabi-connect が設置しないため) */
+  #manabi-back-local{
+    position:fixed;
+    left:calc(12px + env(safe-area-inset-left));
+    top:calc(12px + env(safe-area-inset-top));
+    z-index:50;display:block;padding:9px 16px;border-radius:20px;
+    background:rgba(30,18,8,0.78);
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    border:1.5px solid rgba(255,180,80,0.55);
+    color:#ffd98a;font:700 13px 'Zen Kaku Gothic New',sans-serif;
+    text-decoration:none;letter-spacing:0.05em;cursor:pointer;
+    transition:transform .12s ease, background .2s ease, box-shadow .2s ease;
+    animation:manabiBackIn .5s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #manabi-back-local:hover{background:rgba(60,36,16,0.9);box-shadow:0 0 14px rgba(255,150,40,0.35);}
+  #manabi-back-local:active{transform:scale(0.9);background:rgba(90,54,22,0.95);}
+  @keyframes manabiBackIn{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:none;}}
 </style>
 <!-- ManabiBox 接続 -->
 <script>window.MANABI_CONFIG = window.MANABI_CONFIG || {};</script>
@@ -637,6 +655,7 @@ let G=null;
 let clickables=[];
 let lastTime=0, gt=0;
 let toast=null;
+let pressFx=null; // タップ時のリップル/押し込みアニメーション
 
 function startStage(stage){
   G={stage:stage, endless:!!stage.endless, qIndex:0, asked:0, correct:0, score:0, combo:0,
@@ -833,6 +852,20 @@ function render(dt){
   else if(screen==='play') renderPlay(dt);
   else if(screen==='result') renderResult(dt);
   ctx.restore();
+  // タップリップル(広がる光の輪)
+  if(pressFx){
+    pressFx.t+=dt;
+    const p=pressFx.t/0.35;
+    if(p>=1){ pressFx=null; }
+    else{
+      ctx.save(); ctx.globalAlpha=0.55*(1-p);
+      ctx.strokeStyle='#ffd98a'; ctx.lineWidth=3;
+      const g=8+p*30;
+      const r=Math.min((pressFx.h+g)/2,26);
+      rr(pressFx.x-g/2,pressFx.y-g/2,pressFx.w+g,pressFx.h+g,r); ctx.stroke();
+      ctx.restore();
+    }
+  }
   if(toast){
     toast.t-=dt; if(toast.t<=0) toast=null;
     else{ ctx.save(); ctx.globalAlpha=Math.min(1,toast.t); ctx.fillStyle='rgba(20,12,6,0.9)';
@@ -843,6 +876,11 @@ function render(dt){
 function button(x,y,w,h,label,action,opts){
   opts=opts||{};
   ctx.save();
+  // 押し込みアニメーション
+  if(pressFx&&pressFx.t<0.18&&pressFx.x===x&&pressFx.y===y&&pressFx.w===w&&pressFx.h===h){
+    const k=1-0.08*Math.sin(Math.PI*pressFx.t/0.18);
+    ctx.translate(x+w/2,y+h/2); ctx.scale(k,k); ctx.translate(-(x+w/2),-(y+h/2));
+  }
   ctx.fillStyle=opts.bg||'#c8781e';
   ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=10; ctx.shadowOffsetY=3;
   rr(x,y,w,h,h/2); ctx.fill();
@@ -906,7 +944,7 @@ function renderSelect(dt){
     ctx.restore();
     clickables.push({x:x,y:y0,w:cw,h:chh,fn:()=>{ sfxClick(); startStage(st); }});
   });
-  button(30,24,120,40,'← もどる',()=>{ sfxClick(); screen='title'; },{bg:'#4a3a26',border:'#a8905e',size:14});
+  button(W-150,24,120,40,'タイトルへ',()=>{ sfxClick(); screen='title'; },{bg:'#4a3a26',border:'#a8905e',size:14});
   txt('えらんでタップ / クリック',W/2,H-40,14,'#8d7a5c');
 }
 /* プレイ */
@@ -1095,7 +1133,10 @@ function handleTap(e){
   auInit();
   const p=toLogical(e);
   for(const c of clickables){
-    if(p.x>=c.x&&p.x<=c.x+c.w&&p.y>=c.y&&p.y<=c.y+c.h){ c.fn(); return; }
+    if(p.x>=c.x&&p.x<=c.x+c.w&&p.y>=c.y&&p.y<=c.y+c.h){
+      pressFx={x:c.x,y:c.y,w:c.w,h:c.h,t:0};
+      c.fn(); return;
+    }
   }
   // プレイ中: 画面の左右タップでも回答
   if(screen==='play'&&G&&G.phase==='question'){
@@ -1123,12 +1164,33 @@ window.addEventListener('keydown',e=>{
   }else if(screen==='title'&&(e.key==='Enter'||e.key===' ')){ screen='select'; }
 });
 
+/* ================= もどるボタン =================
+   ManabiBox配下(同一URL階層)に置くと manabi-connect.js が
+   「ハブ本体」と判定してボタンを設置しないため、自前で設置する。
+   別リポジトリに移した場合は manabi-connect 側のボタンを優先し、二重表示しない。 */
+const HUB_URL=(window.MANABI_CONFIG&&window.MANABI_CONFIG.hubUrl)||'https://backtree-create.github.io/ManabiBox/';
+let backBtn=null;
+setTimeout(function(){
+  backBtn=document.getElementById('manabi-back');
+  if(backBtn) return;
+  backBtn=document.createElement('a');
+  backBtn.id='manabi-back-local';
+  backBtn.href=HUB_URL;
+  backBtn.textContent='← まなびボックス';
+  document.body.appendChild(backBtn);
+},800);
+
 /* ================= メインループ ================= */
 function loop(ts){
   const dt=Math.min(0.05,(ts-lastTime)/1000||0.016);
   lastTime=ts;
   update(dt);
   render(dt);
+  // プレイ中はもどるボタンを隠す(HUDと重なるため)
+  if(backBtn){
+    const hide=(screen==='play');
+    if(backBtn.style.display!==(hide?'none':'')) backBtn.style.display=hide?'none':'';
+  }
   requestAnimationFrame(loop);
 }
 let loopStarted=false;
