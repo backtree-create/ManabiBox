@@ -4,7 +4,7 @@
 window.MANABI_CONFIG = {
 
   /* Apps Script のウェブアプリURL（.../exec で終わるもの） */
-  endpoint: 'https://script.google.com/macros/s/AKfycbwV63vaDEgFuuC-CJUM4GeIwIBJ_v7Rwr51RzQXQjdeFc2Od0HhgXMRwHHPZBxYW_9l/exec',
+  endpoint: 'https://script.google.com/macros/s/AKfycbyKfjthpn93zNaVGmR6_5DNgv1PddrZuXcEFEeDIp7SxL-BO6SDEVPq6UMl4-bFP19u/exec',
 
   /* code.gs の WRITE_TOKEN と同じ文字列 */
   token: 'manabi-write-2026',
