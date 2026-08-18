@@ -80,7 +80,7 @@
     "key": "onpu-trolley",
     "name": "オンプ・トロッコ",
     "subject": "音楽",
-    "file": "https://backtree-create.github.io/ManabiBox/onpu-trolley.html/",
+    "file": "https://backtree-create.github.io/ManabiBox/onpu-trolley.html",
     "desc": "松明の洞窟をトロッコで駆け抜け、五線譜の音階の分岐を乗り越えるクイズゲーム。ト音記号・ヘ音記号対応。",
     "unit": "坑道",
     "total": 3,
