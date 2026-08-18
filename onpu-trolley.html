@@ -747,7 +747,7 @@ function finishStage(cleared){
 }
 /*
   送信仕様:
-  - ゴールモード(キー onpu-trolley): done=クリア数/3, best=3ステージ正答率の平均(未挑戦は0%扱い, 0-100)
+  - ゴールモード(キー onpu-trolley): done=クリア数/3, best=3ステージ正答率の平均を1000点満点に換算(未挑戦は0%扱い, 0-1000)
   - エンドレス(キー onpu-trolley-endless): best=そのプレイのスコアをそのまま(ハブ側で自己最高を保持)
 */
 function sendReport(cleared,acc){
@@ -759,8 +759,8 @@ function sendReport(cleared,acc){
     }else{
       const recs=['treble','bass','mixed'].map(k=>save.stages[k]);
       const clearedCount=recs.filter(r=>r.cleared).length;
-      const avgAcc=Math.round(recs.reduce((s,r)=>s+(r.acc||0),0)/3);
-      manabiReport({app:APP_KEY, done:clearedCount, total:3, best:avgAcc,
+      const avgPts=Math.round(recs.reduce((s,r)=>s+(r.acc||0),0)/3*10);
+      manabiReport({app:APP_KEY, done:clearedCount, total:3, best:avgPts,
         note:(G.stage.name+(cleared?' クリア':' 挑戦')+' 正答'+acc+'%').slice(0,40)});
     }
   }catch(e){}
