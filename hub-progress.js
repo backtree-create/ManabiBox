@@ -2,7 +2,7 @@
 
    ゲーム側でやることは1行だけです。
 
-     LearnHub.report({ app:'english-go', done:3, total:4, best:82, note:'S3クリア' });
+     LearnHub.report({ app:'english-go', done:3, total:4, best:820, note:'S3クリア' });
 
    端末に保存し、スプレッドシートへ送ります。
    通信できなかったぶんは貯めておき、次に開いたときにまとめて送ります。
