@@ -148,8 +148,26 @@
 
   /* ---- 5. リアル人生サバイバルのアダプター ------------------ */
   /* zustand が oshi-life-survival-save に状態をまるごと保存している。
-     章(chapter 1〜3)と、覚えた知識カード(全10枚)を読み取って送る。 */
+     章(chapter 1〜3)の進みと、人生が終わったときの最終ランクを送る。
+     ランク→点数(1000点満点): SSS=1000, S=800, A=600, B=400, C=200, D=100 */
   var RM = { key: 'oshi-life-survival-save', app: 'money-survival', total: 3, cards: 10, sig: null };
+  var RM_RANK_PTS = { SSS: 1000, S: 800, A: 600, B: 400, C: 200, D: 100 };
+
+  /* ゲーム本体と同じ計算で最終ランクを出す
+     (最終スコア = 推し活支出 × 知識ボーナス(最大×2)。ゲームオーバーはD) */
+  function rmRank(st) {
+    var rec = st.records || {};
+    if (rec.gameOver || st.gameOver) return 'D';
+    var spend = Math.max(Number(rec.totalOshiSpending) || 0,
+                         st.finalMissionPurchased ? 1500000 : 0);
+    var use = Math.max(Number(rec.knowledgeUseCount) || 0,
+                       Number(st.knowledgeUseCount) || 0);
+    var score = Math.round(spend * Math.min(2, 1 + use * 0.1));
+    return score >= 3000000 ? 'SSS'
+         : score >= 2500000 ? 'S'
+         : score >= 1500000 ? 'A'
+         : score >= 1000000 ? 'B' : 'C';
+  }
 
   watchKey(RM.key, function (raw) {
     var st;
@@ -158,20 +176,23 @@
 
     var rec = st.records || {};
     var got = (rec.acquiredKnowledge || []).length;
-    var best = Math.min(100, Math.round(got / RM.cards * 100));
     /* 章の途中はまだクリアしていないので、結果画面に着いたぶんだけ数える */
     var done = st.screen === 'result' ? st.chapter : st.chapter - 1;
     if (done < 0) done = 0;
+
+    /* 最終ランクは、人生が終わった(全章クリア or ゲームオーバー)ときだけ点数にする */
+    var finished = !!(rec.gameOver || st.gameOver || st.finalMissionResolved ||
+                      (st.screen === 'result' && st.chapter >= RM.total));
+    var rank = finished ? rmRank(st) : null;
+    var best = rank ? (RM_RANK_PTS[rank] || 0) : 0;
 
     var sig = done + '/' + best;
     if (sig === RM.sig) return;
     RM.sig = sig;
 
     var note = '第' + st.chapter + '章';
-    if (st.finalMissionResolved) {
-      note = st.finalMissionAttendance === 'vip' ? 'VIP席で最終ミッション達成'
-           : st.finalMissionAttendance === 'general' ? '一般席で最終ライブに参加'
-           : '最終ライブを見送り生活を守った';
+    if (rank) {
+      note = '最終ランク' + rank + '（' + best + 'pt）';
     } else if (st.screen === 'result') {
       note = '第' + st.chapter + '章 終了';
     }
@@ -195,8 +216,9 @@
 
     var vals = [];
     for (var k in (s.best || {})) vals.push(Number(s.best[k]) || 0);
+    /* エリアごとの成績(0〜100)の平均を、1000点満点に換算して送る */
     var best = vals.length
-      ? Math.round(vals.reduce(function (a, b) { return a + b; }, 0) / vals.length) : 0;
+      ? Math.round(vals.reduce(function (a, b) { return a + b; }, 0) / vals.length * 10) : 0;
 
     var sig = done + '/' + best;
     if (sig === JQ.sig) return;          /* 変わっていなければ送らない */
