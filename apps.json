@@ -122,11 +122,11 @@
   },
   {
     "key": "algorithm-factory",
-    "name": "手順工場",
+    "name": "ロジック鉄道",
     "subject": "情報",
     "file": "https://backtree-create.github.io/ManabiBox/algorithm-factory.html",
-    "desc": "命令ブロックを並べ、順次・反復・条件分岐で搬送ロボットを動かすプログラミングゲーム。",
-    "unit": "ライン",
+    "desc": "命令を運行表へ並べ、順次・反復・条件分岐で列車を全駅経由の終着駅へ導くプログラミングゲーム。",
+    "unit": "路線",
     "total": 18,
     "color": "#FFD24A",
     "icon": "bolt"
