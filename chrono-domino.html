@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>CHRONO DOMINO — クロノ・ドミノ</title>
+<style>
+  :root{
+    --paper:#ece1c8; --paper2:#e0d2b0; --card:#fbf6e9;
+    --txt:#2c2416; --ink:#2c2416; --ink2:#4c4130; --dim:#7d7158; --faint:#a3967a;
+    --shu:#c23a20; --shu2:#8c2413; --gold:#8f7434; --goldL:#e3c887;
+    --line:rgba(95,75,45,.10);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%;}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    color:var(--txt);
+    background:
+      radial-gradient(140% 90% at 50% 40%, transparent 55%, rgba(90,70,40,.22) 100%),
+      repeating-linear-gradient(0deg, var(--line) 0 1px, transparent 1px 9px),
+      linear-gradient(180deg, #f1e8d3, var(--paper) 45%, var(--paper2));
+    height:100dvh; display:flex; flex-direction:column; overflow:hidden;
+    touch-action:manipulation; user-select:none; -webkit-user-select:none;
+  }
+  .min{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;}
+  button{font:inherit;}
+  button:focus-visible{outline:2px solid var(--shu); outline-offset:2px;}
+  .manabiBar{height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(4px + env(safe-area-inset-top)) 12px 4px;background:rgba(44,36,22,.92);color:#f8ecd4;border-bottom:1px solid var(--gold);font-size:10px;letter-spacing:.08em;}
+  .manabiBar a{color:#fff8ec;text-decoration:none;font-weight:800;min-height:24px;display:inline-flex;align-items:center;padding:3px 9px;border:1px solid rgba(255,248,236,.45);border-radius:999px;}
+  .manabiBar a:hover,.manabiBar a:focus-visible{background:var(--shu);outline:2px solid #fff8ec;outline-offset:2px;}
+  .manabiBar span{color:var(--goldL);}
+
+  /* ---- 朱印 ---- */
+  .seal{
+    display:inline-flex; align-items:center; justify-content:center;
+    background:var(--shu); color:#fff8ec;
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:700;
+    border-radius:3px; transform:rotate(-2deg);
+    box-shadow:inset 0 0 0 1.5px rgba(255,248,236,.4);
+  }
+  .seal.s2{font-size:9px !important; letter-spacing:-1px;}
+  .tag{
+    display:inline-block; font-size:9px; letter-spacing:.22em; font-weight:800;
+    border:1.5px solid var(--gold); color:var(--gold); padding:2px 7px; white-space:nowrap; background:var(--card);
+  }
+  .tag.fill{background:var(--gold); color:#fbf3df; border-color:var(--gold);}
+
+  /* ---- ヘッダー ---- */
+  header{display:flex; align-items:flex-end; gap:12px; padding:10px 14px 6px;}
+  .logo{display:flex; align-items:center; gap:10px;}
+  .logo .seal{width:34px; height:34px; font-size:17px;}
+  .logo .t .en{font-weight:900; letter-spacing:.16em; font-size:clamp(12px,3.2vw,15px); color:var(--ink);}
+  .logo .t .en b{color:var(--shu);}
+  .logo .t .jp{display:block; font-size:8px; letter-spacing:.42em; color:var(--dim); margin-top:2px;}
+  .hud{margin-left:auto; display:flex; gap:6px;}
+  .pill{
+    background:var(--card); border:1.5px solid var(--ink2);
+    border-radius:4px; padding:3px 10px; text-align:center; min-width:58px;
+  }
+  .pill .k{display:block; font-size:8px; letter-spacing:.3em; color:var(--faint); font-weight:700;}
+  .pill b{font-variant-numeric:tabular-nums; color:var(--ink); font-size:clamp(13px,3.6vw,16px);}
+  #ruleBar{height:5px; margin-top:6px;
+    background:repeating-linear-gradient(-55deg, var(--shu) 0 11px, transparent 11px 24px);}
+
+  #eraTitle{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:8px 10px 2px;
+  }
+  #eraTitle .seal{width:26px; height:26px; font-size:14px;}
+  #eraTitle .name{font-size:clamp(15px,4.6vw,21px); font-weight:700; letter-spacing:.14em; color:var(--ink);}
+  #guide{
+    text-align:center; font-size:clamp(10px,3vw,12px);
+    color:var(--dim); padding:2px 14px 6px; min-height:1.5em;
+  }
+
+  /* ---- パイプライン ---- */
+  #pipeWrap{flex:1; min-height:0; overflow-y:auto; padding:6px 12px;}
+  #pipeline{display:flex; flex-direction:column; gap:2px; align-items:center; max-width:560px; margin:0 auto;}
+  .slotRow{display:flex; align-items:center; gap:10px; width:100%;}
+  .slotNo{flex:none;}
+  .slotNo .seal{width:24px; height:24px; font-size:13px;}
+  .slot{
+    flex:1; min-height:56px; border:1.5px dashed var(--faint);
+    background:rgba(255,252,242,.4); position:relative;
+    display:flex; align-items:stretch; perspective:600px;
+  }
+  .slot.hover{border-color:var(--shu); background:rgba(194,58,32,.07);}
+  .connector{
+    align-self:flex-start; margin-left:11px; padding:1px 0 1px 22px;
+    font-size:9px; letter-spacing:.24em; color:var(--dim); font-weight:700;
+    position:relative; line-height:1.5;
+  }
+  .connector::before{
+    content:""; position:absolute; left:11px; top:0; bottom:0; width:2px; background:var(--gold);
+  }
+
+  /* ---- 史料カード ---- */
+  .cardD{
+    flex:1; margin:4px; padding:9px 12px 9px 14px; cursor:grab;
+    background:var(--card);
+    color:var(--ink); border:1.5px solid var(--ink2);
+    border-left:5px solid var(--shu);
+    box-shadow:3px 3px 0 rgba(76,65,48,.35);
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-weight:700; font-size:clamp(13px,3.7vw,16px); letter-spacing:.05em;
+    display:flex; align-items:center; min-height:46px;
+    transform-origin:bottom right;
+    transition:transform .45s cubic-bezier(.5,0,.8,.4), opacity .4s, border-color .3s;
+    touch-action:none; position:relative;
+  }
+  .cardD.sel{border-color:var(--shu); box-shadow:0 0 0 2px var(--shu), 3px 3px 0 rgba(76,65,48,.35);}
+  .cardD.fall{
+    transform:rotate(78deg) translateY(2px);
+    opacity:.68; border-left-color:var(--gold); border-color:var(--gold);
+    box-shadow:none; cursor:default; background:#f3ebd6;
+  }
+  .cardD.wrong{background:#f4d4c9; border-color:var(--shu); border-left-color:var(--shu); animation:shakeD .4s ease;}
+  @keyframes shakeD{0%,100%{translate:0}25%{translate:-6px 0}75%{translate:6px 0}}
+  .cardD.ghost{position:fixed; z-index:60; pointer-events:none; opacity:.92; width:min(70vw,300px); margin:0; transform:translate(-50%,-50%) rotate(-2deg);}
+  .cardD.dragSrc{opacity:.3;}
+
+  /* ---- 解説テロップ（墨の帯） ---- */
+  #caption{
+    font-size:clamp(11px,3.2vw,13px); line-height:1.7;
+    background:#241d12; border-left:5px solid var(--shu);
+    color:#efe6cf; padding:9px 14px; min-height:3em;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+  }
+  #caption b{color:var(--goldL); font-family:"Hiragino Mincho ProN","Yu Mincho",serif;}
+
+  /* ---- 手札 ---- */
+  #handArea{
+    border-top:2px solid var(--ink2); background:rgba(255,250,238,.5);
+    padding:6px 10px calc(8px + env(safe-area-inset-bottom));
+  }
+  #handLabel{font-size:8px; color:var(--faint); letter-spacing:.5em; text-align:center; font-weight:800;}
+  #hand{
+    display:flex; flex-wrap:wrap; gap:4px; justify-content:center;
+    max-height:25dvh; overflow-y:auto; padding:5px 0;
+  }
+  #hand .cardD{flex:0 1 auto; min-width:46%; max-width:100%;}
+  @media (min-width:640px){ #hand .cardD{min-width:180px;} }
+  #actions{display:flex; gap:10px; justify-content:center; padding-top:6px; flex-wrap:wrap;}
+  .btn{
+    font-weight:800; letter-spacing:.2em; cursor:pointer;
+    font-size:clamp(14px,4vw,17px); min-height:48px; padding:11px 30px;
+    color:#fff8ec; background:var(--shu);
+    border:none; border-bottom:4px solid var(--shu2);
+    clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+  }
+  .btn:active{transform:translateY(2px); border-bottom-width:2px;}
+  .btn:disabled{opacity:.35; pointer-events:none;}
+  .btn.sub{
+    font-family:inherit; background:var(--card); border:1.5px solid var(--ink2); border-bottom:3px solid var(--ink2);
+    color:var(--ink2); font-size:clamp(12px,3.2vw,14px); letter-spacing:.08em;
+    clip-path:none;
+  }
+
+  /* ---- オーバーレイ ---- */
+  .overlay{position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; background:rgba(46,36,20,.55); padding:16px;}
+  .overlay.hidden{display:none;}
+  .panel{
+    background:#f6efdc;
+    border:1.5px solid var(--ink2); border-top:5px solid var(--shu);
+    box-shadow:0 10px 30px rgba(40,30,15,.35);
+    max-width:540px; width:100%; max-height:88dvh; overflow-y:auto;
+    padding:24px 20px; position:relative;
+  }
+  .panel::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(0deg, var(--line) 0 1px, transparent 1px 9px);
+  }
+  .panel > *{position:relative;}
+  .secTitle{font-size:9px; letter-spacing:.46em; color:var(--dim); font-weight:800; margin:14px 0 8px; text-align:center;}
+  .bigBtn{
+    font-weight:800; font-size:clamp(15px,4.2vw,18px); letter-spacing:.24em;
+    background:var(--shu); color:#fff8ec;
+    border:none; border-bottom:4px solid var(--shu2);
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
+    padding:13px 34px; margin-top:14px; cursor:pointer; min-height:52px;
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+  }
+  .bigBtn:active{transform:translateY(2px); border-bottom-width:2px;}
+  .bigBtn.gray{background:var(--card); color:var(--ink2); border:1.5px solid var(--ink2); border-bottom:3px solid var(--ink2); font-family:inherit; letter-spacing:.1em; clip-path:none;}
+
+  /* タイトル */
+  .heroSeals{display:flex; align-items:center; justify-content:center; gap:14px; margin:6px 0 4px;}
+  .heroSeals .seal{width:clamp(74px,22vw,96px); height:clamp(74px,22vw,96px); font-size:clamp(40px,12vw,52px); transform:rotate(-3deg);}
+  .heroSeals .seal.g{transform:rotate(2.5deg); background:transparent; color:var(--gold); box-shadow:inset 0 0 0 2.5px var(--gold);}
+  .heroSeals .arrow{color:var(--gold); font-size:clamp(20px,6vw,28px); font-weight:800;}
+  .heroTitle{text-align:center;}
+  .heroTitle .en{font-weight:900; font-size:clamp(20px,6.4vw,30px); letter-spacing:.2em; color:var(--ink);}
+  .heroTitle .en b{color:var(--shu);}
+  .heroTitle .tag2{font-size:clamp(11px,3.4vw,13px); color:var(--dim); margin-top:10px; letter-spacing:.3em;}
+  .heroRule{height:4px; margin:14px auto 0; max-width:280px;
+    background:repeating-linear-gradient(-55deg, var(--shu) 0 11px, var(--gold) 11px 22px, transparent 22px 34px);}
+
+  /* 時代選択 */
+  .eraRow{display:flex; gap:8px; align-items:stretch; margin:9px 0;}
+  .eraBtn{
+    flex:1; display:flex; align-items:center; gap:11px; text-align:left; cursor:pointer;
+    background:var(--card); border:1.5px solid var(--ink2); border-left:4px solid var(--shu);
+    color:var(--ink); padding:10px 12px; min-height:60px;
+  }
+  .eraBtn:active{background:#fff;}
+  .eraBtn .seal{width:26px; height:26px; font-size:14px; flex:none;}
+  .eraBtn .eName{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:700; font-size:clamp(13px,3.9vw,16px); letter-spacing:.07em;}
+  .eraBtn .eInfo{margin-left:auto; text-align:right; flex:none;}
+  .eraBtn .eInfo b{font-size:clamp(13px,3.9vw,16px); font-variant-numeric:tabular-nums;}
+  .eraBtn .eInfo .rk{font-family:"Hiragino Mincho ProN",serif; font-weight:800; margin-right:5px;}
+  .eraBtn .eInfo small{display:block; font-size:8px; letter-spacing:.2em; color:var(--faint); margin-top:2px;}
+  .reviewMini{
+    flex:none; width:50px; cursor:pointer;
+    background:transparent; border:1.5px solid var(--ink2); color:var(--dim);
+    font-size:11px; letter-spacing:.1em; writing-mode:vertical-rl;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .reviewMini:active{border-color:var(--shu); color:var(--shu);}
+  .reviewMini:disabled{opacity:.3; pointer-events:none;}
+
+  /* リザルト */
+  .stamp{
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-weight:800; font-size:clamp(28px,9vw,42px); letter-spacing:.2em;
+    color:var(--shu); transform:rotate(-2.5deg); text-align:center; line-height:1.15;
+    margin:0 0 8px;
+  }
+  .stamp small{display:block; font-family:inherit; font-size:.3em; letter-spacing:.5em; color:var(--dim); transform:none; margin-bottom:6px; font-weight:700;}
+  .rankRow{display:flex; align-items:center; justify-content:center; gap:12px;
+    font-size:9px; letter-spacing:.46em; color:var(--faint); font-weight:800; margin:0 0 10px;}
+  .rankL{font-family:"Hiragino Mincho ProN",serif; font-size:clamp(42px,13vw,62px); line-height:1; font-weight:800;}
+  .scoreRow{display:flex; justify-content:space-between; border-bottom:1px dashed var(--faint); padding:8px 4px; font-size:clamp(12px,3.7vw,15px); color:var(--dim);}
+  .scoreRow b{font-variant-numeric:tabular-nums; color:var(--ink);}
+  .total{font-family:"Hiragino Mincho ProN",serif; font-size:clamp(30px,10vw,46px); font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums; margin:10px 0 2px; text-align:center;}
+  .total small{font-size:.32em; letter-spacing:.3em; color:var(--dim); font-weight:700;}
+  .newRec{
+    display:inline-block; background:var(--shu); color:#fff8ec;
+    font-weight:800; font-size:clamp(11px,3.4vw,13px); letter-spacing:.26em;
+    padding:5px 14px; margin-top:8px;
+    clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);
+    font-family:"Hiragino Mincho ProN",serif;
+  }
+  .btnRow{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:8px;}
+  .center{text-align:center;}
+
+  /* ふり返り */
+  #ovReview{z-index:120;}
+  .flowItem{
+    background:var(--card); color:var(--ink);
+    border:1.5px solid var(--ink2); border-left:5px solid var(--shu);
+    padding:10px 12px; text-align:left;
+  }
+  .flowItem .fHead{display:flex; align-items:center; gap:8px;}
+  .flowItem .seal{width:20px; height:20px; font-size:11px; flex:none;}
+  .flowItem b{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:clamp(13px,3.9vw,16px);}
+  .flowItem p{margin:.45em 0 0; font-size:clamp(11px,3.3vw,13px); line-height:1.75; color:var(--ink2);}
+  .flowArrow{
+    text-align:left; padding:2px 0 2px 22px; margin-left:11px; position:relative;
+    color:var(--dim); font-size:9px; letter-spacing:.26em; font-weight:800; line-height:1.6;
+  }
+  .flowArrow::before{content:""; position:absolute; left:9px; top:0; bottom:0; width:2px; background:var(--gold);}
+  /* ---- 巻物選択 ---- */
+  .volCard{
+    display:flex; align-items:stretch; width:100%; margin:14px 0; cursor:pointer;
+    background:none; border:none; padding:0; min-height:112px; text-align:left;
+    filter:drop-shadow(0 6px 10px rgba(50,38,18,.35));
+  }
+  .volCard:active{transform:translateY(1px);}
+  .rod{
+    flex:none; width:15px; margin:-8px 0; position:relative; z-index:1;
+    background:linear-gradient(90deg,#2e2012,#6b4a26 45%,#2e2012);
+    border-radius:7px;
+  }
+  .rod::before,.rod::after{
+    content:""; position:absolute; left:50%; transform:translateX(-50%);
+    width:21px; height:9px; border-radius:5px;
+    background:linear-gradient(180deg,#a8875a,#6e5426);
+  }
+  .rod::before{top:-4px;} .rod::after{bottom:-4px;}
+  .volPaper{
+    flex:1; position:relative; display:flex; align-items:center; justify-content:center; gap:14px;
+    background:linear-gradient(180deg,#f8f2e2,#eee2c4 70%,#e6d7b2);
+    border-top:1.5px solid #4c4130; border-bottom:1.5px solid #4c4130;
+    box-shadow:inset 16px 0 16px -12px rgba(60,45,20,.45), inset -16px 0 16px -12px rgba(60,45,20,.45);
+    padding:12px 18px;
+  }
+  .volSeal{position:absolute; top:8px; left:14px;}
+  .volSeal .seal{width:22px; height:22px; font-size:12px;}
+  .volTitle{
+    writing-mode:vertical-rl; font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-weight:800; font-size:clamp(17px,5.2vw,22px); letter-spacing:.3em; color:var(--ink);
+    max-height:96px;
+  }
+  .volMeta{text-align:left;}
+  .volMeta b{display:block; font-size:clamp(15px,4.4vw,19px); color:var(--shu); font-variant-numeric:tabular-nums;}
+  .volMeta b span{color:var(--faint); font-size:.75em;}
+  .volMeta small{display:block; font-size:8px; letter-spacing:.24em; color:var(--dim); font-weight:800; margin-top:3px;}
+  .atkScroll{
+    display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%;
+    margin:18px 0 2px; padding:13px 16px; cursor:pointer; text-align:left;
+    background:linear-gradient(180deg,#cf4a2e,var(--shu) 60%,#a52f18);
+    border:1.5px solid var(--shu2); border-top:3px solid #e8734f;
+    color:#fff8ec; min-height:64px;
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+  }
+  .atkScroll:active{transform:translateY(2px);}
+  .atkScroll .aName{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:800; font-size:clamp(14px,4.2vw,17px); letter-spacing:.16em;}
+  .atkScroll .aSub{display:block; font-family:"Hiragino Kaku Gothic ProN",sans-serif; font-size:9px; letter-spacing:.12em; color:#f6d9c4; font-weight:400; margin-top:3px;}
+  .atkScroll small{font-size:10px; color:#ffe3b8; font-variant-numeric:tabular-nums; font-weight:800; flex:none;}
+  .backLink{
+    background:none; border:none; color:var(--dim); font-size:clamp(11px,3.2vw,13px);
+    cursor:pointer; padding:10px; letter-spacing:.1em; text-decoration:underline;
+  }
+  /* ---- UI polish / accessibility ---- */
+  header{padding-top:calc(10px + env(safe-area-inset-top));}
+  .overlay{backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);}
+  .panel{border-radius:10px; box-shadow:0 18px 55px rgba(40,30,15,.42); scrollbar-width:thin; scrollbar-color:var(--gold) transparent;}
+  .volCard,.eraBtn,.reviewMini,.atkScroll,.bigBtn,.btn,.backLink{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease,background-color .16s ease;}
+  .volCard:hover,.eraBtn:hover,.atkScroll:hover,.bigBtn:hover:not(:disabled),.btn:hover:not(:disabled){filter:brightness(1.045);}
+  .volCard:focus-visible{outline:3px solid var(--shu); outline-offset:4px;}
+  .cardD{cursor:pointer;}
+  .cardD:focus-visible,.slot:focus-visible{outline:3px solid var(--shu); outline-offset:2px;}
+  @media (min-width:900px){
+    #pipeWrap{padding-inline:24px;}
+    #pipeline{max-width:700px;}
+    #hand{max-width:920px;margin-inline:auto;}
+    #hand .cardD{min-width:210px;}
+  }
+  @media (max-width:520px){
+    .manabiBar span{display:none;}
+    .panel{padding:20px 14px;max-height:92dvh;}
+    .volCard{min-height:98px;margin:11px 0;}
+    .volPaper{gap:9px;padding-inline:8px;}
+    .volTitle{font-size:clamp(13px,4vw,17px);}
+    .pill{padding-inline:8px;min-width:52px;}
+  }
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+<script src="https://backtree-create.github.io/ManabiBox/config.js"></script>
+<script src="https://backtree-create.github.io/ManabiBox/hub-progress.js"></script>
+<script src="https://backtree-create.github.io/ManabiBox/manabi-connect.js"></script>
+</head>
+<body>
+
+<div class="manabiBar"><a id="manabi-back" href="https://backtree-create.github.io/ManabiBox/">ManabiBox ホーム</a><span>進捗とベストスコアを自動送信</span></div>
+
+<div>
+<header>
+  <div class="logo">
+    <span class="seal">因</span>
+    <span class="t">
+      <span class="en">CHRONO <b>DOMINO</b></span>
+      <span class="jp">クロノ・ドミノ</span>
+    </span>
+  </div>
+  <div class="hud">
+    <div class="pill"><span class="k">TIME</span><b id="hudTime">0</b></div>
+    <div class="pill"><span class="k">連鎖</span><b id="hudCombo">0</b></div>
+  </div>
+</header>
+<div id="ruleBar"></div>
+</div>
+
+<div id="eraTitle"></div>
+<div id="guide" aria-live="polite">カードを選んで、原因 → 結果の順にスロットへ置こう</div>
+
+<div id="pipeWrap"><div id="pipeline"></div></div>
+
+<div id="caption" aria-live="polite"><span>歴史は「暗記」じゃない。「つながり」だ。</span></div>
+
+<div id="handArea">
+  <div id="handLabel">手札 ── 史料カード</div>
+  <div id="hand"></div>
+  <div id="actions">
+    <button class="btn sub" id="btnBack">時代選択</button>
+    <button class="btn" id="btnRun">実 行</button>
+  </div>
+</div>
+
+<!-- タイトル -->
+<div class="overlay" id="ovTitle" role="dialog" aria-modal="true" aria-label="クロノ・ドミノ タイトル">
+  <div class="panel center">
+    <div class="heroSeals">
+      <span class="seal min">因</span>
+      <span class="arrow">─▶</span>
+      <span class="seal g min">果</span>
+    </div>
+    <div class="heroTitle">
+      <div class="en">CHRONO <b>DOMINO</b></div>
+      <div class="tag2">── 歴史は、つながりだ ──</div>
+    </div>
+    <div class="heroRule"></div>
+    <p style="font-size:clamp(11px,3.3vw,13px);color:var(--dim);line-height:2;margin:16px 0 0">
+      出来事を「これが起きたから、次にこれが起きた」の順に並べ、<br>
+      <b class="min" style="color:var(--txt)">実行</b>でドミノ倒しを起こせ。<br>
+      因果が正しければ連鎖し、間違った場所で歴史は止まる。</p>
+    <button class="bigBtn" id="btnStart">巻をえらぶ</button>
+  </div>
+</div>
+
+<!-- 巻選択 -->
+<div class="overlay hidden" id="ovVolumes" role="dialog" aria-modal="true" aria-label="巻を選択">
+  <div class="panel">
+    <div class="secTitle">PLAY MODE ── 巻別選択</div>
+    <div id="volList"></div>
+    <button class="atkScroll" id="btnAtk">
+      <span><span class="aName">乱世流し ── 全巻ミックス</span>
+      <span class="aSub">180秒・全六十章を重複なしで巡るランダム出題</span></span>
+      <small id="bestAtk">BEST —</small>
+    </button>
+    <div id="allClearBadge" class="center" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- 章選択 -->
+<div class="overlay hidden" id="ovSelect">
+  <div class="panel">
+    <div class="secTitle" id="selTitle"></div>
+    <div id="eraList"></div>
+    <div class="center"><button class="backLink" id="btnToVolumes">← 巻選択にもどる</button></div>
+  </div>
+</div>
+
+<!-- スコアアタック結果 -->
+<div class="overlay hidden" id="ovAtk">
+  <div class="panel center">
+    <div class="stamp min"><small>SCORE ATTACK ── 乱世流し</small><span>時間切れ</span></div>
+    <div class="scoreRow"><span>つないだ章</span><b id="atkChainsEl"></b></div>
+    <div class="scoreRow"><span>うち一発ノーミス</span><b id="atkNoMissEl"></b></div>
+    <div class="total"><span id="atkScoreEl"></span><small> 点</small></div>
+    <div><span class="newRec" id="atkRec" style="display:none">新記録</span></div>
+    <div class="btnRow">
+      <button class="bigBtn gray" id="btnAtkBack">巻選択へ</button>
+      <button class="bigBtn" id="btnAtkAgain">もう一度</button>
+    </div>
+  </div>
+</div>
+
+<!-- クリア -->
+<div class="overlay hidden" id="ovClear">
+  <div class="panel center">
+    <div class="stamp min"><small id="clearWhere"></small><span>完全連鎖</span></div>
+    <div class="rankRow">RANK<span id="scRank" class="rankL"></span></div>
+    <div class="scoreRow"><span>つないだドミノ</span><b id="scChain"></b></div>
+    <div class="scoreRow"><span>因果関係の正確性</span><b id="scAcc"></b></div>
+    <div class="scoreRow"><span>スピード倍率</span><b id="scSpeed"></b></div>
+    <div class="scoreRow"><span>一発ノーミス</span><b id="scMiss"></b></div>
+    <div class="total"><span id="scTotal"></span><small> 点</small></div>
+    <div><span class="newRec" id="scRec" style="display:none">新記録</span></div>
+    <div class="btnRow">
+      <button class="btn sub" id="btnReview">流れをふり返る</button>
+      <button class="bigBtn gray" id="btnRetry">もう一度</button>
+      <button class="bigBtn" id="btnNext">次の時代へ</button>
+    </div>
+  </div>
+</div>
+
+<!-- 流れのふり返り -->
+<div class="overlay hidden" id="ovReview">
+  <div class="panel">
+    <div class="stamp min" style="font-size:clamp(20px,6.4vw,28px)"><small>REVIEW</small><span id="reviewTitle"></span></div>
+    <p class="center" style="margin:-2px 0 10px;color:var(--faint);font-size:10px;letter-spacing:.1em">「なぜ → どうなった」を声に出して説明できたら完ぺき</p>
+    <div id="flowList" style="display:flex;flex-direction:column;gap:2px"></div>
+    <div class="center"><button class="bigBtn gray" id="btnReviewClose">とじる</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var mem={};
+var store={
+  get:function(k,d){try{var v=localStorage.getItem(k);return v!==null?JSON.parse(v):d;}catch(e){return (k in mem)?mem[k]:d;}},
+  set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} mem[k]=v;}
+};
+var AC=null;
+function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=t||"square";o.frequency.value=f;g.gain.value=v||0.06;g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.12));o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+(d||0.12));}catch(e){}}
+function $(id){return document.getElementById(id);}
+function kan(n){
+  var d=["","一","二","三","四","五","六","七","八","九"];
+  if(n<10) return d[n];
+  if(n===10) return "十";
+  if(n<20) return "十"+d[n-10];
+  return "二十";
+}
+function volNo(i){
+  var v=ERAS[i].vol, n=0;
+  for(var k=0;k<=i;k++) if(ERAS[k].vol===v) n++;
+  return n;
+}
+function kanSeal(n){
+  var t=kan(n);
+  return '<span class="seal'+(t.length>1?" s2":"")+'">'+t+'</span>';
+}
+var RANK_ORD={S:4,A:3,B:2,C:1};
+var RANK_COL={S:"#8f7434",A:"#2c2416",B:"#7d7158",C:"#b3a78c"};
+
+/* ---------- 時代データ（原因→結果の正順） ---------- */
+var ERAS=[
+ {vol:"政治の流れ", name:"ムラからクニへ", chain:[
+   {t:"稲作の伝来", e:"弥生時代、大陸から稲作が伝わり、人々は定住して米づくりを始めた。"},
+   {t:"むらの誕生と貧富の差", e:"米を蓄えられるようになり、持つ者と持たざる者の差が生まれた。"},
+   {t:"むらどうしの争い", e:"土地や水をめぐって争いが起こり、濠で囲んだ集落や武器が現れた。"},
+   {t:"小さな国々の誕生", e:"争いを勝ちぬいた有力なむらが「クニ」となった。邪馬台国の卑弥呼が有名。"},
+   {t:"大和政権と古墳", e:"王たちの連合である大和政権が生まれ、力を示す巨大な古墳がつくられた。"}
+ ]},
+ {vol:"政治の流れ", name:"律令国家への道", chain:[
+   {t:"聖徳太子の政治", e:"天皇中心の国を目指し、冠位十二階や十七条の憲法を定めた。"},
+   {t:"遣隋使の派遣", e:"小野妹子らを隋へ送り、大陸の進んだ制度や文化を学んだ。"},
+   {t:"大化の改新", e:"中大兄皇子と中臣鎌足が蘇我氏を倒し、公地公民などの改革を始めた。"},
+   {t:"壬申の乱", e:"皇位をめぐる争いに勝った天武天皇が、天皇の権力をさらに強めた。"},
+   {t:"大宝律令の制定", e:"唐にならった法律が完成し、律令国家のしくみが整った。"}
+ ]},
+ {vol:"政治の流れ", name:"奈良の都と仏教", chain:[
+   {t:"平城京への遷都", e:"唐の長安にならった本格的な都が奈良につくられた。"},
+   {t:"ききんと伝染病の流行", e:"災いや反乱が続き、社会に不安が広がった。"},
+   {t:"国分寺と大仏の造立", e:"聖武天皇は仏教の力で国を守ろうと、各地に国分寺を建て大仏をつくらせた。"},
+   {t:"墾田永年私財法", e:"開墾をすすめるため、新しく開いた土地の私有が認められた。"},
+   {t:"荘園の広がり", e:"貴族や寺社が私有地を広げ、公地公民の原則がくずれ始めた。"}
+ ]},
+ {vol:"政治の流れ", name:"貴族の政治と国風文化", chain:[
+   {t:"平安京への遷都", e:"桓武天皇が政治を立て直すため、都を京都に移した。"},
+   {t:"藤原氏の摂関政治", e:"娘を天皇のきさきにし、摂政・関白として政治の実権をにぎった。"},
+   {t:"遣唐使の停止", e:"唐がおとろえ、菅原道真の意見で派遣が取りやめになった。"},
+   {t:"国風文化の発達", e:"大陸の文化を消化し、かな文字や『源氏物語』など日本風の文化が育った。"},
+   {t:"院政の開始", e:"藤原氏と血縁のうすい天皇が上皇となって政治を行い、摂関政治は衰えた。"}
+ ]},
+ {vol:"政治の流れ", name:"武士の世の始まり", chain:[
+   {t:"保元の乱・平治の乱", e:"貴族の争いを武士の力で解決。武士の地位が大きく上がった。"},
+   {t:"平清盛の政権", e:"平治の乱に勝った清盛が武士初の太政大臣となり、日宋貿易で富を得た。"},
+   {t:"源平の争乱", e:"平氏の独裁への不満から源頼朝らが挙兵。壇ノ浦で平氏がほろんだ。"},
+   {t:"鎌倉幕府の成立", e:"頼朝が守護・地頭を置き、征夷大将軍となって武家政権を開いた。"},
+   {t:"承久の乱", e:"後鳥羽上皇が倒幕を図るが敗北。幕府の支配が西日本にも強まった。"}
+ ]},
+ {vol:"政治の流れ", name:"鎌倉幕府のたおれ方", chain:[
+   {t:"元寇（文永・弘安の役）", e:"元（モンゴル）が二度日本に襲来。御家人は命がけで戦った。"},
+   {t:"御家人の不満が高まる", e:"外国との戦いでは領地が手に入らず、十分な恩賞をもらえなかった。"},
+   {t:"（永仁の）徳政令", e:"幕府は御家人の借金を帳消しにして救おうとした。"},
+   {t:"幕府への信頼が低下", e:"効果は一時的で、かえって経済が混乱し、幕府の力は弱まった。"},
+   {t:"鎌倉幕府の滅亡", e:"後醍醐天皇の呼びかけに足利尊氏らが応じ、幕府は倒された。"}
+ ]},
+ {vol:"政治の流れ", name:"南北朝と室町幕府", chain:[
+   {t:"建武の新政", e:"後醍醐天皇が天皇中心の政治を始めたが、武士の不満を招いた。"},
+   {t:"南北朝の動乱", e:"足利尊氏が新たな天皇を立て、朝廷が二つに分かれて争った。"},
+   {t:"室町幕府の成立", e:"尊氏が征夷大将軍となり、京都に幕府を開いた。"},
+   {t:"南北朝の統一", e:"3代将軍・足利義満が動乱を終わらせ、幕府の全盛期を築いた。"},
+   {t:"日明貿易（勘合貿易）", e:"義満が明と国交を結び、勘合を用いた貿易で大きな利益を得た。"}
+ ]},
+ {vol:"政治の流れ", name:"戦国から天下統一へ", chain:[
+   {t:"応仁の乱", e:"将軍のあとつぎ争いから11年続く戦乱に。幕府の力が衰えた。"},
+   {t:"下剋上と戦国大名", e:"実力があれば身分をこえられる時代となり、各地に戦国大名が現れた。"},
+   {t:"織田信長の統一事業", e:"桶狭間・長篠の戦いに勝ち、室町幕府をほろぼして統一を進めた。"},
+   {t:"豊臣秀吉の全国統一", e:"本能寺の変の後を継ぎ、検地と刀狩で兵農分離を進めて全国を統一。"},
+   {t:"関ヶ原の戦い", e:"秀吉の死後、徳川家康が石田三成らを破り、天下の実権をにぎった。"}
+ ]},
+ {vol:"政治の流れ", name:"江戸幕府の支配のしくみ", chain:[
+   {t:"江戸幕府の成立", e:"関ヶ原に勝った家康が征夷大将軍となり、江戸に幕府を開いた。"},
+   {t:"大阪の陣", e:"豊臣氏をほろぼし、幕府に対抗できる勢力を取りのぞいた。"},
+   {t:"武家諸法度と参勤交代", e:"大名を統制し、幕府に逆らえないしくみを整えた。"},
+   {t:"島原・天草一揆", e:"キリシタンへの弾圧と重い年貢に対し、大規模な一揆が起きた。"},
+   {t:"鎖国の完成", e:"幕府はキリスト教を禁じ、貿易の相手と窓口を厳しく限定した。"}
+ ]},
+ {vol:"政治の流れ", name:"元禄から改革の時代へ", chain:[
+   {t:"元禄文化と経済の発展", e:"平和が続いて商業がさかえ、上方の町人文化が花開いた。"},
+   {t:"幕府財政の悪化", e:"支出が増え、金銀の産出も減って、幕府の財政は苦しくなった。"},
+   {t:"享保の改革", e:"8代将軍・徳川吉宗が倹約や新田開発、目安箱などで立て直しを図った。"},
+   {t:"田沼の政治", e:"田沼意次は商人の力を利用して財政再建を図ったが、わいろ政治と批判された。"},
+   {t:"寛政の改革", e:"松平定信が厳しい倹約と統制を行ったが、人々の反発を招いた。"}
+ ]},
+ {vol:"政治の流れ", name:"ゆらぐ江戸幕府", chain:[
+   {t:"天保のききん", e:"全国的な凶作で、多くの人が飢えに苦しんだ。"},
+   {t:"大塩平八郎の乱", e:"元役人の大塩が人々の救済を求めて大阪で兵をあげ、幕府に衝撃を与えた。"},
+   {t:"天保の改革", e:"水野忠邦が倹約令などで幕府の立て直しを図ったが、失敗に終わった。"},
+   {t:"ペリー来航", e:"弱った幕府のもとへアメリカのペリーが来航し、開国を要求した。"},
+   {t:"日米和親条約", e:"下田・函館を開港。200年あまり続いた鎖国が終わった。"}
+ ]},
+ {vol:"政治の流れ", name:"幕末の動乱", chain:[
+   {t:"日米修好通商条約", e:"朝廷の許可なく調印。貿易が始まり物価が上がって生活が苦しくなった。"},
+   {t:"尊王攘夷運動の高まり", e:"天皇を敬い、外国勢力を追い払おうとする運動が盛んになった。"},
+   {t:"薩長同盟", e:"対立していた薩摩藩と長州藩が、坂本龍馬らの仲立ちで手を結んだ。"},
+   {t:"大政奉還", e:"追いつめられた15代将軍・徳川慶喜が、政権を朝廷に返した。"},
+   {t:"戊辰戦争", e:"新政府軍と旧幕府軍が戦い、新政府軍が勝利。江戸時代が終わった。"}
+ ]},
+ {vol:"政治の流れ", name:"明治の国づくり", chain:[
+   {t:"明治維新", e:"新政府が五箇条の御誓文を出し、近代国家づくりを始めた。"},
+   {t:"廃藩置県", e:"藩を廃止して県を置き、政府が全国を直接治める中央集権が実現した。"},
+   {t:"殖産興業・富国強兵", e:"官営工場をつくり、徴兵令や地租改正で国の力を強めた。"},
+   {t:"西南戦争", e:"改革に不満をもつ士族が西郷隆盛を中心に反乱を起こしたが、鎮圧された。"},
+   {t:"大日本帝国憲法の発布", e:"武力ではなく言論の時代へ。憲法がつくられ、立憲国家となった。"}
+ ]},
+ {vol:"政治の流れ", name:"日清・日露戦争", chain:[
+   {t:"日清戦争", e:"朝鮮をめぐって清と開戦。勝利して下関条約を結び、賠償金と領土を得た。"},
+   {t:"三国干渉", e:"ロシアなどの圧力で遼東半島を清に返還。ロシアへの対抗心が高まった。"},
+   {t:"日英同盟", e:"ロシアの南下に対抗するため、イギリスと同盟を結んだ。"},
+   {t:"日露戦争", e:"満州・韓国をめぐりロシアと開戦。苦戦の末、ポーツマス条約を結んだ。"},
+   {t:"韓国併合", e:"日本は韓国を植民地とし、大陸への影響力を強めていった。"}
+ ]},
+ {vol:"政治の流れ", name:"第一次世界大戦と日本", chain:[
+   {t:"第一次世界大戦の勃発", e:"サラエボ事件をきっかけに、ヨーロッパ全体を巻きこむ大戦が始まった。"},
+   {t:"日本の参戦と二十一か条の要求", e:"日英同盟を理由に参戦し、中国での権益拡大を求めた。"},
+   {t:"大戦景気", e:"ヨーロッパへの輸出が増え、日本は空前の好景気にわいた。"},
+   {t:"米騒動", e:"シベリア出兵を見こした米の買い占めで米価が急上昇し、騒動が全国に広がった。"},
+   {t:"本格的な政党内閣の誕生", e:"米騒動で内閣がたおれ、原敬による本格的な政党内閣が生まれた。"}
+ ]},
+ {vol:"政治の流れ", name:"大正デモクラシー", chain:[
+   {t:"護憲運動", e:"藩閥中心の政治への批判から、憲法にもとづく政治を守る運動が起きた。"},
+   {t:"民本主義の広がり", e:"吉野作造が、民衆の意向を政治に反映させるべきだと説いた。"},
+   {t:"社会運動の高まり", e:"労働運動や女性運動、全国水平社など、権利を求める運動が広がった。"},
+   {t:"普通選挙法の成立", e:"25歳以上のすべての男子に選挙権が認められた。"},
+   {t:"治安維持法の制定", e:"同時に、社会運動への取りしまりが強められた。"}
+ ]},
+ {vol:"政治の流れ", name:"戦争への道", chain:[
+   {t:"世界恐慌", e:"アメリカ発の大不況が世界に広がり、日本の経済も大きな打撃を受けた。"},
+   {t:"満州事変", e:"関東軍が南満州鉄道の線路を爆破して軍事行動を開始。満州国を建てた。"},
+   {t:"国際連盟からの脱退", e:"満州国が認められず、日本は国際社会で孤立していった。"},
+   {t:"日中戦争", e:"盧溝橋事件をきっかけに、中国との全面戦争に突入した。"},
+   {t:"太平洋戦争の開戦", e:"資源を求めて南進し、真珠湾攻撃でアメリカ・イギリスとの戦争が始まった。"}
+ ]},
+ {vol:"政治の流れ", name:"太平洋戦争の終結", chain:[
+   {t:"ミッドウェー海戦の敗北", e:"日本は主力の空母を失い、戦局が大きく転換した。"},
+   {t:"本土空襲の激化", e:"サイパン島が占領され、日本の都市への空襲が本格化した。"},
+   {t:"沖縄戦", e:"国内で唯一の大規模な地上戦となり、多くの県民が犠牲になった。"},
+   {t:"原子爆弾の投下", e:"広島・長崎に原爆が投下され、甚大な被害が出た。"},
+   {t:"ポツダム宣言の受諾", e:"ソ連の参戦もあり、日本は降伏。長い戦争が終わった。"}
+ ]},
+ {vol:"政治の流れ", name:"戦後の日本", chain:[
+   {t:"GHQの民主化政策", e:"財閥解体・農地改革・日本国憲法の制定など、戦後改革が進められた。"},
+   {t:"朝鮮戦争と特需景気", e:"軍需物資の注文が増え、日本経済は復興のきっかけをつかんだ。"},
+   {t:"サンフランシスコ平和条約", e:"独立を回復。同時に日米安全保障条約を結んだ。"},
+   {t:"55年体制の始まり", e:"自由民主党と社会党が対立する政治のしくみが長く続いた。"},
+   {t:"高度経済成長", e:"所得倍増計画などを背景に、日本は経済大国へと成長した。"}
+ ]},
+ {vol:"政治の流れ", name:"国際社会と現代の日本", chain:[
+   {t:"国際連合への加盟", e:"日ソ共同宣言でソ連と国交を回復し、国連加盟が実現した。"},
+   {t:"高度経済成長のひずみ", e:"経済発展の一方で、四大公害病など公害問題が深刻化した。"},
+   {t:"公害対策と環境庁の設置", e:"世論の批判を受け、国が本格的な公害対策に乗り出した。"},
+   {t:"石油危機", e:"中東戦争の影響で原油価格が急騰し、高度経済成長が終わった。"},
+   {t:"バブル経済とその崩壊", e:"省エネと技術力で乗りこえた日本は好景気にわいたが、崩壊後は長い不況に入った。"}
+ ]}
+,
+ {vol:"文化とくらし", name:"縄文と弥生のくらし", chain:[
+   {t:"狩りと採集のくらし", e:"縄文時代の人々は、狩りや木の実の採集で食料を得ていた。"},
+   {t:"土器の発明", e:"土器で煮たきや保存ができるようになり、くらしが安定した。"},
+   {t:"定住とむらの形成", e:"食料が安定したことで、たて穴住居に定住するむらが生まれた。"},
+   {t:"稲作の広まり", e:"大陸から伝わった稲作が広まり、計画的に食料を生産できるようになった。"},
+   {t:"金属器の伝来", e:"青銅器や鉄器が伝わり、祭りの道具や農具・武器に使われた。"}
+ ]},
+ {vol:"文化とくらし", name:"古墳と大陸の文化", chain:[
+   {t:"大和政権の勢力拡大", e:"大王を中心とする大和政権が、各地の豪族をまとめていった。"},
+   {t:"渡来人の増加", e:"朝鮮半島から多くの人々が移り住み、進んだ技術を伝えた。"},
+   {t:"漢字・儒教の伝来", e:"渡来人によって漢字や儒教がもたらされ、記録が可能になった。"},
+   {t:"仏教の伝来", e:"百済から仏教が伝わり、受け入れをめぐって豪族が対立した。"},
+   {t:"飛鳥文化の開花", e:"仏教を中心とする日本最初の仏教文化が飛鳥の地に花開いた。"}
+ ]},
+ {vol:"文化とくらし", name:"天平文化", chain:[
+   {t:"遣唐使の往来", e:"唐との行き来がさかんになり、進んだ制度や文物がもたらされた。"},
+   {t:"国際色豊かな都", e:"シルクロードを通じて西アジアの品々まで平城京に集まった。"},
+   {t:"聖武天皇の仏教保護", e:"社会不安の中、天皇は仏教の力で国を守ろうとした。"},
+   {t:"東大寺と大仏", e:"国ごとに国分寺が建てられ、都には東大寺の大仏がつくられた。"},
+   {t:"正倉院の宝物", e:"聖武天皇ゆかりの品々が正倉院に納められ、天平文化を今に伝える。"}
+ ]},
+ {vol:"文化とくらし", name:"国風文化", chain:[
+   {t:"遣唐使の停止", e:"唐のおとろえを理由に、菅原道真の意見で遣唐使が停止された。"},
+   {t:"日本風の好みの高まり", e:"大陸文化を消化し、日本の風土に合った文化が育ち始めた。"},
+   {t:"かな文字の発明", e:"漢字をくずしたかな文字で、感情を細やかに表せるようになった。"},
+   {t:"女流文学の全盛", e:"紫式部『源氏物語』や清少納言『枕草子』が生まれた。"},
+   {t:"寝殿造と大和絵", e:"貴族の屋敷は寝殿造となり、日本の風景を描く大和絵が発達した。"}
+ ]},
+ {vol:"文化とくらし", name:"鎌倉の文化と仏教", chain:[
+   {t:"武士の世の到来", e:"政治の中心が貴族から武士に移り、時代の気風が変わった。"},
+   {t:"力強い文化の好み", e:"素朴で力強いものを好む、武士らしい文化が求められた。"},
+   {t:"金剛力士像の造立", e:"運慶らが写実的で迫力ある彫刻をつくり上げた。"},
+   {t:"新しい仏教の誕生", e:"だれにでも実行しやすい、わかりやすい教えの仏教が生まれた。"},
+   {t:"念仏や禅の広まり", e:"念仏や題目、座禅の教えが、武士や民衆の間に広まっていった。"}
+ ]},
+ {vol:"文化とくらし", name:"室町の文化", chain:[
+   {t:"武家と公家の文化の融合", e:"京都に幕府が置かれ、武家文化と公家文化がまじり合った。"},
+   {t:"金閣と銀閣", e:"義満の金閣は華やかさを、義政の銀閣は簡素な美しさを示した。"},
+   {t:"書院造の誕生", e:"床の間や畳をしきつめた書院造が、現代の和室のもとになった。"},
+   {t:"能・狂言の大成", e:"観阿弥・世阿弥父子が能を芸術として大成させた。"},
+   {t:"茶の湯・生け花の発達", e:"茶の湯や生け花など、今に続く文化がこの時代に形づくられた。"}
+ ]},
+ {vol:"文化とくらし", name:"南蛮文化の到来", chain:[
+   {t:"ポルトガル人の漂着", e:"1543年、種子島に流れ着いたポルトガル人が鉄砲を伝えた。"},
+   {t:"鉄砲の国産化", e:"堺や国友で鉄砲がつくられ、急速に広まった。"},
+   {t:"戦い方と城の変化", e:"足軽鉄砲隊が主力となり、城のつくりも変わっていった。"},
+   {t:"キリスト教の伝来", e:"ザビエルが来日し、西日本を中心に信者が増えていった。"},
+   {t:"南蛮貿易の活発化", e:"ポルトガルやスペインとの貿易で、パンやカステラなどが伝わった。"}
+ ]},
+ {vol:"文化とくらし", name:"桃山文化", chain:[
+   {t:"天下統一の進展", e:"信長・秀吉の時代、統一が進んで社会に活気があふれた。"},
+   {t:"大名の富と権力", e:"統一をなしとげた武将たちは、富と権力を形で示そうとした。"},
+   {t:"壮大な天守", e:"安土城や大阪城など、権力の象徴となる壮大な城が築かれた。"},
+   {t:"豪華なふすま絵", e:"狩野永徳らが、金地に力強い絵を描いて城の内部をかざった。"},
+   {t:"わび茶の大成", e:"千利休が、豪華さとは対照的な簡素なわび茶を完成させた。"}
+ ]},
+ {vol:"文化とくらし", name:"元禄文化", chain:[
+   {t:"平和と経済の発展", e:"戦乱のない世が続き、商業の発達で町人が力をつけた。"},
+   {t:"町人の台頭", e:"経済力をもった上方の町人が、文化のにない手となった。"},
+   {t:"浮世草子と人形浄瑠璃", e:"井原西鶴の小説や近松門左衛門の脚本が人気を集めた。"},
+   {t:"俳諧の芸術化", e:"松尾芭蕉が俳諧を芸術の域まで高め、『おくのほそ道』を残した。"},
+   {t:"浮世絵の誕生", e:"菱川師宣が町人の風俗を描き、浮世絵の祖となった。"}
+ ]},
+ {vol:"文化とくらし", name:"化政文化", chain:[
+   {t:"江戸の繁栄", e:"18世紀末から19世紀初め、文化の中心は江戸に移った。"},
+   {t:"庶民文化の成熟", e:"庶民が文化のにない手となり、こっけいや風刺が好まれた。"},
+   {t:"錦絵の流行", e:"北斎や広重の風景画が大量に刷られ、庶民の手に届いた。"},
+   {t:"こっけい本と川柳", e:"十返舎一九の旅の物語や、世相を笑う川柳が流行した。"},
+   {t:"旅と名所ブーム", e:"街道の整備を背景に、伊勢参りなどの旅が大ブームになった。"}
+ ]},
+ {vol:"文化とくらし", name:"江戸の学問", chain:[
+   {t:"幕府による朱子学の奨励", e:"身分秩序を重んじる朱子学が、幕府の学問とされた。"},
+   {t:"国学の発達", e:"本居宣長が『古事記伝』を著し、日本古来の考え方を研究した。"},
+   {t:"蘭学の広まり", e:"オランダ語を通じて、西洋の学問を学ぶ蘭学がおこった。"},
+   {t:"『解体新書』の翻訳", e:"杉田玄白らが西洋の解剖書を翻訳し、蘭学の基礎を築いた。"},
+   {t:"日本地図の完成", e:"伊能忠敬が全国を測量し、正確な日本地図をつくり上げた。"}
+ ]},
+ {vol:"文化とくらし", name:"寺子屋と教育", chain:[
+   {t:"商業の発達", e:"経済が発展し、契約や帳簿など文字を使う場面が増えた。"},
+   {t:"読み書きそろばんの必要", e:"町人や農民にも、読み書きと計算の力が必要になった。"},
+   {t:"寺子屋の普及", e:"町や村に寺子屋が開かれ、庶民の子どもが学んだ。"},
+   {t:"高い識字率", e:"庶民まで文字が読める、世界でも有数の社会になった。"},
+   {t:"出版文化の発達", e:"読める人が多いため、本の出版や貸本屋がさかんになった。"}
+ ]},
+ {vol:"文化とくらし", name:"文明開化", chain:[
+   {t:"明治維新", e:"新政府が誕生し、欧米に追いつくための改革が始まった。"},
+   {t:"欧米文化の流入", e:"衣食住のすみずみまで、欧米の文化がどっと入ってきた。"},
+   {t:"ざんぎり頭と洋服", e:"まげを切り、洋服を着ることが文明開化の象徴とされた。"},
+   {t:"ガス灯とれんが街", e:"銀座にはれんが造りの建物が並び、ガス灯がともった。"},
+   {t:"太陽暦の採用", e:"暦も欧米に合わせ、1日24時間・週7日制が取り入れられた。"}
+ ]},
+ {vol:"文化とくらし", name:"明治の思想と文学", chain:[
+   {t:"欧米思想の紹介", e:"自由や権利といった欧米の考え方が紹介された。"},
+   {t:"『学問のすゝめ』", e:"福沢諭吉が人間の平等と学問の大切さを説き、大ベストセラーに。"},
+   {t:"自由民権思想の広まり", e:"国民が政治に参加する権利を求める考えが広まった。"},
+   {t:"近代文学の誕生", e:"夏目漱石や樋口一葉らが、新しい時代の人間を描いた。"},
+   {t:"言文一致体の確立", e:"話し言葉に近い文章で書く形が定着し、文学が身近になった。"}
+ ]},
+ {vol:"文化とくらし", name:"産業革命と社会問題", chain:[
+   {t:"軽工業の発展", e:"紡績業・製糸業が発達し、日本の産業革命が始まった。"},
+   {t:"工場で働く人々", e:"若い女性たちが工場で長時間の厳しい労働にたえた。"},
+   {t:"八幡製鉄所の操業", e:"日清戦争の賠償金で製鉄所がつくられ、重工業が始まった。"},
+   {t:"公害・労働問題の発生", e:"足尾銅山鉱毒事件など、発展のかげで社会問題が生まれた。"},
+   {t:"社会運動の芽生え", e:"田中正造の告発や労働運動など、問題と闘う動きが現れた。"}
+ ]},
+ {vol:"文化とくらし", name:"大正の文化", chain:[
+   {t:"都市化の進展", e:"産業の発展で都市に人が集まり、新しいくらしが生まれた。"},
+   {t:"サラリーマンと職業婦人", e:"会社勤めの人々や、働く女性が増えていった。"},
+   {t:"新聞・雑誌の大衆化", e:"発行部数が大きく伸び、情報が広く行きわたるようになった。"},
+   {t:"ラジオ放送の開始", e:"1925年にラジオ放送が始まり、同じ情報を同時に共有できた。"},
+   {t:"大衆文化の開花", e:"映画や歌謡曲、野球など、大衆が楽しむ文化が花開いた。"}
+ ]},
+ {vol:"文化とくらし", name:"戦時下のくらし", chain:[
+   {t:"日中戦争の長期化", e:"戦争が長引き、国の力をすべて戦争に注ぐ体制が求められた。"},
+   {t:"国家総動員法", e:"政府は議会の承認なしに、人や物資を戦争に動員できるようになった。"},
+   {t:"配給制と隣組", e:"生活必需品は配給制となり、隣組でたがいを監視し合った。"},
+   {t:"学徒出陣・勤労動員", e:"学生も戦場や工場へ送られ、勉強どころではなくなった。"},
+   {t:"学童疎開", e:"空襲をさけるため、都市の子どもたちは親元を離れて地方へ移った。"}
+ ]},
+ {vol:"文化とくらし", name:"戦後の生活と文化", chain:[
+   {t:"焼け跡からの出発", e:"空襲で焼けた町で、人々は物資不足の中を生きぬいた。"},
+   {t:"民主化と男女平等", e:"新憲法のもと、女性の参政権など平等の考えが広まった。"},
+   {t:"白黒テレビの登場", e:"街頭テレビに人だかりができ、やがて家庭にも普及した。"},
+   {t:"三種の神器", e:"テレビ・洗濯機・冷蔵庫が「三種の神器」とあこがれられた。"},
+   {t:"東京オリンピック", e:"1964年の五輪と新幹線開通が、復興をとげた日本を世界に示した。"}
+ ]},
+ {vol:"文化とくらし", name:"高度成長期のくらし", chain:[
+   {t:"経済の急成長", e:"重化学工業を中心に、経済が年10％近い成長を続けた。"},
+   {t:"農村から都市へ", e:"仕事を求めて人々が都市へ移り、農村では過疎が進んだ。"},
+   {t:"団地とマイカー", e:"都市の郊外に団地が建ち、自家用車が普及し始めた。"},
+   {t:"3Cの普及", e:"カー・クーラー・カラーテレビが新しいあこがれになった。"},
+   {t:"大阪万博の開催", e:"1970年の万国博覧会が、豊かになった日本を象徴した。"}
+ ]},
+ {vol:"文化とくらし", name:"現代の情報社会", chain:[
+   {t:"安定成長と技術立国", e:"石油危機の後、日本は省エネと高い技術力で成長を続けた。"},
+   {t:"家電と自動車の輸出", e:"日本製品が世界中で使われ、貿易摩擦も生まれた。"},
+   {t:"パソコンの普及", e:"職場や家庭にコンピューターが入り、仕事のしかたが変わった。"},
+   {t:"インターネットの登場", e:"世界中の情報と人がネットワークでつながるようになった。"},
+   {t:"スマートフォンとSNS", e:"だれもが発信者になれる時代となり、情報の見きわめが課題になった。"}
+ ]},
+ {vol:"世界と日本", name:"邪馬台国と中国", chain:[
+   {t:"倭の小国の分立", e:"倭（日本）には100あまりの小国が分かれて争っていた。"},
+   {t:"中国の歴史書に登場", e:"倭の国々のようすが、中国の歴史書に記されるようになった。"},
+   {t:"金印を授かる", e:"倭の奴国の王が漢に使いを送り、金印を授けられた。"},
+   {t:"卑弥呼の朝貢", e:"邪馬台国の女王・卑弥呼が魏に使いを送った。"},
+   {t:"「親魏倭王」の称号", e:"卑弥呼は魏の皇帝から称号と銅鏡を授けられ、権威を高めた。"}
+ ]},
+ {vol:"世界と日本", name:"遣隋使と遣唐使", chain:[
+   {t:"隋の中国統一", e:"長く分裂していた中国を隋が統一し、大帝国が生まれた。"},
+   {t:"対等外交を目指す国書", e:"聖徳太子は隋の皇帝に対等の立場で国書を送った。"},
+   {t:"遣隋使の派遣", e:"小野妹子らが海をわたり、進んだ制度や文化を学んだ。"},
+   {t:"唐の成立と遣唐使", e:"隋にかわった唐へも使節を送り続けた。"},
+   {t:"律令と文化の導入", e:"持ち帰った知識が、律令国家づくりや天平文化の土台となった。"}
+ ]},
+ {vol:"世界と日本", name:"白村江と国土防衛", chain:[
+   {t:"唐・新羅の連合", e:"朝鮮半島で唐と新羅が手を結び、勢力を広げた。"},
+   {t:"百済の滅亡", e:"日本と親しかった百済が、唐・新羅にほろぼされた。"},
+   {t:"白村江の戦い", e:"百済復興を助けようとした日本軍は、白村江で大敗した。"},
+   {t:"防人と山城", e:"唐の来襲に備え、九州に防人を置き、山城を築いた。"},
+   {t:"大宰府の防衛強化", e:"外交と防衛の拠点として、大宰府の守りが固められた。"}
+ ]},
+ {vol:"世界と日本", name:"平氏と日宋貿易", chain:[
+   {t:"宋の商業発展", e:"中国の宋では商業が発達し、海をこえた交易がさかんだった。"},
+   {t:"宋船の来航", e:"博多に宋の商船が来航し、大陸の品々がもたらされた。"},
+   {t:"平清盛の港整備", e:"清盛は貿易の利益に注目し、大輪田泊（神戸の港）を整備した。"},
+   {t:"日宋貿易の拡大", e:"貿易は平氏の重要な収入源となり、政権を支えた。"},
+   {t:"宋銭の流通", e:"輸入された宋銭が国内に広まり、貨幣経済が発達し始めた。"}
+ ]},
+ {vol:"世界と日本", name:"モンゴル帝国と元寇", chain:[
+   {t:"モンゴル帝国の拡大", e:"チンギス・ハンの築いた帝国がユーラシアの大半を支配した。"},
+   {t:"高麗の服属", e:"朝鮮半島の高麗がモンゴルに従わされた。"},
+   {t:"フビライの服属要求", e:"国号を元と定めたフビライが、日本にも従うよう求めた。"},
+   {t:"執権北条時宗の拒否", e:"鎌倉幕府は要求を退け、戦いに備えた。"},
+   {t:"二度の襲来（元寇）", e:"文永・弘安の役で元軍が襲来したが、日本は退けた。"}
+ ]},
+ {vol:"世界と日本", name:"倭寇と日明貿易", chain:[
+   {t:"海の秩序の乱れ", e:"元の衰えとともに、東シナ海の治安が悪化した。"},
+   {t:"倭寇の横行", e:"日本人を中心とする海賊集団が、大陸沿岸をあらした。"},
+   {t:"明の建国と取りしまり要求", e:"新たに建国された明は、日本に倭寇の取りしまりを求めた。"},
+   {t:"足利義満の国交樹立", e:"義満は明と国交を結び、「日本国王」と認められた。"},
+   {t:"勘合貿易の開始", e:"倭寇と区別する勘合を用いた貿易で、幕府は大きな利益を得た。"}
+ ]},
+ {vol:"世界と日本", name:"大航海時代と日本", chain:[
+   {t:"香辛料を求める航海", e:"ヨーロッパの人々はアジアの香辛料を直接手に入れたがった。"},
+   {t:"新航路の開拓", e:"コロンブスやバスコ・ダ・ガマらが新しい航路を切り開いた。"},
+   {t:"ポルトガル人の来航", e:"アジアに進出したポルトガル人が、種子島に鉄砲を伝えた。"},
+   {t:"キリスト教の伝来", e:"ザビエルら宣教師が来日し、布教を始めた。"},
+   {t:"世界とつながる日本", e:"南蛮貿易を通じて、日本は世界の交易網に組みこまれた。"}
+ ]},
+ {vol:"世界と日本", name:"朱印船と鎖国への道", chain:[
+   {t:"家康の貿易奨励", e:"徳川家康は海外貿易に積極的で、渡航許可の朱印状を発行した。"},
+   {t:"朱印船貿易と日本町", e:"東南アジア各地に日本人が移り住み、日本町ができた。"},
+   {t:"キリスト教徒の増加", e:"貿易とともに信者が増え、幕府は支配のさまたげと考えた。"},
+   {t:"禁教令の強化", e:"幕府はキリスト教を禁じ、宣教師や信者を取りしまった。"},
+   {t:"鎖国体制の完成", e:"貿易の相手と窓口を厳しく制限する体制ができ上がった。"}
+ ]},
+ {vol:"世界と日本", name:"鎖国下の四つの窓口", chain:[
+   {t:"鎖国体制の完成", e:"日本人の海外渡航と帰国が禁じられ、交流は限定された。"},
+   {t:"長崎の出島", e:"オランダと中国だけが、長崎で幕府と貿易を許された。"},
+   {t:"オランダ風説書", e:"幕府はオランダから海外情報を報告させ、世界の動きを知った。"},
+   {t:"朝鮮通信使の往来", e:"対馬藩を通じて朝鮮と国交が結ばれ、将軍の代がわりごとに使節が来た。"},
+   {t:"琉球・アイヌとの交易", e:"薩摩藩は琉球王国と、松前藩はアイヌの人々と交易を行った。"}
+ ]},
+ {vol:"世界と日本", name:"産業の発達と三都", chain:[
+   {t:"新田開発と農具の進歩", e:"備中ぐわや千歯こきが普及し、耕地も大きく広がった。"},
+   {t:"農業生産の向上", e:"生産力が上がり、米以外を育てる余裕が生まれた。"},
+   {t:"商品作物の栽培", e:"綿や菜種など、売るための作物がさかんに育てられた。"},
+   {t:"五街道と航路の整備", e:"陸と海の交通網が整い、全国に物資が流通した。"},
+   {t:"三都の繁栄", e:"江戸・大阪・京都が栄え、大阪は「天下の台所」と呼ばれた。"}
+ ]},
+ {vol:"世界と日本", name:"欧米の市民革命", chain:[
+   {t:"王による専制政治", e:"ヨーロッパでは国王が絶対的な権力で人々を支配していた。"},
+   {t:"市民革命の勃発", e:"イギリス・アメリカ・フランスで、市民が自由と平等を求めて立ち上がった。"},
+   {t:"人権思想の確立", e:"独立宣言や人権宣言で、人間の生まれながらの権利がうたわれた。"},
+   {t:"産業革命の進展", e:"イギリスで始まった機械生産が、社会のしくみを一変させた。"},
+   {t:"欧米諸国の海外進出", e:"力をつけた欧米は、原料と市場を求めてアジアへ向かった。"}
+ ]},
+ {vol:"世界と日本", name:"アヘン戦争の衝撃", chain:[
+   {t:"イギリスの三角貿易", e:"イギリスはインド産のアヘンを清に持ちこみ、利益を上げた。"},
+   {t:"アヘン戦争", e:"アヘンを取りしまった清に、イギリスが戦争をしかけて勝利した。"},
+   {t:"不平等条約を結ばされる清", e:"敗れた清は香港をゆずり、不利な条約を結ばされた。"},
+   {t:"日本に伝わる衝撃", e:"大国の清が敗れた知らせは、幕府と諸藩に危機感を与えた。"},
+   {t:"異国船への対応の転換", e:"幕府は打払いをゆるめ、まきや水を与える方針に改めた。"}
+ ]},
+ {vol:"世界と日本", name:"不平等条約の改正", chain:[
+   {t:"幕末の不平等条約", e:"領事裁判権を認め、関税自主権のない条約を結ばされていた。"},
+   {t:"欧化政策と鹿鳴館", e:"政府は舞踏会などで欧米に近代化を示し、改正をねらった。"},
+   {t:"ノルマントン号事件", e:"日本人乗客だけが見捨てられた事件で、改正を求める世論が高まった。"},
+   {t:"領事裁判権の撤廃", e:"陸奥宗光が日清戦争の直前、イギリスとの交渉で撤廃に成功した。"},
+   {t:"関税自主権の回復", e:"小村寿太郎が回復を実現し、条約改正が完成した。"}
+ ]},
+ {vol:"世界と日本", name:"帝国主義と世界分割", chain:[
+   {t:"産業革命の広がり", e:"欧米各国で工業化が進み、大量の製品が生産された。"},
+   {t:"原料と市場を求める列強", e:"各国は資源の産地と売り先を海外に求めた。"},
+   {t:"アフリカ・アジアの分割", e:"軍事力を背景に、列強が世界各地を植民地にしていった。"},
+   {t:"中国分割の進行", e:"日清戦争後、列強は競って中国に勢力範囲を築いた。"},
+   {t:"義和団事件", e:"外国勢力への反発から中国で反乱が起き、列強が共同出兵した。"}
+ ]},
+ {vol:"世界と日本", name:"第一次大戦後の世界", chain:[
+   {t:"大戦の惨禍", e:"新兵器が使われた総力戦で、かつてない犠牲が出た。"},
+   {t:"ベルサイユ条約", e:"敗れたドイツに、巨額の賠償金と厳しい条件が課された。"},
+   {t:"国際連盟の設立", e:"二度と大戦を起こさないため、世界初の国際平和機構がつくられた。"},
+   {t:"ワシントン会議と軍縮", e:"列強は海軍の軍備を制限し、協調をはかった。"},
+   {t:"国際協調の時代", e:"1920年代、各国は話し合いで問題を解決しようとした。"}
+ ]},
+ {vol:"世界と日本", name:"世界恐慌と各国の対応", chain:[
+   {t:"ニューヨーク株価の大暴落", e:"1929年、アメリカの株価が大暴落した。"},
+   {t:"不況の世界連鎖", e:"アメリカ資本に頼っていた各国の経済が連鎖的にくずれた。"},
+   {t:"ブロック経済", e:"イギリスやフランスは植民地との貿易を優先し、他国を閉め出した。"},
+   {t:"ファシズムの台頭", e:"植民地の少ない国では、力による解決を唱える勢力が台頭した。"},
+   {t:"第二次世界大戦へ", e:"対立は深まり、世界は再び大戦へと突き進んだ。"}
+ ]},
+ {vol:"世界と日本", name:"冷戦の始まり", chain:[
+   {t:"第二次大戦の終結", e:"連合国が勝利したが、戦後の方針をめぐり足並みが乱れた。"},
+   {t:"米ソの対立", e:"資本主義のアメリカと社会主義のソ連が世界を二分した。"},
+   {t:"東西ドイツの分断", e:"ドイツは東西に分かれ、対立の最前線となった。"},
+   {t:"朝鮮戦争", e:"朝鮮半島で東西両陣営が実際に戦火を交えた。"},
+   {t:"核軍拡競争", e:"米ソは核兵器の開発を競い、世界は核戦争の恐怖にさらされた。"}
+ ]},
+ {vol:"世界と日本", name:"日本の国際社会復帰", chain:[
+   {t:"サンフランシスコ平和条約", e:"1951年、日本は48か国と講和し、独立を回復した。"},
+   {t:"国際連合への加盟", e:"日ソ共同宣言でソ連との国交が回復し、国連加盟が実現した。"},
+   {t:"日韓基本条約", e:"1965年、韓国と国交を正常化した。"},
+   {t:"沖縄の日本復帰", e:"1972年、アメリカの統治下にあった沖縄が日本に復帰した。"},
+   {t:"日中国交正常化", e:"同じ1972年、中国との国交も正常化した。"}
+ ]},
+ {vol:"世界と日本", name:"冷戦の終結", chain:[
+   {t:"米ソの軍縮交渉", e:"軍拡の負担に苦しんだ米ソが、軍縮の話し合いを始めた。"},
+   {t:"東欧の民主化", e:"ソ連の改革をきっかけに、東ヨーロッパで民主化が進んだ。"},
+   {t:"ベルリンの壁崩壊", e:"1989年、東西分断の象徴だった壁が取りこわされた。"},
+   {t:"マルタ会談", e:"米ソ首脳が会談し、冷戦の終結を宣言した。"},
+   {t:"ソ連の解体", e:"1991年、ソ連は解体し、冷戦の時代が完全に終わった。"}
+ ]},
+ {vol:"世界と日本", name:"グローバル化の課題", chain:[
+   {t:"冷戦後の世界", e:"大国の対立は終わったが、世界は新たな課題に直面した。"},
+   {t:"地域紛争とテロ", e:"民族や宗教の対立から、各地で紛争やテロが起きた。"},
+   {t:"地域統合の進展", e:"EUのように、国境をこえて協力するしくみが広がった。"},
+   {t:"地球環境問題への取り組み", e:"温暖化などの問題に、世界が協力して取り組み始めた。"},
+   {t:"持続可能な社会へ", e:"SDGsをかかげ、未来の世代のことを考えた社会が目指されている。"}
+ ]}
+];
+
+
+
+var curEra=0, hand=[], slots=[], selected=null, t0=0, timerId=null;
+var retries=0, running=false;
+var mode="grade", curVol=null;
+var VOLS=(function(){var seen={},out=[];ERAS.forEach(function(e){if(!seen[e.vol]){seen[e.vol]=1;out.push(e.vol);}});return out;})();
+var atkScore=0, atkChains=0, atkNoMiss=0, atkEnd=0, atkPrev=-1, atkOver=false, atkDeck=[];
+
+var pipeline=$("pipeline"), handEl=$("hand"), caption=$("caption"), guide=$("guide");
+
+function reportChrono(score,note){
+  if(typeof manabiReport!=="function") return;
+  var chapterBest=store.get("chrono_best4",{}), done=0, bestScore=Number(score)||0;
+  Object.keys(chapterBest).forEach(function(k){done++;bestScore=Math.max(bestScore,Number(chapterBest[k].score)||0);});
+  var attackBest=store.get("chrono_atk1",null);
+  if(attackBest) bestScore=Math.max(bestScore,Number(attackBest.score)||0);
+  manabiReport({app:"chrono-domino",done:Math.min(done,ERAS.length),total:ERAS.length,best:bestScore,note:String(note||"").slice(0,40)});
+}
+$('manabi-back').addEventListener('click',function(){reportChrono(mode==="attack"?atkScore:0,"ManabiBoxへ戻る");});
+
+function shuffle(a){
+  for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; }
+  return a;
+}
+
+/* ---------- 描画 ---------- */
+function cardNode(idx){
+  var d=document.createElement("div");
+  d.className="cardD"; d.textContent=ERAS[curEra].chain[idx].t; d.dataset.idx=idx;
+  d.tabIndex=0; d.setAttribute("role","button");
+  d.setAttribute("aria-label",ERAS[curEra].chain[idx].t+"を選択");
+  d.addEventListener("pointerdown",dragStart);
+  d.addEventListener("click",function(){ if(!dragMoved) tapCard(d); });
+  d.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){e.preventDefault();tapCard(d);} });
+  return d;
+}
+function render(){
+  pipeline.innerHTML="";
+  var n=ERAS[curEra].chain.length, i;
+  for(i=0;i<n;i++){
+    var row=document.createElement("div"); row.className="slotRow";
+    var no=document.createElement("div"); no.className="slotNo";
+    no.innerHTML=kanSeal(i+1);
+    var sl=document.createElement("div"); sl.className="slot"; sl.dataset.slot=i;
+    sl.tabIndex=0; sl.setAttribute("role","button"); sl.setAttribute("aria-label",(i+1)+"番目のスロット");
+    if(slots[i]!==null && slots[i]!==undefined) sl.appendChild(cardNode(slots[i]));
+    sl.addEventListener("click",tapSlot);
+    sl.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){e.preventDefault();tapSlot(e);} });
+    row.appendChild(no); row.appendChild(sl);
+    pipeline.appendChild(row);
+    if(i<n-1){ var c=document.createElement("div"); c.className="connector"; c.textContent="その結果"; pipeline.appendChild(c); }
+  }
+  handEl.innerHTML="";
+  hand.forEach(function(idx){ handEl.appendChild(cardNode(idx)); });
+  $("btnRun").disabled = hand.length>0 || running;
+}
+
+/* ---------- タップ操作 ---------- */
+function tapCard(el){
+  if(running) return;
+  var inSlot=el.closest(".slot");
+  if(inSlot){
+    var s=parseInt(inSlot.dataset.slot,10);
+    hand.push(slots[s]); slots[s]=null; selected=null; beep(300,0.08);
+    render(); return;
+  }
+  if(selected===el.dataset.idx){ selected=null; }
+  else selected=el.dataset.idx;
+  beep(500,0.06);
+  Array.prototype.slice.call(handEl.querySelectorAll(".cardD")).forEach(function(c){
+    c.classList.toggle("sel", c.dataset.idx===selected);
+  });
+}
+function tapSlot(e){
+  if(running) return;
+  var sl=e.currentTarget;
+  if(e.target.closest(".cardD")) return;
+  if(selected===null) return;
+  placeCard(parseInt(selected,10), parseInt(sl.dataset.slot,10));
+  selected=null;
+}
+function placeCard(idx,s){
+  var hi=hand.indexOf(idx);
+  if(hi<0) return;
+  hand.splice(hi,1);
+  if(slots[s]!==null && slots[s]!==undefined) hand.push(slots[s]);
+  slots[s]=idx;
+  beep(620,0.08); render();
+}
+
+/* ---------- ドラッグ操作 ---------- */
+var drag=null, dragMoved=false;
+function dragStart(e){
+  if(running) return;
+  var src=e.currentTarget;
+  dragMoved=false;
+  drag={src:src, sx:e.clientX, sy:e.clientY, ghost:null};
+  document.addEventListener("pointermove",dragMove);
+  document.addEventListener("pointerup",dragEnd);
+  document.addEventListener("pointercancel",dragEnd);
+}
+function dragMove(e){
+  if(!drag) return;
+  if(!dragMoved && Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<8) return;
+  if(!drag.ghost){
+    dragMoved=true;
+    var g=drag.src.cloneNode(true); g.classList.add("ghost");
+    document.body.appendChild(g); drag.ghost=g;
+    drag.src.classList.add("dragSrc");
+  }
+  e.preventDefault();
+  drag.ghost.style.left=e.clientX+"px"; drag.ghost.style.top=e.clientY+"px";
+  var el=document.elementFromPoint(e.clientX,e.clientY);
+  var sl=el&&el.closest?el.closest(".slot"):null;
+  Array.prototype.slice.call(document.querySelectorAll(".slot")).forEach(function(s){
+    s.classList.toggle("hover",s===sl);
+  });
+}
+function dragEnd(e){
+  document.removeEventListener("pointermove",dragMove);
+  document.removeEventListener("pointerup",dragEnd);
+  document.removeEventListener("pointercancel",dragEnd);
+  Array.prototype.slice.call(document.querySelectorAll(".slot")).forEach(function(s){s.classList.remove("hover");});
+  if(!drag) return;
+  var src=drag.src, ghost=drag.ghost; drag=null;
+  if(!ghost) return;
+  ghost.remove(); src.classList.remove("dragSrc");
+  var el=document.elementFromPoint(e.clientX,e.clientY);
+  var sl=el&&el.closest?el.closest(".slot"):null;
+  var idx=parseInt(src.dataset.idx,10);
+  var fromSlot=src.closest(".slot");
+  if(sl){
+    var s=parseInt(sl.dataset.slot,10);
+    if(fromSlot){
+      var f=parseInt(fromSlot.dataset.slot,10);
+      if(f!==s){ var tmp=slots[s]; slots[s]=slots[f]; slots[f]=(tmp===undefined?null:tmp); beep(620,0.08); render(); }
+    }else{
+      placeCard(idx,s);
+    }
+  }else if(fromSlot){
+    var f2=parseInt(fromSlot.dataset.slot,10);
+    hand.push(slots[f2]); slots[f2]=null; beep(300,0.08); render();
+  }
+  selected=null;
+}
+
+/* ---------- 実行（ドミノ倒し） ---------- */
+$("btnRun").addEventListener("click",function(){
+  if(running) return;
+  running=true;
+  $("btnRun").disabled=true;
+  guide.textContent="……ドミノ、起動。";
+  var chain=ERAS[curEra].chain, n=chain.length;
+  var slotEls=Array.prototype.slice.call(pipeline.querySelectorAll(".slot"));
+  var i=0, combo=0;
+  function step(){
+    if(i>=n){ finishClear(combo); return; }
+    var cardEl=slotEls[i].querySelector(".cardD");
+    var placed=slots[i];
+    if(placed===i){
+      combo++; $("hudCombo").textContent=combo;
+      cardEl.classList.add("fall");
+      caption.innerHTML="<span><b>"+chain[i].t+"</b>　"+chain[i].e+"</span>";
+      beep(400+i*80,0.12,"triangle",0.08);
+      i++;
+      setTimeout(step, mode==="attack"?650:950);
+    }else{
+      cardEl.classList.add("wrong");
+      caption.innerHTML="<span>── 因果が切れた ──　「"+chain[placed].t+"」はここじゃない。並べ直して再挑戦。</span>";
+      beep(140,0.35,"sawtooth",0.09);
+      retries++;
+      setTimeout(function(){
+        running=false;
+        if(mode==="attack" && (atkOver||Date.now()>=atkEnd)){ endAttack(); return; }
+        guide.textContent="間違った所から並べ直そう（カードをタップで手札に戻せる）";
+        Array.prototype.slice.call(pipeline.querySelectorAll(".cardD")).forEach(function(c){c.classList.remove("wrong");});
+        $("btnRun").disabled=false;
+      },900);
+    }
+  }
+  setTimeout(step,400);
+});
+
+function rankOf(retries,t){
+  if(retries===0) return t<=90 ? "S" : "A";
+  if(retries===1) return "B";
+  return "C";
+}
+function finishClear(combo){
+  if(mode==="attack"){
+    var gain=Math.max(150, 500-retries*150)+(retries===0?300:0);
+    atkScore+=gain; atkChains++;
+    if(retries===0) atkNoMiss++;
+    beep(523,0.1);setTimeout(function(){beep(784,0.12);},110);
+    caption.innerHTML="<span><b>完全連鎖！</b>　＋"+gain+"点　（合計 "+atkScore+"点）</span>";
+    running=false;
+    setTimeout(function(){
+      if(atkOver||Date.now()>=atkEnd){ endAttack(); }
+      else nextAttackEra();
+    },900);
+    return;
+  }
+  clearInterval(timerId);
+  var t=(Date.now()-t0)/1000;
+  var n=ERAS[curEra].chain.length;
+  var acc = retries===0 ? 1 : Math.max(0.4, 1 - retries*0.2);
+  var speedMult = 1 + Math.max(0,(120-t))/120;
+  var noMiss = retries===0 ? 500 : 0;
+  var total = Math.round(n*200*acc*speedMult) + noMiss;
+  var rank = rankOf(retries,t);
+  beep(523,0.12);setTimeout(function(){beep(659,0.12);},130);setTimeout(function(){beep(784,0.12);},260);setTimeout(function(){beep(1047,0.3);},400);
+
+  var best=store.get("chrono_best4",{});
+  var prev=best[curEra];
+  var rec=!prev||total>prev.score;
+  var bestRank=(!prev||!prev.rank||RANK_ORD[rank]>RANK_ORD[prev.rank])?rank:prev.rank;
+  best[curEra]={score:Math.max(total,prev?prev.score:0), rank:bestRank, noMiss:(prev&&prev.noMiss)||retries===0};
+  store.set("chrono_best4",best);
+  reportChrono(total,ERAS[curEra].vol+"・"+ERAS[curEra].name+" 完全連鎖");
+
+  $("clearWhere").textContent=ERAS[curEra].vol+"　第"+kan(volNo(curEra))+"章｜"+ERAS[curEra].name;
+  $("scRank").textContent=rank;
+  $("scRank").style.color=RANK_COL[rank];
+  $("scChain").textContent=combo+" 連鎖";
+  $("scAcc").textContent=Math.round(acc*100)+"%（やり直し "+retries+" 回）";
+  $("scSpeed").textContent="×"+speedMult.toFixed(2)+"（"+Math.round(t)+"秒）";
+  $("scMiss").textContent=retries===0?"+"+noMiss:"—";
+  $("scTotal").textContent=total;
+  $("scRec").style.display=rec?"inline-block":"none";
+  $("btnNext").style.display=(curEra<ERAS.length-1 && ERAS[curEra+1].vol===ERAS[curEra].vol)?"inline-block":"none";
+  setTimeout(function(){ show(ovClear); running=false; },900);
+}
+
+/* ---------- 進行 ---------- */
+function startEra(i){
+  curEra=i; retries=0; running=false; selected=null;
+  slots=ERAS[i].chain.map(function(){return null;});
+  hand=shuffle(ERAS[i].chain.map(function(_,idx){return idx;}));
+  var sorted=hand.every(function(v,k){return v===k;});
+  if(sorted) hand.reverse();
+  if(mode==="attack"){
+    $("eraTitle").innerHTML='<span class="tag shu" style="border-color:var(--shu);color:var(--shu)">乱世流し</span><span class="name min">'+ERAS[i].name+'</span>';
+    guide.textContent="第"+(atkChains+1)+"章目 ── 原因 → 結果の順に置いて実行！";
+  }else{
+    $("eraTitle").innerHTML=kanSeal(volNo(i))+'<span class="name min">'+ERAS[i].vol+'・'+ERAS[i].name+'</span>';
+    guide.textContent="カードを選んで、原因 → 結果の順にスロットへ置こう";
+  }
+  $("hudCombo").textContent="0";
+  caption.innerHTML="<span>歴史は「暗記」じゃない。「つながり」だ。</span>";
+  t0=Date.now();
+  if(mode!=="attack"){
+    clearInterval(timerId);
+    timerId=setInterval(function(){ $("hudTime").textContent=Math.floor((Date.now()-t0)/1000); },250);
+  }
+  render();
+  hide(ovTitle);hide(ovVolumes);hide(ovSelect);hide(ovClear);hide(ovReview);hide(ovAtk);
+}
+
+var ovTitle=$("ovTitle"),ovVolumes=$("ovVolumes"),ovSelect=$("ovSelect"),ovClear=$("ovClear"),ovReview=$("ovReview"),ovAtk=$("ovAtk");
+function show(o){o.classList.remove("hidden");} function hide(o){o.classList.add("hidden");}
+
+/* ---------- 流れのふり返り ---------- */
+function openReview(i){
+  $("reviewTitle").textContent=ERAS[i].name;
+  var list=$("flowList"); list.innerHTML="";
+  ERAS[i].chain.forEach(function(c,k){
+    var item=document.createElement("div"); item.className="flowItem";
+    item.innerHTML='<div class="fHead">'+kanSeal(k+1)+'<b>'+c.t+'</b></div><p>'+c.e+'</p>';
+    list.appendChild(item);
+    if(k<ERAS[i].chain.length-1){
+      var ar=document.createElement("div"); ar.className="flowArrow"; ar.textContent="その結果";
+      list.appendChild(ar);
+    }
+  });
+  show(ovReview);
+  ovReview.querySelector(".panel").scrollTop=0;
+}
+$("btnReview").addEventListener("click",function(){ openReview(curEra); });
+$("btnReviewClose").addEventListener("click",function(){ hide(ovReview); });
+
+/* ---------- 時代選択 ---------- */
+function volStats(v){
+  var best=store.get("chrono_best4",{});
+  var total=0, done=0, nm=0;
+  ERAS.forEach(function(e,i){
+    if(e.vol!==v) return;
+    total++;
+    if(best[i]){ done++; if(best[i].noMiss) nm++; }
+  });
+  return {total:total, done:done, nm:nm};
+}
+function buildVolumes(){
+  var list=$("volList"); list.innerHTML="";
+  VOLS.forEach(function(v,vi){
+    var st=volStats(v);
+    var b=document.createElement("button");
+    b.className="volCard";
+    b.innerHTML='<span class="rod"></span>'+
+      '<span class="volPaper">'+
+        '<span class="volSeal">'+kanSeal(vi+1)+'</span>'+
+        '<span class="volTitle">'+v+'</span>'+
+        '<span class="volMeta"><b>'+st.done+'<span> / '+st.total+'</span></b>'+
+        '<small>CLEAR ── 一発 '+st.nm+'</small></span>'+
+      '</span>'+
+      '<span class="rod"></span>';
+    b.addEventListener("click",function(){ buildSelect(v); hide(ovVolumes); show(ovSelect); });
+    list.appendChild(b);
+  });
+  var ba=store.get("chrono_atk1",null);
+  $("bestAtk").textContent=ba?("BEST "+ba.score):"BEST —";
+  var best=store.get("chrono_best4",{});
+  var allNoMiss=ERAS.every(function(_,i){return best[i]&&best[i].noMiss;});
+  $("allClearBadge").innerHTML = allNoMiss ? '<span class="tag fill">全六十章 一発制覇</span>' : '';
+}
+function buildSelect(vol){
+  curVol=vol;
+  $("selTitle").textContent="巻・"+vol+" ── 全"+volStats(vol).total+"章";
+  var list=$("eraList"); list.innerHTML="";
+  var best=store.get("chrono_best4",{});
+  ERAS.forEach(function(era,i){
+    if(era.vol!==vol) return;
+    var row=document.createElement("div"); row.className="eraRow";
+    var b=document.createElement("button");
+    b.className="eraBtn";
+    var info;
+    if(best[i]){
+      info='<b><span class="rk" style="color:'+RANK_COL[best[i].rank||"C"]+'">'+(best[i].rank||"")+'</span>'+best[i].score+'</b>'+
+           '<small>'+(best[i].noMiss?'一発クリア済':'BEST')+'</small>';
+    }else{
+      info='<b style="color:var(--faint)">—</b><small>未挑戦</small>';
+    }
+    b.innerHTML=kanSeal(volNo(i))+'<span class="eName">'+era.name+'</span><span class="eInfo">'+info+'</span>';
+    b.addEventListener("click",function(){ mode="grade"; startEra(i); });
+    var rv=document.createElement("button");
+    rv.className="reviewMini"; rv.textContent="流れ";
+    rv.disabled=!best[i];
+    rv.addEventListener("click",function(){ openReview(i); });
+    row.appendChild(b); row.appendChild(rv);
+    list.appendChild(row);
+  });
+}
+
+/* ---------- スコアアタック：乱世流し ---------- */
+function startAttack(){
+  mode="attack"; atkScore=0; atkChains=0; atkNoMiss=0; atkPrev=-1; atkOver=false;
+  atkDeck=shuffle(ERAS.map(function(_,i){return i;}));
+  atkEnd=Date.now()+180000;
+  clearInterval(timerId);
+  timerId=setInterval(function(){
+    var left=Math.max(0,atkEnd-Date.now());
+    $("hudTime").textContent=Math.ceil(left/1000);
+    if(left<=0){
+      atkOver=true;
+      if(!running){ endAttack(); }
+    }
+  },250);
+  nextAttackEra();
+}
+function nextAttackEra(){
+  if(!atkDeck.length){
+    atkDeck=shuffle(ERAS.map(function(_,i){return i;}));
+    if(atkDeck[atkDeck.length-1]===atkPrev && atkDeck.length>1){
+      var swap=atkDeck[0]; atkDeck[0]=atkDeck[atkDeck.length-1]; atkDeck[atkDeck.length-1]=swap;
+    }
+  }
+  var i=atkDeck.pop();
+  atkPrev=i;
+  startEra(i);
+}
+function endAttack(){
+  if(mode!=="attack") return;
+  mode="grade"; clearInterval(timerId); running=false;
+  beep(392,0.15);setTimeout(function(){beep(330,0.25);},160);
+  var best=store.get("chrono_atk1",null);
+  var rec=!best||atkScore>best.score;
+  if(rec) store.set("chrono_atk1",{score:atkScore,chains:atkChains});
+  reportChrono(atkScore,"乱世流し "+atkChains+"章連鎖");
+  $("atkChainsEl").textContent=atkChains+" 章";
+  $("atkNoMissEl").textContent=atkNoMiss+" 章";
+  $("atkScoreEl").textContent=atkScore;
+  $("atkRec").style.display=rec?"inline-block":"none";
+  show(ovAtk);
+}
+
+$("btnStart").addEventListener("click",function(){buildVolumes();hide(ovTitle);show(ovVolumes);});
+$("btnBack").addEventListener("click",function(){
+  clearInterval(timerId);
+  if(mode==="attack"){ mode="grade"; buildVolumes(); show(ovVolumes); }
+  else if(curVol){ buildSelect(curVol); show(ovSelect); }
+  else{ buildVolumes(); show(ovVolumes); }
+});
+$("btnToVolumes").addEventListener("click",function(){ buildVolumes(); hide(ovSelect); show(ovVolumes); });
+$("btnAtk").addEventListener("click",function(){ startAttack(); });
+$("btnAtkAgain").addEventListener("click",function(){ startAttack(); });
+$("btnAtkBack").addEventListener("click",function(){ hide(ovAtk); buildVolumes(); show(ovVolumes); });
+$("btnRetry").addEventListener("click",function(){startEra(curEra);});
+$("btnNext").addEventListener("click",function(){startEra(Math.min(curEra+1,ERAS.length-1));});
+window.addEventListener("contextmenu",function(e){ if(e.target.closest(".cardD")) e.preventDefault(); });
+})();
+</script>
+</body>
+</html>

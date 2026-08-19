@@ -76,6 +76,39 @@
     "color": "#4FD1C5",
     "icon": "flask"
   },
+  {
+    "key": "chrono-domino",
+    "name": "クロノ・ドミノ",
+    "subject": "社会",
+    "file": "https://backtree-create.github.io/ManabiBox/chrono-domino.html",
+    "desc": "歴史上の出来事を原因から結果へ並べ、全60章の因果関係をつなぐ歴史ゲーム。",
+    "unit": "章",
+    "total": 60,
+    "color": "#C23A20",
+    "icon": "clock"
+  },
+  {
+    "key": "equation-balance",
+    "name": "数式ラボ",
+    "subject": "数学",
+    "file": "https://backtree-create.github.io/ManabiBox/equation-balance.html",
+    "desc": "一次方程式・連立方程式・因数分解を、操作とスコアアタックで攻略する数式ゲーム。",
+    "unit": "ステージ",
+    "total": 64,
+    "color": "#F0B429",
+    "icon": "bolt"
+  },
+  {
+    "key": "resba-response",
+    "name": "レスバ・レスポンス",
+    "subject": "国語",
+    "file": "https://backtree-create.github.io/ManabiBox/resba-response.html",
+    "desc": "証言の文法・敬語・論理の破綻を見抜き、異議を唱えて証人を攻略する国語ゲーム。",
+    "unit": "証人",
+    "total": 6,
+    "color": "#BD8C3F",
+    "icon": "pen"
+  },
    {
     "key": "onpu-trolley",
     "name": "オンプ・トロッコ",

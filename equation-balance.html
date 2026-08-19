@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>EQUATION BALANCE — 数式ラボ</title>
+<style>
+  :root{
+    --bg0:#0c1220; --bg1:#101a2c; --line:rgba(126,156,196,.07);
+    --paper:#e9eef7; --dim:#8fa3bd; --faint:#54657f;
+    --key:#1a2536; --keyEdge:#33465f; --keyDown:#101a2b;
+    --xcol:#5b7cfa; --xdeep:#22307a; --xneg:#f25c4e; --xnegdeep:#8a2018;
+    --ycol:#a86ae0; --ydeep:#5b2d8c;
+    --num:#3bbd7e; --numdeep:#155c3a; --numneg:#e89a3c; --numnegdeep:#8a5210;
+    --acc:#f0b429; --accInk:#171004; --accDeep:#8a5d00;
+    --tilt:0deg;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%;}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    color:var(--paper);
+    background:
+      radial-gradient(900px 480px at 50% -8%, rgba(50,80,130,.35), transparent 65%),
+      repeating-linear-gradient(0deg,   var(--line) 0 1px, transparent 1px 26px),
+      repeating-linear-gradient(90deg,  var(--line) 0 1px, transparent 1px 26px),
+      linear-gradient(180deg, var(--bg1), var(--bg0) 60%);
+    height:100dvh; display:flex; flex-direction:column; overflow:hidden;
+    touch-action:manipulation; user-select:none; -webkit-user-select:none;
+  }
+  .disp{font-family:"Didot","Bodoni 72","Georgia","Times New Roman",serif;}
+  button{font:inherit;}
+  button:focus-visible{outline:2px solid var(--acc); outline-offset:2px;}
+  .manabiBar{height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(4px + env(safe-area-inset-top)) 12px 4px;background:rgba(7,11,20,.96);color:var(--paper);border-bottom:1px solid #33465f;font-size:10px;letter-spacing:.08em;}
+  .manabiBar a{color:var(--paper);text-decoration:none;font-weight:800;min-height:24px;display:inline-flex;align-items:center;padding:3px 9px;border:1px solid #54657f;border-radius:999px;}
+  .manabiBar a:hover,.manabiBar a:focus-visible{background:var(--acc);color:var(--accInk);outline:2px solid var(--acc);outline-offset:2px;}
+  .manabiBar span{color:var(--acc);}
+  svg.ic{width:1.25em; height:1.25em; vertical-align:-0.28em; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;}
+
+  /* ============ ヘッダー・HUD ============ */
+  header{display:flex; align-items:flex-end; gap:12px; padding:10px 14px 6px;}
+  .logo{line-height:1.05;}
+  .logo .en{font-weight:900; letter-spacing:.14em; font-size:clamp(13px,3.4vw,17px); color:var(--paper);}
+  .logo .en b{color:var(--acc);}
+  .logo .jp{font-size:9px; letter-spacing:.42em; color:var(--dim); display:block; margin-top:2px;}
+  .hud{margin-left:auto; display:flex; gap:6px; flex-wrap:wrap;}
+  .pill{
+    background:rgba(10,16,28,.7); border:1px solid #26364e;
+    border-radius:4px; padding:3px 10px; text-align:center; min-width:58px;
+  }
+  .pill .k{display:block; font-size:8px; letter-spacing:.3em; color:var(--faint); font-weight:700;}
+  .pill b{font-variant-numeric:tabular-nums; color:var(--paper); font-size:clamp(13px,3.6vw,16px);}
+  .pill.warn b{color:var(--xneg);}
+  #tapeBar{height:5px; margin:6px 0 0;
+    background:repeating-linear-gradient(-55deg, var(--acc) 0 12px, transparent 12px 26px);
+    opacity:.85;}
+
+  #modeLabel{
+    text-align:center; font-size:clamp(10px,2.9vw,12px); color:var(--acc);
+    letter-spacing:.18em; min-height:1.4em; padding:6px 8px 0; font-weight:800;
+  }
+  #eqText{
+    text-align:center; font-size:clamp(21px,6.2vw,36px); font-weight:700;
+    letter-spacing:.03em; padding:0 8px; min-height:1.25em; color:#fff;
+  }
+  #eqText .eq{color:var(--acc); padding:0 .28em;}
+  #playWrap{flex:1; min-height:0; display:flex; flex-direction:column;}
+
+  /* ============ LAB 01 シーソーゲージ ============ */
+  #linArea{flex:1; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:4px 10px;}
+  .gauge{position:relative; width:min(62vw,250px); height:36px;}
+  .gTicks{position:absolute; left:0; right:0; bottom:8px; height:10px;
+    background:
+      linear-gradient(90deg, transparent calc(50% - 1px), var(--acc) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+      repeating-linear-gradient(90deg, #33465f 0 2px, transparent 2px 12.5%);
+    border-bottom:2px solid #33465f;}
+  .gNeedle{position:absolute; left:50%; bottom:8px; width:3px; height:26px; background:var(--acc);
+    transform-origin:bottom center; transform:translateX(-50%) rotate(var(--tilt));
+    transition:transform .5s cubic-bezier(.34,1.56,.64,1);}
+  .gLbl{position:absolute; top:-11px; left:50%; transform:translateX(-50%); font-size:8px; letter-spacing:.42em; color:var(--faint); font-weight:800; white-space:nowrap;}
+  .scaleRow{display:flex; align-items:center; width:min(94vw,680px); position:relative; --dy:0px;}
+  .scaleRow::before{content:""; position:absolute; left:2%; right:2%; top:50%; height:3px; background:var(--acc); opacity:.3;}
+  .pivot{flex:none; width:42px; height:42px; margin:0 8px; display:flex; align-items:center; justify-content:center;
+    background:var(--acc); transform:rotate(45deg); z-index:1;}
+  .pivot span{transform:rotate(-45deg); color:var(--accInk); font-weight:800; font-size:20px;}
+  .pan{flex:1; min-height:clamp(112px,21dvh,164px); background:rgba(13,20,34,.94);
+    border:1px solid #33465f; border-top:3px solid var(--acc); position:relative; z-index:1;
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px));
+    display:flex; flex-wrap:wrap; gap:6px; align-content:center;
+    justify-content:center; padding:12px 8px 20px;
+    transition:transform .5s cubic-bezier(.34,1.56,.64,1);}
+  .pan.l{transform:translateY(calc(var(--dy) * -1));}
+  .pan.r{transform:translateY(var(--dy));}
+  .pan.dropHover{border-color:#fff; background:rgba(30,45,72,.95);}
+  .panLabel{position:absolute; bottom:5px; left:50%; transform:translateX(-50%); font-size:8px; color:var(--faint); letter-spacing:.42em; white-space:nowrap;}
+
+  .chip{
+    min-width:42px; height:42px; padding:0 9px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:clamp(15px,4vw,19px);
+    border-radius:8px; cursor:grab; position:relative;
+    color:#fff; touch-action:none;
+  }
+  .chip, .chipC{font-family:"Didot","Bodoni 72","Georgia",serif;}
+  .chip.x{background:var(--xcol); border:2.5px solid var(--xdeep); box-shadow:0 4px 0 var(--xdeep);}
+  .chip.x.neg{background:var(--xneg); border-color:var(--xnegdeep); box-shadow:0 4px 0 var(--xnegdeep);}
+  .chip.n{background:var(--num); border:2.5px solid var(--numdeep); box-shadow:0 4px 0 var(--numdeep); border-radius:50%; min-width:50px; height:50px;}
+  .chip.n.neg{background:var(--numneg); border-color:var(--numnegdeep); box-shadow:0 4px 0 var(--numnegdeep);}
+  .chip.ghost{position:fixed; z-index:50; pointer-events:none; opacity:.92; transform:translate(-50%,-50%) scale(1.08); margin:0;}
+  .chip.dragSrc{opacity:.35;}
+  @keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+  .chip.pop{animation:pop .3s ease;}
+
+  /* ============ LAB 02 反応 ============ */
+  #simArea{flex:1; min-height:0; overflow-y:auto; padding:6px 12px; display:flex; flex-direction:column; gap:8px; align-items:center;}
+  #simGuide{font-size:clamp(11px,3.2vw,13px); color:var(--dim); text-align:center; min-height:1.5em; max-width:480px;}
+  #simGuide b{color:var(--acc);}
+  .simEq{
+    width:100%; max-width:480px;
+    background:rgba(16,24,40,.85); border:1px solid #26364e; border-left:4px solid var(--acc);
+    padding:10px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center;
+    min-height:62px;
+  }
+  .simEq .no{
+    flex:none; width:26px; height:26px; background:var(--acc); color:var(--accInk);
+    font-weight:900; display:flex; align-items:center; justify-content:center; font-size:13px;
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%);
+  }
+  .chipC{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:44px; height:44px; padding:0 10px;
+    font-weight:800; font-size:clamp(16px,4.4vw,20px);
+    border-radius:8px; color:#fff;
+  }
+  .chipC.x{background:var(--xcol); border:2.5px solid var(--xdeep); box-shadow:0 4px 0 var(--xdeep);}
+  .chipC.y{background:var(--ycol); border:2.5px solid var(--ydeep); box-shadow:0 4px 0 var(--ydeep);}
+  .chipC.n{background:var(--num); border:2.5px solid var(--numdeep); box-shadow:0 4px 0 var(--numdeep); border-radius:50%;}
+  .chipC.x.neg{background:var(--xneg); border-color:var(--xnegdeep); box-shadow:0 4px 0 var(--xnegdeep);}
+  .chipC.y.neg{background:#e0568c; border-color:#7d1f47; box-shadow:0 4px 0 #7d1f47;}
+  .chipC.n.neg{background:var(--numneg); border-color:var(--numnegdeep); box-shadow:0 4px 0 var(--numnegdeep);}
+  .chipC.op{background:none; border:none; box-shadow:none; color:var(--acc); min-width:auto; padding:0 2px;}
+  .chipC.tappable{cursor:pointer; animation:glow 1s ease infinite alternate; border-color:#fff;}
+  @keyframes glow{from{box-shadow:0 4px 0 rgba(0,0,0,.4),0 0 4px rgba(255,255,255,.35)}to{box-shadow:0 4px 0 rgba(0,0,0,.4),0 0 18px var(--acc)}}
+  .simBtnGrid{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; max-width:480px;}
+  .solvedTag{
+    border:1px dashed var(--acc); padding:6px 16px;
+    font-weight:800; font-size:clamp(16px,4.6vw,20px); color:var(--acc);
+  }
+
+  /* ============ LAB 03 金庫 ============ */
+  #facArea{flex:1; min-height:0; overflow-y:auto; padding:6px 12px; display:flex; flex-direction:column; gap:10px; align-items:center;}
+  #facGuide{font-size:clamp(11px,3.2vw,13px); color:var(--dim); text-align:center; min-height:1.5em; max-width:460px;}
+  #facGuide b{color:var(--acc);}
+  #facForm{
+    font-weight:800; font-size:clamp(17px,5vw,26px); color:#fff;
+    border-bottom:1px dashed #26364e; padding:4px 12px 8px; text-align:center;
+  }
+  #facForm .pv{color:var(--acc);}
+  .stepRow{display:flex; align-items:center; gap:10px;}
+  .stepRow .lbl{font-weight:800; font-size:clamp(16px,4.4vw,20px); width:2em; text-align:center; color:var(--dim);}
+  .stepBtn{
+    font-weight:800; font-size:22px; width:52px; height:48px;
+    color:var(--paper); background:var(--key);
+    border:2px solid var(--keyEdge); border-bottom-width:4px; border-radius:8px; cursor:pointer;
+  }
+  .stepBtn:active{transform:translateY(2px); border-bottom-width:2px; background:var(--keyDown);}
+  .stepVal{
+    width:64px; height:48px; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:24px; color:var(--acc);
+    background:#0a101c; border:2px solid var(--keyEdge); border-radius:8px;
+    font-variant-numeric:tabular-nums;
+  }
+  .vault{
+    width:100%; max-width:440px;
+    background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 2px, transparent 2px 5px),
+      linear-gradient(180deg,#2a3a4e,#1a2636);
+    border:2px solid #45596f; border-top:4px solid var(--acc);
+    clip-path:polygon(0 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%);
+    padding:12px 12px 18px; display:flex; flex-direction:column; gap:10px; align-items:center;
+    transition:border-color .4s;
+  }
+  .vault.open{border-color:var(--acc);}
+  @keyframes vaultPop{0%{transform:scale(1)}40%{transform:scale(1.03)}100%{transform:scale(1)}}
+  .vault.open{animation:vaultPop .6s ease;}
+  .vaultTitle{font-size:10px; letter-spacing:.34em; color:var(--dim); font-weight:800;}
+  .dialCol{display:flex; flex-direction:column; gap:8px;}
+  .lockRow{
+    width:100%; display:flex; align-items:center; gap:10px;
+    background:rgba(8,13,24,.6); border:1px solid #33465f;
+    padding:8px 12px;
+  }
+  .lockRow.open{border-color:var(--acc); background:rgba(20,40,45,.55);}
+  .lockIcon{flex:none; width:24px; height:24px; color:var(--faint);}
+  .lockIcon svg{width:24px; height:24px;}
+  .lockIcon .lk-open{display:none;}
+  .lockRow.open .lockIcon{color:var(--acc);}
+  .lockRow.open .lk-open{display:block;}
+  .lockRow.open .lk-closed{display:none;}
+  .lockName{font-size:clamp(11px,3vw,13px); line-height:1.2; color:var(--dim); width:5.5em; flex:none;}
+  .lockName small{color:var(--faint);}
+  .lockNow{
+    font-size:clamp(18px,5vw,24px); font-variant-numeric:tabular-nums;
+    min-width:2.2em; text-align:center; font-weight:800;
+  }
+  .lockRow.open .lockNow{color:var(--acc);}
+  .lockTgt{font-size:clamp(11px,3vw,13px); color:var(--dim); white-space:nowrap;}
+  .lockTgt b{color:var(--paper); font-size:1.35em;}
+  .lockDir{margin-left:auto; font-size:clamp(10px,2.9vw,12px); color:var(--numneg); white-space:nowrap; min-width:5.5em; text-align:right; letter-spacing:.1em; font-weight:700;}
+  .lockRow.open .lockDir{color:var(--acc);}
+  #hintPairs{display:flex; gap:6px; flex-wrap:wrap; justify-content:center;}
+  #hintPairs .hp{
+    border:1px dashed var(--acc); color:var(--acc);
+    padding:4px 10px; font-weight:700; font-size:clamp(13px,3.6vw,15px);
+  }
+
+  /* ============ 操作列・トースト ============ */
+  #controls{
+    display:flex; gap:8px; justify-content:center; align-items:center;
+    flex-wrap:wrap; padding:12px 10px calc(10px + env(safe-area-inset-bottom));
+    border-top:1px solid #1c2a3f;
+  }
+  .opBtn{
+    font-weight:800; font-size:clamp(15px,4vw,18px);
+    color:var(--paper); background:var(--key);
+    border:2px solid var(--keyEdge); border-bottom-width:4px; border-radius:8px;
+    padding:10px 14px; min-width:58px; min-height:48px; cursor:pointer;
+  }
+  .opBtn:active{transform:translateY(2px); border-bottom-width:2px; background:var(--keyDown);}
+  .opBtn.sub{font-size:clamp(12px,3.2vw,14px); font-weight:700; color:var(--dim);}
+  .opBtn.acc{background:var(--acc); color:var(--accInk); border-color:var(--accDeep);}
+  .opBtn:disabled{opacity:.35; pointer-events:none;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  .shake{animation:shake .3s ease;}
+  #toast{
+    position:fixed; left:50%; top:14%; transform:translateX(-50%);
+    background:#0a101c; border:1px solid var(--keyEdge); border-left:4px solid var(--acc);
+    color:var(--paper); padding:9px 16px;
+    font-size:clamp(12px,3.4vw,14px); opacity:0; pointer-events:none;
+    transition:opacity .25s; z-index:60; max-width:88vw; text-align:center;
+  }
+  #toast.show{opacity:1;}
+  #toast.good{border-left-color:var(--num);}
+
+  /* ============ オーバーレイ ============ */
+  .overlay{
+    position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center;
+    background:rgba(6,10,18,.9); padding:16px;
+  }
+  .overlay.hidden{display:none;}
+  .panelBox{
+    background:var(--bg1);
+    border:1px solid #26364e; border-top:4px solid var(--acc);
+    max-width:560px; width:100%; max-height:88dvh; overflow-y:auto;
+    padding:22px 20px; position:relative;
+  }
+  .panelBox::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:
+      repeating-linear-gradient(0deg,  var(--line) 0 1px, transparent 1px 26px),
+      repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 26px);
+  }
+  .panelBox > *{position:relative;}
+  .secTitle{font-size:10px; letter-spacing:.4em; color:var(--faint); font-weight:800; margin:16px 0 6px;}
+  .bigBtn{
+    font-weight:900; font-size:clamp(15px,4.2vw,18px); letter-spacing:.16em;
+    background:var(--acc); color:var(--accInk);
+    border:none; border-bottom:4px solid var(--accDeep);
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
+    padding:13px 32px; margin-top:14px; cursor:pointer; min-height:52px;
+  }
+  .bigBtn:active{transform:translateY(2px); border-bottom-width:2px;}
+  .bigBtn.gray{background:var(--key); color:var(--paper); border-bottom-color:#0a101c;}
+
+  /* タイトル */
+  .heroX{
+    font-size:clamp(88px,30vw,150px); font-weight:800; line-height:.9;
+    color:transparent; -webkit-text-stroke:2px var(--acc);
+    text-align:center; margin:4px 0 0; font-style:italic;
+  }
+  .heroX .q{color:var(--acc); -webkit-text-stroke:0;}
+  .heroTitle{text-align:center; margin:6px 0 2px;}
+  .heroTitle .en{font-weight:900; font-size:clamp(24px,7.4vw,36px); letter-spacing:.1em; line-height:1.1;}
+  .heroTitle .en b{color:var(--acc);}
+  .heroTitle .tag{font-size:clamp(12px,3.6vw,14px); color:var(--dim); margin-top:8px; letter-spacing:.24em;}
+  .heroTape{height:5px; margin:14px auto 12px; max-width:300px;
+    background:repeating-linear-gradient(-55deg,
+      #f0b429 0 14px, #5ce08a 14px 28px, #4fc3e8 28px 42px);}
+  .labStrip{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:6px;}
+  .labMini{
+    display:flex; align-items:center; gap:6px;
+    font-size:clamp(10px,2.9vw,12px); color:var(--dim); letter-spacing:.06em;
+    border:1px solid #26364e; padding:5px 10px;
+  }
+  .labMini b{font-weight:900; font-size:1.15em;}
+
+  /* ハブ */
+  .plate{
+    flex:none; width:60px; height:60px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; color:#101722;
+    clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px));
+  }
+  .plate .pLab{font-size:7px; letter-spacing:.3em; font-weight:900; opacity:.75;}
+  .plate .pNo{font-weight:800; font-size:26px; line-height:1;}
+  .modeCard{
+    display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+    color:#fff; cursor:pointer;
+    background:rgba(255,255,255,.03); border:1px solid #26364e; border-left:4px solid var(--mc,#888);
+    padding:12px; margin:10px 0; min-height:84px;
+  }
+  .modeCard:active{background:rgba(255,255,255,.08);}
+  .modeCard .mGrade{font-size:9px; color:var(--faint); letter-spacing:.34em; font-weight:800;}
+  .modeCard .mName{font-weight:900; font-size:clamp(15px,4.4vw,18px); color:var(--mc); letter-spacing:.04em;}
+  .modeCard .mSub{font-size:clamp(10px,3vw,12px); color:var(--dim); margin-top:3px; line-height:1.5;}
+  .modeCard .mProg{margin-left:auto; flex:none; text-align:right;}
+  .modeCard .mProg b{font-size:clamp(15px,4.4vw,19px); color:var(--mc); font-variant-numeric:tabular-nums; font-weight:800;}
+  .modeCard .mProg small{display:block; font-size:8px; letter-spacing:.3em; color:var(--faint); font-weight:800;}
+  .mixBtn{
+    display:flex; justify-content:space-between; align-items:center; gap:8px; width:100%;
+    font-weight:800; font-size:clamp(13px,3.8vw,16px); color:#fff; text-align:left;
+    background:rgba(255,255,255,.03); border:1px solid #26364e;
+    padding:0 14px 12px 14px; margin:14px 0 2px; cursor:pointer; min-height:60px;
+    flex-wrap:wrap;
+  }
+  .mixBtn .mixTape{width:calc(100% + 28px); margin:0 -14px 8px; height:5px;
+    background:repeating-linear-gradient(-55deg,#f0b429 0 12px,#5ce08a 12px 24px,#4fc3e8 24px 36px);}
+  .mixBtn small{font-size:11px; color:var(--dim); font-variant-numeric:tabular-nums; font-weight:700; margin-left:auto;}
+  .mixBtn .aSub{display:block; font-size:10px; color:var(--dim); font-weight:400; margin-top:2px;}
+
+  /* モードホーム */
+  .modeHead{display:flex; align-items:center; gap:12px; margin-bottom:2px; text-align:left;}
+  .modeHead h2{margin:0; color:var(--acc); font-size:clamp(18px,5.2vw,25px); letter-spacing:.05em;}
+  .modeHead .mGrade{font-size:9px; color:var(--faint); letter-spacing:.34em; font-weight:800;}
+  .modeHead .mDesc{font-size:clamp(10px,3vw,12px); color:var(--dim); margin-top:2px;}
+  .modeTape{height:4px; margin:10px 0 2px;
+    background:repeating-linear-gradient(-55deg, var(--acc) 0 10px, transparent 10px 22px);}
+  .atkBtn{
+    display:flex; justify-content:space-between; align-items:center; width:100%;
+    font-weight:800; font-size:clamp(13px,3.9vw,16px); color:var(--paper); text-align:left;
+    background:rgba(255,255,255,.03); border:1px solid #26364e; border-left:4px solid var(--acc);
+    padding:11px 14px; margin:8px 0; cursor:pointer; min-height:58px;
+  }
+  .atkBtn:active{background:rgba(255,255,255,.08);}
+  .atkBtn small{font-size:11px; color:var(--acc); font-variant-numeric:tabular-nums; font-weight:800; flex:none; margin-left:8px; text-align:right;}
+  .atkBtn .aSub{display:block; font-size:10px; color:var(--dim); font-weight:400; margin-top:2px;}
+  .courseHead{
+    display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+    margin:16px 2px 6px; border-bottom:1px solid #26364e; padding-bottom:5px;
+  }
+  .courseHead b{font-size:clamp(13px,3.9vw,15px); color:var(--acc); letter-spacing:.05em;}
+  .courseHead b i{font-style:normal; font-size:.75em; letter-spacing:.25em; color:var(--faint); margin-right:.6em;}
+  .courseHead small{font-size:10px; color:var(--dim);}
+  .stageGrid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  .stBtn{
+    position:relative; border:1px solid #26364e;
+    background:rgba(255,255,255,.03); color:var(--paper); padding:8px 2px; cursor:pointer; min-height:58px;
+  }
+  .stBtn:active{background:rgba(255,255,255,.08);}
+  .stBtn b{display:block; font-size:19px; font-weight:800;}
+  .stBtn small{display:block; font-size:9px; color:var(--dim); margin-top:2px; font-variant-numeric:tabular-nums; letter-spacing:.05em;}
+  .stBtn.cleared{border-color:var(--acc);}
+  .stBtn.cleared b{color:var(--acc);}
+  .stBtn.cleared::after{
+    content:""; position:absolute; right:0; top:0; border-style:solid;
+    border-width:0 12px 12px 0; border-color:transparent var(--acc) transparent transparent;
+  }
+  .backLink{
+    background:none; border:none; color:var(--faint); font-size:clamp(11px,3.2vw,13px);
+    cursor:pointer; padding:10px; margin-top:8px; letter-spacing:.1em;
+  }
+  .backLink:active{color:var(--paper);}
+
+  /* リザルト */
+  .stamp{
+    font-weight:900; font-size:clamp(30px,9.5vw,46px); letter-spacing:.12em;
+    color:var(--acc); transform:rotate(-3deg); text-align:center; line-height:1;
+    margin:2px 0 10px;
+  }
+  .stamp small{display:block; font-size:.28em; letter-spacing:.5em; color:var(--dim); transform:none; margin-bottom:4px;}
+  #clearAnswer{font-size:clamp(20px,6.4vw,30px); font-weight:800; margin:2px 0 12px; text-align:center;}
+  #clearAnswer .subEq{font-size:.62em; color:var(--dim); font-weight:400; display:block; margin-bottom:2px;}
+  .scoreRow{display:flex; justify-content:space-between; border-bottom:1px dashed #26364e; padding:8px 4px; font-size:clamp(12px,3.7vw,15px); color:var(--dim);}
+  .scoreRow b{font-variant-numeric:tabular-nums; color:var(--paper);}
+  .total{font-size:clamp(30px,10vw,48px); font-weight:800; color:var(--acc); font-variant-numeric:tabular-nums; margin:10px 0 2px; text-align:center;}
+  .total small{font-size:.35em; letter-spacing:.3em; color:var(--dim); font-weight:700;}
+  .rankRow{display:flex; align-items:center; justify-content:center; gap:12px;
+    font-size:10px; letter-spacing:.42em; color:var(--faint); font-weight:800; margin:0 0 8px;}
+  .rankL{font-size:clamp(42px,13vw,64px); line-height:1; letter-spacing:0; font-weight:800;}
+  .newRec{
+    display:inline-block; background:var(--acc); color:var(--accInk);
+    font-weight:900; font-size:clamp(11px,3.4vw,13px); letter-spacing:.2em;
+    padding:5px 14px; margin-top:8px;
+    clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);
+  }
+  .btnRow{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:6px;}
+  .center{text-align:center;}
+  /* ============ UI polish / accessibility ============ */
+  header{padding-top:calc(10px + env(safe-area-inset-top));}
+  .overlay{backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);}
+  .panelBox{border-radius:12px; box-shadow:0 22px 70px rgba(0,0,0,.55); scrollbar-width:thin; scrollbar-color:var(--acc) transparent;}
+  .modeCard,.mixBtn,.atkBtn,.stBtn,.opBtn,.bigBtn,.backLink{transition:transform .16s ease,filter .16s ease,background-color .16s ease,box-shadow .16s ease;}
+  .modeCard:hover,.mixBtn:hover,.atkBtn:hover,.stBtn:hover,.opBtn:hover:not(:disabled),.bigBtn:hover:not(:disabled){filter:brightness(1.12);}
+  .modeCard:focus-visible,.mixBtn:focus-visible,.atkBtn:focus-visible,.stBtn:focus-visible{outline:3px solid var(--acc);outline-offset:3px;}
+  #controls{padding-bottom:calc(8px + env(safe-area-inset-bottom));}
+  @media (min-width:900px){
+    #playWrap{max-width:980px;width:100%;margin-inline:auto;}
+    #controls{max-width:980px;width:100%;margin-inline:auto;border-inline:1px solid #26364e;}
+    .panelBox{max-width:720px;}
+  }
+  @media (max-width:520px){
+    .manabiBar span{display:none;}
+    .panelBox{padding:20px 14px;max-height:93dvh;}
+    .modeCard{padding:12px 10px;gap:10px;}
+    .pill{padding-inline:7px;min-width:50px;}
+    #controls{gap:6px;padding-inline:8px;}
+    .opBtn{min-height:46px;}
+  }
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+<script src="https://backtree-create.github.io/ManabiBox/config.js"></script>
+<script src="https://backtree-create.github.io/ManabiBox/hub-progress.js"></script>
+<script src="https://backtree-create.github.io/ManabiBox/manabi-connect.js"></script>
+</head>
+<body>
+
+<div class="manabiBar"><a id="manabi-back" href="https://backtree-create.github.io/ManabiBox/">ManabiBox ホーム</a><span>進捗とベストスコアを自動送信</span></div>
+
+<div>
+<header>
+  <div class="logo">
+    <span class="en">EQUATION <b>BALANCE</b></span>
+    <span class="jp">スウシキ・ラボ</span>
+  </div>
+  <div class="hud">
+    <div class="pill" id="pillTime"><span class="k">TIME</span><b id="hudTime">0.0</b></div>
+    <div class="pill"><span class="k">MOVES</span><b><span id="hudMoves">0</span><span style="color:var(--faint)">/</span><span id="hudPar" style="color:var(--dim)">?</span></b></div>
+    <div class="pill" id="pillSolved" style="display:none"><span class="k">SOLVED</span><b id="hudSolved">0</b></div>
+  </div>
+</header>
+<div id="tapeBar"></div>
+</div>
+
+<div id="modeLabel" aria-live="polite"></div>
+<div id="eqText" class="disp" aria-live="polite"></div>
+
+<div id="playWrap">
+  <div id="linArea">
+    <div class="gauge">
+      <span class="gLbl">BALANCE LEVEL</span>
+      <div class="gTicks"></div>
+      <div class="gNeedle"></div>
+    </div>
+    <div class="scaleRow" id="scaleRow">
+      <div class="pan l" id="panL" data-side="L"><span class="panLabel">LEFT</span></div>
+      <div class="pivot"><span>＝</span></div>
+      <div class="pan r" id="panR" data-side="R"><span class="panLabel">RIGHT</span></div>
+    </div>
+  </div>
+
+  <div id="simArea" style="display:none">
+    <div id="simGuide"></div>
+    <div class="simEq" id="simEq1"></div>
+    <div class="simEq" id="simEq2"></div>
+    <div id="simSolvedLine"></div>
+    <div class="simBtnGrid" id="simBtns"></div>
+  </div>
+
+  <div id="facArea" style="display:none">
+    <div id="facGuide"></div>
+    <div id="facForm" class="disp"></div>
+    <div class="vault" id="vault">
+      <div class="vaultTitle">FACTOR BANK ── DUAL LOCK SYSTEM</div>
+      <div class="dialCol">
+        <div class="stepRow">
+          <span class="lbl disp">p</span>
+          <button class="stepBtn" data-t="p" data-d="-1">−</button>
+          <div class="stepVal disp" id="valP">0</div>
+          <button class="stepBtn" data-t="p" data-d="1">＋</button>
+        </div>
+        <div class="stepRow">
+          <span class="lbl disp">q</span>
+          <button class="stepBtn" data-t="q" data-d="-1">−</button>
+          <div class="stepVal disp" id="valQ">0</div>
+          <button class="stepBtn" data-t="q" data-d="1">＋</button>
+        </div>
+      </div>
+      <div class="lockRow" id="lockSum">
+        <span class="lockIcon">
+          <svg class="ic lk-closed" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="1.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <svg class="ic lk-open" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="1.5"/><path d="M8 10V7a4 4 0 0 1 7.7-1.6"/></svg>
+        </span>
+        <span class="lockName">和ロック<br><small class="disp">p＋q</small></span>
+        <b class="lockNow disp" id="sumNow">0</b>
+        <span class="lockTgt">目標 <b class="disp" id="sumTgt"></b></span>
+        <span class="lockDir" id="sumDir"></span>
+      </div>
+      <div class="lockRow" id="lockProd">
+        <span class="lockIcon">
+          <svg class="ic lk-closed" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="1.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <svg class="ic lk-open" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="1.5"/><path d="M8 10V7a4 4 0 0 1 7.7-1.6"/></svg>
+        </span>
+        <span class="lockName">積ロック<br><small class="disp">p×q</small></span>
+        <b class="lockNow disp" id="prodNow">0</b>
+        <span class="lockTgt">目標 <b class="disp" id="prodTgt"></b></span>
+        <span class="lockDir" id="prodDir"></span>
+      </div>
+      <button class="opBtn sub" id="btnFactorHint">約数ペアのヒント（手数＋2）</button>
+      <div id="hintPairs" class="disp"></div>
+    </div>
+  </div>
+</div>
+
+<div id="controls">
+  <button class="opBtn disp" data-op="d2">÷2</button>
+  <button class="opBtn disp" data-op="d3">÷3</button>
+  <button class="opBtn disp" data-op="d5">÷5</button>
+  <button class="opBtn disp" data-op="neg">×(−1)</button>
+  <button class="opBtn sub" id="btnReset">やり直す</button>
+  <button class="opBtn sub" id="btnMenu">メニュー</button>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- タイトル -->
+<div class="overlay" id="ovTitle" role="dialog" aria-modal="true" aria-label="数式ラボ タイトル">
+  <div class="panelBox center">
+    <div class="heroX disp">x <span style="-webkit-text-stroke:0;color:var(--paper)">=</span> <span class="q">?</span></div>
+    <div class="heroTitle">
+      <div class="en">EQUATION <b>BALANCE</b></div>
+      <div class="tag">── 解く、が快感になる ──</div>
+    </div>
+    <div class="heroTape"></div>
+    <div class="labStrip">
+      <span class="labMini"><b class="disp" style="color:#f0b429">01</b>一次方程式</span>
+      <span class="labMini"><b class="disp" style="color:#5ce08a">02</b>連立方程式</span>
+      <span class="labMini"><b class="disp" style="color:#4fc3e8">03</b>二次方程式</span>
+    </div>
+    <p style="font-size:clamp(11px,3.3vw,13px);color:var(--dim);line-height:1.9;margin:14px 0 0">
+      3つのラボを攻略せよ。<br>最小手数 × スピードでスコアを刻め。</p>
+    <button class="bigBtn" id="btnStart">ラボへ入る</button>
+  </div>
+</div>
+
+<!-- ラボ選択ハブ -->
+<div class="overlay hidden" id="ovHub" role="dialog" aria-modal="true" aria-label="ラボを選択">
+  <div class="panelBox">
+    <div class="secTitle center">PLAY MODE ── ラボを選択</div>
+    <div id="hubCards"></div>
+    <button class="mixBtn" id="btnMix">
+      <span class="mixTape"></span>
+      <span>MIX ATTACK ── 150秒<span class="aSub">中1基礎から中3因数分解まで、全学年を横断するスコアアタック</span></span>
+      <small id="bestMix">BEST —</small>
+    </button>
+  </div>
+</div>
+
+<!-- モードホーム -->
+<div class="overlay hidden" id="ovMode">
+  <div class="panelBox" id="modeCardEl">
+    <div id="modeBody"></div>
+    <div class="center"><button class="backLink" id="btnToHub">← ラボ選択にもどる</button></div>
+  </div>
+</div>
+
+<!-- クリア -->
+<div class="overlay hidden" id="ovClear">
+  <div class="panelBox center">
+    <div class="stamp"><small id="clearWhere"></small><span id="clearTitle">CLEAR</span></div>
+    <div id="clearAnswer" class="disp"></div>
+    <div class="rankRow">RANK<span id="scRank" class="disp rankL"></span></div>
+    <div class="scoreRow"><span>基礎点</span><b id="scBase"></b></div>
+    <div class="scoreRow"><span>無駄な操作（−100/回）</span><b id="scWaste"></b></div>
+    <div class="scoreRow"><span>スピード倍率</span><b id="scSpeed"></b></div>
+    <div class="total disp"><span id="scTotal"></span><small> PTS</small></div>
+    <div><span class="newRec" id="scRec" style="display:none">NEW RECORD</span></div>
+    <div class="btnRow">
+      <button class="bigBtn gray" id="btnRetry">もう一度</button>
+      <button class="bigBtn" id="btnNext">次へ</button>
+    </div>
+  </div>
+</div>
+
+<!-- スコアアタック結果 -->
+<div class="overlay hidden" id="ovAtk">
+  <div class="panelBox center">
+    <div class="stamp"><small>SCORE ATTACK</small><span>TIME UP</span></div>
+    <div class="scoreRow"><span>解いた問題</span><b id="atkSolved2"></b></div>
+    <div class="scoreRow"><span>最高到達レベル</span><b id="atkLv"></b></div>
+    <div class="scoreRow"><span>無駄な操作</span><b id="atkWaste"></b></div>
+    <div class="total disp"><span id="atkScoreEl"></span><small> PTS</small></div>
+    <div><span class="newRec" id="atkRec" style="display:none">NEW RECORD</span></div>
+    <div class="btnRow">
+      <button class="bigBtn gray" id="btnAtkMenu">メニュー</button>
+      <button class="bigBtn" id="btnAtkAgain">再挑戦</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- 基盤 ---------- */
+var mem={};
+var store={
+  get:function(k,d){try{var v=localStorage.getItem(k);return v!==null?JSON.parse(v):d;}catch(e){return (k in mem)?mem[k]:d;}},
+  set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} mem[k]=v;}
+};
+var AC=null;
+function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=t||"triangle";o.frequency.value=f;g.gain.value=v||0.08;g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.15));o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+(d||0.15));}catch(e){}}
+function $(id){return document.getElementById(id);}
+function fmtN(v){ return v<0 ? "−"+(-v) : ""+v; }
+
+function reportEquation(score,note){
+  if(typeof manabiReport!=="function") return;
+  var stageBest=store.get("eqb_best3",{}), done=Object.keys(stageBest).length, bestScore=Number(score)||0;
+  Object.keys(stageBest).forEach(function(k){bestScore=Math.max(bestScore,Number(stageBest[k].score)||0);});
+  ["mix","m1","hard","m2","m3"].forEach(function(k){var r=store.get("eqb_atk4_"+k,null);if(r)bestScore=Math.max(bestScore,Number(r.score)||0);});
+  manabiReport({app:"equation-balance",done:Math.min(done,64),total:64,best:bestScore,note:String(note||"").slice(0,40)});
+}
+$('manabi-back').addEventListener('click',function(){reportEquation(mode==="attack"?atkScore:0,"ManabiBoxへ戻る");});
+var ICONS={
+  balance:'<svg class="ic" viewBox="0 0 24 24"><path d="M12 4v15M6 21h12M12 6L5.5 8.5M12 6l6.5 2.5"/><path d="M3 13.5a2.6 2.6 0 0 0 5.2 0L5.6 8.6 3 13.5Z"/><path d="M15.8 13.5a2.6 2.6 0 0 0 5.2 0l-2.6-4.9-2.6 4.9Z"/></svg>',
+  flask:'<svg class="ic" viewBox="0 0 24 24"><path d="M9.5 3h5M10.5 3v5.2L5 17.6A1.8 1.8 0 0 0 6.6 20h10.8a1.8 1.8 0 0 0 1.6-2.4L13.5 8.2V3"/><path d="M7.3 14.5h9.4"/></svg>',
+  dial:'<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.4M12 18.1v2.4M3.5 12h2.4M18.1 12h2.4M6 6l1.7 1.7M18 6l-1.7 1.7"/></svg>',
+  bolt:'<svg class="ic" viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z"/></svg>'
+};
+
+/* ================= モード・コース定義 ================= */
+var MODES={
+ m1:{no:"01", icon:"balance", name:"バランス・ラボ", grade:"LAB 01｜中1・一次方程式", acc:"#f0b429", accInk:"#171004", accDeep:"#8a5d00",
+     sub:"天秤のつり合いで「移項」と「等式の性質」を体で覚える",
+     attacks:[
+       {kind:"m1",   label:"スコアアタック ── 90秒", sub:"基礎から発展へ、だんだん難しくなる"},
+       {kind:"hard", label:"発展のみ ── 90秒", sub:"最初から発展問題だけの上級者向け"}
+     ]},
+ m2:{no:"02", icon:"flask", name:"リアクション・ラボ", grade:"LAB 02｜中2・連立方程式", acc:"#5ce08a", accInk:"#04170c", accDeep:"#1f7a45",
+     sub:"2つの式を反応させて文字を対消滅（＝加減法）",
+     attacks:[
+       {kind:"m2", label:"連続リアクション ── 120秒", sub:"連立方程式をひたすら反応させろ"}
+     ]},
+ m3:{no:"03", icon:"dial", name:"ファクター・バンク", grade:"LAB 03｜中3・二次方程式", acc:"#4fc3e8", accInk:"#04141c", accDeep:"#176e8c",
+     sub:"和と積の2つのロックを解除して金庫をひらけ（＝因数分解）",
+     attacks:[
+       {kind:"m3", label:"金庫連続やぶり ── 90秒", sub:"二次方程式を因数分解で連続撃破"}
+     ]}
+};
+var COURSES=[
+ {id:"g1a", mode:"m1", type:"lin", set:"SET A", name:"基礎", desc:"x＋□＝□ ／ □x＝□", stages:[
+   {Lx:1,Lc:2,Rx:0,Rc:6},{Lx:1,Lc:5,Rx:0,Rc:9},{Lx:1,Lc:-3,Rx:0,Rc:4},{Lx:1,Lc:-6,Rx:0,Rc:1},
+   {Lx:2,Lc:0,Rx:0,Rc:10},{Lx:3,Lc:0,Rx:0,Rc:12},{Lx:4,Lc:0,Rx:0,Rc:8},{Lx:5,Lc:0,Rx:0,Rc:15}
+ ]},
+ {id:"g1b", mode:"m1", type:"lin", set:"SET B", name:"標準", desc:"□x＋□＝□", stages:[
+   {Lx:2,Lc:3,Rx:0,Rc:7},{Lx:3,Lc:-1,Rx:0,Rc:8},{Lx:2,Lc:5,Rx:0,Rc:13},{Lx:4,Lc:-3,Rx:0,Rc:9},
+   {Lx:5,Lc:2,Rx:0,Rc:17},{Lx:3,Lc:4,Rx:0,Rc:1},{Lx:2,Lc:-7,Rx:0,Rc:-1},{Lx:6,Lc:5,Rx:0,Rc:23}
+ ]},
+ {id:"g1c", mode:"m1", type:"lin", set:"SET C", name:"応用", desc:"両辺に x がある", stages:[
+   {Lx:2,Lc:1,Rx:1,Rc:4},{Lx:3,Lc:2,Rx:1,Rc:8},{Lx:4,Lc:-1,Rx:2,Rc:5},{Lx:5,Lc:3,Rx:2,Rc:12},
+   {Lx:3,Lc:-4,Rx:1,Rc:2},{Lx:4,Lc:6,Rx:1,Rc:-3},{Lx:6,Lc:-5,Rx:2,Rc:3},{Lx:5,Lc:1,Rx:3,Rc:-7}
+ ]},
+ {id:"g1d", mode:"m1", type:"lin", set:"SET D", name:"発展", desc:"マイナスの係数・左右逆", stages:[
+   {Lx:-1,Lc:7,Rx:0,Rc:4},{Lx:-2,Lc:10,Rx:0,Rc:4},{Lx:0,Lc:8,Rx:1,Rc:3},{Lx:0,Lc:12,Rx:3,Rc:-6},
+   {Lx:-3,Lc:-2,Rx:0,Rc:7},{Lx:-4,Lc:2,Rx:0,Rc:10},{Lx:-1,Lc:7,Rx:2,Rc:1},{Lx:-5,Lc:4,Rx:-2,Rc:-8}
+ ]},
+ {id:"g2a", mode:"m2", type:"sim", set:"SET A", name:"基本反応", desc:"反転と合体で対消滅", stages:[
+   {e1:[1,1,5],  e2:[1,-1,1], par:4},
+   {e1:[1,1,7],  e2:[1,-1,3], par:4},
+   {e1:[2,1,8],  e2:[1,1,5],  par:4},
+   {e1:[2,1,9],  e2:[1,-1,3], par:4},
+   {e1:[3,1,10], e2:[1,1,6],  par:5},
+   {e1:[2,3,12], e2:[2,1,8],  par:6},
+   {e1:[3,2,13], e2:[1,2,7],  par:6},
+   {e1:[3,2,12], e2:[1,2,8],  par:6}
+ ]},
+ {id:"g2b", mode:"m2", type:"sim", set:"SET B", name:"増幅反応", desc:"×2・×3で係数をそろえろ", stages:[
+   {e1:[1,2,8],  e2:[2,-1,1],  par:6},
+   {e1:[5,2,16], e2:[2,1,7],   par:6},
+   {e1:[1,3,11], e2:[3,-1,3],  par:6},
+   {e1:[2,3,12], e2:[3,-1,7],  par:6},
+   {e1:[4,3,18], e2:[3,2,13],  par:7},
+   {e1:[3,4,17], e2:[2,3,12],  par:7},
+   {e1:[2,3,13], e2:[1,-2,-4], par:7},
+   {e1:[3,2,13], e2:[4,-3,6],  par:7}
+ ]},
+ {id:"g3a", mode:"m3", type:"fac", set:"SET A", name:"町の金庫", desc:"和も積もプラス", stages:[
+   {b:3,c:2},{b:5,c:6},{b:7,c:12},{b:6,c:8},
+   {b:8,c:15},{b:7,c:10},{b:9,c:20},{b:4,c:4}
+ ]},
+ {id:"g3b", mode:"m3", type:"fac", set:"SET B", name:"中央銀行の大金庫", desc:"マイナス・特殊型", stages:[
+   {b:-5,c:6},{b:-1,c:-6},{b:2,c:-8},{b:-4,c:-12},
+   {b:0,c:-9},{b:0,c:-16},{b:-6,c:9},{b:1,c:-20}
+ ]}
+];
+
+/* ---------- par計算 ---------- */
+function facCount(n){
+  var c=0;
+  [2,3,5].forEach(function(p){ while(n%p===0 && n>1){ n/=p; c++; } });
+  return n===1 ? c : 99;
+}
+function parSide(keepL, st){
+  var moveChips = keepL ? Math.abs(st.Rx) : Math.abs(st.Lx);
+  var n = keepL ? st.Lx-st.Rx : st.Rx-st.Lx;
+  if(n===0) return 99;
+  var keepC = keepL ? st.Lc : st.Rc;
+  var moves = moveChips + (keepC!==0?1:0);
+  if(n<0){ moves++; n=-n; }
+  var f=facCount(n);
+  if(f>50) return 99;
+  return moves+f;
+}
+function linPar(st){ return Math.min(parSide(true,st), parSide(false,st)); }
+function simPar(st){
+  var e1=st.e1, e2=st.e2;
+  var byY = Math.abs(e1[1])===Math.abs(e2[1]);
+  var direct = byY ? (e1[1]+e2[1]===0) : (e1[0]+e2[0]===0);
+  var k = byY ? (direct ? e1[0]+e2[0] : e1[0]-e2[0])
+              : (direct ? e1[1]+e2[1] : e1[1]-e2[1]);
+  var other = byY ? e1[1] : e1[0];
+  var p = (direct?0:1) + 1;
+  k=Math.abs(k);
+  if(k>1) p++;
+  p+=2;
+  if(Math.abs(other)>1) p++;
+  return p;
+}
+function facPQ(b,c){
+  for(var p=-12;p<=12;p++){ var q=b-p; if(p*q===c) return [p,q]; }
+  return [0,0];
+}
+function facPar(st){ var pq=facPQ(st.b,st.c); return Math.abs(pq[0])+Math.abs(pq[1]); }
+
+/* ---------- スコアアタック生成 ---------- */
+function ri(a,b){ return a+Math.floor(Math.random()*(b-a+1)); }
+function pick(a){ return a[ri(0,a.length-1)]; }
+function genLin(tier){
+  var x0, st;
+  for(var guard=0; guard<60; guard++){
+    if(tier===1){
+      if(Math.random()<0.5){ x0=ri(1,9); var b=ri(-8,8)||3; st={Lx:1,Lc:b,Rx:0,Rc:x0+b}; }
+      else{ var k=pick([2,3,4,5,6]); x0=ri(1,9); st={Lx:k,Lc:0,Rx:0,Rc:k*x0}; }
+    }else if(tier===2){
+      var k2=pick([2,3,4,5,6]); x0=ri(-4,8)||2; var b2=ri(-9,9)||4;
+      st={Lx:k2,Lc:b2,Rx:0,Rc:k2*x0+b2};
+    }else if(tier===3){
+      var c=ri(1,3), net=pick([1,2,3,4,5,6]), a=c+net;
+      x0=ri(-4,7)||3; var b3=ri(-9,9)||-2;
+      st={Lx:a,Lc:b3,Rx:c,Rc:net*x0+b3};
+    }else{
+      var v=ri(0,2);
+      if(v===0){ var k4=pick([1,2,3]); x0=ri(-6,8)||3; var b4=ri(-9,9)||5; st={Lx:-k4,Lc:b4,Rx:0,Rc:-k4*x0+b4}; }
+      else if(v===1){ var k5=pick([1,2,3,4]); x0=ri(-5,9)||2; var b5=ri(-9,9)||-3; st={Lx:0,Lc:k5*x0+b5,Rx:k5,Rc:b5}; }
+      else{ var a6=-ri(1,4), c6=a6+pick([1,2,3,4,5,6]);
+            x0=ri(-5,7)||2; var b6=ri(-8,8)||1;
+            st={Lx:a6,Lc:b6,Rx:c6,Rc:(a6-c6)*x0+b6};
+      }
+    }
+    if(Math.abs(st.Lc)>60||Math.abs(st.Rc)>60) continue;
+    if((st.Lx===0&&st.Lc===0)||(st.Rx===0&&st.Rc===0)) continue;
+    if(Math.abs(st.Lx)>6||Math.abs(st.Rx)>6) continue;
+    if(st.Lx===st.Rx) continue;
+    if(linPar(st)>=99) continue;
+    return st;
+  }
+  return {Lx:1,Lc:2,Rx:0,Rc:6};
+}
+function genSim(){
+  for(var g=0;g<60;g++){
+    var x0=ri(1,5), y0=ri(1,5);
+    var byY=Math.random()<0.5, direct=Math.random()<0.5;
+    var a1=ri(1,3), b1=ri(1,3), a2, b2;
+    if(byY){ b2=direct?-b1:b1; a2=ri(1,3); if(!direct&&a2===a1) continue; }
+    else{ a2=direct?-a1:a1; b2=ri(1,3); if(!direct&&b2===b1) continue; }
+    var e2=[a2,b2,a2*x0+b2*y0];
+    if(e2[2]===0) continue;
+    return {e1:[a1,b1,a1*x0+b1*y0], e2:e2, par:0};
+  }
+  return {e1:[1,1,5], e2:[1,-1,1], par:4};
+}
+function genFac(){
+  var p,q;
+  do{ p=ri(-6,6); }while(p===0);
+  do{ q=ri(-6,6); }while(q===0);
+  return {b:p+q, c:p*q};
+}
+
+/* ================= 共通状態 ================= */
+var mode="grade", curC=0, curS=0, curType="lin";
+var curMode="m1";
+var curProblem=null, curPar=1;
+var moves=0, waste=0, t0=0, qT0=0, timerId=null, playing=false;
+var atkKind="mix", atkIdx=0, atkScore=0, atkSolved=0, atkWasteTotal=0, atkEnd=0, atkMaxTier=1;
+var ATK_SEQ={ mix:[1,1,2,2,3,4,5,6], m1:[1,2,2,3,3,4] };
+var ATK_TIME={ mix:150, m1:90, hard:90, m2:120, m3:90 };
+var ATK_MODE={ mix:null, m1:"m1", hard:"m1", m2:"m2", m3:"m3" };
+var TIER_NAME={1:"基礎",2:"標準",3:"応用",4:"発展",5:"連立",6:"因数分解"};
+
+var eqText=$("eqText");
+var toastEl=$("toast"), toastId=null;
+function toast(msg,good){
+  toastEl.textContent=msg;
+  toastEl.classList.toggle("good",!!good);
+  toastEl.classList.add("show");
+  clearTimeout(toastId); toastId=setTimeout(function(){toastEl.classList.remove("show");},1500);
+}
+function addMove(){ moves++; updateHud(); }
+function addWaste(){ waste++; updateHud(); }
+function updateHud(){ $("hudMoves").textContent=moves; $("hudPar").textContent=curPar; }
+function setAccent(m){
+  var r=document.documentElement.style;
+  if(m){
+    r.setProperty("--acc", MODES[m].acc);
+    r.setProperty("--accInk", MODES[m].accInk);
+    r.setProperty("--accDeep", MODES[m].accDeep);
+  }else{
+    r.setProperty("--acc","#f0b429"); r.setProperty("--accInk","#171004"); r.setProperty("--accDeep","#8a5d00");
+  }
+}
+function showArea(t){
+  $("linArea").style.display = t==="lin"?"flex":"none";
+  $("simArea").style.display = t==="sim"?"flex":"none";
+  $("facArea").style.display = t==="fac"?"flex":"none";
+  Array.prototype.slice.call(document.querySelectorAll(".opBtn[data-op]")).forEach(function(b){
+    b.style.display = t==="lin"?"inline-block":"none";
+  });
+}
+
+/* ================= LAB 01：一次方程式 ================= */
+var linState=null;
+var panL=$("panL"), panR=$("panR");
+function newLinState(st){
+  function xs(n){ var a=[],i; for(i=0;i<Math.abs(n);i++) a.push(n>0?1:-1); return a; }
+  return { L:{xs:xs(st.Lx), c:st.Lc}, R:{xs:xs(st.Rx), c:st.Rc} };
+}
+function xTotal(s){ return s.xs.reduce(function(a,b){return a+b;},0); }
+function sideText(s){
+  var xt=xTotal(s), parts=[];
+  if(xt!==0) parts.push((xt===1?"":xt===-1?"−":(xt<0?"−":"")+Math.abs(xt))+"x");
+  if(s.c!==0) parts.push(s.c<0?"−"+Math.abs(s.c):""+s.c);
+  if(parts.length===0) return "0";
+  var txt=parts[0], i;
+  for(i=1;i<parts.length;i++){
+    var p=parts[i];
+    if(p.charAt(0)==="−") txt+=" − "+p.slice(1); else txt+=" + "+p;
+  }
+  return txt;
+}
+function renderLin(){
+  eqText.innerHTML = sideText(linState.L)+'<span class="eq">＝</span>'+sideText(linState.R);
+  [[panL,linState.L],[panR,linState.R]].forEach(function(pair){
+    var pan=pair[0], s=pair[1];
+    Array.prototype.slice.call(pan.querySelectorAll(".chip")).forEach(function(c){c.remove();});
+    s.xs.forEach(function(v){ pan.appendChild(makeChip("x",v)); });
+    if(s.c!==0) pan.appendChild(makeChip("n",s.c));
+  });
+}
+function makeChip(kind,val){
+  var d=document.createElement("div");
+  d.className="chip "+kind+(val<0?" neg":"")+" pop";
+  d.textContent = kind==="x" ? (val>0?"x":"−x") : fmtN(val);
+  d.dataset.kind=kind; d.dataset.val=val;
+  d.addEventListener("pointerdown", dragStart);
+  return d;
+}
+function wobble(){
+  var sgn=(Math.random()<.5?-1:1);
+  var root=document.documentElement.style;
+  root.setProperty("--tilt",(sgn*9)+"deg");
+  var row=$("scaleRow"); if(row) row.style.setProperty("--dy",(sgn*7)+"px");
+  setTimeout(function(){
+    root.setProperty("--tilt","0deg");
+    if(row) row.style.setProperty("--dy","0px");
+  },300);
+}
+var drag=null;
+function dragStart(e){
+  if(!playing||curType!=="lin") return;
+  e.preventDefault();
+  var src=e.currentTarget;
+  var g=src.cloneNode(true);
+  g.classList.add("ghost"); g.classList.remove("pop");
+  document.body.appendChild(g);
+  src.classList.add("dragSrc");
+  drag={src:src, ghost:g, from:src.closest(".pan").dataset.side};
+  moveGhost(e.clientX,e.clientY);
+  document.addEventListener("pointermove",dragMove);
+  document.addEventListener("pointerup",dragEnd);
+  document.addEventListener("pointercancel",dragEnd);
+}
+function moveGhost(x,y){
+  drag.ghost.style.left=x+"px"; drag.ghost.style.top=y+"px";
+  var el=document.elementFromPoint(x,y);
+  var pan=el && el.closest ? el.closest(".pan") : null;
+  panL.classList.toggle("dropHover", pan===panL && drag.from!=="L");
+  panR.classList.toggle("dropHover", pan===panR && drag.from!=="R");
+}
+function dragMove(e){ e.preventDefault(); moveGhost(e.clientX,e.clientY); }
+function dragEnd(e){
+  document.removeEventListener("pointermove",dragMove);
+  document.removeEventListener("pointerup",dragEnd);
+  document.removeEventListener("pointercancel",dragEnd);
+  panL.classList.remove("dropHover"); panR.classList.remove("dropHover");
+  var el=document.elementFromPoint(e.clientX,e.clientY);
+  var pan=el && el.closest ? el.closest(".pan") : null;
+  var kind=drag.src.dataset.kind, val=parseInt(drag.src.dataset.val,10);
+  drag.ghost.remove(); drag.src.classList.remove("dragSrc");
+  var from=drag.from; drag=null;
+  if(pan && pan.dataset.side!==from) applyLinMove(from, pan.dataset.side, kind, val);
+}
+function applyLinMove(fromSide,toSide,kind,val){
+  var f = fromSide==="L" ? linState.L : linState.R;
+  var t = toSide==="L" ? linState.L : linState.R;
+  if(kind==="n"){ f.c=0; t.c += -val; }
+  else{
+    var i=f.xs.indexOf(val);
+    if(i>=0) f.xs.splice(i,1);
+    var flipped=-val;
+    var j=t.xs.indexOf(-flipped);
+    if(j>=0) t.xs.splice(j,1); else t.xs.push(flipped);
+  }
+  addMove(); wobble(); beep(kind==="n"?520:640,0.12);
+  renderLin(); checkLin();
+}
+function applyLinOp(op,btn){
+  if(!playing||curType!=="lin") return;
+  var Lx=xTotal(linState.L), Rx=xTotal(linState.R);
+  var ok=false;
+  if(op==="neg"){
+    linState.L.xs=linState.L.xs.map(function(v){return -v;});
+    linState.R.xs=linState.R.xs.map(function(v){return -v;});
+    linState.L.c*=-1; linState.R.c*=-1; ok=true;
+  }else{
+    var k = op==="d2"?2 : op==="d3"?3 : 5;
+    if(Lx%k===0 && Rx%k===0 && linState.L.c%k===0 && linState.R.c%k===0 &&
+       (Lx!==0||Rx!==0||linState.L.c!==0||linState.R.c!==0)){
+      var rebuild=function(s){
+        var nx=xTotal(s)/k, a=[],i;
+        for(i=0;i<Math.abs(nx);i++) a.push(nx>0?1:-1);
+        s.xs=a; s.c=s.c/k;
+      };
+      rebuild(linState.L); rebuild(linState.R); ok=true;
+    }
+  }
+  if(ok){ addMove(); wobble(); beep(760,0.12); renderLin(); checkLin(); }
+  else{
+    addWaste();
+    btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
+    beep(180,0.2,"sawtooth",0.05);
+    toast("わり切れないよ。先に移項して整理しよう");
+  }
+}
+function checkLin(){
+  var L=linState.L, R=linState.R, v=null;
+  if(L.xs.length===1 && L.xs[0]===1 && L.c===0 && R.xs.length===0) v=R.c;
+  else if(R.xs.length===1 && R.xs[0]===1 && R.c===0 && L.xs.length===0) v=L.c;
+  if(v===null) return;
+  problemCleared("x ＝ "+v);
+}
+function startLin(st){
+  curType="lin"; curProblem=st; curPar=linPar(st);
+  linState=newLinState(st); showArea("lin"); renderLin();
+}
+
+/* ================= LAB 02：連立方程式 ================= */
+var sim=null;
+function startSim(st){
+  curType="sim"; curProblem=st;
+  curPar = st.par || simPar(st);
+  sim={ e1:st.e1.slice(), e2:st.e2.slice(), orig1:st.e1.slice(),
+        phase:1, solvedVar:null, solvedVal:null, ph3:null, hist:[], quiz:null };
+  showArea("sim"); renderSim();
+}
+function tTxt(n,v){
+  if(n===0) return "";
+  var a=Math.abs(n), s=(n<0?"−":"");
+  return s+(v ? (a===1?v:a+v) : ""+a);
+}
+function chipC(cls,txt,extra){
+  return '<span class="chipC '+cls+(txt.charAt(0)==="−"?" neg":"")+(extra||"")+'">'+txt+'</span>';
+}
+function eqRowHTML(no,e){
+  var h='<span class="no">'+no+'</span>';
+  var first=true;
+  [["x",e[0]],["y",e[1]]].forEach(function(t){
+    if(t[1]===0) return;
+    if(!first) h+='<span class="chipC op">'+(t[1]>0?"＋":"−")+'</span>';
+    var a=Math.abs(t[1]);
+    var txt=(first&&t[1]<0?"−":"")+(a===1?t[0]:a+t[0]);
+    h+=chipC(t[0],txt);
+    first=false;
+  });
+  h+='<span class="chipC op">＝</span>'+chipC("n", fmtN(e[2]));
+  return h;
+}
+function simBtn(label,fn,acc){
+  var b=document.createElement("button");
+  b.className="opBtn disp"+(acc?" acc":""); b.textContent=label;
+  b.addEventListener("click",fn);
+  return b;
+}
+function renderSim(){
+  var g=$("simGuide"), b=$("simBtns"), s1=$("simEq1"), s2=$("simEq2"), sv=$("simSolvedLine");
+  b.innerHTML=""; sv.innerHTML="";
+  if(sim.phase===1){
+    eqText.innerHTML="連立方程式";
+    g.innerHTML='合体は<b>必ず実行される</b>。係数をそろえずに合体すると式は複雑になるだけ——<b>どちらの文字を消すか</b>先に決めろ（＝加減法）';
+    s1.style.display="flex"; s2.style.display="flex";
+    s1.innerHTML=eqRowHTML("1",sim.e1);
+    s2.innerHTML=eqRowHTML("2",sim.e2);
+    b.appendChild(simBtn("①反転",function(){simFlip(1);}));
+    b.appendChild(simBtn("②反転",function(){simFlip(2);}));
+    [["①×2",1,2],["①×3",1,3],["②×2",2,2],["②×3",2,3]].forEach(function(m){
+      b.appendChild(simBtn(m[0],function(){simMul(m[1],m[2]);}));
+    });
+    b.appendChild(simBtn("合体！",function(){simFuse();},true));
+    var ub=simBtn("もどす",function(){simUndo();});
+    ub.classList.remove("disp"); ub.classList.add("sub");
+    b.appendChild(ub);
+  }else if(sim.phase===2){
+    var vn=sim.solvedVar, k=sim.ph2k, c=sim.ph2c;
+    eqText.innerHTML=tTxt(k,vn)+'<span class="eq">＝</span>'+fmtN(c);
+    g.textContent="文字が1つ消えた。残った方程式を解こう";
+    s1.style.display="flex"; s2.style.display="none";
+    s1.innerHTML='<span class="no">＊</span>'+chipC(vn,tTxt(k,vn))+'<span class="chipC op">＝</span>'+chipC("n",fmtN(c));
+    if(k<0){
+      b.appendChild(simBtn("×(−1)",function(){ sim.ph2k*=-1; sim.ph2c*=-1; addMove(); beep(760,0.12); renderSim(); simCheck2(); }));
+    }else if(k>1){
+      b.appendChild(simBtn("÷"+k,function(){ sim.ph2c/=sim.ph2k; sim.ph2k=1; addMove(); beep(760,0.12); simCheck2(); }));
+    }
+    simCheck2();
+  }else{
+    var o=sim.ph3;
+    g.textContent = !o.sub ? ("出た値を①の式に代入。光っているコマをタップ")
+                  : !o.moved ? "代入した数を移項しよう（数字コマをタップ）"
+                  : "仕上げ。両辺をわって答えを出そう";
+    sv.innerHTML='<span class="solvedTag disp">'+sim.solvedVar+' ＝ '+fmtN(sim.solvedVal)+'</span>';
+    s2.style.display="none"; s1.style.display="flex";
+    var other=o.varName, oc=o.coef;
+    var h='<span class="no">1</span>';
+    if(!o.sub){
+      var e=sim.orig1, first=true;
+      [["x",e[0]],["y",e[1]]].forEach(function(t){
+        if(t[1]===0) return;
+        if(!first) h+='<span class="chipC op">＋</span>';
+        var a=Math.abs(t[1]);
+        h+='<span class="chipC '+t[0]+(t[0]===sim.solvedVar?' tappable':'')+'" data-sub="'+(t[0]===sim.solvedVar?1:0)+'">'+(a===1?t[0]:a+t[0])+'</span>';
+        first=false;
+      });
+      h+='<span class="chipC op">＝</span>'+chipC("n",fmtN(e[2]));
+      eqText.innerHTML="";
+    }else if(!o.moved){
+      h+=chipC(other,tTxt(oc,other))+'<span class="chipC op">＋</span>'+
+         '<span class="chipC n tappable" data-mv="1">'+fmtN(o.left)+'</span>'+
+         '<span class="chipC op">＝</span>'+chipC("n",fmtN(o.right));
+      eqText.innerHTML=tTxt(oc,other)+" + "+fmtN(o.left)+'<span class="eq">＝</span>'+fmtN(o.right);
+    }else{
+      h+=chipC(other,tTxt(oc,other))+'<span class="chipC op">＝</span>'+chipC("n",fmtN(o.right));
+      eqText.innerHTML=tTxt(oc,other)+'<span class="eq">＝</span>'+fmtN(o.right);
+      if(oc>1) b.appendChild(simBtn("÷"+oc,function(){
+        o.right/=o.coef; o.coef=1; addMove(); beep(760,0.12); renderSim(); simCheck3();
+      }));
+    }
+    s1.innerHTML=h;
+    Array.prototype.slice.call(s1.querySelectorAll('[data-sub="1"]')).forEach(function(el){
+      el.addEventListener("click",simSubstitute);
+    });
+    Array.prototype.slice.call(s1.querySelectorAll('[data-mv="1"]')).forEach(function(el){
+      el.addEventListener("click",simMoveConst);
+    });
+    simCheck3();
+  }
+}
+function simSnap(){
+  sim.hist.push({e1:sim.e1.slice(), e2:sim.e2.slice()});
+  if(sim.hist.length>24) sim.hist.shift();
+}
+function simUndo(){
+  if(!playing||sim.phase!==1) return;
+  var h=sim.hist.pop();
+  if(!h){ toast("もどす手がないよ"); return; }
+  sim.e1=h.e1; sim.e2=h.e2;
+  beep(320,0.08); renderSim();
+}
+function simFlip(which){
+  if(!playing) return;
+  simSnap();
+  var e = which===1?sim.e1:sim.e2;
+  e[0]*=-1; e[1]*=-1; e[2]*=-1;
+  addMove(); beep(430,0.1,"square",0.06);
+  toast("符号がひっくり返った（引き算のかわり）");
+  renderSim();
+}
+function simMul(which,f){
+  if(!playing) return;
+  var e = which===1?sim.e1:sim.e2;
+  if(Math.max(Math.abs(e[0]*f),Math.abs(e[1]*f))>36){ addWaste(); toast("これ以上大きくできないよ"); return; }
+  simSnap();
+  e[0]*=f; e[1]*=f; e[2]*=f;
+  addMove(); beep(640,0.1); renderSim();
+}
+function simFuse(){
+  if(!playing) return;
+  var r=[sim.e1[0]+sim.e2[0], sim.e1[1]+sim.e2[1], sim.e1[2]+sim.e2[2]];
+  var xz=r[0]===0, yz=r[1]===0;
+  if(xz&&yz){ addWaste(); beep(180,0.2,"sawtooth",0.05); toast("式そのものが消滅する組み合わせだ（実行できない）"); return; }
+  simSnap(); addMove();
+  if(xz||yz){
+    sim.solvedVar = xz ? "y" : "x";
+    sim.ph2k = xz ? r[1] : r[0];
+    sim.ph2c = r[2];
+    sim.phase=2;
+    beep(880,0.12); setTimeout(function(){beep(1180,0.12);},90);
+    toast("対消滅！ "+(xz?"x":"y")+" が消えた",true);
+  }else{
+    sim.e1=r;
+    beep(210,0.22,"sawtooth",0.06);
+    toast("何も消えなかった…… ①が置き換わった。［もどす］で戻れる");
+  }
+  renderSim();
+}
+function simCheck2(){
+  if(sim.ph2k===1){
+    sim.solvedVal=sim.ph2c;
+    var other = sim.solvedVar==="x" ? "y" : "x";
+    var oc = other==="x" ? sim.orig1[0] : sim.orig1[1];
+    sim.phase=3;
+    sim.ph3={varName:other, coef:oc, left:null, right:sim.orig1[2], sub:false, moved:false};
+    toast(sim.solvedVar+" ＝ "+fmtN(sim.solvedVal)+"。次は代入だ",true);
+    beep(880,0.1); setTimeout(function(){beep(1100,0.12);},100);
+    renderSim();
+  }
+}
+function simSubstitute(){
+  if(!playing) return;
+  var o=sim.ph3;
+  var sc = sim.solvedVar==="x" ? sim.orig1[0] : sim.orig1[1];
+  if(sc===1){
+    o.left=sim.solvedVal; o.sub=true;
+    addMove(); beep(700,0.1); renderSim(); return;
+  }
+  showSubQuiz(sc, sim.solvedVal);
+}
+function showSubQuiz(a, v){
+  var correct=a*v;
+  var set={}; set[correct]=1;
+  var out=[correct];
+  [a+v, correct+a, correct-a, correct+v, correct+1].forEach(function(x){
+    if(out.length<3 && !set[x]){ set[x]=1; out.push(x); }
+  });
+  for(var i=out.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=out[i];out[i]=out[j];out[j]=t; }
+  var g=$("simGuide"), b=$("simBtns");
+  g.innerHTML='代入の暗算チェック：<b>'+a+sim.solvedVar+'</b> に '+sim.solvedVar+'＝'+fmtN(v)+' を入れると？　<b>'+a+' × '+fmtN(v)+' ＝ ?</b>';
+  b.innerHTML="";
+  out.forEach(function(val){
+    var bt=simBtn(fmtN(val),function(){
+      if(val===correct){
+        var o=sim.ph3;
+        o.left=correct; o.sub=true;
+        addMove(); beep(880,0.1); renderSim();
+      }else{
+        addWaste(); beep(180,0.2,"sawtooth",0.05);
+        bt.classList.remove("shake"); void bt.offsetWidth; bt.classList.add("shake");
+        toast("ちがう。かけ算をもう一度");
+      }
+    });
+    b.appendChild(bt);
+  });
+}
+function simMoveConst(){
+  if(!playing) return;
+  var o=sim.ph3;
+  o.right -= o.left; o.left=null; o.moved=true;
+  addMove(); beep(520,0.12); renderSim();
+}
+function simCheck3(){
+  var o=sim.ph3;
+  if(o && o.sub && o.moved && o.coef===1){
+    var x = sim.solvedVar==="x" ? sim.solvedVal : o.right;
+    var y = sim.solvedVar==="y" ? sim.solvedVal : o.right;
+    problemCleared("x ＝ "+fmtN(x)+"、 y ＝ "+fmtN(y));
+  }
+}
+
+/* ================= LAB 03：ファクター・バンク ================= */
+var fac=null;
+function startFac(st){
+  curType="fac"; curProblem=st; curPar=facPar(st);
+  fac={b:st.b, c:st.c, p:0, q:0, done:false, hinted:false};
+  $("vault").classList.remove("open");
+  $("btnFactorHint").disabled=false;
+  $("hintPairs").innerHTML="";
+  showArea("fac"); renderFac();
+}
+function fmtQuad(b,c){
+  var s="x²";
+  if(b!==0) s+= (b>0?" + ":" − ")+(Math.abs(b)===1?"":Math.abs(b))+"x";
+  if(c!==0) s+= (c>0?" + ":" − ")+Math.abs(c);
+  return s+" = 0";
+}
+function facFormHTML(){
+  function pt(v){ return v<0?("− "+(-v)):("+ "+v); }
+  return fmtQuad(fac.b,fac.c)+'　→　(x <span class="pv">'+pt(fac.p)+'</span>)(x <span class="pv">'+pt(fac.q)+'</span>)';
+}
+function renderFac(){
+  eqText.innerHTML=fmtQuad(fac.b,fac.c);
+  $("facGuide").innerHTML='まず<b>積が '+fmtN(fac.c)+'</b> になるペアを探し、その中から<b>和が '+fmtN(fac.b)+'</b> のものを選ぶのがコツ';
+  $("facForm").innerHTML=facFormHTML();
+  $("valP").textContent=fmtN(fac.p); $("valQ").textContent=fmtN(fac.q);
+  updateLock("sum", fac.p+fac.q, fac.b);
+  updateLock("prod", fac.p*fac.q, fac.c);
+}
+function updateLock(kind,now,tgt){
+  $(kind+"Now").textContent=fmtN(now);
+  $(kind+"Tgt").textContent=fmtN(tgt);
+  var open = now===tgt;
+  $(kind+"Dir").textContent = open?"OPEN":(now<tgt?"▲ 大きく":"▼ 小さく");
+  $("lock"+(kind==="sum"?"Sum":"Prod")).classList.toggle("open",open);
+}
+function facHint(){
+  if(!fac||fac.done||fac.hinted) return;
+  fac.hinted=true; waste+=2; updateHud();
+  $("btnFactorHint").disabled=true;
+  var box=$("hintPairs"); box.innerHTML="";
+  var seen={};
+  for(var d=1;d<=Math.abs(fac.c);d++){
+    if(fac.c%d!==0) continue;
+    var e=fac.c/d;
+    [[d,e],[-d,-e]].forEach(function(pr){
+      var a=Math.min(pr[0],pr[1]), b2=Math.max(pr[0],pr[1]);
+      if(Math.abs(a)>9||Math.abs(b2)>9) return;
+      if(a*b2!==fac.c) return;
+      var key=a+"_"+b2;
+      if(seen[key]) return; seen[key]=1;
+      var sp=document.createElement("span");
+      sp.className="hp"; sp.textContent=fmtN(a)+" × "+fmtN(b2);
+      box.appendChild(sp);
+    });
+  }
+  beep(600,0.1); toast("積が "+fmtN(fac.c)+" になるペアはこれだ。和を確かめよう");
+}
+$("btnFactorHint").addEventListener("click",facHint);
+function facStep(t,d){
+  if(!playing||!fac||fac.done) return;
+  if(t==="p") fac.p=Math.max(-9,Math.min(9,fac.p+d));
+  else fac.q=Math.max(-9,Math.min(9,fac.q+d));
+  addMove(); beep(560+(d>0?60:0),0.05);
+  renderFac();
+  if(fac.p+fac.q===fac.b && fac.p*fac.q===fac.c){
+    fac.done=true;
+    $("vault").classList.add("open");
+    beep(880,0.1);setTimeout(function(){beep(1100,0.1);},90);setTimeout(function(){beep(1480,0.18);},200);
+    var r1=-fac.p, r2=-fac.q;
+    var ans = r1===r2 ? "x ＝ "+fmtN(r1)+"（重解）" : "x ＝ "+fmtN(r1)+"、 "+fmtN(r2);
+    var sub="(x "+(fac.p<0?"− "+(-fac.p):"+ "+fac.p)+")(x "+(fac.q<0?"− "+(-fac.q):"+ "+fac.q)+") = 0";
+    setTimeout(function(){ problemCleared(ans, sub); },750);
+  }
+}
+Array.prototype.slice.call(document.querySelectorAll(".stepBtn")).forEach(function(b){
+  b.addEventListener("click",function(){ facStep(b.dataset.t, parseInt(b.dataset.d,10)); });
+});
+
+/* ================= ランク ================= */
+var RANK_ORD={S:4,A:3,B:2,C:1};
+var RANK_COL={S:"var(--acc)",A:"#e9eef7",B:"#8fa3bd",C:"#54657f"};
+function rankOf(wasteMoves){ return wasteMoves===0?"S":wasteMoves<=2?"A":wasteMoves<=5?"B":"C"; }
+
+/* ================= クリア共通 ================= */
+function problemCleared(answerText, subText){
+  if(mode==="grade") clearGrade(answerText, subText);
+  else clearAttack(answerText);
+}
+function clearGrade(answerText, subText){
+  playing=false; clearInterval(timerId);
+  var t=(Date.now()-t0)/1000;
+  var wasteMoves = Math.max(0, moves-curPar) + waste;
+  var base=1000;
+  var afterWaste=Math.max(100, base - wasteMoves*100);
+  var limit = curType==="lin" ? 60 : 120;
+  var speedMult = 1 + Math.max(0,(limit-t))/limit;
+  var total=Math.round(afterWaste*speedMult);
+  beep(660,0.12); setTimeout(function(){beep(880,0.12);},120); setTimeout(function(){beep(1100,0.25);},240);
+
+  var rank=rankOf(wasteMoves);
+  var best=store.get("eqb_best3",{});
+  var key=COURSES[curC].id+"_"+curS;
+  var prev=best[key];
+  var rec = !prev || total>prev.score;
+  var bestRank = (!prev||!prev.rank||RANK_ORD[rank]>RANK_ORD[prev.rank]) ? rank : prev.rank;
+  best[key]={score:Math.max(total, prev?prev.score:0), rank:bestRank};
+  store.set("eqb_best3",best);
+  reportEquation(total,MODES[curMode].name+" ステージ"+(curS+1)+"クリア");
+
+  var md=MODES[COURSES[curC].mode];
+  $("clearWhere").textContent="LAB "+md.no+"｜"+COURSES[curC].name+"　第"+(curS+1)+"問";
+  $("scRank").textContent=rank;
+  $("scRank").style.color=RANK_COL[rank];
+  $("clearAnswer").innerHTML=(subText?('<span class="subEq">'+subText+'</span>'):"")+answerText;
+  $("scBase").textContent=base;
+  $("scWaste").textContent="−"+(wasteMoves*100)+"（"+wasteMoves+"回）";
+  $("scSpeed").textContent="×"+speedMult.toFixed(2)+"（"+t.toFixed(1)+"秒）";
+  $("scTotal").textContent=total;
+  $("scRec").style.display = rec?"inline-block":"none";
+  var modeCourses=COURSES.filter(function(c){return c.mode===COURSES[curC].mode;});
+  var lastInMode = (COURSES[curC].id===modeCourses[modeCourses.length-1].id && curS===COURSES[curC].stages.length-1);
+  var btnNext=$("btnNext");
+  btnNext.style.display = lastInMode?"none":"inline-block";
+  btnNext.textContent = (curS===COURSES[curC].stages.length-1)?"次のセットへ":"次の問題へ";
+  setTimeout(function(){ show(ovClear); }, 500);
+}
+
+/* ================= 学年モード進行 ================= */
+function startGrade(c,i){
+  mode="grade"; curC=c; curS=i;
+  curMode=COURSES[c].mode; setAccent(curMode);
+  moves=0; waste=0; playing=true; t0=Date.now();
+  var course=COURSES[c], st=course.stages[i], md=MODES[course.mode];
+  $("modeLabel").textContent="LAB "+md.no+"　"+md.name+"｜"+course.name+"　"+(i+1)+" / "+course.stages.length;
+  $("pillSolved").style.display="none";
+  $("pillTime").classList.remove("warn");
+  clearInterval(timerId);
+  timerId=setInterval(function(){ $("hudTime").textContent=((Date.now()-t0)/1000).toFixed(1); },100);
+  if(course.type==="lin") startLin(st);
+  else if(course.type==="sim") startSim(st);
+  else startFac(st);
+  updateHud();
+  hideAll();
+}
+
+/* ================= スコアアタック ================= */
+function attackTier(){
+  if(atkKind==="hard") return 4;
+  if(atkKind==="m2") return 5;
+  if(atkKind==="m3") return 6;
+  var seq=ATK_SEQ[atkKind];
+  if(atkIdx<seq.length) return seq[atkIdx];
+  return atkKind==="mix" ? pick([3,4,5,6]) : 4;
+}
+function nextAttackProblem(){
+  var tier=attackTier();
+  atkMaxTier=Math.max(atkMaxTier,tier);
+  moves=0; waste=0; qT0=Date.now();
+  var st;
+  if(tier===5){ st=genSim(); startSim(st); }
+  else if(tier===6){ st=genFac(); startFac(st); }
+  else{ st=genLin(tier); startLin(st); }
+  curProblem=st; curProblem._tier=tier;
+  var names={mix:"MIX ATTACK", m1:"SCORE ATTACK", hard:"EXPERT ATTACK", m2:"REACTION RUSH", m3:"VAULT RUSH"};
+  $("modeLabel").textContent=names[atkKind]+"｜"+TIER_NAME[tier]+"　No."+(atkSolved+1);
+  updateHud();
+}
+function clearAttack(answerText){
+  var t=(Date.now()-qT0)/1000;
+  var tier=curProblem._tier||4;
+  var wasted=Math.max(0,moves-curPar)+waste;
+  atkWasteTotal+=wasted;
+  var pts=Math.max(50, Math.round((80+tier*70) + Math.max(0,(20-t))*10 - wasted*25));
+  atkScore+=pts; atkSolved++; atkIdx++;
+  $("hudSolved").textContent=atkSolved;
+  beep(880,0.08); setTimeout(function(){beep(1320,0.1);},80);
+  toast(answerText+"　正解 +"+pts,true);
+  if(Date.now()<atkEnd) nextAttackProblem();
+}
+function startAttack(kind){
+  mode="attack"; atkKind=kind;
+  curMode=ATK_MODE[kind]||"m1"; setAccent(ATK_MODE[kind]);
+  atkIdx=0; atkScore=0; atkSolved=0; atkWasteTotal=0;
+  atkMaxTier=(kind==="hard"?4:kind==="m2"?5:kind==="m3"?6:1);
+  playing=true;
+  atkEnd=Date.now()+ATK_TIME[kind]*1000;
+  $("pillSolved").style.display="block";
+  $("hudSolved").textContent="0";
+  clearInterval(timerId);
+  timerId=setInterval(function(){
+    var left=(atkEnd-Date.now())/1000;
+    if(left<=0){ endAttack(); return; }
+    $("hudTime").textContent=left.toFixed(1);
+    $("pillTime").classList.toggle("warn",left<15);
+  },100);
+  nextAttackProblem();
+  hideAll();
+}
+function endAttack(){
+  playing=false; clearInterval(timerId);
+  $("hudTime").textContent="0.0";
+  beep(392,0.15);setTimeout(function(){beep(330,0.25);},160);
+  var key="eqb_atk4_"+atkKind;
+  var best=store.get(key,null);
+  var rec=!best||atkScore>best.score;
+  if(rec) store.set(key,{score:atkScore,solved:atkSolved});
+  reportEquation(atkScore,(atkKind==="mix"?"MIX ATTACK":MODES[curMode].name)+" "+atkSolved+"問");
+  $("atkSolved2").textContent=atkSolved+" 問";
+  $("atkLv").textContent=TIER_NAME[atkMaxTier];
+  $("atkWaste").textContent=atkWasteTotal+" 回";
+  $("atkScoreEl").textContent=atkScore;
+  $("atkRec").style.display=rec?"inline-block":"none";
+  show(ovAtk);
+}
+
+/* ================= メニュー ================= */
+var ovTitle=$("ovTitle"), ovHub=$("ovHub"), ovMode=$("ovMode"), ovClear=$("ovClear"), ovAtk=$("ovAtk");
+function show(o){o.classList.remove("hidden");}
+function hide(o){o.classList.add("hidden");}
+function hideAll(){ [ovTitle,ovHub,ovMode,ovClear,ovAtk].forEach(hide); }
+
+function modeProgress(m){
+  var best=store.get("eqb_best3",{});
+  var total=0, done=0;
+  COURSES.filter(function(c){return c.mode===m;}).forEach(function(c){
+    c.stages.forEach(function(_,i){ total++; if(best[c.id+"_"+i]) done++; });
+  });
+  return {done:done,total:total};
+}
+function plateHTML(md){
+  return '<span class="plate" style="background:'+md.acc+'"><span class="pLab">LAB</span><span class="pNo disp">'+md.no+'</span></span>';
+}
+function buildHub(){
+  setAccent(null);
+  var box=$("hubCards"); box.innerHTML="";
+  ["m1","m2","m3"].forEach(function(m){
+    var md=MODES[m], pg=modeProgress(m);
+    var b=document.createElement("button");
+    b.className="modeCard"; b.style.setProperty("--mc",md.acc);
+    b.innerHTML=plateHTML(md)+
+      '<span><span class="mGrade">'+md.grade+'</span><br><span class="mName">'+md.name+'</span>'+
+      '<span class="mSub">'+md.sub+'</span></span>'+
+      '<span class="mProg"><b>'+pg.done+'<span style="color:var(--faint)">/'+pg.total+'</span></b><small>CLEAR</small></span>';
+    b.addEventListener("click",function(){ openMode(m); });
+    box.appendChild(b);
+  });
+  var bm=store.get("eqb_atk4_mix",null);
+  $("bestMix").textContent = bm?("BEST "+bm.score):"BEST —";
+}
+function openMode(m){
+  curMode=m; setAccent(m);
+  var md=MODES[m];
+  var best=store.get("eqb_best3",{});
+  var body=$("modeBody"); body.innerHTML="";
+  var head=document.createElement("div"); head.className="modeHead";
+  head.innerHTML=plateHTML(md)+'<div><div class="mGrade">'+md.grade+'</div><h2>'+md.name+'</h2><div class="mDesc">'+md.sub+'</div></div>';
+  body.appendChild(head);
+  var tape=document.createElement("div"); tape.className="modeTape"; body.appendChild(tape);
+  var st1=document.createElement("div"); st1.className="secTitle"; st1.textContent="SCORE ATTACK";
+  body.appendChild(st1);
+  md.attacks.forEach(function(a){
+    var bt=document.createElement("button"); bt.className="atkBtn";
+    var bk=store.get("eqb_atk4_"+a.kind,null);
+    bt.innerHTML='<span>'+ICONS.bolt+' '+a.label+'<span class="aSub">'+a.sub+'</span></span><small>'+(bk?("BEST<br>"+bk.score):"BEST<br>—")+'</small>';
+    bt.addEventListener("click",function(){ startAttack(a.kind); });
+    body.appendChild(bt);
+  });
+  var st2=document.createElement("div"); st2.className="secTitle"; st2.textContent="STAGES";
+  body.appendChild(st2);
+  COURSES.forEach(function(course,c){
+    if(course.mode!==m) return;
+    var head2=document.createElement("div"); head2.className="courseHead";
+    head2.innerHTML="<b><i>"+course.set+"</i>"+course.name+"</b><small>"+course.desc+"</small>";
+    body.appendChild(head2);
+    var g=document.createElement("div"); g.className="stageGrid";
+    course.stages.forEach(function(st,i){
+      var key=course.id+"_"+i;
+      var b=document.createElement("button");
+      b.className="stBtn"+(best[key]?" cleared":"");
+      b.innerHTML='<b class="disp">'+(i+1)+"</b><small>"+(best[key]?((best[key].rank||"")+" "+best[key].score):"—")+"</small>";
+      b.addEventListener("click",function(){ startGrade(c,i); });
+      g.appendChild(b);
+    });
+    body.appendChild(g);
+  });
+  hideAll(); show(ovMode);
+}
+$("btnStart").addEventListener("click",function(){ buildHub(); hideAll(); show(ovHub); });
+$("btnToHub").addEventListener("click",function(){ buildHub(); hideAll(); show(ovHub); });
+$("btnMix").addEventListener("click",function(){ startAttack("mix"); });
+$("btnMenu").addEventListener("click",function(){
+  playing=false; clearInterval(timerId);
+  if(mode==="attack" && atkKind==="mix"){ buildHub(); hideAll(); show(ovHub); }
+  else openMode(curMode);
+});
+$("btnReset").addEventListener("click",function(){
+  if(!curProblem) return;
+  if(mode==="grade") startGrade(curC,curS);
+  else{
+    moves=0; waste=0; qT0=Date.now();
+    var tier=curProblem._tier||4;
+    if(tier===5) startSim(curProblem);
+    else if(tier===6) startFac(curProblem);
+    else startLin(curProblem);
+    updateHud();
+  }
+});
+$("btnRetry").addEventListener("click",function(){ startGrade(curC,curS); });
+$("btnNext").addEventListener("click",function(){
+  if(curS<COURSES[curC].stages.length-1){ startGrade(curC,curS+1); return; }
+  for(var c=curC+1;c<COURSES.length;c++){
+    if(COURSES[c].mode===COURSES[curC].mode){ startGrade(c,0); return; }
+  }
+});
+$("btnAtkAgain").addEventListener("click",function(){ startAttack(atkKind); });
+$("btnAtkMenu").addEventListener("click",function(){
+  if(atkKind==="mix"){ buildHub(); hideAll(); show(ovHub); }
+  else openMode(ATK_MODE[atkKind]);
+});
+Array.prototype.slice.call(document.querySelectorAll(".opBtn[data-op]")).forEach(function(b){
+  b.addEventListener("click",function(){ applyLinOp(b.dataset.op,b); });
+});
+window.addEventListener("contextmenu",function(e){ if(e.target.closest(".chip")||e.target.closest(".chipC")) e.preventDefault(); });
+})();
+</script>
+</body>
+</html>

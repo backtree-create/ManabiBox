@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>RESBA RESPONSE — レスバ・レスポンス</title>
+<style>
+  :root{
+    --bg:#211510; --bg2:#2b1c12; --pnl:#2e2015;
+    --crim:#b02a37; --crim2:#771822;
+    --blue:#3f74b5; --blue2:#27507f;
+    --brass:#bd8c3f; --brassL:#e2ba74; --brassD:#6e4f1a;
+    --red:var(--crim); --indigo:var(--blue); --gold:var(--brassL);
+    --parch:#f1e7cf; --parch2:#e6d8b8; --pInk:#2a2118;
+    --txt:#efe7d8; --dim:#b3a48b; --faint:#7c6f5c;
+    --line:rgba(190,150,90,.06);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%;}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    color:var(--txt);
+    background:
+      radial-gradient(900px 460px at 50% -10%, rgba(200,150,80,.14), transparent 60%),
+      repeating-linear-gradient(90deg, var(--line) 0 2px, transparent 2px 14px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.12) 0 1px, transparent 1px 34px),
+      linear-gradient(180deg, var(--bg2), var(--bg) 55%);
+    height:100dvh; display:flex; flex-direction:column; overflow:hidden;
+    touch-action:manipulation; user-select:none; -webkit-user-select:none;
+  }
+  .min{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;}
+  button{font:inherit;}
+  button:focus-visible{outline:2px solid var(--brassL); outline-offset:2px;}
+  .manabiBar{height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(4px + env(safe-area-inset-top)) 12px 4px;background:rgba(12,7,4,.96);color:var(--txt);border-bottom:1px solid var(--brassD);font-size:10px;letter-spacing:.08em;}
+  .manabiBar a{color:var(--txt);text-decoration:none;font-weight:800;min-height:24px;display:inline-flex;align-items:center;padding:3px 9px;border:1px solid var(--brass);border-radius:999px;}
+  .manabiBar a:hover,.manabiBar a:focus-visible{background:var(--crim);color:#fff5e8;outline:2px solid var(--brassL);outline-offset:2px;}
+  .manabiBar span{color:var(--brassL);}
+
+  /* ---- 真鍮プレート章票 ---- */
+  .stampBox{
+    display:inline-flex; align-items:center; justify-content:center;
+    background:linear-gradient(180deg,var(--brassL),var(--brass) 60%,#96692a);
+    color:#241811; border:2px solid var(--brassD);
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:800;
+    letter-spacing:.05em; border-radius:3px;
+    box-shadow:inset 0 1px 0 rgba(255,240,200,.6), 0 3px 6px rgba(0,0,0,.4);
+  }
+  .tag{
+    display:inline-block; font-size:9px; letter-spacing:.22em; font-weight:800;
+    border:1px solid var(--brass); color:var(--brassL); padding:2px 7px; white-space:nowrap;
+  }
+
+  /* ---- ヘッダー ---- */
+  header{display:flex; align-items:flex-end; gap:10px; padding:10px 14px 6px;}
+  .logo{display:flex; align-items:center; gap:10px;}
+  .logo .stampBox{width:36px; height:36px; font-size:17px;}
+  .logo .t .en{font-weight:900; letter-spacing:.16em; font-size:clamp(12px,3.2vw,15px);}
+  .logo .t .en b{color:var(--brassL);}
+  .logo .t .jp{display:block; font-size:8px; letter-spacing:.42em; color:var(--dim); margin-top:2px;}
+  .hud{margin-left:auto; display:flex; gap:6px;}
+  .pill{
+    background:rgba(14,9,6,.7); border:1px solid #4a3a26;
+    border-radius:4px; padding:3px 10px; text-align:center; min-width:56px;
+  }
+  .pill .k{display:block; font-size:8px; letter-spacing:.3em; color:var(--faint); font-weight:700;}
+  .pill b{font-variant-numeric:tabular-nums; color:var(--brassL); font-size:clamp(13px,3.6vw,16px);}
+  #ruleBar{height:5px; margin-top:6px;
+    background:repeating-linear-gradient(-55deg, var(--crim) 0 12px, var(--brass) 12px 24px, transparent 24px 38px);}
+
+  /* ---- 法廷HUD ---- */
+  #battleHud{padding:10px 12px 2px; display:flex; flex-direction:column; gap:7px;}
+  .fRow{display:flex; align-items:center; gap:10px;}
+  .plate{
+    flex:none; background:linear-gradient(180deg,var(--brassL),var(--brass) 55%,#96692a);
+    border:2px solid var(--brassD); border-left:6px solid var(--crim);
+    padding:5px 14px; min-width:9.5em;
+    box-shadow:inset 0 1px 0 rgba(255,240,200,.55), 0 3px 6px rgba(0,0,0,.4);
+  }
+  .plate .lv{font-size:8px; letter-spacing:.26em; color:#5c3f12; font-weight:800;}
+  .plate .nm{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:800; font-size:clamp(13px,3.9vw,16px); letter-spacing:.1em; color:#241811;}
+  .fRow.me .plate{border-left-color:var(--blue); min-width:7.5em;}
+  .hpWrap{flex:1;}
+  .hpBar{height:13px; background:#120b07; border:1.5px solid var(--brassD); overflow:hidden;}
+  .hpFill{height:100%; width:100%; background:linear-gradient(90deg,var(--crim2),var(--crim)); transition:width .35s ease;}
+  .fRow.me .hpFill{background:linear-gradient(90deg,var(--blue2),var(--blue));}
+  .hpNum{font-size:9px; color:var(--faint); font-variant-numeric:tabular-nums; letter-spacing:.1em; text-align:right; margin-top:2px;}
+
+  #timerLine{height:5px; margin:7px 12px 0; background:#120b07; border:1px solid #4a3a26;}
+  #timerBar{height:100%; background:linear-gradient(90deg,var(--brass),var(--crim)); transform-origin:left; transition:none;}
+
+  /* ---- 証言 ---- */
+  #stage{flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; padding:14px 12px 10px; gap:9px;}
+  #enemySay{
+    background:linear-gradient(180deg,#f5edd9,var(--parch) 30%,var(--parch2));
+    color:var(--pInk);
+    border:1.5px solid #574733; border-top:4px solid var(--crim);
+    box-shadow:0 6px 16px rgba(0,0,0,.45);
+    padding:20px 15px 14px;
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-size:clamp(16px,4.7vw,21px); line-height:2.25; font-weight:600;
+    position:relative;
+  }
+  #enemySay::before{
+    content:"証 言"; position:absolute; top:-11px; left:12px;
+    background:var(--crim); color:#f6ead9;
+    font-family:"Hiragino Kaku Gothic ProN",sans-serif;
+    font-size:10px; letter-spacing:.34em; font-weight:800;
+    padding:3px 10px 2px 13px; line-height:1;
+  }
+  .seg{
+    padding:3px 1px; cursor:pointer;
+    border-bottom:2px dotted #a5967a;
+    transition:background .15s;
+  }
+  .seg:active{background:rgba(176,42,55,.1);}
+  .seg.hit{
+    background:rgba(176,42,55,.13);
+    border-bottom:4px double var(--crim);
+  }
+  .seg.miss{opacity:.42; text-decoration:line-through; border-bottom-color:transparent;}
+  .seg.answer{
+    border:2px solid var(--crim); border-radius:16px; padding:1px 5px;
+    border-bottom-style:solid;
+  }
+  .seg.locked{cursor:default;}
+  #prompt{
+    text-align:center; font-size:clamp(11px,3.2vw,13px); color:var(--dim); min-height:1.6em;
+  }
+  #prompt b{color:var(--brassL);}
+  #quizBox{display:none; flex-direction:column; gap:8px; align-items:center;}
+  #quizBox .qTitle{font-size:clamp(11px,3.3vw,13px); color:var(--txt);}
+  #quizBox .qTitle b{color:var(--brassL);}
+  #quizBox .qBtns{display:flex; gap:9px; flex-wrap:wrap; justify-content:center;}
+  .keyBtn{
+    color:var(--pInk); background:linear-gradient(180deg,#f5edd9,var(--parch2));
+    border:1.5px solid #574733; border-bottom:4px solid #574733; border-radius:6px;
+    padding:10px 14px; min-height:48px; cursor:pointer;
+    font-weight:800; font-size:clamp(12px,3.5vw,14px);
+  }
+  .keyBtn:active{transform:translateY(2px); border-bottom-width:2px;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  .shake{animation:shake .3s ease;}
+
+  #explain{
+    display:none; background:linear-gradient(180deg,#f5edd9,var(--parch2));
+    color:var(--pInk);
+    border:1.5px solid #574733; border-left:5px solid var(--brass);
+    box-shadow:0 5px 14px rgba(0,0,0,.4);
+    padding:12px 14px; font-size:clamp(12px,3.4vw,14px); line-height:1.85;
+  }
+  #explain .cat{
+    display:inline-block; background:var(--crim); color:#f6ead9;
+    font-weight:800; font-size:clamp(10px,3vw,12px);
+    padding:3px 10px; margin-bottom:6px; letter-spacing:.12em;
+  }
+  #explain button{
+    display:block; margin:10px auto 0;
+    font-family:"Hiragino Mincho ProN",serif; font-weight:800; letter-spacing:.2em;
+    background:var(--crim); color:#f6ead9; border:none; border-bottom:4px solid var(--crim2);
+    clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
+    padding:10px 30px; min-height:46px; cursor:pointer; font-size:clamp(13px,3.8vw,15px);
+  }
+  #explain button:active{transform:translateY(2px); border-bottom-width:2px;}
+
+  footer{
+    display:flex; gap:8px; align-items:center; justify-content:space-between;
+    padding:7px 14px calc(9px + env(safe-area-inset-bottom));
+    border-top:2px solid var(--brassD); background:rgba(10,6,4,.55);
+  }
+  footer .fCell{text-align:center;}
+  footer .k{display:block; font-size:8px; letter-spacing:.3em; color:var(--faint); font-weight:800;}
+  footer b{font-variant-numeric:tabular-nums; font-size:clamp(14px,4vw,18px);}
+  #fCombo b{color:var(--brassL);}
+  #fCombo.hot b{color:#ff8a70;}
+  .quitBtn{min-height:40px;padding:6px 10px;border:1px solid #65543c;background:transparent;color:var(--dim);font-weight:800;cursor:pointer;letter-spacing:.08em;}
+  .quitBtn.armed{color:#fff0dc;border-color:var(--crim);background:var(--crim2);}
+
+  /* ---- 異議あり演出 ---- */
+  #flash{
+    position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center;
+    pointer-events:none;
+  }
+  #flash .stampBig{
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:800;
+    font-size:clamp(42px,14vw,92px); letter-spacing:.14em; line-height:1;
+    color:#f6ead9; background:var(--crim);
+    border:4px solid #f6ead9; outline:4px solid var(--crim);
+    padding:.18em .5em; transform:rotate(-4deg);
+    box-shadow:0 14px 40px rgba(0,0,0,.6);
+    animation:slam .5s cubic-bezier(.2,2,.4,1);
+  }
+  #flash.self .stampBig{background:#3d4654; outline-color:#3d4654;}
+  #flash.perfect .stampBig{
+    background:linear-gradient(180deg,var(--brassL),var(--brass));
+    color:#241811; border-color:#241811; outline-color:var(--brass);
+  }
+  @keyframes slam{0%{transform:scale(2.4) rotate(-4deg); opacity:0}60%{transform:scale(.96) rotate(-4deg); opacity:1}100%{transform:scale(1) rotate(-4deg)}}
+  .shakeBody{animation:bshake .3s ease;}
+  @keyframes bshake{0%,100%{transform:translate(0)}25%{transform:translate(-6px,2px)}75%{transform:translate(6px,-2px)}}
+
+  /* ---- オーバーレイ ---- */
+  .overlay{position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; background:rgba(10,6,3,.9); padding:16px;}
+  .overlay.hidden{display:none;}
+  .panel{
+    background:
+      repeating-linear-gradient(90deg, var(--line) 0 2px, transparent 2px 14px),
+      linear-gradient(180deg, #33241664, transparent 40%),
+      var(--pnl);
+    border:3px double var(--brass);
+    box-shadow:0 12px 34px rgba(0,0,0,.55);
+    max-width:540px; width:100%; max-height:88dvh; overflow-y:auto;
+    padding:24px 20px; position:relative;
+  }
+  .panel > *{position:relative;}
+  .bigBtn{
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-weight:800; font-size:clamp(15px,4.2vw,18px); letter-spacing:.24em;
+    background:var(--crim); color:#f6ead9;
+    border:none; border-bottom:4px solid var(--crim2);
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,0 100%);
+    padding:13px 32px; margin-top:14px; cursor:pointer; min-height:52px;
+  }
+  .bigBtn:active{transform:translateY(2px); border-bottom-width:2px;}
+  .bigBtn.gray{background:#40362a; color:var(--txt); border-bottom-color:#1a130c; font-family:inherit; letter-spacing:.1em;}
+
+  .heroStamp{display:flex; justify-content:center; margin:8px 0 2px;}
+  .heroStamp .stampBox{
+    background:var(--crim); color:#f6ead9; border:3px solid #f6ead9;
+    outline:3px solid var(--crim); border-radius:0;
+    font-size:clamp(34px,11vw,54px); padding:.2em .5em; letter-spacing:.14em;
+    transform:rotate(-4deg);
+    box-shadow:0 10px 30px rgba(0,0,0,.5);
+  }
+  .heroTitle{text-align:center;}
+  .heroTitle .en{font-weight:900; font-size:clamp(19px,6vw,28px); letter-spacing:.18em; margin-top:18px;}
+  .heroTitle .en b{color:var(--brassL);}
+  .heroTitle .tag2{font-size:clamp(11px,3.4vw,13px); color:var(--dim); margin-top:10px; letter-spacing:.26em;}
+  .heroRule{height:4px; margin:14px auto 0; max-width:280px;
+    background:repeating-linear-gradient(-55deg, var(--crim) 0 11px, var(--brass) 11px 22px, transparent 22px 34px);}
+  .catStrip{display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:12px;}
+  .catStrip span{font-size:9px; letter-spacing:.1em; color:var(--dim); border:1px solid #4a3a26; padding:3px 9px;}
+
+  .vsPlate{
+    background:#191009; border:1.5px solid var(--brassD); border-top:4px solid var(--crim);
+    box-shadow:0 8px 20px rgba(0,0,0,.5);
+    padding:14px 18px; margin:12px auto 4px; max-width:340px; text-align:left;
+  }
+  .vsPlate .lv{font-size:9px; letter-spacing:.3em; color:var(--brassL); font-weight:800;}
+  .vsPlate .nm{font-family:"Hiragino Mincho ProN",serif; font-weight:800; font-size:clamp(19px,6vw,26px); letter-spacing:.12em;}
+  .vsPlate .qt{font-size:clamp(11px,3.3vw,13px); color:var(--dim); margin-top:6px; line-height:1.8;}
+  .vsPlate .st{font-size:10px; color:var(--faint); margin-top:6px; letter-spacing:.1em;}
+
+  .danRow{display:flex; align-items:baseline; justify-content:center; gap:12px;
+    font-size:9px; letter-spacing:.46em; color:var(--faint); font-weight:800; margin:2px 0 8px;}
+  .danL{font-family:"Hiragino Mincho ProN",serif; font-size:clamp(36px,11vw,52px); line-height:1.25; font-weight:800; color:var(--brassL); letter-spacing:.12em;}
+  .scoreRow{display:flex; justify-content:space-between; border-bottom:1px dashed #4a3a26; padding:8px 4px; font-size:clamp(12px,3.7vw,15px); color:var(--dim);}
+  .scoreRow b{font-variant-numeric:tabular-nums; color:var(--txt);}
+  .total{font-family:"Hiragino Mincho ProN",serif; font-size:clamp(30px,10vw,46px); font-weight:800; color:var(--brassL); font-variant-numeric:tabular-nums; margin:10px 0 2px; text-align:center;}
+  .total small{font-size:.32em; letter-spacing:.3em; color:var(--dim); font-weight:700;}
+  .newRec{
+    display:inline-block; background:var(--crim); color:#f6ead9;
+    font-family:"Hiragino Mincho ProN",serif; font-weight:800;
+    font-size:clamp(11px,3.4vw,13px); letter-spacing:.26em;
+    padding:5px 14px; margin-top:8px;
+    clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);
+  }
+  .btnRow{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:8px;}
+  .center{text-align:center;}
+  /* ---- UI polish / accessibility ---- */
+  header{padding-top:calc(10px + env(safe-area-inset-top));}
+  .overlay{backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);}
+  .panel{border-radius:9px;box-shadow:0 22px 70px rgba(0,0,0,.68);scrollbar-width:thin;scrollbar-color:var(--brass) transparent;}
+  .seg,.keyBtn,.bigBtn,.quitBtn,#explain button{transition:transform .15s ease,filter .15s ease,background-color .15s ease;}
+  .seg:hover:not(.locked){background:rgba(176,42,55,.1);}
+  .keyBtn:hover,.bigBtn:hover,#explain button:hover{filter:brightness(1.1);}
+  .seg:focus-visible{outline:3px solid var(--crim);outline-offset:3px;border-radius:3px;}
+  .keyBtn:focus-visible,.quitBtn:focus-visible{outline:3px solid var(--brassL);outline-offset:2px;}
+  @media (min-width:900px){
+    #battleHud,#stage,#timerLine{max-width:900px;width:calc(100% - 32px);margin-inline:auto;}
+    footer{justify-content:center;gap:42px;}
+    #enemySay{padding:28px 24px 20px;font-size:22px;}
+  }
+  @media (max-width:520px){
+    .manabiBar span{display:none;}
+    .panel{padding:20px 14px;max-height:93dvh;}
+    #battleHud{padding-inline:8px;}
+    .plate{padding:5px 8px;min-width:7.8em;}
+    footer{gap:5px;padding-inline:8px;}
+    footer .k{font-size:7px;letter-spacing:.18em;}
+    .quitBtn{padding-inline:7px;font-size:11px;}
+  }
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+<script src="https://backtree-create.github.io/ManabiBox/config.js"></script>
+<script src="https://backtree-create.github.io/ManabiBox/hub-progress.js"></script>
+<script src="https://backtree-create.github.io/ManabiBox/manabi-connect.js"></script>
+</head>
+<body>
+
+<div class="manabiBar"><a id="manabi-back" href="https://backtree-create.github.io/ManabiBox/">ManabiBox ホーム</a><span>進捗とベストスコアを自動送信</span></div>
+
+<div>
+<header>
+  <div class="logo">
+    <span class="stampBox min">法</span>
+    <span class="t">
+      <span class="en">RESBA <b>RESPONSE</b></span>
+      <span class="jp">レスバ・レスポンス</span>
+    </span>
+  </div>
+  <div class="hud">
+    <div class="pill"><span class="k">証人攻略</span><b id="hudKO">0</b></div>
+  </div>
+</header>
+<div id="ruleBar"></div>
+</div>
+
+<div id="battleHud">
+  <div class="fRow">
+    <div class="plate">
+      <div class="lv" id="enemyLv">WITNESS</div>
+      <div class="nm min" id="enemyName">———</div>
+    </div>
+    <div class="hpWrap">
+      <div class="hpBar"><div class="hpFill" id="enemyHp"></div></div>
+      <div class="hpNum" id="enemyHpNum"></div>
+    </div>
+  </div>
+  <div class="fRow me">
+    <div class="plate">
+      <div class="lv" style="color:#1c3a63">COUNSEL ── 弁護人</div>
+      <div class="nm min">あなた</div>
+    </div>
+    <div class="hpWrap">
+      <div class="hpBar"><div class="hpFill" id="myHp"></div></div>
+      <div class="hpNum" id="myHpNum"></div>
+    </div>
+  </div>
+</div>
+
+<div id="timerLine"><div id="timerBar"></div></div>
+
+<div id="stage">
+  <div id="enemySay" class="min" aria-live="polite"></div>
+  <div id="prompt" aria-live="polite">証言の<b>破綻している部分</b>をタップして異議を唱えろ</div>
+  <div id="quizBox">
+    <div class="qTitle">ボーナス：この破綻の<b>種類</b>は？</div>
+    <div class="qBtns" id="quizBtns"></div>
+  </div>
+  <div id="explain"></div>
+</div>
+
+<footer>
+  <div class="fCell"><span class="k">SCORE</span><b id="fScore">0</b></div>
+  <div class="fCell" id="fCombo"><span class="k">COMBO</span><b id="fComboV">0</b></div>
+  <div class="fCell"><span class="k">異議成立</span><b id="fWin">0</b></div>
+  <div class="fCell"><span class="k">最速</span><b id="fFast">—</b></div>
+  <button class="quitBtn" id="btnQuit" type="button">退廷</button>
+</footer>
+
+<div id="flash"><span class="stampBig" id="flashTxt">異議あり!!</span></div>
+
+<!-- タイトル -->
+<div class="overlay" id="ovTitle" role="dialog" aria-modal="true" aria-label="レスバ・レスポンス タイトル">
+  <div class="panel center">
+    <div class="heroStamp"><span class="stampBox min">異議あり!!</span></div>
+    <div class="heroTitle">
+      <div class="en">RESBA <b>RESPONSE</b></div>
+      <div class="tag2">── 言葉の法廷。その証言は、破綻している ──</div>
+    </div>
+    <div class="heroRule"></div>
+    <p style="font-size:clamp(11px,3.3vw,13px);color:var(--dim);line-height:2;margin:14px 0 0">
+      証人の発言には、必ず一か所ほころびがある。<br>
+      発言時間内にその部分をタップして<b class="min" style="color:var(--txt)">異議を唱えろ</b>。<br>
+      早いほど証言はくずれる。種類まで見抜けば<b class="min" style="color:var(--brassL)">論証成立</b>。</p>
+    <div class="catStrip">
+      <span>主語と述語のねじれ</span><span>接続詞の誤用</span><span>呼応の乱れ</span>
+      <span>重複表現</span><span>敬語の誤り</span><span>論理の飛躍</span><span>ずるい論法</span>
+    </div>
+    <button class="bigBtn" id="btnStart">開廷する</button>
+    <p id="bestLine" style="font-size:10px;color:var(--faint);letter-spacing:.1em;margin-top:12px"></p>
+  </div>
+</div>
+
+<!-- 対戦相手登場 -->
+<div class="overlay hidden" id="ovVs">
+  <div class="panel center">
+    <p style="font-size:9px;letter-spacing:.46em;color:var(--faint);font-weight:800;margin:0">NEXT WITNESS ── 証人入廷</p>
+    <div class="vsPlate">
+      <div class="lv" id="vsLv"></div>
+      <div class="nm" id="vsName"></div>
+      <div class="qt min" id="vsQuote"></div>
+      <div class="st" id="vsStat"></div>
+    </div>
+    <button class="bigBtn" id="btnFight">尋問開始</button>
+  </div>
+</div>
+
+<!-- 結果 -->
+<div class="overlay hidden" id="ovResult">
+  <div class="panel center">
+    <p style="font-size:9px;letter-spacing:.46em;color:var(--faint);font-weight:800;margin:0 0 4px">VERDICT ── 判決・称号認定</p>
+    <div class="danRow"><span class="danL" id="resDan"></span></div>
+    <div class="scoreRow"><span>攻略した証人</span><b id="resKO"></b></div>
+    <div class="scoreRow"><span>異議成立の数</span><b id="resWin"></b></div>
+    <div class="scoreRow"><span>論証成立（種類まで正解）</span><b id="resPerfect"></b></div>
+    <div class="scoreRow"><span>最大コンボ</span><b id="resCombo"></b></div>
+    <div class="scoreRow"><span>最速レス</span><b id="resFast"></b></div>
+    <div class="total"><span id="resScore"></span><small> PTS</small></div>
+    <div><span class="newRec" id="resRec" style="display:none">記録更新</span></div>
+    <div class="btnRow">
+      <button class="bigBtn" id="btnAgain">再び開廷</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var mem={};
+var store={
+  get:function(k,d){try{var v=localStorage.getItem(k);return v!==null?JSON.parse(v):d;}catch(e){return (k in mem)?mem[k]:d;}},
+  set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} mem[k]=v;}
+};
+var AC=null;
+function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=t||"square";o.frequency.value=f;g.gain.value=v||0.06;g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.12));o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+(d||0.12));}catch(e){}}
+function el(id){return document.getElementById(id);}
+
+/* ---------- 問題データ 73問 ---------- */
+var Q=[
+ // 主語と述語のねじれ
+ {tier:1,type:"主語と述語のねじれ",segs:["ぼくの将来の夢は、","医者になって","多くの人を助けたいです。"],f:2,fix:"「夢は」で始めたら「〜助けることです」で受ける。「夢は…助けたい」は主語と述語がかみ合っていない。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["この本の魅力は、","登場人物の心情が","ていねいに描かれています。"],f:2,fix:"「魅力は」→「描かれている点です」と受ける。「魅力は…描かれています」ではねじれている。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["私の目標は、","毎日欠かさず","勉強をがんばりたいです。"],f:2,fix:"「目標は」→「がんばることです」。主語「目標は」に対して述語「がんばりたい」が対応していない。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["委員会の役割は、","学校生活を","よりよく改善します。"],f:2,fix:"「役割は」→「改善することです」と受ける必要がある。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["私が言いたいのは、","全員で協力すれば","文化祭は成功するだろう。"],f:2,fix:"「言いたいのは」→「〜成功するということだ」。文末が言い切りのままではねじれる。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["この物語のテーマは、","あきらめない心が","大切だと教えてくれます。"],f:2,fix:"「テーマは」→「大切だということです」。「テーマは…教えてくれます」ではかみ合わない。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["私の日課は、","朝起きてすぐ","犬の散歩に行きます。"],f:2,fix:"「日課は」→「行くことです」と受ける。「日課は…行きます」はねじれ。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["先生の教えは、","どんな時でも","あいさつを忘れません。"],f:2,fix:"「教えは」→「忘れないこと（忘れるなということ）だ」と受ける必要がある。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["この写真を見て感じたことは、","自然を大切に","しなければならない。"],f:2,fix:"「感じたことは」→「〜しなければならないということです」で受ける。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["ぼくの特技は、","どんな曲でも","ピアノですぐ弾けます。"],f:2,fix:"「特技は」→「弾けることです」と受ける。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["大切なのは、","最後まで","あきらめません。"],f:2,fix:"「大切なのは」→「あきらめないことだ」と受ける。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["この標語の目的は、","校内の事故を","減らします。"],f:2,fix:"「目的は」→「減らすことです」と受ける。"},
+ // 接続詞の誤用
+ {tier:1,type:"接続詞の誤用",segs:["昨日は朝から大雨だった。","だから、","傘を持たずに出かけた。"],f:1,fix:"前後が逆の関係なので、順接「だから」ではなく逆接「しかし」が正しい。"},
+ {tier:1,type:"接続詞の誤用",segs:["彼は毎日欠かさず練習した。","しかし、","大会で優勝できた。"],f:1,fix:"努力→優勝は自然な流れ（順接）。「しかし」ではなく「だから」「その結果」。"},
+ {tier:1,type:"接続詞の誤用",segs:["やっと宿題が終わった。","なぜなら、","思いきり遊んだ。"],f:1,fix:"「なぜなら」の後には理由が来るはず。ここは「そこで」「だから」が正しい。"},
+ {tier:1,type:"接続詞の誤用",segs:["彼女はクラスで一番足が速い。","それとも、","リレーの選手に選ばれた。"],f:1,fix:"「それとも」は選択に使う接続詞。ここは順接「だから」が正しい。"},
+ {tier:2,type:"接続詞の誤用",segs:["このかばんはとても軽い。","つまり、","長時間背負っても疲れにくい。"],f:1,fix:"「つまり」は言い換えに使う。軽い→疲れにくい は理由と結果なので「だから」「そのため」。"},
+ {tier:1,type:"接続詞の誤用",segs:["テスト勉強を全くしなかった。","それゆえ、","テストは満点だった。"],f:1,fix:"勉強しなかった→満点 は逆の関係。「それゆえ」ではなく「それなのに」「しかし」。"},
+ {tier:2,type:"接続詞の誤用",segs:["彼は足をけがしている。","さらに、","最後まで試合に出続けた。"],f:1,fix:"「さらに」は追加のときに使う。ここは逆接の「それでも」「それなのに」が正しい。"},
+ {tier:2,type:"接続詞の誤用",segs:["今日は道が凍っている。","ところで、","転ばないように気をつけよう。"],f:1,fix:"「ところで」は話題を変えるときの言葉。ここは順接の「だから」が正しい。"},
+ {tier:2,type:"接続詞の誤用",segs:["野菜は体にとても良い。","もしくは、","毎日食べた方がいい。"],f:1,fix:"「もしくは」は選択に使う。理由→すすめ の流れなので「だから」が正しい。"},
+ {tier:1,type:"接続詞の誤用",segs:["昨日は夜ふかしをした。","したがって、","朝すっきり起きられた。"],f:1,fix:"逆の内容が続いているので「したがって」ではなく「それなのに」「しかし」。"},
+ {tier:2,type:"接続詞の誤用",segs:["彼はまだ初心者だ。","だから、","経験者より上手に弾けた。"],f:1,fix:"初心者なのに上手＝逆接。「それなのに」が正しい。"},
+ {tier:2,type:"接続詞の誤用",segs:["雨がやんだ。","ただし、","試合を再開しよう。"],f:1,fix:"「ただし」は条件をつけ足す言葉。ここは「だから」「それでは」が正しい。"},
+ {tier:3,type:"接続詞の誤用",segs:["このきのこは食用だ。","すなわち、","よく似た毒きのこもあるので注意。"],f:1,fix:"「すなわち」は言い換えに使う。注意をつけ足すなら「ただし」が正しい。"},
+ // 呼応の乱れ
+ {tier:2,type:"呼応の乱れ",segs:["彼は決して、","うそをつく","人だ。"],f:2,fix:"「決して」は「〜ない」と呼応する。「決してうそをつかない人だ」が正しい。"},
+ {tier:2,type:"呼応の乱れ",segs:["まさか彼が","優勝するとは","思った。"],f:2,fix:"「まさか」は「〜とは思わなかった」と呼応する。"},
+ {tier:2,type:"呼応の乱れ",segs:["もし明日","雨が降ったので、","試合は中止になる。"],f:1,fix:"「もし」は「〜たら／〜れば」と呼応する。「もし雨が降ったら」が正しい。"},
+ {tier:2,type:"呼応の乱れ",segs:["今日の宿題は","ぜんぜん","終わった。"],f:1,fix:"「ぜんぜん」は打ち消し「〜ない」と呼応する（書き言葉では）。「ぜんぜん終わらない」など。"},
+ {tier:2,type:"呼応の乱れ",segs:["たとえ雨が","降ったから、","遠足は行われる。"],f:1,fix:"「たとえ」は「〜ても」と呼応する。「たとえ雨が降っても」が正しい。"},
+ {tier:2,type:"呼応の乱れ",segs:["彼の走りは","まるでチーターの","速さだ。"],f:2,fix:"「まるで」は「〜のようだ」と呼応する。「速さのようだ」が正しい。"},
+ {tier:2,type:"呼応の乱れ",segs:["おそらく明日は","雨が","降った。"],f:2,fix:"「おそらく」は推量「〜だろう」と呼応する。「降るだろう」が正しい。"},
+ {tier:3,type:"呼応の乱れ",segs:["この勝負、","決して","あきらめてもいい。"],f:2,fix:"「決して」は打ち消しと呼応する。「決してあきらめてはいけない」。"},
+ {tier:3,type:"呼応の乱れ",segs:["もしかすると","彼は天才に","ちがいない。"],f:2,fix:"「もしかすると」は「〜かもしれない」と呼応する。断定の「ちがいない」とは合わない。"},
+ // 重複表現
+ {tier:1,type:"重複表現",segs:["頭痛が","痛いので、","保健室に行きたい。"],f:0,fix:"「頭痛」にはすでに「痛い」が含まれている。「頭が痛いので」が正しい。"},
+ {tier:2,type:"重複表現",segs:["この作戦が","いちばんベストな","方法だと思う。"],f:1,fix:"「ベスト」はもともと「いちばん良い」という意味。重ねると重複になる。"},
+ {tier:2,type:"重複表現",segs:["今そんな態度だと、","あとで後悔しても","知らないよ。"],f:1,fix:"「後悔」は「あとで悔やむ」こと。「あとで」と重ねると重複になる。"},
+ {tier:2,type:"重複表現",segs:["彼は","馬から落馬して","けがをした。"],f:1,fix:"「落馬」は「馬から落ちる」こと。「馬から」と重ねると重複になる。"},
+ {tier:1,type:"重複表現",segs:["今の現状では、","この作戦で","勝つのは難しい。"],f:0,fix:"「現状」に「今の」の意味が含まれている。「現状では」だけでよい。"},
+ {tier:1,type:"重複表現",segs:["この絵は","まだ未完成の","作品だ。"],f:1,fix:"「未完成」に「まだ完成していない」の意味が含まれる。「まだ」は不要。"},
+ {tier:2,type:"重複表現",segs:["現時点では","はっきりと明言は","できない。"],f:1,fix:"「明言」＝はっきり言うこと。「はっきりと」を重ねると重複になる。"},
+ {tier:2,type:"重複表現",segs:["彼が","一番最初に","ゴールした。"],f:1,fix:"「最初」は一つしかない。「一番」を重ねると重複になる。"},
+ // 敬語の誤り
+ {tier:2,type:"敬語の誤り",segs:["先生が","申された","通りにやってみます。"],f:1,fix:"「申す」は自分がへりくだる謙譲語。先生の動作には尊敬語「おっしゃった」を使う。"},
+ {tier:2,type:"敬語の誤り",segs:["まもなく","お客様が","参られます。"],f:2,fix:"「参る」は謙譲語。お客様の動作には尊敬語「いらっしゃいます」を使う。"},
+ {tier:2,type:"敬語の誤り",segs:["校長先生が","おっしゃられた","お話を紹介します。"],f:1,fix:"「おっしゃる」＋「〜れる」は二重敬語。「おっしゃった」で十分。"},
+ {tier:2,type:"敬語の誤り",segs:["先生、","ご苦労さまです。","今日もよろしくお願いします。"],f:1,fix:"「ご苦労さま」は目上から目下へのねぎらい。目上には「お疲れさまです」などを使う。"},
+ {tier:3,type:"敬語の誤り",segs:["こちらの資料を","どうぞいただいて","ください。"],f:1,fix:"「いただく」は自分の謙譲語。相手にすすめるなら「お受け取りください」。"},
+ {tier:3,type:"敬語の誤り",segs:["私の母が","そうおっしゃって","いました。"],f:1,fix:"身内の動作に尊敬語は使わない。外の人に話すときは「申しておりました」。"},
+ // 論理の飛躍
+ {tier:2,type:"論理の飛躍",segs:["今朝は好物のパンを食べた。","だから","今日のテストは満点のはずだ。"],f:2,fix:"パンを食べたことと満点には何のつながりもない。根拠と結論が飛躍している。"},
+ {tier:2,type:"論理の飛躍",segs:["クラスの3人が賛成してくれた。","よって","全校生徒が賛成していると言える。"],f:2,fix:"たった3人の意見から全体を決めつけるのは「早まった一般化」。"},
+ {tier:2,type:"論理の飛躍",segs:["あの店はいつも行列ができている。","したがって","日本一おいしい店にちがいない。"],f:2,fix:"行列＝人気の可能性はあるが、「日本一おいしい」とまでは言えない。結論が飛びすぎ。"},
+ {tier:2,type:"論理の飛躍",segs:["彼は昨日図書館にいた。","ということは","本を破った犯人は彼で決まりだ。"],f:2,fix:"「その場にいた」だけでは証拠にならない。可能性と断定を混同している。"},
+ {tier:3,type:"論理の飛躍",segs:["ゲームをした直後に","雨が降り出した。","つまりゲームが雨を降らせたのだ。"],f:2,fix:"「後に起きた」ことを「原因だ」と思い込む誤り。順番と因果は別物。"},
+ {tier:2,type:"論理の飛躍",segs:["宿題を忘れた人が2人いた。","つまり","このクラスは全員やる気がない。"],f:2,fix:"2人の例からクラス全員を決めつけるのは「早まった一般化」。"},
+ {tier:3,type:"論理の飛躍",segs:["昨日カレーを食べたら","その夜ぐっすり眠れた。","よってカレーは睡眠に効く食べ物だ。"],f:2,fix:"1回の偶然を因果関係と決めつけている。「後に起きた」＝「原因」ではない。"},
+ {tier:2,type:"論理の飛躍",segs:["1回戦で勝った。","つまり","優勝は決まったようなものだ。"],f:2,fix:"1勝しただけで優勝と結論づけるのは飛躍。まだ何試合も残っている。"},
+ {tier:3,type:"論理の飛躍",segs:["兄は数学が得意だ。","だから","弟の彼も数学が得意なはずだ。"],f:2,fix:"家族が得意でも本人が得意とは限らない。人はそれぞれ別。"},
+ {tier:3,type:"論理の飛躍",segs:["お守りを買った日に","テストで満点を取れた。","よってお守りには確かな効果がある。"],f:2,fix:"偶然の一致を因果関係と決めつけている。効果を言うには比較や検証が必要。"},
+ // ずるい論法
+ {tier:3,type:"ずるい論法（多数派への訴え）",segs:["みんなが持っているから、","スマホは","中学生に絶対必要と言える。"],f:0,fix:"「みんなが〜だから正しい」は根拠にならない。必要かどうかは理由で示すべき。"},
+ {tier:3,type:"ずるい論法（権威への訴え）",segs:["有名な人がすすめていたので、","この健康法は","何があっても正しい。"],f:0,fix:"有名人が言った＝正しい、ではない。「何があっても」と言い切るのも危険。"},
+ {tier:3,type:"ずるい論法（人格攻撃）",segs:["この計画に反対する人は、","どうせ努力がきらいなだけだ。","だから意見を聞く必要はない。"],f:1,fix:"意見の中身ではなく相手の人格を攻撃している。反論になっていない。"},
+ {tier:3,type:"ずるい論法（循環論法）",segs:["宿題は減らすべきだ。","なぜなら、","宿題は減らした方がいいからだ。"],f:2,fix:"理由が主張のくり返しになっている（循環論法）。理由には別の根拠が必要。"},
+ {tier:3,type:"ずるい論法（論点のすり替え）",segs:["ろうかを走った件について","聞いているのに、","でも君だって昨日走ってたよね。"],f:2,fix:"「お前だって」と相手の話にすり替えて、自分の行いへの答えから逃げている。"},
+ {tier:3,type:"ずるい論法（循環論法）",segs:["この参考書を使えば","必ず合格できる。","なぜなら絶対に落ちないからだ。"],f:2,fix:"理由が主張の言い換えになっているだけ（循環論法）。別の根拠が必要。"},
+ {tier:3,type:"ずるい論法（反論封じ）",segs:["この案に反対するなら、","完ぺきな代案を","出してから言うべきだ。"],f:1,fix:"代案がなくても、問題点の指摘には意味がある。「完ぺきな代案」を要求して反論を封じるのはずるい。"},
+ {tier:3,type:"ずるい論法（極端なすり替え）",segs:["ゲームを少し許すなら、","勉強を全部やめても","いいと言っているのと同じだ。"],f:2,fix:"「少し許す」を「全部やめてもいい」に極端化してすり替えている（わら人形論法）。"},
+ {tier:3,type:"ずるい論法（関係ない指摘）",segs:["あの人は字が下手だ。","だから","言っていることも間違っている。"],f:2,fix:"字の上手下手と主張の正しさは無関係。中身で判断すべき。"},
+ {tier:3,type:"ずるい論法（多数派への訴え）",segs:["みんなが塾に通っているのだから、","塾に行かないという選択は","まちがいだと言える。"],f:2,fix:"「みんながそうだから」は正しさの根拠にならない。必要かどうかは本人の状況で決まる。"},
+ {tier:3,type:"ずるい論法（偽の二択）",segs:["この案に賛成しないなら、","君は私の敵だと","いうことになる。"],f:1,fix:"賛成か敵かの二択に見せかけている。中立や別の意見もありうる。"},
+ {tier:3,type:"ずるい論法（感情への訴え）",segs:["私はこんなに","がんばったのだから、","この答えは正解にすべきだ。"],f:2,fix:"努力したかどうかと、答えの正誤は別の問題。"},
+ {tier:3,type:"ずるい論法（伝統への訴え）",segs:["昔からずっとこのやり方だから、","これが正しいに","決まっている。"],f:0,fix:"「昔からそうだ」は正しさの根拠にならない。理由で示すべき。"},
+ {tier:3,type:"ずるい論法（無知への訴え）",segs:["幽霊がいないと","証明できた人はいない。","だから幽霊は存在するのだ。"],f:2,fix:"「否定の証明がない」ことは「存在する」証拠にならない。"},
+ {tier:3,type:"ずるい論法（数字のトリック）",segs:["事故の多くは家の近くで起きている。","だから遠くへ出かけるほうが","安全だと言える。"],f:1,fix:"そもそも家の近くを移動する回数が多いだけ。回数の差を無視して割合だけで語っている。"},
+ // ---- 追加：主語と述語のねじれ ----
+ {tier:1,type:"主語と述語のねじれ",segs:["この映画のいいところは、","最後まで","目が離せません。"],f:2,fix:"「いいところは」→「目が離せないところです」と受ける。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["私の長所は、","だれとでもすぐ","仲良くなれます。"],f:2,fix:"「長所は」→「仲良くなれることです」と受ける。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["部活の目標は、","地区大会で","優勝したいです。"],f:2,fix:"「目標は」→「優勝することです」。「目標は…したい」はねじれ。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["この道具の特徴は、","かたづけが","簡単にできます。"],f:2,fix:"「特徴は」→「簡単にできることです」と受ける。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["ぼくの毎朝の習慣は、","起きてすぐ","水を飲みます。"],f:2,fix:"「習慣は」→「水を飲むことです」と受ける。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["驚いたのは、","彼が一人で","全部作りました。"],f:2,fix:"「驚いたのは」→「作ったことです」と受ける。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["遅刻した理由は、","目覚まし時計が","こわれました。"],f:2,fix:"「理由は」→「こわれたからです」と受ける。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["中止の理由は、","グラウンドが","使えません。"],f:2,fix:"「理由は」→「使えないからです」と受ける。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["彼を選んだ理由は、","だれよりも責任感が","あります。"],f:2,fix:"「理由は」→「あるからです」と受ける。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["うれしかったのは、","友達が最後まで","応援してくれます。"],f:2,fix:"「うれしかったのは」→「くれたことです」。時制もかみ合っていない。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["問題は、","連絡が","おくれました。"],f:2,fix:"「問題は」→「おくれたことです」と受ける。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["この祭りの由来は、","昔の人が豊作を","感謝します。"],f:2,fix:"「由来は」→「感謝したことにあります」と受ける。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["ぼくが伝えたいことは、","あいさつの大切さを","知ってほしい。"],f:2,fix:"「伝えたいことは」→「知ってほしいということです」と受ける。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["私の願いは、","家族みんなが","健康で過ごします。"],f:2,fix:"「願いは」→「過ごすことです」と受ける。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["この学級の決まりは、","ろうかを","走りません。"],f:2,fix:"「決まりは」→「走らないことです」と受ける。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["この係の仕事は、","毎朝花に水を","やります。"],f:2,fix:"「仕事は」→「やることです」と受ける。"},
+ {tier:3,type:"主語と述語のねじれ",segs:["先生が強調したのは、","毎日の復習を","欠かさない。"],f:2,fix:"「強調したのは」→「欠かさないことだ」と受ける。"},
+ {tier:3,type:"主語と述語のねじれ",segs:["調査で分かったことは、","若者の読書時間が","減っています。"],f:2,fix:"「分かったことは」→「減っているということです」と受ける。"},
+ {tier:3,type:"主語と述語のねじれ",segs:["大会で学んだのは、","苦しいときこそ仲間を","信じます。"],f:2,fix:"「学んだのは」→「信じることです」と受ける。"},
+ {tier:3,type:"主語と述語のねじれ",segs:["提案の内容は、","校庭にゴミ箱を","増やしてほしい。"],f:2,fix:"「内容は」→「増やすことです」と受ける。"},
+ {tier:1,type:"主語と述語のねじれ",segs:["好きな季節は、","雪あそびが","できます。"],f:2,fix:"「好きな季節は」→「できる冬です」のように季節で受ける必要がある。"},
+ {tier:2,type:"主語と述語のねじれ",segs:["この犬の特徴は、","かみなりを","こわがります。"],f:2,fix:"「特徴は」→「こわがることです」と受ける。"},
+ {tier:3,type:"主語と述語のねじれ",segs:["注意すべき点は、","雨の日は足元が","すべります。"],f:2,fix:"「点は」→「すべりやすいことです」と受ける。"},
+ {tier:3,type:"主語と述語のねじれ",segs:["ぼくの意見は、","朝練の回数を","減らしてほしいです。"],f:2,fix:"「意見は」→「減らすべきだというものです」と受ける。"},
+ // ---- 追加：接続詞の誤用 ----
+ {tier:1,type:"接続詞の誤用",segs:["雨が降り出した。","だから、","かさをささずに歩いた。"],f:1,fix:"降ったのにささない＝逆接。「それでも」「しかし」が正しい。"},
+ {tier:1,type:"接続詞の誤用",segs:["彼は高熱がある。","しかし、","学校を休んだ。"],f:1,fix:"熱→休む は自然な流れ。「だから」が正しい。"},
+ {tier:1,type:"接続詞の誤用",segs:["おなかがいっぱいだ。","それなのに、","デザートは残した。"],f:1,fix:"満腹→残す は自然な流れ。「だから」が正しい。"},
+ {tier:1,type:"接続詞の誤用",segs:["一日も練習を休まなかった。","それなのに、","レギュラーに選ばれた。"],f:1,fix:"努力→選ばれた は順接。「だから」が正しい。"},
+ {tier:1,type:"接続詞の誤用",segs:["兄は犬が大好きだ。","または、","毎日散歩に連れて行く。"],f:1,fix:"「または」は選択。ここは「だから」が正しい。"},
+ {tier:1,type:"接続詞の誤用",segs:["風がとても強い。","なぜなら、","帽子が飛ばされた。"],f:1,fix:"「なぜなら」の後は理由。ここは結果なので「だから」が正しい。"},
+ {tier:2,type:"接続詞の誤用",segs:["彼は絵が得意だ。","ただし、","音楽も得意だ。"],f:1,fix:"つけ加えなので「さらに」「そのうえ」。「ただし」は条件の補足。"},
+ {tier:2,type:"接続詞の誤用",segs:["時間が足りなかった。","そのうえ、","全問解き終えた。"],f:1,fix:"足りない→解けた は逆接。「それでも」が正しい。"},
+ {tier:2,type:"接続詞の誤用",segs:["この薬はよく効く。","つまり、","副作用に注意が必要だ。"],f:1,fix:"「つまり」は言い換え。注意のつけ足しは「ただし」。"},
+ {tier:2,type:"接続詞の誤用",segs:["彼は毎朝走っている。","ようするに、","昨日は雨で走れなかった。"],f:1,fix:"「ようするに」はまとめ。例外をつけ足すなら「もっとも」「ただし」。"},
+ {tier:2,type:"接続詞の誤用",segs:["図書室はとても静かだ。","それとも、","集中して勉強できる。"],f:1,fix:"「それとも」は選択。ここは「だから」が正しい。"},
+ {tier:2,type:"接続詞の誤用",segs:["この靴は歩きやすい。","なぜなら、","デザインもおしゃれだ。"],f:1,fix:"後半は理由ではなく別の長所。「そのうえ」が正しい。"},
+ {tier:2,type:"接続詞の誤用",segs:["発表の準備は完ぺきにした。","すると、","うまく話せるか不安だ。"],f:1,fix:"準備した→それでも不安＝逆接。「それでも」が正しい。"},
+ {tier:2,type:"接続詞の誤用",segs:["水はかぎりある資源だ。","たとえば、","むだづかいはやめよう。"],f:1,fix:"「たとえば」は例を挙げるとき。ここは「だから」が正しい。"},
+ {tier:2,type:"接続詞の誤用",segs:["彼は転んでしまった。","おまけに、","すぐ立ち上がって走った。"],f:1,fix:"「おまけに」は悪いことの追加などに使う。ここは「それでも」。"},
+ {tier:2,type:"接続詞の誤用",segs:["以上で説明を終わります。","ところが、","質問はありますか。"],f:1,fix:"話を次へ進める場面。「それでは」が正しい。"},
+ {tier:3,type:"接続詞の誤用",segs:["彼の主張には根拠がある。","とはいえ、","データもきちんと示されている。"],f:1,fix:"後半は反対ではなく補強。「実際」「そのうえ」が正しい。"},
+ {tier:3,type:"接続詞の誤用",segs:["実験は失敗に終わった。","したがって、","貴重なデータが得られた。"],f:1,fix:"失敗→でも収穫あり＝逆接。「それでも」が正しい。"},
+ {tier:3,type:"接続詞の誤用",segs:["この本は内容が難しい。","要するに、","図が多くて読みやすい。"],f:1,fix:"難しい／読みやすい は対比。「一方で」「ただし」が正しい。"},
+ {tier:3,type:"接続詞の誤用",segs:["彼はその案に反対した。","同様に、","私は賛成した。"],f:1,fix:"反対と賛成は逆。「一方で」が正しい。"},
+ {tier:1,type:"接続詞の誤用",segs:["今朝は大ねぼうした。","けれども、","学校に遅刻した。"],f:1,fix:"ねぼう→遅刻 は順接。「だから」が正しい。"},
+ {tier:2,type:"接続詞の誤用",segs:["野菜がずっと苦手だ。","だから、","残さず食べた。"],f:1,fix:"苦手→でも食べた＝逆接。「それでも」が正しい。"},
+ {tier:2,type:"接続詞の誤用",segs:["空が暗くなってきた。","ゆえに、","洗濯物はそのままにした。"],f:1,fix:"暗い→ふつうは取りこむ。逆の行動なので「それなのに」。"},
+ {tier:3,type:"接続詞の誤用",segs:["彼はもの静かな性格だ。","すなわち、","人前で話すのが大好きだ。"],f:1,fix:"「すなわち」は言い換え。反対の内容なので「しかし」。"},
+ {tier:3,type:"接続詞の誤用",segs:["計画は完ぺきだった。","その結果、","準備不足で失敗した。"],f:1,fix:"完ぺき→準備不足で失敗 は矛盾。「それなのに」「ところが」。"},
+ {tier:3,type:"接続詞の誤用",segs:["練習はとても厳しかった。","にもかかわらず、","全員が大きく力をつけた。"],f:1,fix:"厳しい練習→力がつく は自然な流れ。「その結果」が正しい。"},
+ // ---- 追加：呼応の乱れ ----
+ {tier:2,type:"呼応の乱れ",segs:["まさか君まで","反対する","つもりだ。"],f:2,fix:"「まさか」は「〜とは思わなかった」などと呼応する。"},
+ {tier:2,type:"呼応の乱れ",segs:["たぶん彼は","もう家に","着いた。"],f:2,fix:"「たぶん」は推量「〜だろう」と呼応する。「着いただろう」。"},
+ {tier:2,type:"呼応の乱れ",segs:["どうか私の話を","最後まで","聞いてくれた。"],f:2,fix:"「どうか」はお願い「〜ください」と呼応する。"},
+ {tier:2,type:"呼応の乱れ",segs:["まったく彼の話は","意味が","分かる。"],f:2,fix:"「まったく」は打ち消しと呼応する。「分からない」。"},
+ {tier:2,type:"呼応の乱れ",segs:["今日は","少しも","つかれている。"],f:2,fix:"「少しも」は打ち消しと呼応する。「つかれていない」。"},
+ {tier:2,type:"呼応の乱れ",segs:["よもや彼が","負けるとは","思っていた。"],f:2,fix:"「よもや」は「〜まい」「〜とは思わなかった」と呼応する。"},
+ {tier:2,type:"呼応の乱れ",segs:["ぜひ今度の発表会に","来て","くれました。"],f:2,fix:"「ぜひ」はお願いや意志と呼応する。「来てください」。"},
+ {tier:2,type:"呼応の乱れ",segs:["彼女の手は","まるで氷のように","温かい。"],f:2,fix:"「氷のように」とたとえたなら「冷たい」と続くはず。たとえと結びが合っていない。"},
+ {tier:3,type:"呼応の乱れ",segs:["おそらく彼も","参加する","はずがない。"],f:2,fix:"「おそらく」は推量「〜だろう」と呼応する。強い否定とはかみ合わない。"},
+ {tier:3,type:"呼応の乱れ",segs:["まさに彼こそ","リーダーに","ふさわしくない。"],f:2,fix:"「まさに〜こそ」は強調。打ち消しで受けるとちぐはぐになる。"},
+ {tier:2,type:"呼応の乱れ",segs:["決して二度と","同じ失敗を","くり返す。"],f:2,fix:"「決して」は打ち消しと呼応する。「くり返さない」。"},
+ {tier:2,type:"呼応の乱れ",segs:["とうてい一人では","運べる","重さだ。"],f:2,fix:"「とうてい」は打ち消しと呼応する。「運べない」。"},
+ {tier:2,type:"呼応の乱れ",segs:["この模型は","あたかも","本物だ。"],f:2,fix:"「あたかも」は「〜のようだ」と呼応する。「本物のようだ」。"},
+ {tier:2,type:"呼応の乱れ",segs:["めったに彼は","おこる","人だ。"],f:2,fix:"「めったに」は打ち消しと呼応する。「おこらない人だ」。"},
+ {tier:3,type:"呼応の乱れ",segs:["必ずしも努力が","報われるとは","限る。"],f:2,fix:"「必ずしも」は「〜とは限らない」と呼応する。"},
+ {tier:3,type:"呼応の乱れ",segs:["いまだに事件の真相は","解明","された。"],f:2,fix:"「いまだに」は「〜されていない」など未解決の状態と呼応する。"},
+ {tier:3,type:"呼応の乱れ",segs:["どうして彼が","休んだのか、","だれでも知らない。"],f:2,fix:"打ち消しと呼応するのは「だれも」。「だれも知らない」が正しい。"},
+ {tier:3,type:"呼応の乱れ",segs:["万一雨が","降ったので、","運動会は中止にします。"],f:1,fix:"「万一」は仮定「〜たら」と呼応する。「降ったら」。"},
+ // ---- 追加：重複表現 ----
+ {tier:1,type:"重複表現",segs:["まず最初に、","自己紹介を","します。"],f:0,fix:"「最初」に「まず」の意味が含まれる。「最初に」だけでよい。"},
+ {tier:1,type:"重複表現",segs:["彼からの手紙に","返事を返して","おいた。"],f:1,fix:"「返事」はもともと返すもの。「返事をして」でよい。"},
+ {tier:1,type:"重複表現",segs:["草原を走る","白い白馬に","あこがれる。"],f:1,fix:"「白馬」は白い馬のこと。「白い」を重ねると重複。"},
+ {tier:2,type:"重複表現",segs:["過半数をこえる","賛成で","可決された。"],f:0,fix:"「過半数」＝半数をこえる数。「こえる」を重ねると重複。"},
+ {tier:2,type:"重複表現",segs:["人気店なので席を","あらかじめ予約して","おいた。"],f:1,fix:"「予約」は前もって約束すること。「あらかじめ」は不要。"},
+ {tier:2,type:"重複表現",segs:["この事件は","いまだに未解決の","ままだ。"],f:1,fix:"「未解決」に「まだ」の意味が含まれる。「いまだに」との重複。"},
+ {tier:2,type:"重複表現",segs:["各クラスごとに","目標を決めて","発表しよう。"],f:0,fix:"「各」と「ごと」は同じ意味。「クラスごとに」でよい。"},
+ {tier:2,type:"重複表現",segs:["約10分ほど","休憩を","とります。"],f:0,fix:"「約」と「ほど」はどちらもおおよその意味。どちらか一つでよい。"},
+ {tier:2,type:"重複表現",segs:["集会には","だいたい30人くらいが","集まった。"],f:1,fix:"「だいたい」と「くらい」は同じ働き。どちらか一つでよい。"},
+ {tier:2,type:"重複表現",segs:["電車がゆっくりと","後ろへ後退","した。"],f:1,fix:"「後退」は後ろへ下がること。「後ろへ」は不要。"},
+ {tier:3,type:"重複表現",segs:["この結末には","違和感を感じる","人が多い。"],f:1,fix:"「感」の字が重なる。「違和感を覚える」「違和感がある」が自然。"},
+ {tier:3,type:"重複表現",segs:["元旦の朝に","初日の出を","見た。"],f:0,fix:"「元旦」は元日の朝のこと。「朝」を重ねると重複。"},
+ {tier:3,type:"重複表現",segs:["炎天下のもとで","練習を","続けた。"],f:0,fix:"「下」と「のもと」が重複。「炎天下で」が正しい。"},
+ {tier:3,type:"重複表現",segs:["従来から","この方法で","やってきた。"],f:0,fix:"「従来」＝以前から今まで。「から」を重ねると重複。"},
+ {tier:3,type:"重複表現",segs:["敵は","射程距離に","入った。"],f:1,fix:"「射程」＝弾のとどく距離。「射程内に入った」が正しい。"},
+ {tier:3,type:"重複表現",segs:["明日の授業を","あらかじめ予習","しておこう。"],f:1,fix:"「予習」は前もって学ぶこと。「あらかじめ」は不要。"},
+ // ---- 追加：敬語の誤り ----
+ {tier:2,type:"敬語の誤り",segs:["くわしくは","係の者に","うかがってください。"],f:2,fix:"「うかがう」は自分側の謙譲語。相手には「お聞きください」「おたずねください」。"},
+ {tier:2,type:"敬語の誤り",segs:["先生も","お弁当を","いただきますか。"],f:2,fix:"「いただく」は謙譲語。先生の動作には「召し上がりますか」。"},
+ {tier:2,type:"敬語の誤り",segs:["どうぞ","遠慮なく","拝見してください。"],f:2,fix:"「拝見する」は謙譲語。相手には「ご覧ください」。"},
+ {tier:2,type:"敬語の誤り",segs:["校長先生が","そう申して","いました。"],f:1,fix:"「申す」は謙譲語。校長先生の動作には「おっしゃっていました」。"},
+ {tier:2,type:"敬語の誤り",segs:["先生は","職員室に","おりますか。"],f:2,fix:"「おる」は謙譲語。先生には「いらっしゃいますか」。"},
+ {tier:3,type:"敬語の誤り",segs:["恐れ入りますが","お名前を頂戴","できますか。"],f:1,fix:"名前はもらう物ではない。「お名前をお聞かせいただけますか」など。"},
+ {tier:3,type:"敬語の誤り",segs:["これは先生が","お書きになられた","本です。"],f:1,fix:"「お書きになる」＋「れる」は二重敬語。「お書きになった」で十分。"},
+ {tier:3,type:"敬語の誤り",segs:["お客様が","お見えになられ","ました。"],f:1,fix:"「お見えになる」＋「れる」は二重敬語。「お見えになりました」。"},
+ {tier:2,type:"敬語の誤り",segs:["先生、","おっしゃりたいことが","あります。"],f:1,fix:"自分の動作に尊敬語は使わない。「申し上げたいことがあります」。"},
+ {tier:3,type:"敬語の誤り",segs:["ご注文の品、","おそろいに","なりました。"],f:1,fix:"品物に尊敬語を使っている。「そろいました」でよい。"},
+ {tier:3,type:"敬語の誤り",segs:["こちらの席で","よろしかった","でしょうか。"],f:1,fix:"今のことを過去形にする必要はない。「よろしいでしょうか」。"},
+ {tier:2,type:"敬語の誤り",segs:["卒業式で先生に","花束をあげ","ました。"],f:1,fix:"目上の人には謙譲語「さしあげました」を使う。"},
+ // ---- 追加：論理の飛躍 ----
+ {tier:2,type:"論理の飛躍",segs:["彼は本をたくさん読む。","だから","スポーツは苦手にちがいない。"],f:2,fix:"読書とスポーツに関係はない。勝手なイメージで決めつけている。"},
+ {tier:2,type:"論理の飛躍",segs:["朝ごはんをぬいてしまった。","そのせいで","漢字テストをまちがえたのだ。"],f:1,fix:"本当にそれが原因かは分からない。因果関係の決めつけ。"},
+ {tier:2,type:"論理の飛躍",segs:["となりのクラスは平均点が高い。","つまり","全員が塾に通っているのだ。"],f:2,fix:"平均点から通塾は分からない。根拠のない決めつけ。"},
+ {tier:2,type:"論理の飛躍",segs:["この店は開店前から行列だ。","ということは","値段も安いにちがいない。"],f:2,fix:"行列と値段は別問題。人気の理由は色々ありうる。"},
+ {tier:2,type:"論理の飛躍",segs:["彼女はピアノがうまい。","だから","勉強もできるはずだ。"],f:2,fix:"ピアノと勉強は別の能力。片方から他方は導けない。"},
+ {tier:2,type:"論理の飛躍",segs:["ぼくのねこは魚が好きだ。","つまり","世界中のねこは魚が好きなのだ。"],f:2,fix:"1匹の例から全体を決めつける「早まった一般化」。"},
+ {tier:2,type:"論理の飛躍",segs:["昨日の夜、流れ星を見た。","だから","今日はいいことが起きるはずだ。"],f:2,fix:"流れ星と今日の出来事に因果関係はない。"},
+ {tier:3,type:"論理の飛躍",segs:["アンケートで「面白い」が多数だった。","よって","この企画に欠点は一つもない。"],f:2,fix:"「多数が面白いと答えた」ことと「欠点がない」ことは別。"},
+ {tier:3,type:"論理の飛躍",segs:["彼は一度うそをついた。","だから","彼の話はすべてうそだ。"],f:2,fix:"一度の事実から「すべて」へ広げるのは飛躍。"},
+ {tier:3,type:"論理の飛躍",segs:["新製品を使ったら肌の調子がいい。","つまり","効果は科学的に証明された。"],f:2,fix:"個人の感想は科学的な証明ではない。比較や検証が必要。"},
+ {tier:3,type:"論理の飛躍",segs:["有名選手はこの靴をはいている。","よって","この靴をはけば速く走れる。"],f:2,fix:"速さの原因は靴だけではない。あこがれと効果を混同している。"},
+ {tier:3,type:"論理の飛躍",segs:["アイスの売上と水難事故は同時に増える。","よって","アイスが事故の原因と言える。"],f:2,fix:"どちらも「夏の暑さ」が原因で増えるだけ。同時に起きる＝原因ではない。"},
+ {tier:2,type:"論理の飛躍",segs:["今日は先生の機嫌がいい。","ということは","テストは中止になるだろう。"],f:2,fix:"機嫌とテストの予定に関係はない。希望をまじえた飛躍。"},
+ {tier:2,type:"論理の飛躍",segs:["リレーで1組が優勝した。","つまり","1組の生徒は全員足が速い。"],f:2,fix:"代表が速いだけで、全員が速いとは言えない。"},
+ {tier:3,type:"論理の飛躍",segs:["この参考書で合格した先輩がいる。","だから","これを買えば必ず合格できる。"],f:2,fix:"一人の成功例から「必ず」は導けない。"},
+ {tier:3,type:"論理の飛躍",segs:["祖父は毎朝みそ汁を飲んで長生きだ。","よって","長生きの秘けつはみそ汁と断定できる。"],f:2,fix:"一人の例では断定できない。長生きの要因は他にも多くある。"},
+ {tier:2,type:"論理の飛躍",segs:["最近ミスが続いてしまった。","つまり","ぼくには才能がないのだ。"],f:2,fix:"数回のミスから「才能がない」と結論づけるのは飛躍。"},
+ {tier:3,type:"論理の飛躍",segs:["図書室の利用者が減った。","ということは","本を読む人は日本からいなくなる。"],f:2,fix:"一つの部屋のデータから国全体の未来へ飛んでいる。"},
+ {tier:3,type:"論理の飛躍",segs:["彼は昨日早退した。","だから","今日の欠席もサボりに決まっている。"],f:2,fix:"早退の事実から「サボり」とは言えない。理由は確かめないと分からない。"},
+ {tier:2,type:"論理の飛躍",segs:["となりの家の犬にほえられた。","つまり","この町の犬は全部きけんだ。"],f:2,fix:"1匹の例から町全体へ広げる「早まった一般化」。"},
+ // ---- 追加：ずるい論法 ----
+ {tier:3,type:"ずるい論法（人格攻撃）",segs:["君は字がきたないのだから、","作文の中身だって","たいしたことないはずだ。"],f:2,fix:"字のきれいさと内容は無関係。人格や見た目への攻撃で中身の評価から逃げている。"},
+ {tier:3,type:"ずるい論法（人格攻撃）",segs:["遅刻ばかりしている君に、","この計画の欠点を指摘する","資格などない。"],f:2,fix:"指摘が正しいかどうかと、指摘した人の生活態度は別問題。"},
+ {tier:3,type:"ずるい論法（多数派への訴え）",segs:["クラス全員が面白いと言っている。","だからつまらないと言う君の方が","まちがっている。"],f:1,fix:"感想は多数決で決まらない。人数を理由に個人の意見を否定している。"},
+ {tier:3,type:"ずるい論法（多数派への訴え）",segs:["これだけ行列ができているのだから、","この店の味は","日本一に決まっている。"],f:0,fix:"人気と味の順位は別。人数の多さを正しさの証拠にしている。"},
+ {tier:3,type:"ずるい論法（権威への訴え）",segs:["テレビで博士が言っていたのだから、","この情報を疑う必要は","まったくない。"],f:1,fix:"専門家の発言でも検証は必要。「えらい人が言った」は証拠にならない。"},
+ {tier:3,type:"ずるい論法（権威への訴え）",segs:["先輩の言うことなのだから、","後輩は理由を聞かずに","従うべきだ。"],f:1,fix:"立場が上でも、理由を確かめるのは当然のこと。"},
+ {tier:3,type:"ずるい論法（論点のすり替え）",segs:["ぼくのゲーム時間の話をしているのに、","でも兄さんだって","昨日夜ふかししていたよね。"],f:1,fix:"「お前だって」と相手の話にすり替え、自分の問題への答えから逃げている。"},
+ {tier:3,type:"ずるい論法（論点のすり替え）",segs:["ポイ捨てを注意されたけれど、","先にあの人が捨てたのだから","ぼくは悪くない。"],f:1,fix:"他人がしたことは、自分の行いの言い訳にならない。"},
+ {tier:3,type:"ずるい論法（極端なすり替え）",segs:["君は宿題を減らせと言うが、","それはつまり勉強を","一切やめたいということだな。"],f:1,fix:"「減らす」を「やめる」に極端化してすり替えている（わら人形論法）。"},
+ {tier:3,type:"ずるい論法（極端なすり替え）",segs:["部費の使い方を見直そうと言っただけで、","部活そのものに反対するとは","ひどいやつだ。"],f:1,fix:"「見直し」を「反対」に言いかえて攻撃している。"},
+ {tier:3,type:"ずるい論法（偽の二択）",segs:["全力でやる気がないのなら、","今すぐ","やめてしまえ。"],f:0,fix:"「全力か、やめるか」の二択に見せかけている。ほどよく続ける道もある。"},
+ {tier:3,type:"ずるい論法（偽の二択）",segs:["ぼくの意見に反対するということは、","クラスの和を","乱すということだ。"],f:1,fix:"反対意見＝和を乱す、ではない。話し合いには反対意見が必要。"},
+ {tier:3,type:"ずるい論法（循環論法）",segs:["彼が正しいのは、","彼がまちがって","いないからだ。"],f:2,fix:"「正しい」を「まちがっていない」と言いかえただけの循環論法。"},
+ {tier:3,type:"ずるい論法（循環論法）",segs:["この規則は守るべきだ。","なぜなら","規則だからだ。"],f:2,fix:"理由が主張のくり返し。規則の目的や必要性を示すべき。"},
+ {tier:3,type:"ずるい論法（感情への訴え）",segs:["徹夜までして作ったのだから、","この企画は","採用されるべきだ。"],f:1,fix:"かけた労力と企画の良し悪しは別問題。"},
+ {tier:3,type:"ずるい論法（感情への訴え）",segs:["泣くほど悔しがっているのだから、","彼の主張の方が","正しいのだろう。"],f:1,fix:"感情の強さは正しさの証拠にならない。"},
+ {tier:3,type:"ずるい論法（伝統への訴え）",segs:["この部では10年前からこの練習法だ。","だから","変える必要などまったくない。"],f:1,fix:"続いてきたことは、今も最適である証拠にならない。"},
+ {tier:3,type:"ずるい論法（伝統への訴え）",segs:["昔の人はみなこうしていた。","よって","現代人もこうすべきだ。"],f:1,fix:"時代がちがえば事情もちがう。「昔から」は根拠にならない。"},
+ {tier:3,type:"ずるい論法（無知への訴え）",segs:["この方法がダメだという証拠はない。","だから","この方法は正しい。"],f:1,fix:"「反証がない」ことは「正しい」証拠にならない。"},
+ {tier:3,type:"ずるい論法（無知への訴え）",segs:["宇宙人がいないと言い切れる人はいない。","つまり","宇宙人は必ずいる。"],f:1,fix:"証明されていないことと、存在することは別。"},
+ {tier:3,type:"ずるい論法（新しさへの訴え）",segs:["この理論は最新のものだ。","だから","古い理論より必ず正しい。"],f:1,fix:"新しい＝正しい、ではない。検証されているかどうかが大事。"},
+ {tier:3,type:"ずるい論法（論点先取）",segs:["ぼくがカンニングをするはずがない。","なぜならぼくは","不正をしない人間だからだ。"],f:1,fix:"証明したいこと自体を理由に使っている。"},
+ {tier:3,type:"ずるい論法（論点のすり替え）",segs:["掃除をサボった話をしているのに、","そもそも掃除に意味は","あるのだろうか。"],f:1,fix:"自分の行いの話を、制度への疑問にすり替えている。"},
+ {tier:3,type:"ずるい論法（おどしへの訴え）",segs:["この案に反対するなら、","あとでこまるのは","君の方だぞ。"],f:1,fix:"理由ではなくおどしで意見を通そうとしている。"},
+ {tier:3,type:"ずるい論法（同情への訴え）",segs:["罰を軽くしてほしい。","なぜならぼくは今週","ずっとついていないからだ。"],f:1,fix:"同情をさそう事情と、行いの責任は別問題。"},
+ {tier:3,type:"ずるい論法（勝手な代表）",segs:["みんな迷惑しているんだ。","少なくともぼくと友達の","2人はそう思っている。"],f:0,fix:"2人の意見を「みんな」と言いかえて大きく見せている。"},
+ {tier:3,type:"ずるい論法（どっちもどっち）",segs:["どっちもどっちなのだから、","この件でぼくだけ責められるのは","おかしい。"],f:0,fix:"相手にも非があるとしても、自分の行いの責任は消えない。"},
+ {tier:3,type:"ずるい論法（関係ない指摘）",segs:["彼はあいさつが元気だ。","だから","会計の計算ミスもないはずだ。"],f:2,fix:"あいさつと計算の正確さは無関係。良い印象で別の能力まで判断している。"},
+ {tier:3,type:"ずるい論法（つまみ食い）",segs:["成功した3回だけを見れば、","この作戦の成功率は","100％と言える。"],f:0,fix:"都合のよいデータだけを選んでいる。失敗した回も数えるべき。"},
+ {tier:3,type:"ずるい論法（希望的観測）",segs:["そうなってほしくないから、","この予報は","外れるに決まっている。"],f:0,fix:"願望と予測は別物。「〜であってほしい」は根拠にならない。"}
+];
+var CATS=(function(){
+  var seen={}, out=[];
+  Q.forEach(function(q){
+    var c=q.type.split("（")[0];
+    if(!seen[c]){ seen[c]=1; out.push(c); }
+  });
+  return out;
+})();
+function catOf(q){ return q.type.split("（")[0]; }
+
+/* ---------- 対戦相手 ---------- */
+var ENEMIES=[
+ {name:"あいまいな目撃者", hp:60,  time:14, tiers:[1],     quote:"「私の証言、完ぺきですけど？」"},
+ {name:"早口の記者",       hp:80,  time:12, tiers:[1,2],   quote:"「言葉尻をつかまえる気かね？」"},
+ {name:"詭弁の商人",       hp:100, time:11, tiers:[2,3],   quote:"「理屈なんて、言い方ひとつですよ」"},
+ {name:"沈黙の重役",       hp:120, time:9,  tiers:[2,3],   quote:"「……私の発言に、破綻など無い」"},
+ {name:"百戦の検事",       hp:140, time:8,  tiers:[1,2,3], quote:"「その若さで私に異議を唱えるか」"},
+ {name:"言論の黒幕",       hp:160, time:7,  tiers:[1,2,3], quote:"「論理そのものが、私に従う」"}
+];
+function enemyFor(lv){
+  var base=ENEMIES[Math.min(lv,ENEMIES.length-1)];
+  var extra=Math.max(0,lv-(ENEMIES.length-1));
+  return {name:base.name+(extra>0?" 改"+(extra>1?extra:""):""),
+          hp:base.hp+extra*20, time:Math.max(5,base.time-extra), tiers:base.tiers, quote:base.quote};
+}
+var DAN=["傍聴人","新米弁護士","若手の希望","敏腕弁護士","法廷の雄","無敗の弁護人","伝説の論客","言葉の番人"];
+function danOf(kos){ return DAN[Math.min(kos,DAN.length-1)]; }
+
+/* ---------- 状態 ---------- */
+var lv=0, enemy=null, enemyHp=0, myHp=100;
+var score=0, combo=0, maxCombo=0, wins=0, kos=0, perfects=0, fastest=null;
+var qPool=[], curQ=null, qStart=0, timerRaf=null, limitMs=0, locked=false;
+
+function reportResba(note){
+  if(typeof manabiReport!=="function") return;
+  var saved=store.get("resba_best2",null), bestScore=Math.max(score,saved?Number(saved.score)||0:0);
+  manabiReport({app:"resba-response",done:Math.min(kos,6),total:6,best:bestScore,note:String(note||"").slice(0,40)});
+}
+el("manabi-back").addEventListener("click",function(){reportResba("ManabiBoxへ戻る");});
+
+/* ---------- 表示 ---------- */
+function setHp(bar,num,val,max){
+  var v=Math.max(0,val);
+  bar.style.width=(v/max*100)+"%";
+  num.textContent=v+" / "+max;
+}
+function refreshHud(){
+  setHp(el("enemyHp"),el("enemyHpNum"),enemyHp,enemy.hp);
+  setHp(el("myHp"),el("myHpNum"),myHp,100);
+  el("fScore").textContent=score;
+  el("fComboV").textContent=combo;
+  el("fCombo").classList.toggle("hot",combo>=3);
+  el("fWin").textContent=wins;
+  el("hudKO").textContent=kos;
+  el("fFast").textContent=fastest!==null?fastest.toFixed(2)+"s":"—";
+}
+function flash(text,cls){
+  var f=el("flash");
+  el("flashTxt").textContent=text;
+  f.className=cls||"";
+  f.style.display="flex";
+  setTimeout(function(){f.style.display="none";},650);
+}
+
+/* ---------- 出題 ---------- */
+function pickQ(){
+  if(qPool.length===0){
+    qPool=Q.filter(function(q){return enemy.tiers.indexOf(q.tier)>=0;}).slice();
+    for(var i=qPool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=qPool[i];qPool[i]=qPool[j];qPool[j]=t;}
+  }
+  return qPool.pop();
+}
+function showQ(){
+  curQ=pickQ(); locked=false;
+  el("explain").style.display="none";
+  el("quizBox").style.display="none";
+  var say=el("enemySay"); say.innerHTML="";
+  curQ.segs.forEach(function(s,i){
+    var sp=document.createElement("span");
+    sp.className="seg"; sp.textContent=s; sp.dataset.i=i;
+    sp.tabIndex=0; sp.setAttribute("role","button"); sp.setAttribute("aria-label",s+"に異議を唱える");
+    sp.addEventListener("click",function(){answer(i,sp);});
+    sp.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();answer(i,sp);}});
+    say.appendChild(sp);
+  });
+  el("prompt").innerHTML='証言の<b>破綻している部分</b>をタップして異議を唱えろ';
+  limitMs=enemy.time*1000; qStart=performance.now();
+  cancelAnimationFrame(timerRaf);
+  (function tick(){
+    var left=1-(performance.now()-qStart)/limitMs;
+    el("timerBar").style.transform="scaleX("+Math.max(0,left)+")";
+    if(left<=0){ timeout(); return; }
+    if(!locked) timerRaf=requestAnimationFrame(tick);
+  })();
+  beep(700,0.06,"triangle");
+}
+
+/* ---------- 判定 ---------- */
+function lockSegs(){
+  locked=true; cancelAnimationFrame(timerRaf);
+  Array.prototype.slice.call(el("enemySay").querySelectorAll(".seg")).forEach(function(s){s.classList.add("locked");});
+}
+function showExplain(label,cb){
+  var ex=el("explain");
+  ex.innerHTML='<span class="cat">'+curQ.type+'</span><div>'+curQ.fix+'</div>';
+  var b=document.createElement("button");
+  b.textContent=label;
+  b.addEventListener("click",cb);
+  ex.appendChild(b);
+  ex.style.display="block";
+  ex.scrollIntoView({block:"nearest"});
+}
+function continueAfter(ok){
+  refreshHud();
+  if(enemyHp<=0){
+    kos++; refreshHud();
+    reportResba(enemy.name+" 攻略");
+    showExplain("次の証人を呼ぶ",function(){ koEnemy(); });
+  }else if(myHp<=0){
+    showExplain("判決を聞く",function(){ gameOver(); });
+  }else{
+    showExplain(ok?"次の証言へ":"立て直して次の証言へ",function(){ showQ(); });
+  }
+}
+function answer(i,sp){
+  if(locked) return;
+  var t=(performance.now()-qStart)/1000;
+  lockSegs();
+  if(i===curQ.f){
+    sp.classList.add("hit");
+    var leftRatio=Math.max(0,1-(t*1000)/limitMs);
+    var dmg=15+Math.round(leftRatio*15);
+    combo++; maxCombo=Math.max(maxCombo,combo); wins++;
+    if(fastest===null||t<fastest) fastest=t;
+    var gain=Math.round(100*(lv+1)*(1+leftRatio)*(1+(combo-1)*0.2)*(curQ.tier*0.5+0.5));
+    score+=gain;
+    enemyHp-=dmg;
+    flash(t<1.5?"電光の異議!!":"異議あり!!");
+    beep(880,0.1);setTimeout(function(){beep(1320,0.15);},90);
+    document.body.classList.remove("shakeBody");void document.body.offsetWidth;document.body.classList.add("shakeBody");
+    refreshHud();
+    el("prompt").innerHTML=t.toFixed(2)+'秒で見切った　<b>+'+gain+'</b>';
+    showTypeQuiz(gain);
+  }else{
+    sp.classList.add("miss");
+    markAnswer();
+    selfDamage("そこじゃない。");
+  }
+}
+function showTypeQuiz(baseGain){
+  var correct=catOf(curQ);
+  var others=CATS.filter(function(c){return c!==correct;});
+  for(var i=others.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=others[i];others[i]=others[j];others[j]=t;}
+  var opts=[correct,others[0],others[1]];
+  for(var i2=opts.length-1;i2>0;i2--){var j2=Math.floor(Math.random()*(i2+1));var t2=opts[i2];opts[i2]=opts[j2];opts[j2]=t2;}
+  var box=el("quizBox"), btns=el("quizBtns");
+  btns.innerHTML="";
+  opts.forEach(function(c){
+    var b=document.createElement("button");
+    b.className="keyBtn"; b.textContent=c;
+    b.addEventListener("click",function(){
+      box.style.display="none";
+      if(c===correct){
+        perfects++;
+        var bonus=Math.round(baseGain*0.5);
+        score+=bonus; enemyHp-=10;
+        flash("論証成立","perfect");
+        beep(1100,0.1);setTimeout(function(){beep(1560,0.16);},90);
+        el("prompt").innerHTML='論証成立。種類まで見抜いた　<b>+'+bonus+'</b>';
+      }else{
+        beep(300,0.15,"sawtooth",0.05);
+        el("prompt").innerHTML='種類は「<b>'+correct+'</b>」だった。ボーナスなし';
+      }
+      continueAfter(true);
+    });
+    btns.appendChild(b);
+  });
+  box.style.display="flex";
+}
+function timeout(){
+  if(locked) return;
+  lockSegs(); markAnswer();
+  selfDamage("時間切れ。");
+}
+function markAnswer(){
+  var segs=el("enemySay").querySelectorAll(".seg");
+  if(segs[curQ.f]) segs[curQ.f].classList.add("answer");
+}
+function selfDamage(msg){
+  combo=0; myHp-=20;
+  flash("異議棄却","self");
+  beep(150,0.3,"sawtooth",0.09);
+  refreshHud();
+  el("prompt").textContent=msg+" 赤枠の部分が証言の破綻だった。";
+  continueAfter(false);
+}
+
+/* ---------- 進行 ---------- */
+function koEnemy(){
+  myHp=Math.min(100,myHp+20);
+  lv++;
+  showVs();
+}
+function showVs(){
+  enemy=enemyFor(lv); enemyHp=enemy.hp;
+  el("vsLv").textContent="第"+(lv+1)+"号証人　発言時間 "+enemy.time+"秒";
+  el("vsName").textContent=enemy.name;
+  el("vsQuote").textContent=enemy.quote;
+  el("vsStat").textContent="証言の信用度 "+enemy.hp;
+  el("enemyName").textContent=enemy.name;
+  el("enemyLv").textContent="第"+(lv+1)+"号証人　発言 "+enemy.time+"秒";
+  qPool=[];
+  refreshHud();
+  show(ovVs);
+}
+function gameOver(){
+  var dan=danOf(kos);
+  var best=store.get("resba_best2",{score:0,wins:0,fast:null,kos:0});
+  var rec = score>best.score || kos>best.kos;
+  store.set("resba_best2",{
+    score:Math.max(best.score,score),
+    wins:Math.max(best.wins,wins),
+    kos:Math.max(best.kos||0,kos),
+    fast:(best.fast===null||(fastest!==null&&fastest<best.fast))?fastest:best.fast
+  });
+  el("resDan").textContent=dan;
+  el("resKO").textContent=kos+"人";
+  el("resWin").textContent=wins+"回";
+  el("resPerfect").textContent=perfects+"回";
+  el("resCombo").textContent="×"+maxCombo;
+  el("resFast").textContent=fastest!==null?fastest.toFixed(2)+"秒":"—";
+  el("resScore").textContent=score;
+  el("resRec").style.display=rec?"inline-block":"none";
+  reportResba("判決 "+danOf(kos)+" "+kos+"人攻略");
+  show(ovResult);
+}
+
+var ovTitle=el("ovTitle"),ovVs=el("ovVs"),ovResult=el("ovResult");
+function show(o){o.classList.remove("hidden");} function hide(o){o.classList.add("hidden");}
+
+function newRun(){
+  lv=0; myHp=100; score=0; combo=0; maxCombo=0; wins=0; kos=0; perfects=0; fastest=null; qPool=[];
+  hide(ovTitle); hide(ovResult);
+  showVs();
+}
+function refreshBestLine(){
+  var b=store.get("resba_best2",null);
+  el("bestLine").textContent=(b&&b.score)?("自己ベスト "+b.score+" PTS ／ 証人攻略 "+(b.kos||0)+"人 ／ 称号 "+danOf(b.kos||0)+(b.fast?(" ／ 最速 "+b.fast.toFixed(2)+"秒"):"")):"";
+}
+el("btnStart").addEventListener("click",newRun);
+el("btnAgain").addEventListener("click",newRun);
+el("btnFight").addEventListener("click",function(){ hide(ovVs); showQ(); });
+
+var quitArmed=false, quitTimer=null;
+el("btnQuit").addEventListener("click",function(){
+  var b=this;
+  if(!quitArmed){
+    quitArmed=true; b.textContent="もう一度で退廷"; b.classList.add("armed");
+    clearTimeout(quitTimer); quitTimer=setTimeout(function(){quitArmed=false;b.textContent="退廷";b.classList.remove("armed");},2200);
+    return;
+  }
+  clearTimeout(quitTimer); quitArmed=false; locked=true; cancelAnimationFrame(timerRaf);
+  b.textContent="退廷"; b.classList.remove("armed"); hide(ovVs); hide(ovResult); refreshBestLine(); show(ovTitle);
+});
+
+(function initTitle(){
+  refreshBestLine();
+})();
+})();
+</script>
+</body>
+</html>
