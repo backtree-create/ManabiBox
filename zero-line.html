@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07101d">
+  <title>ZERO LINE | Manabi Box</title>
+  <script src="https://backtree-create.github.io/ManabiBox/config.js"></script>
+  <script src="https://backtree-create.github.io/ManabiBox/hub-progress.js"></script>
+  <script src="https://backtree-create.github.io/ManabiBox/manabi-connect.js"></script>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@500;600;700&display=swap');
+
+:root {
+  color-scheme: dark;
+  --bg: #07101d;
+  --panel: #0a1625;
+  --line: rgba(156, 190, 219, .2);
+  --muted: #71869d;
+  --text: #eaf7ff;
+  --cyan: #65e9ff;
+  --cyan-soft: rgba(75, 221, 255, .16);
+  --blue: #4e8cff;
+  --red: #ff617d;
+  --red-soft: rgba(255, 67, 100, .11);
+  --green: #80ffbd;
+  font-family: "Manrope", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { min-width: 320px; background: var(--bg); }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 50% 62%, rgba(24, 125, 178, .13), transparent 34%),
+    linear-gradient(rgba(31, 65, 94, .08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 65, 94, .08) 1px, transparent 1px),
+    var(--bg);
+  background-size: auto, 34px 34px, 34px 34px, auto;
+}
+
+button, a { -webkit-tap-highlight-color: transparent; }
+
+.app-shell {
+  width: min(1280px, 100%);
+  min-height: 100dvh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 49.8%, rgba(101, 233, 255, .035) 50%, transparent 50.2%);
+}
+
+.topbar {
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(20px, 4vw, 54px);
+  border-bottom: 1px solid var(--line);
+  background: rgba(6, 14, 26, .74);
+  backdrop-filter: blur(12px);
+  position: relative;
+  z-index: 3;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  text-decoration: none;
+  font-family: "IBM Plex Mono", monospace;
+  letter-spacing: .16em;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.brand-mark {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--cyan);
+  transform: rotate(45deg);
+  box-shadow: 0 0 14px rgba(101, 233, 255, .5), inset 0 0 8px rgba(101, 233, 255, .25);
+  position: relative;
+}
+
+.brand-mark::after { content: ""; position: absolute; inset: 5px; background: var(--cyan); }
+.product-name { margin-right: auto; margin-left: 18px; padding-left: 18px; border-left: 1px solid var(--line); color: #8ba2b5; font: 500 11px "IBM Plex Mono", monospace; letter-spacing: .16em; }
+
+.hud { display: flex; align-items: center; gap: clamp(18px, 3vw, 42px); }
+.hud-item { display: grid; gap: 2px; font-family: "IBM Plex Mono", monospace; }
+.hud-item span { color: var(--muted); font-size: 9px; letter-spacing: .18em; }
+.hud-item strong { font-size: 17px; font-weight: 500; letter-spacing: .1em; }
+.time-hud strong { color: var(--cyan); }
+.time-hud.danger strong { color: var(--red); animation: timeBlink .55s steps(2) infinite; }
+@keyframes timeBlink { 50% { opacity: .45; } }
+.lives { display: flex; gap: 5px; }
+.lives i { display: block; width: 8px; height: 18px; transform: skew(-14deg); background: var(--cyan); box-shadow: 0 0 9px rgba(101,233,255,.45); transition: .2s ease; }
+.lives i.lost { background: #27394b; box-shadow: none; }
+
+.reset-button, .next-button {
+  border: 1px solid rgba(120, 169, 203, .35);
+  background: rgba(16, 37, 58, .64);
+  color: #b6c9d9;
+  font: 500 10px "IBM Plex Mono", monospace;
+  letter-spacing: .15em;
+  min-height: 38px;
+  padding: 0 16px;
+  cursor: pointer;
+}
+.reset-button:hover, .reset-button:focus-visible { border-color: var(--cyan); color: var(--text); }
+
+main { flex: 1; display: flex; flex-direction: column; position: relative; z-index: 1; }
+.mission { padding: clamp(34px, 6vh, 62px) 20px clamp(28px, 5vh, 48px); text-align: center; }
+.eyebrow { margin: 0 0 16px; color: #8ea5b8; font: 500 10px "IBM Plex Mono", monospace; letter-spacing: .25em; }
+.eyebrow span { width: 5px; height: 5px; display: inline-block; margin-right: 8px; background: var(--cyan); box-shadow: 0 0 9px var(--cyan); transform: translateY(-1px); }
+.eyebrow b { font-weight: 500; color: var(--cyan); }
+
+.equation {
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 2.5vw, 26px);
+  font: 500 clamp(38px, 5vw, 62px) "IBM Plex Mono", monospace;
+  letter-spacing: -.04em;
+}
+.equals { color: #5c7188; }
+.answer { min-width: 1.3em; color: var(--cyan); text-shadow: 0 0 20px rgba(101, 233, 255, .45); }
+.move-instruction { margin-top: 18px; color: var(--cyan); font: 500 13px "IBM Plex Mono", monospace; letter-spacing: .2em; }
+.hint { margin: 9px 0 0; color: #8aa0b4; font-size: 12px; }
+.timer-track { width: min(420px, 78vw); height: 2px; margin: 23px auto 0; background: rgba(96, 129, 153, .2); overflow: hidden; }
+.timer-track span { display: block; width: 100%; height: 100%; transform-origin: left; background: var(--cyan); box-shadow: 0 0 9px var(--cyan); }
+
+.game-panel {
+  position: relative;
+  min-height: 292px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-top: 1px solid rgba(87, 133, 164, .16);
+  border-bottom: 1px solid rgba(87, 133, 164, .16);
+  background: linear-gradient(90deg, var(--red-soft), transparent 45%, transparent 55%, rgba(50, 129, 255, .09));
+  transition: box-shadow .2s ease;
+}
+
+.game-panel.zero-crossed { box-shadow: inset 0 0 90px rgba(101, 233, 255, .14); }
+.game-panel.hit { animation: panelHit .3s ease; }
+@keyframes panelHit { 35% { background-color: rgba(255, 51, 86, .17); transform: translateX(3px); } 65% { transform: translateX(-3px); } }
+.zone-labels { position: absolute; top: 27px; left: 4%; right: 4%; display: grid; grid-template-columns: 1fr 80px 1fr; align-items: center; color: #52677c; font: 500 9px "IBM Plex Mono", monospace; letter-spacing: .17em; }
+.zone-labels span:first-child { text-align: left; color: rgba(255, 107, 131, .6); }
+.zone-labels span:nth-child(2) { text-align: center; color: rgba(101, 233, 255, .8); }
+.zone-labels span:last-child { text-align: right; color: rgba(94, 155, 255, .7); }
+
+.number-line-wrap { width: 100%; padding: 58px max(28px, 4vw) 48px; overflow: hidden; touch-action: none; user-select: none; }
+.number-line { height: 92px; position: relative; outline-offset: 12px; cursor: grab; touch-action: none; }
+.number-line.is-dragging { cursor: grabbing; }
+.zone { position: absolute; top: 40px; height: 3px; }
+.negative-zone { left: 0; right: 50%; background: linear-gradient(90deg, transparent, rgba(255, 97, 125, .5)); }
+.positive-zone { left: 50%; right: 0; background: linear-gradient(90deg, rgba(78, 140, 255, .5), transparent); }
+.axis { position: absolute; left: 0; right: 0; top: 40px; height: 1px; background: rgba(141, 174, 201, .38); }
+
+.ticks { position: absolute; inset: 0; }
+.tick { position: absolute; top: 34px; transform: translateX(-50%); width: 24px; text-align: center; }
+.tick::before { content: ""; display: block; width: 7px; height: 7px; border-radius: 50%; margin: 3px auto 12px; background: #263c51; border: 1px solid #61798d; transition: .14s ease; }
+.tick span { color: #71869a; font: 400 10px "IBM Plex Mono", monospace; }
+.tick.is-zero::before { width: 13px; height: 13px; margin-top: 0; margin-bottom: 9px; border-radius: 1px; transform: rotate(45deg); border-color: var(--cyan); background: #0a2736; box-shadow: 0 0 15px rgba(101, 233, 255, .6); }
+.tick.is-zero span { color: var(--cyan); }
+.tick.is-active::before { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+
+.zero-beam { position: absolute; top: -28px; bottom: 9px; left: 50%; width: 1px; transform: translateX(-50%); background: linear-gradient(transparent, rgba(101, 233, 255, .28), transparent); opacity: .6; }
+.zero-beam.pulse { animation: zeroPulse .5s ease-out; }
+@keyframes zeroPulse { 0% { opacity: 1; box-shadow: 0 0 8px 3px var(--cyan); } 100% { opacity: .6; box-shadow: none; } }
+
+.trail { position: absolute; top: 39px; height: 4px; border-radius: 3px; background: linear-gradient(90deg, rgba(101, 233, 255, .28), var(--cyan)); box-shadow: 0 0 11px rgba(101, 233, 255, .5); transform-origin: left center; }
+.start-marker { position: absolute; top: 17px; width: 1px; height: 48px; background: rgba(166, 192, 211, .4); transform: translateX(-50%); pointer-events: none; }
+.start-marker span { position: absolute; top: -17px; left: 50%; transform: translateX(-50%); color: #7890a4; font: 500 8px "IBM Plex Mono", monospace; letter-spacing: .1em; }
+
+.core { position: absolute; top: 20px; left: 0; width: 42px; height: 42px; transform: translateX(-50%); display: grid; place-items: center; border-radius: 50%; filter: drop-shadow(0 0 12px rgba(101, 233, 255, .72)); transition: left .11s cubic-bezier(.2, .8, .2, 1), transform .12s ease; pointer-events: none; }
+.is-dragging .core { transform: translateX(-50%) scale(1.12); transition: left .06s linear, transform .12s ease; }
+.core-ring { position: absolute; inset: 3px; border: 1px solid rgba(101, 233, 255, .9); border-radius: 50%; box-shadow: inset 0 0 12px rgba(101, 233, 255, .32); }
+.core-ring::before, .core-ring::after { content: ""; position: absolute; inset: 6px; border: 1px solid rgba(101, 233, 255, .62); transform: rotate(45deg); }
+.core-ring::after { inset: 11px; background: var(--cyan); border: 0; box-shadow: 0 0 8px var(--cyan); }
+.core-center { width: 5px; height: 5px; border-radius: 50%; background: #fff; z-index: 1; }
+
+.drag-readout { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); display: flex; align-items: baseline; gap: 10px; color: #6f8497; font: 500 8px "IBM Plex Mono", monospace; letter-spacing: .16em; white-space: nowrap; }
+.drag-readout strong { color: var(--text); font-size: 12px; font-weight: 500; }
+.drag-readout span:first-child { color: var(--cyan); min-width: 58px; text-align: right; }
+.feedback { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; opacity: 0; font: 600 clamp(20px, 3vw, 30px) "IBM Plex Mono", monospace; letter-spacing: .14em; }
+.feedback.show { animation: feedback .9s ease both; }
+.feedback.correct { color: var(--green); text-shadow: 0 0 20px rgba(128,255,189,.6); }
+.feedback.wrong { color: var(--red); text-shadow: 0 0 20px rgba(255,97,125,.6); }
+@keyframes feedback { 0% { opacity: 0; transform: scale(.94); } 18%, 70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
+.score-pop { position: absolute; left: 50%; top: 27%; color: var(--cyan); opacity: 0; pointer-events: none; font: 600 15px "IBM Plex Mono", monospace; letter-spacing: .08em; }
+.score-pop.show { animation: scorePop .8s ease-out; }
+@keyframes scorePop { 0% { opacity: 0; transform: translate(-50%, 12px); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -32px); } }
+
+.controls { min-height: 78px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 16px clamp(20px, 4vw, 54px); color: #71869a; font: 500 10px "IBM Plex Mono", monospace; letter-spacing: .08em; }
+.controls p { margin: 0; display: flex; align-items: center; gap: 9px; }
+.drag-icon { width: 13px; height: 13px; border: 1px solid #7890a4; border-radius: 50%; position: relative; }
+.drag-icon::after { content: ""; position: absolute; width: 18px; height: 1px; left: 9px; top: 5px; background: #7890a4; box-shadow: 6px -3px 0 -2px #7890a4, 6px 3px 0 -2px #7890a4; }
+.key-help { justify-self: end; }
+kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; border: 1px solid rgba(126, 159, 185, .35); background: rgba(20, 39, 57, .65); color: #9bb0c1; font: inherit; }
+.multiplier { justify-self: center; }
+.multiplier strong { color: var(--cyan); font-size: 15px; font-weight: 500; }
+
+.screen-overlay { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; padding: 24px; background: rgba(4, 10, 19, .91); backdrop-filter: blur(12px); }
+.screen-overlay[hidden] { display: none; }
+.screen-overlay::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at center, rgba(24, 126, 174, .18), transparent 42%); pointer-events: none; }
+.overlay-panel { width: min(580px, 100%); text-align: center; position: relative; }
+.overlay-kicker { color: var(--cyan); font: 500 10px "IBM Plex Mono", monospace; letter-spacing: .28em; }
+.overlay-panel h1, .overlay-panel h2 { margin: 18px 0 22px; font: 600 clamp(54px, 9vw, 92px)/.78 "Manrope", sans-serif; letter-spacing: -.07em; }
+.overlay-panel h1 span, .overlay-panel h2 span { color: transparent; -webkit-text-stroke: 1px var(--cyan); text-shadow: 0 0 28px rgba(101, 233, 255, .23); }
+.overlay-copy { color: #91a6b9; font-size: 13px; line-height: 1.9; }
+.rules { margin: 30px auto; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.rules div { padding: 16px 8px; display: grid; gap: 5px; }
+.rules div + div { border-left: 1px solid var(--line); }
+.rules b { color: var(--cyan); font: 500 10px "IBM Plex Mono", monospace; }
+.rules span { color: #9db0c0; font-size: 11px; }
+.launch-button { min-width: 240px; min-height: 52px; padding: 0 24px; border: 1px solid var(--cyan); background: rgba(101,233,255,.08); color: var(--cyan); cursor: pointer; font: 600 11px "IBM Plex Mono", monospace; letter-spacing: .16em; box-shadow: inset 0 0 22px rgba(101,233,255,.07), 0 0 22px rgba(101,233,255,.08); }
+.launch-button:hover, .launch-button:focus-visible { background: var(--cyan); color: var(--bg); }
+.best-label { margin-top: 22px; color: #62788c; font: 500 9px "IBM Plex Mono", monospace; letter-spacing: .16em; }
+.best-label strong { color: #a6b9c9; font-weight: 500; }
+.result-grid { display: grid; grid-template-columns: repeat(3, 1fr); margin: 32px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.result-grid div { padding: 18px 8px; display: grid; gap: 8px; }
+.result-grid div + div { border-left: 1px solid var(--line); }
+.result-grid span { color: #71869a; font: 500 8px "IBM Plex Mono", monospace; letter-spacing: .14em; }
+.result-grid strong { color: var(--text); font: 500 22px "IBM Plex Mono", monospace; }
+.new-record { color: var(--green); font: 500 10px "IBM Plex Mono", monospace; letter-spacing: .2em; text-shadow: 0 0 12px rgba(128,255,189,.4); }
+
+.app-shell.rank-2 .move-instruction { color: #b7c8d6; }
+.app-shell.rank-3 .move-instruction { visibility: hidden; }
+.app-shell.rank-3 .hint { color: #63798d; }
+.app-shell.rank-3 .tick span { opacity: .48; }
+.app-shell.rank-3 .tick.is-active span, .app-shell.rank-3 .tick.is-zero span { opacity: 1; }
+
+@media (max-width: 700px) {
+  .topbar { height: 68px; }
+  .brand { letter-spacing: .1em; }
+  .hud { gap: 14px; }
+  .hud-item span { font-size: 8px; }
+  .reset-button { padding: 0 10px; min-height: 34px; }
+  .mission { padding-top: 30px; }
+  .game-panel { min-height: 270px; }
+  .number-line-wrap { padding-left: 24px; padding-right: 24px; overflow-x: clip; }
+  .tick span { font-size: 9px; }
+  .tick:nth-child(even):not(.is-zero) span { visibility: hidden; }
+  .zone-labels { left: 24px; right: 24px; }
+  .controls { grid-template-columns: 1fr auto 1fr; gap: 12px; }
+}
+
+@media (max-width: 500px) {
+  .brand span:last-child { display: none; }
+  .product-name { margin-left: 12px; padding-left: 12px; font-size: 9px; }
+  .brand-mark { width: 18px; height: 18px; }
+  .hud-item strong { font-size: 14px; }
+  .time-hud { display: none; }
+  .lives { gap: 3px; }
+  .lives i { width: 6px; height: 15px; }
+  .mission { padding-bottom: 30px; }
+  .equation { font-size: 38px; }
+  .game-panel { min-height: 260px; }
+  .number-line-wrap { padding-left: 18px; padding-right: 18px; }
+  .tick { width: 20px; }
+  .key-help { display: none !important; }
+  .controls { display: flex; flex-wrap: wrap; justify-content: center; min-height: 88px; }
+  .multiplier { order: -1; width: 100%; }
+  .screen-overlay { padding: 20px; }
+  .overlay-copy br { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="まなびの基板に戻る">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>MANABI BOX</span>
+      </a>
+      <span class="product-name">ZERO LINE</span>
+      <div class="hud" aria-label="ゲーム状況">
+        <div class="hud-item time-hud"><span>TIME</span><strong id="time">60.0</strong></div>
+        <div class="hud-item"><span>SCORE</span><strong id="score">0000</strong></div>
+        <div class="hud-item"><span>CHAIN</span><strong id="combo">00</strong></div>
+        <div class="lives" id="lives" aria-label="残りエネルギー3"><i></i><i></i><i></i></div>
+        <button class="reset-button" id="resetButton" type="button">RESET</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="mission" aria-labelledby="missionLabel">
+        <p class="eyebrow" id="missionLabel"><span></span> <b id="rankLabel">CALIBRATION</b> / LINE <b id="missionNumber">01</b></p>
+        <div class="equation" aria-live="polite">
+          <span id="startValue">−4</span>
+          <span id="operator">+</span>
+          <span id="moveValue">7</span>
+          <span class="equals">=</span>
+          <span class="answer" id="answer">?</span>
+        </div>
+        <div class="move-instruction" id="moveInstruction">MOVE +7</div>
+        <p class="hint" id="hint">コアを右へ 7 マス動かそう</p>
+        <div class="timer-track" role="progressbar" aria-label="残り時間" aria-valuemin="0" aria-valuemax="60" aria-valuenow="60"><span id="timerBar"></span></div>
+      </section>
+
+      <section class="game-panel" id="gamePanel" aria-label="数直線ゲーム">
+        <div class="zone-labels" aria-hidden="true">
+          <span>NEGATIVE ZONE</span><span>ZERO</span><span>POSITIVE ZONE</span>
+        </div>
+        <div class="number-line-wrap" id="numberLineWrap">
+          <div class="number-line" id="numberLine" role="slider" aria-label="数直線上のコア" aria-valuemin="-10" aria-valuemax="10" aria-valuenow="-4" aria-valuetext="マイナス4" tabindex="0">
+            <div class="zone negative-zone"></div>
+            <div class="zone positive-zone"></div>
+            <div class="axis"></div>
+            <div class="trail" id="trail"></div>
+            <div class="zero-beam" id="zeroBeam"></div>
+            <div class="ticks" id="ticks"></div>
+            <div class="start-marker" id="startMarker"><span>START</span></div>
+            <div class="core" id="core" aria-hidden="true">
+              <span class="core-ring"></span><span class="core-center"></span>
+            </div>
+          </div>
+        </div>
+        <div class="drag-readout" aria-live="polite">
+          <span id="dragDirection">READY</span>
+          <strong id="stepCount">0 / 7</strong>
+          <span>STEPS</span>
+        </div>
+        <div class="feedback" id="feedback" role="status" aria-live="assertive"></div>
+        <div class="score-pop" id="scorePop" aria-hidden="true"></div>
+      </section>
+
+      <footer class="controls">
+        <p><span class="drag-icon" aria-hidden="true"></span>コアをドラッグして移動</p>
+        <p class="multiplier">MULTIPLIER <strong id="multiplier">×1</strong></p>
+        <p class="key-help"><kbd>←</kbd><kbd>→</kbd> キーでも操作できます</p>
+      </footer>
+    </main>
+
+    <section class="screen-overlay" id="startScreen" aria-labelledby="startTitle">
+      <div class="overlay-panel">
+        <p class="overlay-kicker">NUMBER LINE ACTION</p>
+        <h1 id="startTitle">ZERO<br><span>RUSH</span></h1>
+        <p class="overlay-copy">60秒でラインをつなげ。ミスは3回まで。<br>連続正解で倍率が上がり、0通過でボーナス。</p>
+        <div class="rules">
+          <div><b>01</b><span>式を読む</span></div>
+          <div><b>02</b><span>コアを動かす</span></div>
+          <div><b>03</b><span>位置を決める</span></div>
+        </div>
+        <button class="launch-button" id="startButton" type="button">START ZERO RUSH</button>
+        <p class="best-label">HIGH SCORE <strong id="bestScore">0000</strong></p>
+      </div>
+    </section>
+
+    <section class="screen-overlay result-screen" id="resultScreen" aria-labelledby="resultTitle" hidden>
+      <div class="overlay-panel">
+        <p class="overlay-kicker">RUN COMPLETE</p>
+        <h2 id="resultTitle">ZERO<br><span>RESULT</span></h2>
+        <div class="result-grid">
+          <div><span>SCORE</span><strong id="finalScore">0000</strong></div>
+          <div><span>CLEARED</span><strong id="clearedCount">00</strong></div>
+          <div><span>MAX CHAIN</span><strong id="maxCombo">00</strong></div>
+        </div>
+        <p class="new-record" id="newRecord" hidden>NEW HIGH SCORE</p>
+        <button class="launch-button" id="retryButton" type="button">RETRY</button>
+      </div>
+    </section>
+  </div>
+  <script>
+(() => {
+  "use strict";
+
+  const MIN = -10;
+  const MAX = 10;
+  const ROUND_SECONDS = 60;
+  const app = document.querySelector(".app-shell");
+  const timerTrack = document.querySelector(".timer-track");
+  const el = Object.fromEntries([
+    "time", "score", "combo", "lives", "missionNumber", "rankLabel", "startValue",
+    "operator", "moveValue", "answer", "moveInstruction", "hint", "gamePanel",
+    "numberLine", "ticks", "trail", "zeroBeam", "startMarker", "core",
+    "dragDirection", "stepCount", "feedback", "scorePop", "multiplier", "timerBar",
+    "resetButton", "startScreen", "startButton", "bestScore", "resultScreen",
+    "finalScore", "clearedCount", "maxCombo", "newRecord", "retryButton"
+  ].map(id => [id, document.getElementById(id)]));
+
+  const state = {
+    score: 0, combo: 0, maxCombo: 0, cleared: 0, mission: 0, lives: 3,
+    time: ROUND_SECONDS, rank: 1, start: 0, move: 0, target: 0, current: 0,
+    dragging: false, resolved: true, playing: false, crossedZero: false,
+    lastProblem: "", frame: 0, lastTick: 0, problemStarted: 0,
+    transitionTimer: 0, audio: null
+  };
+
+  function signed(n) { return n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : "0"; }
+  function spoken(n) { return n < 0 ? `マイナス${Math.abs(n)}` : n > 0 ? `プラス${n}` : "ゼロ"; }
+  function percent(n) { return ((n - MIN) / (MAX - MIN)) * 100; }
+  function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function pad(n, width = 4) { return String(n).padStart(width, "0"); }
+  function readBest() { try { return Number(localStorage.getItem("zeroLineBest")) || 0; } catch { return 0; } }
+  function saveBest(value) { try { localStorage.setItem("zeroLineBest", String(value)); } catch { /* unavailable */ } }
+
+  function tone(frequency, duration = .05, volume = .025, delay = 0) {
+    if (!state.audio) return;
+    const start = state.audio.currentTime + delay;
+    const oscillator = state.audio.createOscillator();
+    const gain = state.audio.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(frequency, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + .008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    oscillator.connect(gain).connect(state.audio.destination);
+    oscillator.start(start);
+    oscillator.stop(start + duration + .02);
+  }
+
+  function buildTicks() {
+    const fragment = document.createDocumentFragment();
+    for (let n = MIN; n <= MAX; n++) {
+      const tick = document.createElement("div");
+      tick.className = `tick${n === 0 ? " is-zero" : ""}`;
+      tick.dataset.value = n;
+      tick.style.left = `${percent(n)}%`;
+      const label = document.createElement("span");
+      label.textContent = signed(n);
+      tick.append(label);
+      fragment.append(tick);
+    }
+    el.ticks.append(fragment);
+  }
+
+  function updateRank() {
+    state.rank = state.cleared < 3 ? 1 : state.cleared < 8 ? 2 : 3;
+    app.classList.toggle("rank-2", state.rank === 2);
+    app.classList.toggle("rank-3", state.rank === 3);
+    el.rankLabel.textContent = state.rank === 1 ? "CALIBRATION" : state.rank === 2 ? "VECTOR MODE" : "ZERO RUSH";
+  }
+
+  function setExpression() {
+    const magnitude = Math.abs(state.move);
+    let operator = "+";
+    let operand = magnitude;
+    if (state.rank === 3 && Math.random() < .55) {
+      operator = "−";
+      operand = state.move > 0 ? `(${signed(-magnitude)})` : String(magnitude);
+    } else if (state.move < 0) {
+      operand = `(${signed(state.move)})`;
+    }
+    el.startValue.textContent = signed(state.start);
+    el.operator.textContent = operator;
+    el.moveValue.textContent = operand;
+    el.answer.textContent = "?";
+  }
+
+  function createProblem(preview = false) {
+    let start, move, target, key;
+    const maxMove = state.rank === 1 ? 7 : 9;
+    do {
+      start = randomInt(-8, 8);
+      move = randomInt(-maxMove, maxMove);
+      target = start + move;
+      key = `${start}:${move}`;
+    } while (move === 0 || target < MIN || target > MAX || key === state.lastProblem);
+
+    state.lastProblem = key;
+    state.start = start;
+    state.move = move;
+    state.target = target;
+    state.current = start;
+    state.resolved = preview || !state.playing;
+    state.crossedZero = false;
+    state.mission += 1;
+    state.problemStarted = performance.now();
+    updateRank();
+    setExpression();
+    el.missionNumber.textContent = pad(state.mission, 2);
+    if (state.rank === 1) {
+      el.moveInstruction.textContent = `MOVE ${signed(move)}`;
+      el.hint.textContent = `コアを${move > 0 ? "右" : "左"}へ ${Math.abs(move)} マス動かそう`;
+    } else if (state.rank === 2) {
+      el.moveInstruction.textContent = `VECTOR ${signed(move)}`;
+      el.hint.textContent = "符号から移動方向を判断しよう";
+    } else {
+      el.moveInstruction.textContent = "NO GUIDANCE";
+      el.hint.textContent = "式を読み、着地点を決めよう";
+    }
+    el.numberLine.setAttribute("aria-disabled", String(state.resolved));
+    el.gamePanel.classList.remove("zero-crossed", "hit");
+    renderPosition(false);
+  }
+
+  function renderPosition(announce = true) {
+    const p = percent(state.current);
+    const startP = percent(state.start);
+    const moved = Math.abs(state.current - state.start);
+    el.core.style.left = `${p}%`;
+    el.startMarker.style.left = `${startP}%`;
+    el.trail.style.left = `${Math.min(p, startP)}%`;
+    el.trail.style.width = `${Math.abs(p - startP)}%`;
+    el.dragDirection.textContent = state.current === state.start ? "READY" : state.current > state.start ? "RIGHT" : "LEFT";
+    el.stepCount.textContent = state.rank === 1 ? `${moved} / ${Math.abs(state.move)}` : `${moved} STEPS`;
+    el.numberLine.setAttribute("aria-valuenow", String(state.current));
+    el.numberLine.setAttribute("aria-valuetext", spoken(state.current));
+    document.querySelectorAll(".tick").forEach(tick => tick.classList.toggle("is-active", Number(tick.dataset.value) === state.current));
+
+    const crossed = state.start !== 0 && ((state.start < 0 && state.current >= 0) || (state.start > 0 && state.current <= 0));
+    if (crossed && !state.crossedZero) {
+      state.crossedZero = true;
+      el.zeroBeam.classList.remove("pulse");
+      void el.zeroBeam.offsetWidth;
+      el.zeroBeam.classList.add("pulse");
+      el.gamePanel.classList.add("zero-crossed");
+      tone(620, .12, .035);
+      tone(930, .14, .025, .06);
+      if (navigator.vibrate) navigator.vibrate(20);
+    }
+    if (announce) el.numberLine.setAttribute("aria-label", `数直線上のコア、現在 ${spoken(state.current)}`);
+  }
+
+  function positionFromPointer(clientX) {
+    const rect = el.numberLine.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    return Math.max(MIN, Math.min(MAX, Math.round(MIN + ratio * (MAX - MIN))));
+  }
+
+  function moveTo(value) {
+    if (state.resolved || !state.playing) return;
+    const next = Math.max(MIN, Math.min(MAX, value));
+    if (next !== state.current) {
+      state.current = next;
+      renderPosition();
+      tone(180 + (next - MIN) * 9, .025, .012);
+      if (navigator.vibrate) navigator.vibrate(7);
+    }
+  }
+
+  function showFeedback(correct, text) {
+    el.feedback.className = `feedback show ${correct ? "correct" : "wrong"}`;
+    el.feedback.textContent = text;
+    window.setTimeout(() => { el.feedback.className = "feedback"; }, 850);
+  }
+
+  function showPoints(points, extra = "") {
+    el.scorePop.textContent = `+${points}${extra}`;
+    el.scorePop.classList.remove("show");
+    void el.scorePop.offsetWidth;
+    el.scorePop.classList.add("show");
+  }
+
+  function updateHud() {
+    const multiplier = Math.min(5, 1 + Math.floor(state.combo / 3));
+    el.score.textContent = pad(state.score);
+    el.combo.textContent = pad(state.combo, 2);
+    el.multiplier.textContent = `×${multiplier}`;
+    [...el.lives.children].forEach((life, index) => life.classList.toggle("lost", index >= state.lives));
+    el.lives.setAttribute("aria-label", `残りエネルギー${state.lives}`);
+  }
+
+  function evaluate() {
+    if (state.resolved || !state.playing || state.current === state.start) return;
+    state.resolved = true;
+    if (state.current === state.target) {
+      state.combo += 1;
+      state.maxCombo = Math.max(state.maxCombo, state.combo);
+      state.cleared += 1;
+      const multiplier = Math.min(5, 1 + Math.floor(state.combo / 3));
+      const fast = performance.now() - state.problemStarted < 3500;
+      const points = 100 * multiplier + (fast ? 75 : 0) + (state.crossedZero ? 50 : 0);
+      state.score += points;
+      if (state.combo % 5 === 0) state.time = Math.min(ROUND_SECONDS, state.time + 1.5);
+      el.answer.textContent = signed(state.target);
+      el.hint.textContent = `${signed(state.start)} ${state.move >= 0 ? "+" : "−"} ${Math.abs(state.move)} = ${signed(state.target)}`;
+      showPoints(points, state.crossedZero ? "  ZERO BONUS" : fast ? "  QUICK" : "");
+      showFeedback(true, state.combo >= 3 ? `${state.combo} CHAIN` : "LINE COMPLETE");
+      tone(520, .09, .04);
+      tone(780, .13, .035, .07);
+      updateHud();
+      state.transitionTimer = window.setTimeout(() => { if (state.playing) createProblem(); }, 520);
+    } else {
+      state.lives -= 1;
+      state.combo = 0;
+      state.time = Math.max(0, state.time - 2);
+      el.gamePanel.classList.remove("hit");
+      void el.gamePanel.offsetWidth;
+      el.gamePanel.classList.add("hit");
+      showFeedback(false, "CORE LOST  −2.0 SEC");
+      tone(150, .22, .05);
+      if (navigator.vibrate) navigator.vibrate([45, 30, 45]);
+      updateHud();
+      if (state.lives <= 0 || state.time <= 0) {
+        state.transitionTimer = window.setTimeout(endGame, 650);
+      } else {
+        state.transitionTimer = window.setTimeout(() => {
+          if (!state.playing) return;
+          state.current = state.start;
+          state.crossedZero = false;
+          state.resolved = false;
+          el.gamePanel.classList.remove("zero-crossed", "hit");
+          el.hint.textContent = state.rank === 1 ? `もう一度、${state.move > 0 ? "右" : "左"}へ ${Math.abs(state.move)} マス` : "同じ式にもう一度挑戦しよう";
+          renderPosition(false);
+        }, 600);
+      }
+    }
+  }
+
+  function tick(now) {
+    if (!state.playing) return;
+    if (!state.lastTick) state.lastTick = now;
+    state.time = Math.max(0, state.time - (now - state.lastTick) / 1000);
+    state.lastTick = now;
+    el.time.textContent = state.time.toFixed(1);
+    el.timerBar.style.transform = `scaleX(${state.time / ROUND_SECONDS})`;
+    timerTrack.setAttribute("aria-valuenow", String(Math.ceil(state.time)));
+    el.time.parentElement.classList.toggle("danger", state.time <= 10);
+    if (state.time <= 0) { endGame(); return; }
+    state.frame = requestAnimationFrame(tick);
+  }
+
+  function startGame() {
+    window.clearTimeout(state.transitionTimer);
+    cancelAnimationFrame(state.frame);
+    if (!state.audio) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) state.audio = new AudioContext();
+    }
+    if (state.audio?.state === "suspended") state.audio.resume();
+    Object.assign(state, {
+      score: 0, combo: 0, maxCombo: 0, cleared: 0, mission: 0, lives: 3,
+      time: ROUND_SECONDS, rank: 1, playing: true, resolved: false,
+      dragging: false, lastProblem: "", lastTick: 0
+    });
+    el.startScreen.hidden = true;
+    el.resultScreen.hidden = true;
+    el.time.textContent = ROUND_SECONDS.toFixed(1);
+    el.timerBar.style.transform = "scaleX(1)";
+    el.time.parentElement.classList.remove("danger");
+    updateHud();
+    createProblem();
+    state.frame = requestAnimationFrame(tick);
+    el.numberLine.focus({ preventScroll: true });
+    tone(330, .08, .03);
+    tone(660, .16, .03, .08);
+  }
+
+  function endGame() {
+    if (!state.playing) return;
+    state.playing = false;
+    state.resolved = true;
+    state.dragging = false;
+    cancelAnimationFrame(state.frame);
+    window.clearTimeout(state.transitionTimer);
+    el.numberLine.classList.remove("is-dragging");
+    const previousBest = readBest();
+    const isRecord = state.score > previousBest;
+    if (isRecord) saveBest(state.score);
+    el.finalScore.textContent = pad(state.score);
+    el.clearedCount.textContent = pad(state.cleared, 2);
+    el.maxCombo.textContent = pad(state.maxCombo, 2);
+    el.newRecord.hidden = !isRecord;
+    el.bestScore.textContent = pad(Math.max(previousBest, state.score));
+    el.resultScreen.hidden = false;
+    el.retryButton.focus({ preventScroll: true });
+    if (typeof window.manabiReport === "function") {
+      window.manabiReport({
+        app: "zero-line",
+        done: Math.min(20, state.cleared),
+        total: 20,
+        best: state.score,
+        note: `${state.cleared}ライン・最大${state.maxCombo}連鎖`
+      });
+    }
+    tone(260, .18, .035);
+    tone(190, .28, .03, .16);
+  }
+
+  el.numberLine.addEventListener("pointerdown", event => {
+    if (state.resolved || !state.playing || event.button > 0) return;
+    const rect = el.numberLine.getBoundingClientRect();
+    const coreX = rect.left + rect.width * (percent(state.current) / 100);
+    const grabRadius = event.pointerType === "mouse" ? 34 : 48;
+    if (Math.abs(event.clientX - coreX) > grabRadius) return;
+    state.dragging = true;
+    el.numberLine.classList.add("is-dragging");
+    el.numberLine.setPointerCapture(event.pointerId);
+    moveTo(positionFromPointer(event.clientX));
+  });
+  el.numberLine.addEventListener("pointermove", event => { if (state.dragging) moveTo(positionFromPointer(event.clientX)); });
+
+  function endDrag(event) {
+    if (!state.dragging) return;
+    state.dragging = false;
+    el.numberLine.classList.remove("is-dragging");
+    if (el.numberLine.hasPointerCapture(event.pointerId)) el.numberLine.releasePointerCapture(event.pointerId);
+    evaluate();
+  }
+
+  el.numberLine.addEventListener("pointerup", endDrag);
+  el.numberLine.addEventListener("pointercancel", endDrag);
+  el.numberLine.addEventListener("keydown", event => {
+    if (state.resolved || !state.playing) return;
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      moveTo(state.current + (event.key === "ArrowRight" ? 1 : -1));
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      evaluate();
+    }
+  });
+
+  el.startButton.addEventListener("click", startGame);
+  el.retryButton.addEventListener("click", startGame);
+  el.resetButton.addEventListener("click", startGame);
+  window.addEventListener("resize", () => renderPosition(false));
+  buildTicks();
+  el.bestScore.textContent = pad(readBest());
+  createProblem(true);
+  updateHud();
+})();
+
+  </script>
+</body>
+</html>

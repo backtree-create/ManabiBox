@@ -141,5 +141,16 @@
     "total": 3,
     "color": "#FFB84D",
     "icon": "star"
+  },
+  {
+    "key": "zero-line",
+    "name": "ZERO LINE",
+    "subject": "数学",
+    "file": "https://backtree-create.github.io/ManabiBox/zero-line.html",
+    "desc": "数直線上のコアを動かし、正負の数の加法・減法を攻略する60秒スコアアタック。",
+    "unit": "ライン",
+    "total": 20,
+    "color": "#65E9FF",
+    "icon": "target"
   }
 ]
