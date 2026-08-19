@@ -31,7 +31,7 @@
   .disp{font-family:"Didot","Bodoni 72","Georgia","Times New Roman",serif;}
   button{font:inherit;}
   button:focus-visible{outline:2px solid var(--acc); outline-offset:2px;}
-  .manabiBar{height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(4px + env(safe-area-inset-top)) 12px 4px;background:rgba(7,11,20,.96);color:var(--paper);border-bottom:1px solid #33465f;font-size:10px;letter-spacing:.08em;}
+  .manabiBar{position:relative;z-index:200;height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(4px + env(safe-area-inset-top)) 12px 4px;background:rgba(7,11,20,.98);color:var(--paper);border-bottom:1px solid #33465f;font-size:10px;letter-spacing:.08em;box-shadow:0 2px 12px rgba(0,0,0,.35);}
   .manabiBar a{color:var(--paper);text-decoration:none;font-weight:800;min-height:24px;display:inline-flex;align-items:center;padding:3px 9px;border:1px solid #54657f;border-radius:999px;}
   .manabiBar a:hover,.manabiBar a:focus-visible{background:var(--acc);color:var(--accInk);outline:2px solid var(--acc);outline-offset:2px;}
   .manabiBar span{color:var(--acc);}

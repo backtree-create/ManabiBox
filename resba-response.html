@@ -31,7 +31,7 @@
   .min{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;}
   button{font:inherit;}
   button:focus-visible{outline:2px solid var(--brassL); outline-offset:2px;}
-  .manabiBar{height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(4px + env(safe-area-inset-top)) 12px 4px;background:rgba(12,7,4,.96);color:var(--txt);border-bottom:1px solid var(--brassD);font-size:10px;letter-spacing:.08em;}
+  .manabiBar{position:relative;z-index:200;height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(4px + env(safe-area-inset-top)) 12px 4px;background:rgba(12,7,4,.98);color:var(--txt);border-bottom:1px solid var(--brassD);font-size:10px;letter-spacing:.08em;box-shadow:0 2px 12px rgba(0,0,0,.4);}
   .manabiBar a{color:var(--txt);text-decoration:none;font-weight:800;min-height:24px;display:inline-flex;align-items:center;padding:3px 9px;border:1px solid var(--brass);border-radius:999px;}
   .manabiBar a:hover,.manabiBar a:focus-visible{background:var(--crim);color:#fff5e8;outline:2px solid var(--brassL);outline-offset:2px;}
   .manabiBar span{color:var(--brassL);}
