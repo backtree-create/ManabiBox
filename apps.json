@@ -132,17 +132,6 @@
     "icon": "bolt"
   },
   {
-    "key": "ecosystem-keeper",
-    "name": "生態系管理局",
-    "subject": "理科",
-    "file": "https://backtree-create.github.io/ManabiBox/ecosystem-keeper.html",
-    "desc": "個体数と環境変化を観測し、保全策を選んで食物網を安定させる生態系シミュレーション。",
-    "unit": "地域",
-    "total": 12,
-    "color": "#69D477",
-    "icon": "globe"
-  },
-   {
     "key": "onpu-trolley",
     "name": "オンプ・トロッコ",
     "subject": "音楽",
