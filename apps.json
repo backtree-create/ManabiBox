@@ -163,5 +163,38 @@
     "total": 21000,
     "color": "#C9A227",
     "icon": "star"
+  },
+  {
+    "key": "athletics",
+    "name": "四種競技グランプリ",
+    "subject": "保健体育",
+    "file": "https://backtree-create.github.io/ManabiBox/athletics.html",
+    "desc": "100m走・110mハードル・走り幅跳び・砲丸投げに挑むドット2D陸上ゲーム。合間の保健クイズでスタミナが伸びる。",
+    "unit": "種目",
+    "total": 4,
+    "color": "#FF8A3D",
+    "icon": "bolt"
+  },
+  {
+    "key": "consumer-quest",
+    "name": "消費者クエスト",
+    "subject": "家庭科",
+    "file": "https://backtree-create.github.io/ManabiBox/consumer-quest.html",
+    "desc": "悪質商法の証拠を調べ、手口を見抜き、知識カードで業者と対決する調査ファイル型アドベンチャー。全6事件。",
+    "unit": "事件",
+    "total": 6,
+    "color": "#D8503A",
+    "icon": "pen"
+  },
+  {
+    "key": "fitness-dungeon",
+    "name": "リアル体つくりダンジョン",
+    "subject": "保健体育",
+    "file": "https://backtree-create.github.io/fitness_dungeon/",
+    "desc": "カメラが姿勢を読み取り、実際の足踏み・スクワット・ジャンプでダンジョンを攻略する全8面の運動ゲーム。",
+    "unit": "面",
+    "total": 8,
+    "color": "#B36AE2",
+    "icon": "maze"
   }
 ]

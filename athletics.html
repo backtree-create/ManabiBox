@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>四種競技グランプリ | 保健体育 NIGHT GAMES</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#120A16;        /* ナイターの空 */
+  --navy2:#1E1220;
+  --track:#B33B27;       /* タータントラック */
+  --track-dark:#8A2C1D;
+  --lane:#F2E9DC;        /* レーン白線・クリーム */
+  --grass:#1F5C38;       /* インフィールド */
+  --amber:#FFC53D;       /* 電光掲示板 */
+  --amber-dim:#8A6A22;
+  --board:#171008;       /* 掲示板パネル */
+  --board-line:#3A2A12;
+  --white:#F5F1E8;
+  --red:#E5533C;
+  --good:#5AD38A;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--navy);overflow:hidden;
+  font-family:'Zen Kaku Gothic New',sans-serif;color:var(--white);
+  touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#wrap{height:100%;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(120% 90% at 50% 0%, #2A1830 0%, #120A16 60%)}
+#stage{position:relative;width:min(100vw,177.7vh);aspect-ratio:16/9;max-height:100vh;
+  background:var(--navy);overflow:hidden;box-shadow:0 0 60px rgba(0,0,0,.6)}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* ---------- 電光掲示板 HUD ---------- */
+#hud{position:absolute;top:1.2%;left:50%;transform:translateX(-50%);
+  width:94%;display:none;justify-content:space-between;align-items:stretch;gap:1%;
+  pointer-events:none;z-index:5}
+.board{background:var(--board);border:2px solid var(--board-line);border-radius:6px;
+  padding:.5% 1.4%;display:flex;flex-direction:column;justify-content:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.5), inset 0 0 18px rgba(255,197,61,.05)}
+.board .lbl{font-size:clamp(8px,1.4vmin,13px);font-weight:700;color:var(--amber-dim);letter-spacing:.14em}
+.board .val{font-family:'Anton',sans-serif;color:var(--amber);letter-spacing:.06em;
+  font-size:clamp(16px,3.6vmin,34px);line-height:1.05;text-shadow:0 0 10px rgba(255,197,61,.45)}
+#bEvent .val{font-family:'Zen Kaku Gothic New';font-weight:900;font-size:clamp(13px,2.6vmin,24px)}
+#bGauges{flex:1;max-width:38%;gap:6%}
+.meter{display:flex;align-items:center;gap:6px;margin:2px 0}
+.meter .lbl{width:6.5em}
+.meter .bar{flex:1;height:clamp(6px,1.2vmin,11px);background:#241A0C;border:1px solid var(--board-line);border-radius:3px;overflow:hidden}
+.meter .fill{height:100%;width:0%;background:var(--amber);transition:width .05s linear}
+#stFill.low{background:var(--red)}
+
+/* ---------- 操作ボタン ---------- */
+#controls{position:absolute;inset:0;pointer-events:none;z-index:6;display:none}
+.padBtn{position:absolute;bottom:4%;pointer-events:auto;
+  width:clamp(64px,15vmin,120px);height:clamp(64px,15vmin,120px);border-radius:50%;
+  border:3px solid rgba(242,233,220,.75);background:rgba(20,28,50,.55);
+  color:var(--white);font-family:'Anton',sans-serif;font-size:clamp(20px,4.5vmin,38px);
+  letter-spacing:.05em;backdrop-filter:blur(2px);cursor:pointer}
+.padBtn:active{background:rgba(255,197,61,.35);border-color:var(--amber);transform:scale(.94)}
+#btnL{left:3%}
+#btnR{right:3%}
+#btnA{left:50%;transform:translateX(-50%);border-color:var(--amber);color:var(--amber);
+  font-size:clamp(13px,2.6vmin,22px);font-family:'Zen Kaku Gothic New';font-weight:900}
+#btnA:active{transform:translateX(-50%) scale(.94)}
+#btnA.pulse{animation:pulse .7s infinite alternate}
+@keyframes pulse{from{box-shadow:0 0 0 0 rgba(255,197,61,.5)}to{box-shadow:0 0 0 14px rgba(255,197,61,0)}}
+.hidden{display:none !important}
+
+/* ---------- オーバーレイ共通 ---------- */
+#ovl{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center}
+.panel{background:linear-gradient(180deg,rgba(13,18,35,.96),rgba(9,13,26,.96));
+  border:2px solid var(--board-line);border-radius:14px;padding:3.5% 4.5%;
+  width:min(92%,760px);max-height:92%;overflow-y:auto;text-align:center;
+  box-shadow:0 10px 50px rgba(0,0,0,.7)}
+.eyebrow{font-family:'Anton',sans-serif;color:var(--amber);letter-spacing:.35em;
+  font-size:clamp(11px,1.8vmin,15px);margin-bottom:.6em}
+h1{font-weight:900;font-size:clamp(26px,6.5vmin,58px);line-height:1.15;letter-spacing:.04em}
+h1 .en{display:block;font-family:'Anton',sans-serif;font-weight:400;color:var(--amber);
+  font-size:clamp(15px,3vmin,26px);letter-spacing:.3em;margin-top:.35em;text-shadow:0 0 12px rgba(255,197,61,.4)}
+h2{font-weight:900;font-size:clamp(20px,4.6vmin,40px);margin-bottom:.4em}
+p.sub{color:#B9C2D8;font-size:clamp(12px,2.2vmin,17px);line-height:1.8;margin:1em 0}
+.btn{display:inline-block;border:none;cursor:pointer;border-radius:10px;
+  font-family:'Zen Kaku Gothic New';font-weight:900;letter-spacing:.1em;
+  font-size:clamp(15px,3vmin,22px);padding:.7em 2.2em;margin:.4em;
+  background:var(--amber);color:#211502;box-shadow:0 5px 0 #A67C1B}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 #A67C1B}
+.btn.ghost{background:transparent;color:var(--white);border:2px solid rgba(242,233,220,.5);box-shadow:none}
+.btn.ghost:active{transform:translateY(2px)}
+.evList{display:grid;grid-template-columns:repeat(4,1fr);gap:2%;margin:1.4em 0}
+.evCard{background:rgba(179,59,39,.14);border:1px solid rgba(179,59,39,.55);border-radius:10px;padding:6% 2%}
+.evCard .no{font-family:'Anton',sans-serif;color:var(--red);font-size:clamp(13px,2.4vmin,20px);letter-spacing:.15em}
+.evCard .nm{font-weight:900;font-size:clamp(11px,2vmin,17px);margin-top:.3em;line-height:1.3}
+.ctrlBox{background:rgba(255,197,61,.08);border:1px dashed var(--amber-dim);border-radius:10px;
+  padding:3% 4%;margin:1em 0;text-align:left;font-size:clamp(12px,2.2vmin,16px);line-height:2}
+.ctrlBox b{color:var(--amber)}
+.trivia{font-size:clamp(11px,2vmin,14px);color:#8FB79E;border-top:1px solid #22304F;
+  margin-top:1.2em;padding-top:1em;line-height:1.8;text-align:left}
+.trivia b{color:var(--good)}
+.bigNum{font-family:'Anton',sans-serif;color:var(--amber);font-size:clamp(44px,12vmin,110px);
+  line-height:1;text-shadow:0 0 24px rgba(255,197,61,.5);margin:.15em 0}
+.bigNum small{font-size:.35em;letter-spacing:.1em;color:var(--amber-dim)}
+.ptRow{font-weight:900;font-size:clamp(15px,3.2vmin,24px);color:var(--white)}
+.ptRow span{color:var(--amber)}
+
+/* クイズ */
+.qBadge{display:inline-block;background:var(--good);color:#08251A;font-weight:900;
+  border-radius:999px;padding:.25em 1.2em;font-size:clamp(12px,2.2vmin,16px);letter-spacing:.15em}
+.qText{font-weight:900;font-size:clamp(16px,3.4vmin,27px);line-height:1.6;margin:1em 0}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:.5em}
+.choice{background:rgba(31,92,56,.18);border:2px solid rgba(90,211,138,.5);border-radius:10px;
+  color:var(--white);font-family:'Zen Kaku Gothic New';font-weight:700;
+  font-size:clamp(13px,2.4vmin,18px);padding:1em .8em;cursor:pointer;line-height:1.5}
+.choice:active{background:rgba(90,211,138,.3)}
+.choice.correct{background:var(--good);color:#08251A;border-color:var(--good)}
+.choice.wrong{background:var(--red);border-color:var(--red)}
+.choice:disabled{cursor:default;opacity:.9}
+.expl{margin-top:1em;font-size:clamp(12px,2.3vmin,16px);line-height:1.9;color:#B9C2D8;text-align:left;
+  background:rgba(255,255,255,.04);border-radius:8px;padding:3% 4%}
+.expl b{color:var(--good)}
+
+/* 最終結果 */
+table.res{width:100%;border-collapse:collapse;margin:1em 0;font-size:clamp(12px,2.4vmin,18px)}
+table.res td{padding:.55em .4em;border-bottom:1px solid #22304F;text-align:left;font-weight:700}
+table.res td:last-child{text-align:right;font-family:'Anton',sans-serif;color:var(--amber);letter-spacing:.08em}
+table.res tr.total td{border-top:2px solid var(--amber-dim);border-bottom:none;
+  font-weight:900;font-size:1.15em}
+.rank{font-family:'Anton',sans-serif;font-size:clamp(60px,16vmin,150px);line-height:1;
+  color:var(--amber);text-shadow:0 0 30px rgba(255,197,61,.6)}
+.rankMsg{font-weight:900;font-size:clamp(14px,3vmin,22px);margin-top:.3em}
+
+#homeBtn{position:fixed;left:10px;top:10px;z-index:60;
+  font-family:'DotGothic16',monospace;font-size:clamp(11px,2.2vmin,15px);
+  background:rgba(18,10,22,.86);color:#FFC53D;border:2px solid #6B4A26;
+  border-radius:4px;padding:.35em .9em;cursor:pointer;letter-spacing:.06em;
+  box-shadow:0 3px 0 rgba(0,0,0,.4)}
+#homeBtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.4)}
+#rotateHint{position:fixed;inset:0;background:var(--navy);z-index:99;display:none;
+  align-items:center;justify-content:center;text-align:center;font-weight:900;
+  font-size:clamp(16px,4.5vw,24px);line-height:2;padding:8%}
+@media (orientation:portrait) and (max-width:600px){ #rotateHint{display:flex} }
+.flash{animation:flash .35s}
+@keyframes flash{0%{background:rgba(255,255,255,.9)}100%{background:transparent}}
+@media (prefers-reduced-motion:reduce){ *{animation:none !important;transition:none !important} }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="stage">
+    <canvas id="cv"></canvas>
+
+    <div id="hud">
+      <div class="board" id="bEvent"><div class="lbl">EVENT</div><div class="val" id="hEvent">100m走</div></div>
+      <div class="board" id="bGauges">
+        <div class="meter"><div class="lbl">SPEED</div><div class="bar"><div class="fill" id="spFill"></div></div></div>
+        <div class="meter"><div class="lbl">STAMINA</div><div class="bar"><div class="fill" id="stFill"></div></div></div>
+      </div>
+      <div class="board"><div class="lbl" id="hMainLbl">TIME</div><div class="val" id="hMain">0.00</div></div>
+    </div>
+
+    <div id="controls">
+      <button class="padBtn" id="btnL">L</button>
+      <button class="padBtn hidden" id="btnA">JUMP</button>
+      <button class="padBtn" id="btnR">R</button>
+    </div>
+
+    <div id="ovl"></div>
+  </div>
+</div>
+<button id="homeBtn" type="button" hidden>&#8962; まなびの基板</button>
+<div id="rotateHint">画面を横向きにしてください<br><span style="font-weight:700;font-size:.7em;color:#B9C2D8">この競技場はワイド画面仕様です</span></div>
+
+<script src="config.js"></script>
+<script src="hub-progress.js"></script>
+<script>
+"use strict";
+/* =========================================================
+   四種競技グランプリ — 保健体育 NIGHT GAMES
+   100m走 / 110mハードル / 走り幅跳び / 砲丸投げ + 保健クイズ
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const cv = $('#cv'), ctx = cv.getContext('2d');
+const W = 960, H = 540;
+let DPR = 1;
+function fitCanvas(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  cv.width = W*DPR; cv.height = H*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+fitCanvas(); addEventListener('resize', fitCanvas);
+
+/* ---------------- Audio ---------------- */
+let AC=null;
+function ac(){ if(!AC){ AC = new (window.AudioContext||window.webkitAudioContext)(); } if(AC.state==='suspended') AC.resume(); return AC; }
+function tone(f,dur,type='square',vol=.15,slide=0,when=0){
+  const a=ac(), t=a.currentTime+when;
+  const o=a.createOscillator(), g=a.createGain();
+  o.type=type; o.frequency.setValueAtTime(f,t);
+  if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+dur);
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t+dur+.02);
+}
+function noise(dur,vol=.3,hp=0,when=0){
+  const a=ac(), t=a.currentTime+when, n=a.sampleRate*dur|0;
+  const buf=a.createBuffer(1,n,a.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+  const s=a.createBufferSource(); s.buffer=buf;
+  const g=a.createGain(); g.gain.setValueAtTime(vol,t);
+  let node=s;
+  if(hp){ const f=a.createBiquadFilter(); f.type='highpass'; f.frequency.value=hp; s.connect(f); node=f; }
+  node.connect(g).connect(a.destination); s.start(t);
+}
+const SFX = {
+  gun(){ noise(.25,.5); tone(180,.15,'sawtooth',.2,-100); },
+  set(){ tone(660,.12,'sine',.12); },
+  jump(){ tone(300,.18,'square',.1,260); },
+  land(){ noise(.08,.15,300); },
+  hit(){ tone(140,.25,'sawtooth',.2,-80); noise(.15,.2); },
+  ding(){ tone(880,.1,'sine',.15); tone(1320,.25,'sine',.12,0,.1); },
+  buzz(){ tone(120,.35,'sawtooth',.18); },
+  cheer(){ for(let i=0;i<10;i++) noise(.5,.05,800,i*.05); },
+  fanfare(){ [523,659,784,1046].forEach((f,i)=>tone(f,.35,'square',.12,0,i*.14)); },
+  lock(){ tone(520,.08,'square',.12); },
+  count(i){ tone(i===0?880:440,.15,'sine',.14); }
+};
+
+/* ---------------- 保健クイズ ---------------- */
+const QUIZ = [
+ {q:'熱中症を予防する水分補給として最も適切なのは？',
+  c:['のどが渇いてから一気に飲む','のどが渇く前にこまめに飲む','運動後にまとめて飲む','水分は取らず塩分だけ取る'],a:1,
+  e:'のどの渇きを感じたときには、すでに脱水が始まっている。<b>渇く前にこまめに補給</b>するのが熱中症予防の基本。'},
+ {q:'運動後、筋肉が回復して前より強くなる「超回復」までの目安は？',
+  c:['約1〜2時間','約6時間','約48〜72時間','約2週間'],a:2,
+  e:'激しい運動のあと<b>約48〜72時間</b>の休養と栄養で、筋肉は前より少し強くなって回復する。これが超回復。'},
+ {q:'けがの応急手当「RICE」のIが表すのは？',
+  c:['Ice（冷却）','Iron（固定）','Impact（圧迫）','Inside（安静）'],a:0,
+  e:'RICEは <b>Rest（安静）・Ice（冷却）・Compression（圧迫）・Elevation（挙上）</b>。捻挫や打撲の基本の手当。'},
+ {q:'準備運動（ウォームアップ）の主な目的として正しいのは？',
+  c:['筋肉を大きくする','体温を上げてけがを防ぐ','汗をかいて体重を減らす','心拍数を下げて落ち着く'],a:1,
+  e:'準備運動は<b>体温と心拍数を徐々に上げ</b>、筋肉や関節を動きやすくして、けがを防ぐために行う。'},
+ {q:'「日常生活より強い負荷をかけないと体力は向上しない」という原理は？',
+  c:['反復性の原理','特異性の原理','過負荷（オーバーロード）の原理','可逆性の原理'],a:2,
+  e:'トレーニングの3つの原理のひとつ、<b>過負荷の原理</b>。いつもより少し強い負荷が体を強くする。'},
+ {q:'運動直後に10秒間脈拍を測った。1分間の心拍数にするには何倍する？',
+  c:['3倍','6倍','10倍','60倍'],a:1,
+  e:'1分＝60秒なので、10秒間の脈拍数を<b>6倍</b>すると1分間の心拍数になる。'},
+ {q:'AED（自動体外式除細動器）の役割として正しいのは？',
+  c:['心臓マッサージを自動で行う','電気ショックで心臓のけいれんを取り除く','酸素を送り込む','血圧を測定する'],a:1,
+  e:'AEDは心臓が細かくふるえる「心室細動」に<b>電気ショック</b>を与え、正常なリズムに戻すための機器。'},
+ {q:'睡眠中に多く分泌され、体の成長や疲労回復に関わるホルモンは？',
+  c:['アドレナリン','インスリン','成長ホルモン','メラトニン'],a:2,
+  e:'<b>成長ホルモン</b>は深い眠りのときに多く分泌される。睡眠は最強のリカバリー。'},
+ {q:'熱中症が疑われる人への対応として「してはいけない」のは？',
+  c:['涼しい場所へ運ぶ','衣服をゆるめて体を冷やす','意識がないのに水を飲ませる','首やわきの下を冷やす'],a:2,
+  e:'意識がない人に水を飲ませると、気道に入る危険がある。<b>すぐ救急車を呼び、体を冷やす</b>のが正解。'},
+ {q:'突き指をしたとき、最初にすべき手当は？',
+  c:['指を強く引っぱる','温めてもみほぐす','冷やして安静にする','すぐに動かして確かめる'],a:2,
+  e:'突き指は引っぱるのはNG。<b>冷やして安静</b>（RICEのRest＋Ice）にし、腫れが強ければ病院へ。'},
+];
+
+/* ---------------- まなびの基板 連携 ---------------- */
+const HUB={key:'athletics', total:4, maxPt:3400, store:'manabi-athletics'};
+function hubLoad(){ try{ return JSON.parse(localStorage.getItem(HUB.store)||'{}'); }catch(e){ return {}; } }
+function hubSaveLocal(o){ try{ localStorage.setItem(HUB.store, JSON.stringify(o)); }catch(e){} }
+function hubReport(doneEvents, totalPt, note){
+  const rec=hubLoad();
+  const done=Math.max(rec.done||0, doneEvents);
+  const score=Math.max(0, Math.min(1000, Math.round(totalPt/HUB.maxPt*1000)));
+  const best=Math.max(rec.best||0, score);
+  hubSaveLocal({done,best});
+  if(window.LearnHub && typeof LearnHub.report==='function'){
+    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best, note}); }catch(e){}
+  }
+}
+/* ホーム（ハブ）へ戻るボタン。ハブ配下で開いたときだけ出す */
+(function(){
+  const btn=document.getElementById('homeBtn');
+  const cfg=window.MANABI_CONFIG||{};
+  const url=cfg.hubUrl||'index.html';
+  if(cfg.backLink===false) return;
+  if(!window.LearnHub && !cfg.hubUrl) return;   // 単体で開いたときは表示しない
+  btn.hidden=false;
+  btn.onclick=()=>{ location.href=url; };
+})();
+
+/* ---------------- 種目定義 ---------------- */
+const EVENTS = [
+ {id:'sprint', no:'EVENT 1', name:'100m走', lbl:'TIME',
+  desc:'スタートの合図で全力ダッシュ。ゴールまでのタイムを競う。',
+  ctrl:'<b>L / R を交互に</b>連打して加速（PC：<b>FキーとJキー</b>）。同じ側を連打しても速くならない。スタミナが切れると失速するぞ。',
+  trivia:'<b>保体メモ：</b>短距離走は主に「無酸素運動」。酸素を使わずに筋肉のエネルギーを爆発的に使うため、長くは続かない。'},
+ {id:'hurdle', no:'EVENT 2', name:'110mハードル', lbl:'TIME',
+  desc:'10台のハードルを跳び越えてゴールを目指せ。ぶつかると大きく減速。',
+  ctrl:'<b>L / R 交互連打</b>で加速し、ハードルの直前で<b>JUMP</b>（PC：<b>スペースキー</b>）。空中では加速できないので、跳びすぎにも注意。',
+  trivia:'<b>保体メモ：</b>ハードルは「跳ぶ」より「またぎ越す」。上に高く跳ぶほど滞空時間で減速する。リズムが命。'},
+ {id:'longjump', no:'EVENT 3', name:'走り幅跳び', lbl:'DIST',
+  desc:'助走のスピードを踏み切りで跳躍距離に変えろ。試技は2回、良い方の記録が残る。',
+  ctrl:'<b>L / R 交互連打</b>で助走し、黄色い踏切ゾーンで<b>JUMP</b>（PC：スペース）。時間が止まったら、動く角度メーターが緑のゾーンに来た瞬間に<b>もう一度JUMP</b>！ 板を越えるとファウル。',
+  trivia:'<b>保体メモ：</b>実際の走り幅跳びの踏切角度は20度前後。このゲームでは40度前後がベストに調整してある。'},
+ {id:'shot', no:'EVENT 4', name:'砲丸投げ', lbl:'DIST',
+  desc:'パワーをためて、最高の角度で砲丸を突き出せ。試技は2回。',
+  ctrl:'<b>L / R 連打</b>で3秒間パワーをチャージ。その後、動く角度メーターを<b>JUMPボタンで止める</b>。40度前後を狙え。',
+  trivia:'<b>保体メモ：</b>砲丸は「投げる」のではなく肩口から「突き出す」競技。腕だけでなく全身の力を伝えるのがコツ。'},
+];
+
+/* ---------------- ゲーム状態 ---------------- */
+const S = {
+  scene:'menu',          // menu / intro / play / quiz / final
+  evIndex:0,
+  staminaMax:100,
+  results:[],            // {name, record(str), pts}
+  quizGood:0,
+  quizPool:[],
+};
+let R = null;            // 実行中種目のランタイム状態
+let lastT = performance.now();
+
+/* ---------------- 入力 ---------------- */
+const input = { lastSide:-1 };
+function runTap(side){
+  if(!R || !R.acceptRun) return;
+  if(R.airborne) return;
+  const stRatio = R.stamina/ S.staminaMax;
+  const fatigue = stRatio > .3 ? 1 : (.45 + .55*stRatio/.3);
+  const power = (side !== input.lastSide) ? 0.62 : 0.12;
+  R.v += power * fatigue;
+  R.stamina = Math.max(0, R.stamina - 0.55);
+  input.lastSide = side;
+  if(R.onTap) R.onTap();
+}
+function actionDown(){ if(R && R.onActionDown) R.onActionDown(); }
+function actionUp(){ if(R && R.onActionUp) R.onActionUp(); }
+
+addEventListener('keydown', e=>{
+  if(e.repeat) return;
+  if(e.code==='KeyF'||e.code==='ArrowLeft') runTap(0);
+  else if(e.code==='KeyJ'||e.code==='ArrowRight') runTap(1);
+  else if(e.code==='Space'){ e.preventDefault(); actionDown(); }
+});
+addEventListener('keyup', e=>{ if(e.code==='Space') actionUp(); });
+function bindBtn(el, down, up){
+  el.addEventListener('pointerdown', e=>{ e.preventDefault(); ac(); down(); });
+  if(up) el.addEventListener('pointerup', e=>{ e.preventDefault(); up(); });
+  if(up) el.addEventListener('pointercancel', ()=>up());
+}
+bindBtn($('#btnL'), ()=>runTap(0));
+bindBtn($('#btnR'), ()=>runTap(1));
+bindBtn($('#btnA'), actionDown, actionUp);
+
+/* ---------------- 背景（観客・スタジアム） ---------------- */
+const crowd = [];
+{ const cols=['#E5533C','#FFC53D','#5AD38A','#6FA8DC','#F5F1E8','#C58BD8'];
+  for(let i=0;i<900;i++){
+    crowd.push({x:Math.random()*3000, y:120+Math.random()*115, c:cols[Math.random()*cols.length|0], p:Math.random()*6.28});
+  }
+}
+function drawStadium(cam, t){
+  // 夕暮れの空（ポスタライズ帯）
+  const bands=[['#1C1030',0,64],['#3A1846',64,56],['#6D2450',120,52],
+               ['#B33B4A',172,40],['#E86A3C',212,26],['#F5A03C',238,10]];
+  for(const[b,y,h]of bands){ ctx.fillStyle=b; ctx.fillRect(0,y,W,h); }
+  // 沈む太陽（ピクセル円盤）
+  ctx.fillStyle='#FFC53D';
+  ctx.fillRect(W-336,188,72,10); ctx.fillRect(W-328,172,56,16);
+  ctx.fillRect(W-320,164,40,8);  ctx.fillRect(W-312,158,24,6);
+  // 照明塔（ピクセル）
+  for(const lx of [140, 480, 820]){
+    const px=(((lx - cam*6) % 1200 + 1200) % 1200 - 120)|0;
+    ctx.fillStyle='#241826'; ctx.fillRect(px-3,36,6,84); ctx.fillRect(px-22,30,44,5);
+    ctx.fillStyle='#2E1E30'; ctx.fillRect(px-14,60,4,60); ctx.fillRect(px+10,60,4,60);
+    ctx.fillStyle='#FFF2C8';
+    for(let i=0;i<5;i++) ctx.fillRect(px-20+i*9, 19, 7, 9);
+    ctx.fillStyle='rgba(255,235,180,.12)';
+    ctx.fillRect(px-36,14,72,22); ctx.fillRect(px-26,8,52,34);
+  }
+  // スタンド＋観客
+  ctx.fillStyle='#2A1830'; ctx.fillRect(0,108,W,140);
+  ctx.fillStyle='#1C0F20'; ctx.fillRect(0,108,W,12);
+  for(const c of crowd){
+    const px=((c.x - cam*10) % 3000 + 3000) % 3000 - 100;
+    if(px<-6||px>W+6) continue;
+    const bob=(Math.sin(t*2.2+c.p)>0.35)?-3:0;   // カクッと跳ねる応援
+    ctx.fillStyle=c.c; ctx.fillRect(((px/4)|0)*4, ((c.y/4)|0)*4+bob, 4, 4);
+  }
+  // 電光広告ボード
+  ctx.fillStyle='#160D18'; ctx.fillRect(0,248,W,26);
+  ctx.fillStyle='#FFC53D'; ctx.font='400 13px DotGothic16';
+  const ads=['NIGHT GAMES','保健体育','ATHLETICS GP','四種競技','STAY HYDRATED'];
+  for(let i=0;i<14;i++){
+    const px=((i*260 - cam*16) % 3600 + 3600) % 3600 - 200;
+    ctx.fillText(ads[i%ads.length], px, 266);
+  }
+  // 芝
+  ctx.fillStyle='#1F5C38'; ctx.fillRect(0,274,W,44);
+  ctx.fillStyle='#24693F';
+  for(let i=0;i<10;i++){ const px=((i*220-cam*22)%2200+2200)%2200-100; ctx.fillRect(px,274,110,44); }
+}
+function drawTrack(cam, ppm, groundY, marks){
+  // トラック面
+  ctx.fillStyle='#B33B27'; ctx.fillRect(0,318,W,H-318);
+  ctx.fillStyle='#8E2C1C'; ctx.fillRect(0,318,W,10);
+  ctx.fillStyle='#9E3220'; ctx.fillRect(0,402,W,4);
+  ctx.fillStyle='#7E281A'; ctx.fillRect(0,H-18,W,18);
+  // レーンライン（奥行き）
+  ctx.strokeStyle='rgba(242,233,220,.85)'; ctx.lineWidth=3;
+  for(const ly of [352, 400, 470]){
+    ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke();
+  }
+  // 距離マーカー
+  if(marks){
+    ctx.fillStyle='rgba(242,233,220,.9)';
+    ctx.font='400 20px DotGothic16';
+    for(let m=0;m<=marks.max;m+=10){
+      const px=(m-cam)*ppm;
+      if(px<-60||px>W+60) continue;
+      ctx.fillRect(px-2, 400, 4, 70);
+      ctx.fillText(m+'m', px+8, 462);
+    }
+  }
+}
+function drawFinish(cam,ppm,x){
+  const px=(x-cam)*ppm;
+  if(px<-80||px>W+80) return;
+  ctx.fillStyle='#F5F1E8';
+  for(let i=0;i<9;i++) for(let j=0;j<3;j++)
+    if((i+j)%2===0) ctx.fillRect(px+j*8, 352+i*13.3, 8, 13.3);
+  ctx.fillStyle='#E5533C'; ctx.fillRect(px-3,330,4,145);
+  ctx.font='900 15px "Zen Kaku Gothic New"'; ctx.fillStyle='#FFC53D';
+  ctx.fillText('FINISH', px-8, 326);
+}
+
+/* ---------------- 選手描画 ---------------- */
+const ATH_PAL={K:'#181008',S:'#F0C090',H:'#3A2418',J:'#E5533C',D:'#B03226',
+  P:'#F5F1E8',N:'#F0C090',M:'#C09468',E:'#FFC53D',e:'#B8862E'};
+const ATH_FRAMES={"runA": ["........................", ".............K..........", "...........KKHKK........", "..........KHHHHHK.......", "..........KHHHHHSK......", ".........KHHHHHHHK......", "..........KHHHSSKSK.....", "..........KHHHSSSK......", "...........KSHSSSKK.....", "..........KJNNSJKKMK....", ".........KDNNNNJKMMMK...", ".........KNNNNJJMMMMK...", "........KNNNNJJJMMMK....", ".......KNNNNJJJMMMK.....", "........KNNNNJJMMK......", ".........KNNNNJKK.......", ".....K..KJJNNNJK........", "...KKMK.KJJJNJJK........", "..KeeeeKKJPPPJJK........", "..KeeeeKKPPNNPK.........", "...KMMMKKPNNNNK.........", "....KMMMMPPNNNNK........", "....KMMMMMPPNNNK........", "....KMMMMMKKNNNNK.......", "....KMMMMK..KNNNNK......", ".....KMMK....KNNNNK.....", "......KK......KNNNK.....", "..............KNNNNK....", "...............KNNNK....", "...............KNNNNK..."], "runB": [".............K..........", "...........KKHKK........", "..........KHHHHHK.......", "..........KHHHHHK.......", ".........KHHHHHHHK......", "..........KHHHSSKK......", "..........KHHHSSSSK.....", "...........KSHSSSK......", "...........KSSSSSK......", "..........KJJNSJK.......", ".........KDDNNNJK.......", ".........KDNNNNJKKK.....", ".........KDNNNJJMMMK....", ".........KJNNNNNNMMMK...", ".........KJNNNNNNNMK....", ".........KJJNNNNNKK.....", "........KJJJJJJKK.......", "........KJJJJJJK........", "......K.KJPNPJK.........", "....KKMKKPNNNPK.........", "...KeeeeKPNNNPK.........", "...KeeeeMPNNNPK.........", "....KKMMMMNNNK..........", ".....KMMMMMNNNK.........", "......KMMMMNNNK.........", ".......KMMMNNNK.........", "........KMNNNNK.........", "........KNNNNK..........", ".......KNNNNK...........", ".......KNNNK............"], "runC": ["...........KKHKK........", "..........KHHHHHK.......", "..........KHHHHHK.......", ".........KHHHHHHHK......", "..........KHHHSSKK......", "..........KHHHSSSSK.....", "...........KSHSSSK......", "...........KSSSSSK......", "..........KJJNSJK.KK....", ".........KDDNNNJKKNNK...", ".........KDJJNNNKNNNNK..", ".........KDDJNNNNNNNK...", "........KMJJJJNNNNNK....", ".........KJJJJJNNKK.....", ".........KJJJJJMK.......", "........KJJJJJJK........", "........KJJJJJJK........", "........KJPNPJK.........", "...KK...KPNNNPK.........", ".KKNNK..KNNNNPK.........", "KEEEENK.KNNNPPK.........", "KEEEENNKNNNNPMMK........", ".KKKNNNNNNNKMMMK........", "....KNNNNNNKKMMMK.......", ".....KNNNNK.KMMMK.......", "......KKNK.KMMMMK.......", "........K.KMMMMK........", ".........KMMMMK.........", "........KMeeeeK.........", ".........KeeeeK........."], "runD": ["........................", ".............K..........", "...........KKHKK........", "..........KHHHHHK.......", "..........KHHHHHSK......", ".........KHHHHHHHK......", "..........KHHHSSKSK.....", "..........KHHHSSSK......", "...........KSHSSSKK.....", "..........KJJNSJKKNK....", ".........KDDNNNJKNNNK...", ".........KDJNNNNNNNNK...", "........KMDDJNNNNNNK....", ".......KMMJJJJNNNNK.....", "........KMJJJJJNNK......", ".........KJJJJJKK.......", ".....K..KJJJJJJK........", "...KKNK.KJJJJJJK........", "..KEEEEKKJPPPJJK........", "..KEEEEKKPNNPPK.........", "...KNNNKKNNNNPK.........", "....KNNNNNNNPPMK........", "....KNNNNNNPPMMK........", "....KNNNNNKKMMMMK.......", "....KNNNNK..KMMMMK......", ".....KNNK....KMMMMK.....", "......KK......KMMMK.....", "..............KMMMMK....", "...............KMMMK....", "...............KMMMMK..."], "runE": [".............K..........", "...........KKHKK........", "..........KHHHHHK.......", "..........KHHHHHK.......", ".........KHHHHHHHK......", "..........KHHHSSKK......", "..........KHHHSSSSK.....", "...........KSHSSSK......", "...........KSSSSSK......", "..........KJJNSJK.......", ".........KDDNNNJK.......", ".........KDJNNNJKKK.....", ".........KDDNNNNNNNK....", ".........KJJJNNNNNNNK...", ".........KJJJNNNNNNK....", ".........KJJJJNNMKK.....", "........KJJJJJJKK.......", "........KJJJJJJK........", "......K.KJPNPJK.........", "....KKNKKPNNNPK.........", "...KEEEEKPNNNPK.........", "...KEEEENNNNPPK.........", "....KKNNNNNNPK..........", ".....KNNNNNNMMK.........", "......KNNNNMMMK.........", ".......KNNNMMMK.........", "........KNMMMMK.........", "........KMMMMK..........", ".......KMMMMK...........", ".......KMMMK............"], "runF": ["...........KKHKK........", "..........KHHHHHK.......", "..........KHHHHHK.......", ".........KHHHHHHHK......", "..........KHHHSSKK......", "..........KHHHSSSSK.....", "...........KSHSSSK......", "...........KSSSSSK......", "..........KJNNSJK.KK....", ".........KDNNNNJKKMMK...", ".........KDNNNJJKMMMMK..", ".........KNNNJJJMMMMK...", "........KNNNNJJJMMMK....", ".........KNNNNNMMKK.....", ".........KJNNNNNK.......", "........KJJJNNNK........", "........KJJJJJJK........", "........KJPNPJK.........", "...KK...KPNNNPK.........", ".KKMMK..KPNNNNK.........", "KeeeeMK.KPPNNNK.........", "KeeeeMMKMMPPNNNK........", ".KKKMMMMMMMKNNNK........", "....KMMMMMMKKNNNK.......", ".....KMMMMK.KNNNK.......", "......KKMK.KNNNNK.......", "........K.KNNNNK........", ".........KNNNNK.........", "........KNEEEEK.........", ".........KEEEEK........."], "crouch": ["........................", "........................", "........................", "........................", "........................", ".................K......", "...............KKHKK....", "..............KHHHHHK...", "..............KHHHHHSK..", ".............KHHHHHHHK..", "..............KHHHSSKSK.", "..............KHHHSSSK..", ".............KJJSHSSSK..", "............KJJNNJSKK...", "............KDNNNNJK....", "...........KJDNNNJJK....", "...........KJNNNNJMK....", "..........KJJNNNJJMKK...", "..........KJJNNNJMMMMK..", ".........KJJJNNNJMMMMMK.", "........KJJJJNNNKKMMMMMK", "........KJPNNNNNK.KKMMK.", "........KPNNNNNNK...KK..", "........KPPNNNNNNK......", "........KPPPNNNNNNK.....", "....KKK..KPPPKNNNNNK....", "...KMMMKKMMMK.KNNNNK....", "..KeeeeMMMMMK.KNNNK.....", "..KeeeeMMMMMKKNNNK......", "...KKKKMMMMMKKNNNK......"], "hurdle": ["..............K.........", "............KKHKK.......", "...........KHHHHHK......", "...........KHHHHHSK.....", "..........KHHHHSSSK.....", "...........KHHHSSKSK....", "...........KHHHSSSK.....", "............KSHSSSK.....", "...........KJJNNJK......", "..........KDDNNNNNKKKKK.", ".........KMDJJNNNNNNNNNK", "........KMMDDJJNNNNNNNNN", "........KMJJJJJJKNNNNNNK", ".........KJJJJJJKKKKKKK.", ".........KJJJJJK........", ".....K..KJJJJJJK........", "....KMKKKJJJJJJK........", "...KeeeeKJPNNNNNKKKKKK..", "...KeeeeKPNNNNNNNNNNNNKK", "....KMMMKPPNNNNNNNNNNNNN", "....KMMMMPPPPPKKNNNNNNNE", "....KMMMMMPPPK..KKKKKKNE", "....KMMMMMKKK.........KK", ".....KMMMK..............", "......KMK...............", ".......K................", "........................", "........................", "........................", "........................"], "flight": [".......KKNNNMMMK........", "......KHHNNNMMK.........", "......KHHNNNSMK.........", ".....KHHHHNNNMK.........", "......KHHNNNNSK.........", "......KHHNNNSMK.........", ".......KSNNNSK..........", ".......KJNNNJK..........", "......KDJNNNJK..........", "......KJJJNJJK..........", "......KDJDJJJK..........", ".......KJJJJJK..........", ".......KJJJJJK..........", ".......KJJJJJJK.........", ".......KJJJJJJK.........", ".......KJJJJJJK.........", "........KJPNPJK.........", "........KPNNPPK.........", ".KK.....KNNNNPK.........", "KMMKK..KMNNNPPK.........", "eeeMMKKMNNNNPK..........", "eNNNNMMNNNNKK...........", "EEEENNNNNNK.............", "EEEENNNNNNK.............", "KKKKNNNNNK..............", "....KKKKK...............", "........................", "........................", "........................", "........................"], "sit": ["........................", "........................", "........................", "........................", "........................", ".......K................", ".....KKHKK..............", "....KHHHHHK.............", "....KHHHHHSK............", "...KHHHHHHHK............", "....KHHHSSKSK...........", "....KHHHSSSK............", ".....KSHSSSK............", "......KJSNJJK...........", ".....KDJNNNJK...........", ".....KJJNNNNNKKKKK......", ".....KDJDNNNNNNNNNK.....", "......KJJJJNNNNNNNNK....", "......KJJJJJNNNNNNK.....", ".......KJJJJJKMMMK......", ".......KJJJJJKKKK.......", ".......KJJJJJJK.........", ".......KJJPNPJK.........", "........KPPNNNNKKK......", "........KPNNNNNNNNKK....", "........KPPNNNNNNNNNKK..", ".........KPPPKMNNNNNNNK.", "..........KKK.KKKMNNNNNK", ".................KMNNNNN", "..................KMMNEE"], "hold": ["........................", "........................", "..........K.............", "........KKHKK...........", ".......KHHHHHK..........", ".......KHHHHHSK.........", "......KHHHHHHHK.........", ".......KHHHSSKSK........", ".......KHHHNNSK.........", "........KSNNNNNK........", ".......KJJNNNNNNK.......", ".......KJNNNNNNNNK......", ".......KJJNNNNNNK.......", ".......KDJDJJJKKK.......", ".......KDDDJJJMMMK......", "........KJJJJJMMMMK.....", "........KJJJJJMMMK......", "........KJJJJJKKK.......", "........KJJJJJK.........", "........KJPPPJK.........", "........KPPNPPK.........", "........KPNNNPK.........", "........KPPNNNK.........", ".......KMMPNNNNK........", ".....KKMMMMKNNNK........", "...KKMMMMMK.KNNNK.......", ".KKMMMMMMK..KNNNNK......", "KMMMMMMMK....KNNNK......", "MeeeeMKK.....KNNNK......", "KeeeeK.......KNNNK......"], "put": ["........................", "..............K.........", "............KKHKK..K....", "...........KHHHHHKKNK...", "...........KHHHHHSNNNK..", "..........KHHHHHHNNNNK..", "...........KHHHSSNNNK...", "...........KHHHNNNNK....", "...........KJSNNNNK.....", "..........KJJNNNNK......", "..........KDNNNNK.......", ".........KMJJNNJJK......", "........KMMDJDJJK.......", "........KMJJJJJJK.......", "........KMJJJJJJK.......", ".........KJJJJJK........", ".........KJJJJJK........", "........KJJJJJJK........", "........KJPNPJJK........", "........KPPNNPK.........", "......KKMPNNNNK.........", "....KKMMMPPNNNNK........", "..KKMMMMMMPPNNNNK.......", "KKMMMMMMMKKKKNNNNK......", "MMMMMMMKK....KNNNNK.....", "eeeMMKK.......KNNNK.....", "eeeKK..........KNNNK....", "KKK............KNNNNK...", "................KNNNK...", "................KNNNK..."], "cheer": ["...........KKNK.........", ".........KKHNNNK........", "........KHHHNNNMK.......", "........KHHHNNNMK.......", ".......KHHHHNNNMK.......", "........KHHHNNNSK.......", "........KHHNNNSK........", ".........KSNNNSK........", "........KJNNNNK.........", "........KJNNNJK.........", ".......KDJNNNJK.........", ".......KDDDJJJK.........", ".......KDDJJJJK.........", "........KJJJJJK.........", "........KJJJJJK.........", "........KJJJJJK.........", "........KJJJJJK.........", "........KJJJJJK.........", "........KJPNPJK.........", "........KPNNNPK.........", "........KPNNNPK.........", "........KPNNNPK.........", ".........KNNNK..........", "........KMNNNNK.........", "........KMMNNNK.........", "........KMMNNNK.........", "........KMMNNNK.........", "........KMMNNNK.........", ".......KMMMNNNK.........", ".......KMMMNNNK........."]};
+const ATH_IMG={};
+for(const k in ATH_FRAMES){
+  const rows=ATH_FRAMES[k];
+  const c=document.createElement('canvas');c.width=24;c.height=30;
+  const x=c.getContext('2d');
+  rows.forEach((r,j)=>{ for(let i=0;i<r.length;i++){ const ch=r[i];
+    if(ch!=='.'){ x.fillStyle=ATH_PAL[ch]; x.fillRect(i,j,1,1); } } });
+  ATH_IMG[k]=c;
+}
+const RUN_SEQ=['runA','runB','runC','runD','runE','runF'];
+function drawAthlete(px, py, phase, opt={}){
+  const s=(opt.scale||1)*3;
+  if(opt.shadowY!=null){
+    const h=Math.max(0, opt.shadowY-py);
+    const sw2=Math.max(10, 26-h*0.15);
+    ctx.fillStyle=`rgba(0,0,0,${Math.max(.12,.3-h*0.002)})`;
+    ctx.fillRect((px-sw2)|0, opt.shadowY+2, sw2*2|0, 5);
+  }
+  let key;
+  if(opt.pose) key=opt.pose;
+  else if(opt.freeze==null){
+    const i=Math.floor(phase/(Math.PI*2)*6)%6;
+    key=RUN_SEQ[(i+6)%6];
+  }
+  else if(opt.freeze===1.0) key='hurdle';
+  else key='crouch';
+  const img=ATH_IMG[key]||ATH_IMG.runA;
+  ctx.save();
+  ctx.translate(px,py);
+  if(opt.lean) ctx.rotate(opt.lean);
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(img, -11.5*s, -30*s, 24*s, 30*s);
+  ctx.restore();
+}
+
+/* ---------------- HUD ---------------- */
+function hud(on){ $('#hud').style.display = on?'flex':'none'; $('#controls').style.display = on?'block':'none'; }
+function setHud(evName, lbl){ $('#hEvent').textContent=evName; $('#hMainLbl').textContent=lbl; }
+function updHud(mainVal, v, vMax, st){
+  $('#hMain').textContent = mainVal;
+  $('#spFill').style.width = Math.min(100, v/vMax*100)+'%';
+  const stEl=$('#stFill');
+  stEl.style.width = Math.max(0, st/S.staminaMax*100)+'%';
+  stEl.classList.toggle('low', st/S.staminaMax < .3);
+}
+function showJump(on, label='JUMP', pulse=false){
+  const b=$('#btnA'); b.classList.toggle('hidden',!on);
+  b.textContent=label; b.classList.toggle('pulse',pulse);
+}
+
+/* ---------------- オーバーレイ画面 ---------------- */
+const ovl = $('#ovl');
+function screenMenu(){
+  hud(false); S.scene='menu';
+  ovl.innerHTML = `
+   <div class="panel">
+     <div class="eyebrow">HOKEN-TAIIKU NIGHT GAMES</div>
+     <h1>四種競技グランプリ<span class="en">ATHLETICS GP</span></h1>
+     <div class="evList">
+       ${EVENTS.map(e=>`<div class="evCard"><div class="no">${e.no}</div><div class="nm">${e.name}</div></div>`).join('')}
+     </div>
+     <p class="sub">中学の混成競技「四種競技」にちなんだ4種目に挑戦。<br>
+     種目の合間には保健クイズが3問。正解するとスタミナの最大値が上がり、ボーナス点も入る。</p>
+     <button class="btn" id="goStart">大会にエントリー</button>
+     <button class="btn ghost" id="goFull">全画面表示</button>
+   </div>`;
+  $('#goStart').onclick = ()=>{ ac(); SFX.ding(); S.evIndex=0; S.staminaMax=100; S.results=[]; S.quizGood=0;
+      S.quizPool=[...QUIZ].sort(()=>Math.random()-.5).slice(0,3); screenIntro(); };
+  $('#goFull').onclick = ()=>{ const el=document.documentElement;
+      if(!document.fullscreenElement){ (el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el); }
+      else{ (document.exitFullscreen||function(){}).call(document); } };
+}
+function screenIntro(){
+  hud(false); S.scene='intro';
+  const ev = EVENTS[S.evIndex];
+  ovl.innerHTML = `
+   <div class="panel">
+     <div class="eyebrow">${ev.no} / 4</div>
+     <h2>${ev.name}</h2>
+     <p class="sub">${ev.desc}</p>
+     <div class="ctrlBox">${ev.ctrl}</div>
+     <button class="btn" id="goEv">スタート地点へ</button>
+     <div class="trivia">${ev.trivia}</div>
+   </div>`;
+  $('#goEv').onclick = ()=>{ ac(); startEvent(ev); };
+}
+function screenEventResult(ev, recordStr, pts, note){
+  hud(false); S.scene='evres';
+  S.results.push({name:ev.name, record:recordStr, pts});
+  hubReport(S.results.length,
+    S.results.reduce((a,r)=>a+r.pts,0)+S.quizGood*100,
+    `${ev.name}まで ${S.results.length}/4種目`);
+  ovl.innerHTML = `
+   <div class="panel">
+     <div class="eyebrow">${ev.no} RESULT</div>
+     <h2>${ev.name}</h2>
+     <div class="bigNum">${recordStr}</div>
+     ${note?`<p class="sub">${note}</p>`:''}
+     <div class="ptRow">獲得ポイント <span>${pts}</span> pt</div>
+     <br><button class="btn" id="goNext">${S.evIndex<3?'次へ':'最終結果へ'}</button>
+   </div>`;
+  $('#goNext').onclick = ()=>{
+    if(S.evIndex<3){ screenQuiz(); } else { screenFinal(); }
+  };
+}
+function screenQuiz(){
+  S.scene='quiz'; hud(false);
+  const q = S.quizPool[S.evIndex];
+  ovl.innerHTML = `
+   <div class="panel">
+     <div class="qBadge">保健クイズ ${S.evIndex+1} / 3</div>
+     <p class="qText">${q.q}</p>
+     <div class="choices">
+       ${q.c.map((c,i)=>`<button class="choice" data-i="${i}">${c}</button>`).join('')}
+     </div>
+     <div id="qres"></div>
+   </div>`;
+  ovl.querySelectorAll('.choice').forEach(b=>{
+    b.onclick = ()=>{
+      ovl.querySelectorAll('.choice').forEach(x=>x.disabled=true);
+      const i=+b.dataset.i, ok=(i===q.a);
+      ovl.querySelectorAll('.choice')[q.a].classList.add('correct');
+      if(!ok) b.classList.add('wrong');
+      if(ok){ SFX.ding(); S.quizGood++; S.staminaMax+=15; }
+      else{ SFX.buzz(); }
+      $('#qres').innerHTML = `
+        <div class="expl">${ok
+          ? '<b>正解！</b> スタミナ最大値 +15、ボーナス +100pt。<br>'
+          : '<b>残念…</b> 正解は「'+q.c[q.a]+'」。<br>'}${q.e}</div>
+        <button class="btn" id="qNext" style="margin-top:1em">次の種目へ</button>`;
+      $('#qNext').onclick = ()=>{ S.evIndex++; screenIntro(); };
+    };
+  });
+}
+function rankOf(total){
+  if(total>=3100) return ['S','伝説の選手爆誕。オリンピックが君を待っている。'];
+  if(total>=2500) return ['A','大会MVP級！ 全種目ハイレベルにまとめた。'];
+  if(total>=1900) return ['B','県大会レベルの好記録。苦手種目を磨けばAは目前。'];
+  if(total>=1300) return ['C','よく戦った。連打のリズムと角度を復習しよう。'];
+  return ['D','まずは準備運動から。クイズでスタミナを稼ぐのも作戦だ。'];
+}
+function screenFinal(){
+  hud(false); S.scene='final';
+  const bonus = S.quizGood*100;
+  const total = S.results.reduce((s,r)=>s+r.pts,0) + bonus;
+  const [rk,msg] = rankOf(total);
+  hubReport(4, total, `RANK ${rk}／${total}pt`);
+  SFX.fanfare(); SFX.cheer();
+  ovl.innerHTML = `
+   <div class="panel">
+     <div class="eyebrow">FINAL RESULT</div>
+     <h2>大会成績</h2>
+     <table class="res">
+       ${S.results.map(r=>`<tr><td>${r.name}</td><td style="text-align:center;color:#B9C2D8">${r.record}</td><td>${r.pts} pt</td></tr>`).join('')}
+       <tr><td>保健クイズボーナス</td><td style="text-align:center;color:#B9C2D8">${S.quizGood} / 3 問正解</td><td>${bonus} pt</td></tr>
+       <tr class="total"><td>TOTAL</td><td></td><td>${total} pt</td></tr>
+     </table>
+     <div class="rank">RANK ${rk}</div>
+     <div class="rankMsg">${msg}</div>
+     <br><button class="btn" id="goRetry">もう一度挑戦</button>
+   </div>`;
+  $('#goRetry').onclick = screenMenu;
+}
+
+/* ---------------- 種目：走系（100m / 110mH） ---------------- */
+function startEvent(ev){
+  ovl.innerHTML=''; S.scene='play';
+  input.lastSide=-1;
+  if(ev.id==='sprint') initRun(ev, 100, null);
+  else if(ev.id==='hurdle'){
+    const hs=[]; for(let i=0;i<10;i++) hs.push(13.72+i*9.14);
+    initRun(ev, 110, hs);
+  }
+  else if(ev.id==='longjump') initLongJump(ev);
+  else if(ev.id==='shot') initShot(ev);
+}
+function initRun(ev, dist, hurdles){
+  hud(true); setHud(ev.name, 'TIME'); showJump(!!hurdles, 'JUMP');
+  R = {
+    type:'run', ev, dist, hurdles,
+    x:0, v:0, t:0, stamina:S.staminaMax,
+    phase:0, airborne:false, airT:0, stumble:0,
+    started:false, finished:false, finT:0,
+    acceptRun:false, countdown:2.6, gunAt:null,
+    cleared:new Set(), fallen:new Set(),
+    nice:0, niceX:0, inZone:false,
+    onActionDown(){
+      if(!this.started || this.finished) return;
+      if(this.airborne) return;
+      this.airborne=true; this.airT=0; SFX.jump();
+    },
+    onTap(){},
+  };
+  runCountdown();
+}
+function runCountdown(){
+  R.msg='位置について'; SFX.count(1);
+  setTimeout(()=>{ if(R&&!R.started){ R.msg='用意'; SFX.set(); } }, 1300);
+  const wait = 2100 + Math.random()*900;
+  setTimeout(()=>{ if(R&&!R.started){ R.msg=''; R.started=true; R.acceptRun=true; SFX.gun(); } }, wait);
+}
+const AIR_DUR = 0.6;
+function hurdleZone(hx){ return [hx-3.0, hx-0.4]; } // 踏切推奨ゾーン
+function updateRun(dt){
+  if(R.started && !R.finished){
+    R.t += dt;
+    // 減速（空気抵抗＋疲労）
+    R.v -= R.v * 0.42 * dt;
+    if(R.v<0) R.v=0;
+    // ジャンプ（滞空中は最低速度が保証され、必ず前へ進む）
+    let moveV = R.v;
+    if(R.airborne){
+      R.airT += dt;
+      moveV = Math.max(R.v, 5.2);
+      if(R.airT > AIR_DUR){ R.airborne=false; SFX.land(); }
+    }
+    // ハードル判定
+    if(R.hurdles){
+      R.inZone=false;
+      for(const hx of R.hurdles){
+        if(R.cleared.has(hx)){ continue; }
+        const [z0,z1]=hurdleZone(hx);
+        if(!R.airborne && R.x>=z0 && R.x<=z1) R.inZone=true;
+        if(R.x > hx - 0.3 && R.x < hx + 0.3){
+          if(R.airborne){
+            R.cleared.add(hx);
+            R.nice=0.8; R.niceX=hx;             // クリア演出
+          } else {
+            R.cleared.add(hx); R.fallen.add(hx);
+            R.v*=0.55; R.stumble=0.45; SFX.hit(); // 倒して減速（失格にはならない）
+          }
+        }
+      }
+      // ゾーン内で接地中ならJUMPボタンを点滅
+      const b=$('#btnA');
+      if(b.classList.contains('pulse')!==R.inZone) b.classList.toggle('pulse',R.inZone);
+    }
+    if(R.stumble>0) R.stumble-=dt;
+    if(R.nice>0) R.nice-=dt;
+    R.x += moveV*dt;
+    R.phase += moveV*dt*2.4;
+    if(R.x >= R.dist){
+      R.finished=true; R.finT=R.t; R.acceptRun=false;
+      SFX.cheer();
+      const ev=R.ev;
+      setTimeout(()=>{
+        let pts, note='';
+        if(ev.id==='sprint'){
+          pts = Math.min(1100, Math.max(0, Math.round((16.5 - R.finT)*250)));
+          note = R.finT<12.5 ? '全国レベルのスプリント！' : R.finT<14 ? '素晴らしいタイム！' : 'ラストまで粘った！';
+        } else {
+          pts = Math.min(1100, Math.max(0, Math.round((24 - R.finT)*190)));
+          const hit = R.fallen.size;
+          note = hit===0 ? '全ハードルクリア！ 完璧なハードリング！'
+               : R.finT<19 ? `倒したハードル ${hit} 台。それでも好タイム！`
+               : `倒したハードル ${hit} 台。黄色いゾーンでジャンプしよう。`;
+        }
+        screenEventResult(ev, R.finT.toFixed(2)+' 秒', pts, note);
+      }, 1200);
+    }
+  }
+}
+function drawRun(t){
+  const ppm = 34;
+  const cam = Math.max(-6, R.x - 8);
+  drawStadium(cam, t);
+  drawTrack(cam, ppm, 430, {max:R.dist});
+  drawFinish(cam, ppm, R.dist);
+  // スタートライン
+  const sx=(0-cam)*ppm;
+  if(sx>-40&&sx<W+40){ ctx.fillStyle='#F5F1E8'; ctx.fillRect(sx-2,352,4,118); }
+  // ハードル
+  if(R.hurdles){
+    for(const hx of R.hurdles){
+      const px=(hx-cam)*ppm;
+      if(px<-140||px>W+40) continue;
+      // 踏切推奨ゾーン（黄色のシェブロン）
+      if(!R.cleared.has(hx)){
+        const [z0,z1]=hurdleZone(hx);
+        const p0=(z0-cam)*ppm, p1=(z1-cam)*ppm;
+        ctx.fillStyle='rgba(255,197,61,.22)';
+        ctx.fillRect(p0,400,p1-p0,70);
+        ctx.fillStyle='rgba(255,197,61,.75)';
+        for(let cx2=p0+8; cx2<p1-10; cx2+=22){
+          ctx.beginPath();
+          ctx.moveTo(cx2,412); ctx.lineTo(cx2+11,435); ctx.lineTo(cx2,458);
+          ctx.lineTo(cx2+5,458); ctx.lineTo(cx2+16,435); ctx.lineTo(cx2+5,412);
+          ctx.closePath(); ctx.fill();
+        }
+      }
+      // ハードル本体（倒したものは倒れた姿で描く）
+      ctx.save(); ctx.translate(px,430);
+      if(R.fallen.has(hx)) ctx.rotate(1.35);
+      ctx.fillStyle='#181008';
+      ctx.fillRect(-14,-50,7,52); ctx.fillRect(7,-50,7,52); ctx.fillRect(-18,-58,36,13);
+      ctx.fillStyle='#DAD2C4'; ctx.fillRect(-12,-48,4,48); ctx.fillRect(9,-48,4,48);
+      ctx.fillStyle='#F5F1E8'; ctx.fillRect(-16,-56,32,9);
+      ctx.fillStyle='#E5533C'; ctx.fillRect(-16,-56,8,9); ctx.fillRect(8,-56,8,9);
+      ctx.restore();
+    }
+    // 1台目の前にヒント表示
+    if(R.x < 13 && !R.finished && R.started){
+      ctx.textAlign='center';
+      ctx.font='900 24px "Zen Kaku Gothic New"'; ctx.fillStyle='rgba(255,197,61,.95)';
+      ctx.fillText('黄色いゾーンに入ったら JUMP！', W/2, 305);
+      ctx.textAlign='left';
+    }
+  }
+  // 選手
+  const px=(R.x-cam)*ppm;
+  let py=430, lean = R.v*0.012;
+  if(R.airborne){ const k=R.airT/AIR_DUR; py = 430 - 48*Math.sin(k*Math.PI); lean=0.42-0.2*k; }
+  if(R.stumble>0) lean = 0.6*Math.sin(R.stumble*20);
+  drawAthlete(px, py, R.phase, {lean, pose: R.finished?'cheer':undefined,
+    freeze: R.started? (R.airborne? 1.0 : null) : 0.15, shadowY:430});
+  // クリア演出
+  if(R.nice>0){
+    const nx=(R.niceX-cam)*ppm;
+    ctx.font='900 26px "Zen Kaku Gothic New"'; ctx.fillStyle=`rgba(90,211,138,${Math.min(1,R.nice*2)})`;
+    ctx.textAlign='center'; ctx.fillText('NICE!', nx, 340 - (0.8-R.nice)*40); ctx.textAlign='left';
+  }
+  // メッセージ
+  if(R.msg){
+    ctx.font='900 46px "Zen Kaku Gothic New"'; ctx.fillStyle='#FFC53D';
+    ctx.textAlign='center'; ctx.fillText(R.msg, W/2, 210); ctx.textAlign='left';
+  }
+  if(R.finished){
+    ctx.font='900 52px "Zen Kaku Gothic New"'; ctx.fillStyle='#FFC53D'; ctx.textAlign='center';
+    ctx.fillText('GOAL!', W/2, 200);
+    ctx.font='400 60px DotGothic16'; ctx.fillText(R.finT.toFixed(2), W/2, 268); ctx.textAlign='left';
+  }
+  updHud(R.t.toFixed(2), R.v, 10, R.stamina);
+}
+
+/* ---------------- 種目：走り幅跳び ---------------- */
+function initLongJump(ev){
+  hud(true); setHud(ev.name,'DIST'); showJump(true,'JUMP');
+  R = {
+    type:'lj', ev,
+    attempt:1, best:0, records:[],
+    reset(){
+      this.x=-2; this.v=0; this.stamina=S.staminaMax; this.phase=0;
+      this.state='run'; // run / aim / fly / landed / foul
+      this.holdAngle=5; this.aimDir=1; this.aimGuard=0;
+      this.takeoffV=0; this.flyT=0; this.fx=0; this.fy=0; this.vx=0; this.vy=0;
+      this.dist=0; this.msg=''; this.acceptRun=true; this.landT=0; this.early=0;
+      input.lastSide=-1;
+      showJump(true,'JUMP');
+    },
+    onActionDown(){
+      if(this.state==='run'){
+        if(this.x < 20){ this.early=0.7; SFX.buzz(); return; }   // 早すぎ：警告のみ
+        if(this.x > this.boardX+0.25){ this.foul(); return; }
+        // 踏み切り：時間停止して角度選択へ
+        this.state='aim'; this.acceptRun=false; this.aimGuard=0.2;
+        this.takeoffV=this.v; this.holdAngle=5; this.aimDir=1;
+        showJump(true,'ここで止める',true); SFX.set();
+      } else if(this.state==='aim'){
+        if(this.aimGuard>0) return;   // 連打誤爆防止
+        this.launch();
+      }
+    },
+    onActionUp(){},
+    launch(){
+      const theta=this.holdAngle*Math.PI/180;
+      const v=this.takeoffV;
+      this.state='fly'; this.flyT=0;
+      this.fx=this.x; this.fy=0;
+      this.vx=v*Math.cos(theta); this.vy=v*Math.sin(theta)*1.15;
+      showJump(true,'JUMP'); SFX.jump();
+    },
+    foul(){
+      this.state='foul'; this.acceptRun=false; this.dist=0; this.landT=0;
+      SFX.buzz(); this.msg='FOUL！ 踏切板オーバー';
+      this.records.push(null);
+      showJump(true,'JUMP');
+    },
+  };
+  R.boardX=30;
+  R.reset();
+}
+function updateLJ(dt){
+  if(R.state==='run'){
+    R.v -= R.v*0.42*dt; if(R.v<0)R.v=0;
+    R.x += R.v*dt; R.phase += R.v*dt*2.4;
+    if(R.early>0) R.early-=dt;
+    if(R.x > R.boardX+0.3) R.foul(); // 跳ばずに走り抜けた
+  }
+  else if(R.state==='aim'){
+    // 時間停止：角度メーターだけが往復する
+    R.aimGuard-=dt;
+    R.holdAngle += R.aimDir*80*dt;
+    if(R.holdAngle>58){R.holdAngle=58;R.aimDir=-1;}
+    if(R.holdAngle<5){R.holdAngle=5;R.aimDir=1;}
+  }
+  else if(R.state==='fly'){
+    R.flyT+=dt;
+    R.vy -= 9.8*dt*1.05;
+    R.fx += R.vx*dt*0.62;      // 距離スケール補正
+    R.fy += R.vy*dt;
+    if(R.fy<=0 && R.flyT>0.1){
+      R.state='landed'; R.landT=0; SFX.land();
+      R.dist = Math.max(0, R.fx - R.boardX);
+      R.records.push(R.dist);
+      if(R.dist>R.best) R.best=R.dist;
+      if(R.dist>4.6) SFX.cheer();
+    }
+  }
+  else if(R.state==='landed' || R.state==='foul'){
+    R.landT+=dt;
+    if(R.landT>2.2){
+      if(R.attempt===1){ R.attempt=2; R.reset(); }
+      else{
+        const ev=R.ev;
+        const pts=Math.round(R.best*165);
+        const note = R.best<=0 ? '2回ともファウル…次は板の手前で跳ぼう。'
+          : R.best>5.4 ? '大ジャンプ！ 助走と角度が完璧！'
+          : 'いい跳躍！ 角度40度前後を極めよう。';
+        screenEventResult(ev, R.best.toFixed(2)+' m', pts, note);
+      }
+    }
+  }
+}
+function drawLJ(t){
+  const ppm=30;
+  const focus = (R.state==='fly'||R.state==='landed') ? R.fx : R.x;
+  const cam=Math.max(-4, focus-9);
+  drawStadium(cam,t);
+  // 助走路
+  ctx.fillStyle='#B33B27'; ctx.fillRect(0,318,W,H-318);
+  const g=ctx.createLinearGradient(0,340,0,H);
+  g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.25)');
+  ctx.fillStyle=g; ctx.fillRect(0,318,W,H-318);
+  ctx.strokeStyle='rgba(242,233,220,.85)'; ctx.lineWidth=3;
+  for(const ly of [352,470]){ ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); }
+  // 踏切板
+  const bx=(R.boardX-cam)*ppm;
+  ctx.fillStyle='#F5F1E8'; ctx.fillRect(bx-18,352,22,118);
+  ctx.fillStyle='#E5533C'; ctx.fillRect(bx+4,352,6,118);
+  // 砂場
+  const sx=(R.boardX+0.8-cam)*ppm;
+  ctx.fillStyle='#D9B36C'; ctx.fillRect(sx,352,(9.5)*ppm,118);
+  ctx.fillStyle='rgba(0,0,0,.12)';
+  for(let i=0;i<20;i++) ctx.fillRect(sx+Math.random()* (9.5*ppm), 352+Math.random()*118, 8,3);
+  // 距離マーカー
+  ctx.fillStyle='#5A4B2A'; ctx.font='400 17px DotGothic16';
+  for(let m=1;m<=9;m++){
+    const px=(R.boardX+m-cam)*ppm;
+    if(px<sx) continue;
+    ctx.fillRect(px-1.5,352,3,14); ctx.fillText(m+'m', px+5, 368);
+  }
+  // 踏切ゾーン（黄色）：ここに入ったらJUMP
+  if(R.state==='run'){
+    const p0=(26-cam)*ppm, p1=(R.boardX-cam)*ppm;
+    if(p1>0 && p0<W){
+      ctx.fillStyle='rgba(255,197,61,.2)'; ctx.fillRect(p0,352,p1-p0,118);
+      ctx.fillStyle='rgba(255,197,61,.8)'; ctx.font='900 17px "Zen Kaku Gothic New"';
+      ctx.fillText('踏切ゾーン', p0+8, 372);
+    }
+  }
+  // 選手
+  if(R.state==='run'){
+    drawAthlete((R.x-cam)*ppm, 430, R.phase, {lean:R.v*0.012, shadowY:430});
+  } else if(R.state==='aim'){
+    drawAthlete((R.x-cam)*ppm, 430, R.phase, {lean:0.22, freeze:0.55, shadowY:430});
+  } else {
+    const py=430 - R.fy*ppm*1.1;
+    drawAthlete((R.fx-cam)*ppm, Math.min(py,430), R.phase,
+      {lean: R.state==='fly'? -0.05: 0.08, pose: R.state==='fly'? 'flight':'sit', shadowY:430});
+  }
+  // 角度選択（時間停止演出）
+  if(R.state==='aim'){
+    ctx.fillStyle='rgba(22,10,24,.5)'; ctx.fillRect(0,0,W,H);
+    const px=(R.x-cam)*ppm;
+    ctx.save(); ctx.translate(px, 350);
+    ctx.strokeStyle='rgba(255,255,255,.45)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(0,0,78,-Math.PI/2*1.3,0); ctx.stroke();
+    // 適正ゾーン 38-46度
+    ctx.strokeStyle='rgba(90,211,138,.95)'; ctx.lineWidth=10;
+    ctx.beginPath(); ctx.arc(0,0,78,-46*Math.PI/180,-38*Math.PI/180); ctx.stroke();
+    const a=-R.holdAngle*Math.PI/180;
+    ctx.strokeStyle='#FFC53D'; ctx.lineWidth=6;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(88*Math.cos(a),88*Math.sin(a)); ctx.stroke();
+    ctx.fillStyle='#FFC53D'; ctx.font='400 30px DotGothic16';
+    ctx.fillText(Math.round(R.holdAngle)+'°', 28, -52);
+    ctx.restore();
+    ctx.textAlign='center';
+    ctx.font='900 30px "Zen Kaku Gothic New"'; ctx.fillStyle='#F5F1E8';
+    ctx.fillText('緑のゾーンで もう一度 JUMP！', W/2, 180);
+    ctx.textAlign='left';
+  }
+  // 表示メッセージ
+  ctx.textAlign='center';
+  if(R.state==='run' && R.early>0){
+    ctx.font='900 32px "Zen Kaku Gothic New"'; ctx.fillStyle='#E5533C';
+    ctx.fillText('まだ早い！ 黄色いゾーンで！', W/2, 190);
+  }
+  if(R.state==='landed'){
+    ctx.font='900 48px "Zen Kaku Gothic New"'; ctx.fillStyle='#FFC53D';
+    ctx.fillText(R.dist.toFixed(2)+' m', W/2, 210);
+  }
+  if(R.state==='foul'){
+    ctx.font='900 44px "Zen Kaku Gothic New"'; ctx.fillStyle='#E5533C';
+    ctx.fillText(R.msg, W/2, 210);
+  }
+  ctx.font='700 20px "Zen Kaku Gothic New"'; ctx.fillStyle='rgba(245,241,232,.85)';
+  ctx.fillText(`第 ${R.attempt} 跳躍 / 2`, W/2, 300);
+  ctx.textAlign='left';
+  updHud((R.best||0).toFixed(2)+' m', R.v, 10, R.stamina);
+}
+
+/* ---------------- 種目：砲丸投げ ---------------- */
+function initShot(ev){
+  hud(true); setHud(ev.name,'DIST'); showJump(false);
+  R = {
+    type:'shot', ev,
+    attempt:1, best:0,
+    reset(){
+      this.state='power'; this.power=0; this.pT=3.0;
+      this.angle=0; this.angleDir=1;
+      this.fx=0; this.fy=2.0; this.vx=0; this.vy=0; this.flyT=0;
+      this.dist=0; this.landT=0; this.acceptRun=false;
+      showJump(false);
+      input.lastSide=-1;
+    },
+    onTapPower(){
+      if(this.state!=='power') return;
+      this.power=Math.min(100, this.power+4.5); SFX.lock();
+    },
+    onActionDown(){
+      if(this.state!=='angle') return;
+      this.state='fly'; showJump(false); SFX.jump();
+      const v=4+this.power*0.055, th=this.angle*Math.PI/180;
+      this.vx=v*Math.cos(th); this.vy=v*Math.sin(th);
+      this.fx=1.1; this.fy=2.0; this.flyT=0;
+    },
+  };
+  // 砲丸はどのボタン連打でもパワーが入る
+  R.onTap = ()=>R.onTapPower();
+  const origTap = runTap; // (連打→runTap→onTap 経由)
+  R.acceptRun = true;     // runTap を通すため
+  R.v=0; R.stamina=S.staminaMax;
+  R.reset();
+  R.acceptRun = true;
+}
+function updateShot(dt){
+  if(R.state==='power'){
+    R.pT-=dt;
+    R.power=Math.max(0, R.power-9*dt);   // 減衰
+    if(R.pT<=0){
+      R.state='angle'; showJump(true,'ここで止める',true); SFX.set();
+    }
+  }
+  else if(R.state==='angle'){
+    R.angle += R.angleDir*70*dt;
+    if(R.angle>60){R.angle=60;R.angleDir=-1;}
+    if(R.angle<5){R.angle=5;R.angleDir=1;}
+  }
+  else if(R.state==='fly'){
+    R.flyT+=dt;
+    R.vy-=9.8*dt;
+    R.fx+=R.vx*dt*0.92; R.fy+=R.vy*dt;
+    if(R.fy<=0){
+      R.state='landed'; R.landT=0; SFX.land();
+      R.dist=R.fx;
+      if(R.dist>R.best)R.best=R.dist;
+      if(R.dist>9)SFX.cheer();
+    }
+  }
+  else if(R.state==='landed'){
+    R.landT+=dt;
+    if(R.landT>2.2){
+      if(R.attempt===1){ R.attempt=2; R.reset(); R.acceptRun=true; }
+      else{
+        const ev=R.ev;
+        const pts=Math.round(R.best*82);
+        const note=R.best>10?'ミートポイント完璧の大遠投！':R.best>7?'力強い一投！':'パワーゲージを満タン近くまで！';
+        screenEventResult(ev, R.best.toFixed(2)+' m', pts, note);
+      }
+    }
+  }
+}
+function drawShot(t){
+  const ppm=52;
+  const cam=-1.6;
+  drawStadium(cam*0.3, t);
+  // フィールド（芝の投てき場）
+  ctx.fillStyle='#1F5C38'; ctx.fillRect(0,318,W,H-318);
+  ctx.fillStyle='#24693F';
+  for(let i=0;i<9;i++) ctx.fillRect(i*120,318,60,H-318);
+  ctx.fillStyle='rgba(0,0,0,.18)'; ctx.fillRect(0,318,W,14);
+  // サークル
+  const cx=(0-cam)*ppm;
+  ctx.strokeStyle='#F5F1E8'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.ellipse(cx+30,468,68,20,0,0,7); ctx.stroke();
+  // 距離ライン
+  ctx.font='400 18px DotGothic16';
+  for(let m=2;m<=14;m+=2){
+    const px=(m-cam)*ppm;
+    ctx.strokeStyle='rgba(242,233,220,.55)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(px,352); ctx.lineTo(px-26,486); ctx.stroke();
+    ctx.fillStyle='rgba(242,233,220,.9)'; ctx.fillText(m+'m', px+4, 372);
+  }
+  // 選手（構え）
+  const ax=(0-cam)*ppm+20;
+  drawAthlete(ax, 452, 0, {pose:(R.state==='fly'||R.state==='landed')?'put':'hold',
+    lean:0, scale:1.15, shadowY:452});
+  // 砲丸
+  let sx,sy;
+  if(R.state==='fly'||R.state==='landed'){ sx=(R.fx-cam)*ppm; sy=452-88 - (R.fy-2)*ppm*0.9; if(R.state==='landed'){sy=470-8;} }
+  else { sx=ax+13, sy=452-78; }
+  ctx.fillStyle='#181008'; ctx.fillRect(sx-7,sy-7,14,14);
+  ctx.fillStyle='#4A443C'; ctx.fillRect(sx-6,sy-6,12,12);
+  ctx.fillStyle='#6A6258'; ctx.fillRect(sx-5,sy-5,5,4);
+  // ゲージ類
+  ctx.textAlign='center';
+  if(R.state==='power'){
+    ctx.font='900 30px "Zen Kaku Gothic New"'; ctx.fillStyle='#FFC53D';
+    ctx.fillText('連打でパワーチャージ！', W/2, 170);
+    ctx.font='400 44px DotGothic16';
+    ctx.fillText(R.pT.toFixed(1), W/2, 222);
+    // パワーバー
+    ctx.fillStyle='#241A0C'; ctx.fillRect(W/2-180,240,360,26);
+    ctx.fillStyle= R.power>85 ? '#5AD38A' : '#FFC53D';
+    ctx.fillRect(W/2-180,240,360*R.power/100,26);
+    ctx.strokeStyle='#3A2A12'; ctx.lineWidth=3; ctx.strokeRect(W/2-180,240,360,26);
+  }
+  if(R.state==='angle'||R.state==='fly'||R.state==='landed'){
+    // 角度メーター
+    ctx.save(); ctx.translate(ax+26, 452-92);
+    ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(0,0,86,-Math.PI/2*1.3,0); ctx.stroke();
+    ctx.strokeStyle='rgba(90,211,138,.9)'; ctx.lineWidth=9;
+    ctx.beginPath(); ctx.arc(0,0,86,-45*Math.PI/180,-36*Math.PI/180); ctx.stroke();
+    const a=-R.angle*Math.PI/180;
+    ctx.strokeStyle='#FFC53D'; ctx.lineWidth=5;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(96*Math.cos(a),96*Math.sin(a)); ctx.stroke();
+    ctx.fillStyle='#FFC53D'; ctx.font='400 28px DotGothic16';
+    ctx.fillText(Math.round(R.angle)+'°', 40, -50);
+    ctx.restore();
+    if(R.state==='angle'){
+      ctx.font='900 26px "Zen Kaku Gothic New"'; ctx.fillStyle='#F5F1E8';
+      ctx.fillText('緑のゾーンでボタン！', W/2, 170);
+    }
+  }
+  if(R.state==='landed'){
+    ctx.font='900 48px "Zen Kaku Gothic New"'; ctx.fillStyle='#FFC53D';
+    ctx.fillText(R.dist.toFixed(2)+' m', W/2, 210);
+  }
+  ctx.font='700 20px "Zen Kaku Gothic New"'; ctx.fillStyle='rgba(245,241,232,.85)';
+  ctx.fillText(`第 ${R.attempt} 投 / 2`, W/2, 300);
+  ctx.textAlign='left';
+  updHud((R.best||0).toFixed(2)+' m', R.power/10, 10, R.stamina);
+}
+
+/* ---------------- メインループ ---------------- */
+function loop(now){
+  const dt=Math.min(0.05,(now-lastT)/1000); lastT=now;
+  const t=now/1000;
+  if(S.scene==='play' && R){
+    if(R.type==='run'){ updateRun(dt); drawRun(t); }
+    else if(R.type==='lj'){ updateLJ(dt); drawLJ(t); }
+    else if(R.type==='shot'){ updateShot(dt); drawShot(t); }
+  } else {
+    // 背景デモ
+    drawStadium(t*1.2, t);
+    drawTrack(t*1.2, 34, 430, null);
+  }
+  requestAnimationFrame(loop);
+}
+screenMenu();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

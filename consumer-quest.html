@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>消費者クエスト 調査ファイル | 家庭科</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F7F4EC; --paper2:#EFEADE;
+  --ink:#1A1712; --ink2:#3A342A;
+  --shu:#C73A2A; --warn:#F5C400;
+  --marker:rgba(245,196,0,.45);
+  --line:#D8D2C2; --band:#14110C; --ok:#2E7D46;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:#2A2620;color:var(--ink);
+  font-family:'Noto Sans JP',sans-serif;line-height:1.8;
+  -webkit-user-select:none;user-select:none}
+body{min-height:100svh}
+#app{max-width:760px;margin:0 auto;min-height:100svh;background:var(--paper);
+  box-shadow:0 0 60px rgba(0,0,0,.5);position:relative;overflow:hidden;
+  display:flex;flex-direction:column}
+#app::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+   repeating-linear-gradient(0deg,transparent 0 3px,rgba(26,23,18,.012) 3px 4px),
+   radial-gradient(120% 90% at 50% 0%,transparent 60%,rgba(26,23,18,.06) 100%);}
+#app>*{position:relative;z-index:1}
+header#hd{background:var(--band);color:var(--paper);padding:10px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+#hd .t{font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(14px,3.6vw,18px);letter-spacing:.06em}
+#hd .t b{color:var(--warn)}
+#hd .ep{font-size:clamp(10px,2.6vw,12px);color:#C9C2B0;font-weight:700}
+#score{font-family:'Noto Serif JP',serif;font-weight:900;color:var(--warn);font-size:clamp(13px,3.4vw,17px);white-space:nowrap}
+main#mn{flex:1;padding:18px 16px 120px;overflow-y:auto}
+
+.serif{font-family:'Noto Serif JP',serif}
+h1.big{font-family:'Noto Serif JP',serif;font-weight:900;line-height:1.4;
+  font-size:clamp(24px,7vw,40px);letter-spacing:.04em;margin:.4em 0}
+h1.big .sub{display:block;font-size:.42em;color:var(--shu);letter-spacing:.3em;font-weight:700}
+h2.sec{font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(17px,4.6vw,23px);
+  border-left:6px solid var(--shu);padding-left:.5em;margin:1.2em 0 .6em;letter-spacing:.04em}
+p.lead{color:var(--ink2);font-size:clamp(13px,3.4vw,15px)}
+.btn{display:inline-block;border:none;cursor:pointer;
+  font-family:'Noto Serif JP',serif;font-weight:900;letter-spacing:.12em;
+  font-size:clamp(14px,3.8vw,17px);padding:.75em 2em;margin:.4em .2em;
+  background:var(--ink);color:var(--paper);border-radius:3px;
+  box-shadow:3px 3px 0 rgba(26,23,18,.25)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(26,23,18,.25)}
+.btn.accent{background:var(--shu)}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--ink);box-shadow:none}
+.btn:disabled{opacity:.35;pointer-events:none}
+.tag{display:inline-block;background:var(--warn);color:var(--ink);font-weight:900;
+  font-size:clamp(10px,2.8vw,12px);padding:.15em .8em;letter-spacing:.15em}
+.note{background:#FFF9E0;border:1px solid #E8D890;padding:.8em 1em;font-size:clamp(12px,3.2vw,14px);margin:.8em 0}
+.note b{color:var(--shu)}
+.note.gray{background:#EEECE4;border-color:var(--line)}
+
+#telop{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(760px,100%);
+  z-index:30;background:var(--band);border-top:4px solid var(--warn);
+  padding:10px 14px 14px;display:none}
+#telop .who{display:inline-block;background:var(--warn);color:var(--ink);
+  font-weight:900;font-size:clamp(10px,2.8vw,12px);padding:.1em .8em;letter-spacing:.12em;margin-bottom:4px}
+#telop .say{color:var(--paper);font-weight:700;font-size:clamp(14px,3.8vw,17px);line-height:1.7;min-height:2.6em}
+#telop .nx{position:absolute;right:14px;bottom:8px;color:var(--warn);font-size:12px;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.15}}
+
+.chat{display:flex;flex-direction:column;gap:10px;padding:6px 0}
+.msg{max-width:82%;padding:.6em .9em;border-radius:12px;font-size:clamp(13px,3.6vw,15px);
+  line-height:1.7;animation:pop .25s;box-shadow:0 2px 0 rgba(26,23,18,.12)}
+@keyframes pop{from{transform:translateY(8px);opacity:0}}
+.msg.l{align-self:flex-start;background:#fff;border:1px solid var(--line);border-top-left-radius:2px}
+.msg.r{align-self:flex-end;background:#E9F5DB;border:1px solid #C8DFB0;border-top-right-radius:2px}
+.msg.sys{align-self:center;background:transparent;box-shadow:none;color:var(--ink2);
+  font-size:clamp(11px,3vw,13px);font-weight:700}
+.msg .nm{display:block;font-size:.75em;font-weight:900;color:var(--shu);margin-bottom:.2em}
+.msg.r .nm{color:var(--ok)}
+
+.doc{background:#FFFDF7;border:1px solid var(--line);box-shadow:0 4px 16px rgba(26,23,18,.12);
+  padding:22px 18px;margin:12px 0;position:relative}
+.doc .stampword{position:absolute;top:14px;right:16px;width:56px;height:56px;
+  border:3px solid rgba(199,58,42,.55);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:rgba(199,58,42,.6);font-family:'Noto Serif JP',serif;font-weight:900;
+  font-size:15px;transform:rotate(12deg);pointer-events:none}
+.doc h3{font-family:'Noto Serif JP',serif;font-weight:900;text-align:center;
+  font-size:clamp(16px,4.4vw,20px);letter-spacing:.2em;margin-bottom:.8em;
+  border-bottom:2px solid var(--ink);padding-bottom:.4em}
+.doc table{width:100%;border-collapse:collapse;font-size:clamp(12px,3.2vw,14px);margin:.6em 0}
+.doc td{border:1px solid var(--line);padding:.45em .6em;vertical-align:top}
+.doc td.h{background:var(--paper);font-weight:700;width:31%;white-space:nowrap}
+.doc .small{font-size:clamp(8px,2.2vw,9.5px);color:#6A6252;line-height:1.6;margin-top:.7em}
+.doc .clause{font-size:clamp(11.5px,3.1vw,13.5px);margin:.5em 0;line-height:1.8}
+.doc .sign{margin-top:1em;display:flex;justify-content:space-between;align-items:flex-end;
+  font-size:clamp(12px,3.2vw,14px)}
+.doc .sign .nm2{font-family:'Noto Serif JP',serif;font-weight:700;border-bottom:1px solid var(--ink);padding:0 1.2em .1em}
+/* スマホ画面の再現（SMS・通販・フリマ） */
+.phone{background:#111;border-radius:18px;padding:10px 10px 14px;margin:12px auto;max-width:420px;
+  box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.phone .scr{background:#F4F2EE;border-radius:8px;overflow:hidden}
+.phone .bar{background:#E4E0D8;padding:6px 12px;font-size:11px;font-weight:700;color:#555;
+  display:flex;justify-content:space-between}
+.phone .body{padding:12px}
+.sms{background:#fff;border:1px solid #DDD6C8;border-radius:10px;border-top-left-radius:2px;
+  padding:.6em .8em;font-size:clamp(12px,3.3vw,14px);line-height:1.75;max-width:95%}
+.shop-hero{background:#FFE9EE;text-align:center;padding:14px 8px;border-bottom:2px solid #F0C0CC}
+.shop-hero .p1{font-weight:900;color:#D6336C;font-size:clamp(22px,7vw,32px);line-height:1.3}
+.shop-hero .p2{font-weight:900;font-size:clamp(12px,3.4vw,14px)}
+.shop-btn{display:block;background:#D6336C;color:#fff;text-align:center;font-weight:900;
+  border-radius:999px;padding:.7em;margin:10px 8px;font-size:clamp(14px,4vw,17px)}
+.item-ph{background:#DDD6C8;height:120px;display:flex;align-items:center;justify-content:center;
+  color:#8A8270;font-weight:900;letter-spacing:.2em;margin-bottom:8px}
+.slide{background:#1B1B22;color:#fff;padding:18px 14px;margin:12px 0;text-align:center;
+  box-shadow:0 4px 16px rgba(26,23,18,.2)}
+.slide .s1{font-weight:900;font-size:clamp(20px,6vw,30px);color:#FFD84A;line-height:1.4}
+.slide .s2{font-size:clamp(12px,3.3vw,14px);margin-top:.5em;color:#D8D8E0}
+
+.spot{cursor:pointer;border-bottom:2px dashed transparent;transition:background .15s;padding:0 .1em}
+.spot.found{background:var(--marker);border-bottom:2px solid var(--warn)}
+.spot.dud{background:rgba(140,140,140,.28)}
+#fusenBox{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.fusen{background:#FFF3B8;border-left:6px solid var(--warn);padding:.6em .9em;
+  font-size:clamp(12px,3.2vw,14px);box-shadow:2px 3px 0 rgba(26,23,18,.12);animation:slidein .3s}
+@keyframes slidein{from{transform:translateX(-14px);opacity:0}}
+.fusen b{color:var(--shu)}
+#spotCount{font-family:'Noto Serif JP',serif;font-weight:900;color:var(--shu);font-size:clamp(14px,4vw,18px)}
+
+.cards{display:grid;grid-template-columns:1fr;gap:10px;margin:12px 0}
+@media(min-width:560px){.cards{grid-template-columns:repeat(3,1fr)}}
+.card{background:#fff;border:2px solid var(--ink);border-radius:4px;padding:.9em .9em;
+  cursor:pointer;box-shadow:4px 4px 0 rgba(26,23,18,.2);transition:transform .1s}
+.card:active{transform:translate(2px,2px);box-shadow:2px 2px 0 rgba(26,23,18,.2)}
+.card .cn{font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(14px,3.8vw,16px);
+  border-bottom:2px solid var(--warn);padding-bottom:.25em;margin-bottom:.35em}
+.card .cd{font-size:clamp(11px,3vw,12.5px);color:var(--ink2);line-height:1.65}
+.card.correct{border-color:var(--ok);background:#EFF8EC}
+.card.wrong{border-color:var(--shu);background:#FBEAE7;opacity:.7}
+.gauges{display:flex;gap:14px;margin:8px 0 4px;font-size:clamp(11px,3vw,13px);font-weight:700}
+.g{flex:1}
+.g .lb{margin-bottom:2px}
+.g .bar{height:12px;background:#E4DECC;border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.g .fill{height:100%;transition:width .3s}
+#gLie .fill{background:var(--ink)}
+#gFua .fill{background:var(--shu)}
+
+#cutin{position:fixed;left:0;right:0;top:38%;z-index:40;pointer-events:none;
+  transform:translateX(-100%) skewX(-8deg);background:var(--shu);padding:.5em 0;text-align:center}
+#cutin.go{animation:cut 1s ease forwards}
+@keyframes cut{0%{transform:translateX(-100%) skewX(-8deg)}
+  25%,75%{transform:translateX(0) skewX(-8deg)}
+  100%{transform:translateX(100%) skewX(-8deg)}}
+#cutin span{display:inline-block;color:#fff;font-family:'Noto Serif JP',serif;
+  font-weight:900;font-size:clamp(22px,7vw,36px);letter-spacing:.2em;transform:skewX(8deg)}
+
+.postcard{background:#FDFBF3;border:1px solid var(--line);box-shadow:0 4px 16px rgba(26,23,18,.12);
+  padding:20px 16px;margin:12px 0;position:relative;font-size:clamp(12.5px,3.4vw,15px);line-height:2.1}
+.postcard .to{font-family:'Noto Serif JP',serif;font-weight:700;font-size:1.1em;margin-bottom:.6em}
+.blank{display:inline-block;min-width:6.5em;border-bottom:2px solid var(--shu);
+  text-align:center;color:#B0A890;cursor:pointer;font-weight:700;padding:0 .3em}
+.blank.filled{color:var(--ink);border-bottom-color:var(--ink)}
+.blank.hot{animation:hotb 1s infinite}
+@keyframes hotb{50%{background:rgba(245,196,0,.35)}}
+.choicebar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(760px,100%);
+  z-index:35;background:var(--band);border-top:4px solid var(--warn);padding:12px;display:none}
+.choicebar .q{color:var(--warn);font-weight:900;font-size:clamp(12px,3.2vw,14px);margin-bottom:8px}
+.choicebar .opts{display:flex;flex-wrap:wrap;gap:8px}
+.copt{background:var(--paper);border:none;border-radius:3px;cursor:pointer;
+  font-weight:700;font-size:clamp(12px,3.4vw,14px);padding:.5em 1em}
+.copt:active{background:var(--warn)}
+.stamp{position:absolute;right:18px;bottom:14px;width:86px;height:86px;border:5px solid var(--shu);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:var(--shu);font-family:'Noto Serif JP',serif;font-weight:900;font-size:20px;
+  letter-spacing:.1em;transform:rotate(-14deg) scale(0);opacity:.9}
+.stamp.on{animation:stmp .45s cubic-bezier(.2,2.2,.4,1) forwards}
+@keyframes stmp{to{transform:rotate(-14deg) scale(1)}}
+
+.cal{background:#fff;border:1px solid var(--line);margin:10px 0;padding:12px}
+.cal h4{text-align:center;font-family:'Noto Serif JP',serif;font-weight:900;letter-spacing:.2em;margin-bottom:6px}
+.cal .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:clamp(12px,3.4vw,15px)}
+.cal .dow{font-weight:900;color:var(--ink2);font-size:.8em;padding:.2em 0}
+.cal .d{padding:.45em 0;border:1px solid transparent;border-radius:3px;cursor:pointer;font-weight:700}
+.cal .d:active{background:var(--marker)}
+.cal .d.base{background:var(--warn);color:var(--ink);cursor:default}
+.cal .d.pick{background:var(--ok);color:#fff}
+.cal .d.mute{color:#C0B8A0;cursor:default}
+.legend{font-size:clamp(11px,3vw,12.5px);color:var(--ink2)}
+
+/* 仕分け（やる・やらない） */
+.sortItem{background:#fff;border:2px solid var(--ink);border-radius:4px;padding:.7em .9em;margin:.5em 0;
+  font-weight:700;font-size:clamp(13px,3.5vw,15px);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sortItem .sbs{display:flex;gap:6px;flex-shrink:0}
+.sbtn{border:2px solid var(--ink);background:var(--paper);border-radius:3px;cursor:pointer;
+  font-weight:900;font-size:clamp(11px,3vw,13px);padding:.35em .7em}
+.sbtn.do{border-color:var(--ok);color:var(--ok)}
+.sbtn.dont{border-color:var(--shu);color:var(--shu)}
+.sortItem.ok{background:#EFF8EC;border-color:var(--ok)}
+.sortItem.ng{background:#FBEAE7;border-color:var(--shu)}
+.sortItem .why{display:none;font-weight:500;font-size:.85em;color:var(--ink2);margin-top:.3em}
+.sortItem.done .why{display:block}
+.sortItem.done .sbs{display:none}
+.sortItem.done{display:block}
+
+.rank{font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(64px,20vw,120px);
+  color:var(--shu);text-align:center;line-height:1.1}
+table.res{width:100%;border-collapse:collapse;margin:.8em 0;font-size:clamp(12.5px,3.4vw,15px)}
+table.res td{border-bottom:1px solid var(--line);padding:.55em .3em;font-weight:700}
+table.res td:last-child{text-align:right;font-family:'Noto Serif JP',serif;font-weight:900}
+.pointbox{border:2px solid var(--ink);margin:.9em 0;padding:1em 1.1em;background:#fff}
+.pointbox h4{font-family:'Noto Serif JP',serif;font-weight:900;color:var(--shu);margin-bottom:.4em;
+  font-size:clamp(14px,3.8vw,16px)}
+.pointbox li{margin-left:1.3em;font-size:clamp(12.5px,3.3vw,14.5px);margin-bottom:.35em}
+.p188{background:var(--band);color:var(--paper);text-align:center;padding:1em;margin:1em 0}
+.p188 .n{font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(28px,9vw,44px);color:var(--warn);letter-spacing:.1em}
+
+/* エピソード選択 */
+.epGrid{display:grid;grid-template-columns:1fr;gap:10px;margin:14px 0}
+@media(min-width:560px){.epGrid{grid-template-columns:1fr 1fr}}
+.epCard{background:#fff;border:2px solid var(--ink);border-radius:4px;padding:.9em 1em;cursor:pointer;
+  box-shadow:4px 4px 0 rgba(26,23,18,.2);text-align:left;position:relative}
+.epCard:active{transform:translate(2px,2px);box-shadow:2px 2px 0 rgba(26,23,18,.2)}
+.epCard .no{font-family:'Noto Serif JP',serif;font-weight:900;color:var(--shu);font-size:clamp(11px,3vw,13px);letter-spacing:.2em}
+.epCard .tt{font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(15px,4.2vw,18px);margin:.15em 0}
+.epCard .md{font-size:clamp(11px,3vw,12.5px);color:var(--ink2)}
+.epCard .rk{position:absolute;right:10px;top:8px;font-family:'Noto Serif JP',serif;font-weight:900;
+  color:var(--shu);font-size:clamp(18px,5vw,24px)}
+#homeBtn{position:fixed;left:10px;top:10px;z-index:60;
+  font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(11px,2.6vw,14px);
+  background:var(--band);color:var(--warn);border:2px solid var(--warn);
+  border-radius:3px;padding:.35em .9em;cursor:pointer;letter-spacing:.06em}
+#homeBtn:active{transform:translateY(2px)}
+.fade{animation:fadein .4s}
+@keyframes fadein{from{opacity:0;transform:translateY(10px)}}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<button id="homeBtn" type="button" hidden>&#8962; まなびの基板</button>
+<div id="app">
+  <header id="hd">
+    <div>
+      <div class="t">消費者クエスト<b>█</b>調査ファイル</div>
+      <div class="ep" id="hdEp">FILE SELECT</div>
+    </div>
+    <div id="score">SCORE 0</div>
+  </header>
+  <main id="mn"></main>
+  <div id="telop"><span class="who" id="tWho"></span><div class="say" id="tSay"></div><div class="nx">▼ タップ</div></div>
+  <div class="choicebar" id="cbar"><div class="q" id="cbQ"></div><div class="opts" id="cbO"></div></div>
+  <div id="cutin"><span id="cutTxt">反論成立</span></div>
+</div>
+<script src="config.js"></script>
+<script src="hub-progress.js"></script>
+<script>
+"use strict";
+/* =========================================================
+   消費者クエスト — 調査ファイル（全6話・データ駆動）
+   相談 → 証拠しらべ → 手口特定 → 対決 → 手続き → まとめ
+   ========================================================= */
+const $=s=>document.querySelector(s);
+const mn=$('#mn');
+const G={score:0,ep:null,epIdx:0,found:0,duds:0,battleMiss:0,calMiss:0,fua:0,turn:0,clear:{}};
+function addScore(n){G.score=Math.max(0,G.score+n);$('#score').textContent='SCORE '+G.score;}
+
+/* ---------------- まなびの基板 連携 ---------------- */
+const HUB={key:'consumer-quest', total:6, store:'manabi-consumer-quest'};
+function hubLoad(){ try{ return JSON.parse(localStorage.getItem(HUB.store)||'{}'); }catch(e){ return {}; } }
+function hubSaveLocal(o){ try{ localStorage.setItem(HUB.store, JSON.stringify(o)); }catch(e){} }
+function hubBoot(){
+  const rec=hubLoad();
+  if(rec.ranks) G.clear=Object.assign({},rec.ranks);
+}
+function hubReport(epIdx, ratio, rank, epNo){
+  const rec=hubLoad();
+  const ratios=rec.ratios||{};
+  ratios[epIdx]=Math.max(ratios[epIdx]||0, Math.max(0,Math.min(1,ratio)));
+  const ranks=Object.assign({},rec.ranks||{},G.clear);
+  const done=Object.keys(ratios).length;
+  let sum=0; for(const k in ratios) sum+=ratios[k];
+  const best=Math.round(sum/HUB.total*1000);
+  hubSaveLocal({done,best,ratios,ranks});
+  if(window.LearnHub && typeof LearnHub.report==='function'){
+    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best,
+      note:`FILE ${epNo} ランク${rank}`}); }catch(e){}
+  }
+}
+(function(){
+  const btn=document.getElementById('homeBtn');
+  const cfg=window.MANABI_CONFIG||{};
+  const url=cfg.hubUrl||'index.html';
+  if(cfg.backLink===false) return;
+  if(!window.LearnHub && !cfg.hubUrl) return;
+  btn.hidden=false;
+  btn.onclick=()=>{ location.href=url; };
+})();
+function scrollBottom(){mn.scrollTop=mn.scrollHeight;}
+
+let telopQueue=[],telopDone=null;
+function telop(lines,done){
+  telopQueue=[...lines];telopDone=done||null;
+  $('#telop').style.display='block';nextTelop();
+}
+function nextTelop(){
+  if(!telopQueue.length){
+    $('#telop').style.display='none';
+    const d=telopDone;telopDone=null;if(d)d();return;
+  }
+  const [who,say]=telopQueue.shift();
+  $('#tWho').textContent=who;$('#tSay').innerHTML=say;
+}
+$('#telop').addEventListener('pointerdown',e=>{e.preventDefault();nextTelop();});
+function cutin(txt,color){
+  const c=$('#cutin');
+  c.style.background=color||'var(--shu)';
+  $('#cutTxt').textContent=txt;
+  c.classList.remove('go');void c.offsetWidth;c.classList.add('go');
+}
+</script>
+<script>
+"use strict";
+/* ================= エピソードデータ ================= */
+const EPIS=[
+/* ---------- FILE 01 キャッチセールス ---------- */
+{no:'01',title:'路上の甘い罠',mode:'キャッチセールス',
+ client:'ハルカ（18・専門学生）',
+ chat:[
+  ['sys','消費生活センター 相談受付システム'],
+  ['l','はじめまして。相談したいことがあってメッセージしました…','ハルカ（18・専門学生）'],
+  ['l','先週、駅前で「無料の肌診断やってます」って声をかけられて、ついていったんです','ハルカ'],
+  ['l','お店で診断のあと「今日契約すれば半額」って言われて、断りきれなくて…エステの契約をしてしまいました','ハルカ'],
+  ['r','契約書は手元にありますか？','わたし（相談員）'],
+  ['l','あります。写真を送りますね','ハルカ'],
+  ['l','冷静になったら、月々3,000円って聞いてたのに総額がすごい金額で…。お店に電話したら「解約はできない決まりです」って言われました','ハルカ'],
+  ['l','わたし、もう18歳だから大人ですよね。自分でサインしちゃったし、あきらめるしかないんでしょうか…','ハルカ'],
+  ['r','あきらめるのはまだ早いです。まず、契約書をいっしょに確認しましょう','わたし（相談員）'],
+ ],
+ evTitle:'契約書',evLead:'あやしいところをタップしてマーカーを引こう。',
+ needSpots:5,
+ doc:`<div class="doc"><div class="stampword">写</div>
+   <h3>役務提供契約書</h3>
+   <table>
+     <tr><td class="h">サービス名</td><td>プレミアム美肌コース<br><span class="spot" data-dud="1">全身トリートメント24回</span></td></tr>
+     <tr><td class="h">契約期間</td><td><span class="spot" data-id="s4">24か月</span>（月2回）</td></tr>
+     <tr><td class="h">お支払い</td><td>月々 3,000円 × 分割<br>
+       <span class="spot" data-id="s3" style="font-size:8.5px;color:#8A8270">（支払総額：259,200円／分割手数料含む）</span></td></tr>
+     <tr><td class="h">キャンペーン</td><td><span class="spot" data-id="s2">★本日ご契約の方限定★ 通常価格から半額！</span></td></tr>
+     <tr><td class="h">お支払方法</td><td><span class="spot" data-dud="2">クレジット分割（提携信販会社）</span></td></tr>
+   </table>
+   <p class="clause">第7条（解約）　<span class="spot" data-id="s1">お客様のご都合による解約・返品・返金は、理由のいかんを問わず一切できません。</span></p>
+   <p class="clause"><span class="spot" data-id="s5">第8条（その他）　本契約に定めのない事項は当サロンの定めによります。</span></p>
+   <p class="small">ビューティサロン月光　東京都●●区…　契約日：4月10日（書面お渡し日）</p>
+   <div class="sign"><span>お客様署名</span><span class="nm2 serif">春川 ハルカ</span></div>
+ </div>`,
+ spots:{
+  s1:{label:'「解約・返品は一切できません」',expl:'<b>クーリングオフは法律で決まった制度。</b>「解約不可」の特約は<b>無効</b>。'},
+  s2:{label:'「本日契約の方限定 半額」',expl:'<b>「今日だけ」で急がせる</b>のは悪質商法の典型サイン。考える時間をうばう手口。'},
+  s3:{label:'総額 259,200円（極小文字）',expl:'月々の金額を大きく、<b>総額を小さく</b>見せる表示。契約前に必ず総額と回数を確認！'},
+  s4:{label:'契約期間 24か月',expl:'長期のしばり契約。エステ等の継続サービスは<b>特定継続的役務提供</b>として法律のルールがある。'},
+  s5:{label:'クーリングオフの記載がない',expl:'業者は<b>書面でクーリングオフを説明する義務</b>がある。記載のない書面は不備＝<b>8日間のカウントが始まらない</b>！'},
+ },
+ dudExpl:'ここは問題なし（-30）。回数や支払方法の<b>記載があること自体</b>は正常だ。',
+ quiz:{lead:'「路上で声をかけて店に連れていき、その場で契約させる」——この販売方法を何という？',
+  opts:[
+   {n:'キャッチセールス',d:'路上・駅前で呼び止めて営業所などへ同行させ契約させる。法律上は「訪問販売」として規制される。',ok:true},
+   {n:'アポイントメントセールス',d:'「当選しました」など電話やSNSで呼び出して契約させる手口。',ok:false},
+   {n:'ネガティブ・オプション',d:'注文していない商品を送りつけ代金を請求する手口（送り付け商法）。',ok:false},
+  ],
+  after:'<b>正解：キャッチセールス。</b>路上が入口でも、法律上は<b>訪問販売と同じルール</b>が適用される。つまり——<b>クーリングオフの対象</b>だ。'},
+ foe:'サロン店長',battleBtn:'サロンに連絡する',
+ battle:[
+  {say:'ご本人が<b>納得してサインした正式な契約</b>ですよ。今さら解約なんてできません。',
+   cards:[
+    {n:'クーリングオフ制度',d:'キャッチセールス（訪問販売）は、法定書面を受け取った日から8日以内なら無条件で契約解除できる。',ok:true,
+     re:'キャッチセールスは訪問販売として<b>特定商取引法</b>の対象。書面から8日以内なら、サインしていても<b>無条件で解除</b>できます。'},
+    {n:'未成年者取消し',d:'未成年者が親の同意なくした契約は取り消せる。',ok:false,
+     ng:'ハルカさんは18歳。<b>成年年齢は18歳</b>だから未成年者取消しは使えない。……別のカードだ。'},
+    {n:'契約自由の原則',d:'誰とどんな契約を結ぶかは自由に決められる。',ok:false,
+     ng:'それは業者側にも都合のいい原則。消費者を守る<b>特別なルール</b>を突きつけよう。'},
+   ]},
+  {say:'でもウチの契約書、第7条を見ました？ <b>「解約は一切できません」と書いてあります</b>。',
+   cards:[
+    {n:'特約より法律が優先',d:'クーリングオフは強行規定。消費者に不利な特約は書いてあっても無効。',ok:true,
+     re:'クーリングオフの権利は<b>契約書の特約では消せません</b>。「解約不可」の条項そのものが<b>無効</b>です。'},
+    {n:'念書の効力',d:'署名捺印した書面には従う義務がある。',ok:false,
+     ng:'それでは業者の思うツボだ。消費者を守る法律は<b>契約書より強い</b>。'},
+    {n:'口約束の無効',d:'口頭での約束は契約として成立しない。',ok:false,
+     ng:'論点ちがい。そもそも<b>契約は口約束でも成立する</b>——今回は条項の効力が争点だ。'},
+   ]},
+  {say:'……チッ。ですが契約日は4月10日。今日はもう<b>とっくに8日を過ぎてます</b>よ。残念でしたね？',
+   cards:[
+    {n:'期間が始まっていない',d:'8日間は「クーリングオフの説明が書かれた法定書面」を受け取った日から。不備があれば進行しない。',ok:true,
+     re:'この契約書には<b>クーリングオフの記載がどこにもない</b>。法定書面として<b>不備</b>——8日間のカウントは、まだ<b>始まってすらいません</b>。'},
+    {n:'消滅時効',d:'権利は長期間行使しないと消滅する。',ok:false,
+     ng:'時効はもっと長い期間の話。突きつけるべきは<b>書面の不備</b>だ。'},
+    {n:'泣き寝入り禁止の原則',d:'…そんな法律はない。気持ちはわかるが。',ok:false,
+     ng:'気合いだけでは業者は倒せない。<b>証拠しらべで見つけた事実</b>を思い出そう。'},
+   ]},
+ ],
+ winTelop:[['店長','ぐ……分かりましたよ！ 手続きしてください！'],
+   ['ハルカ','ほんとですか…！ ありがとうございます…！'],
+   ['相談員（きみ）','まだ終わりじゃない。<b>「言った言わない」を防ぐため、書面で通知</b>を出します。']],
+ badTelop:[['ハルカ','やっぱり…わたしが悪いんだ…。もういいです…'],
+   ['ナレーション','ハルカさんは25万9200円を支払いつづけることになった——<b>BAD END</b>'],
+   ['ナレーション','……もちろん、ここで終わらせない。もう一度だ。']],
+ final:{type:'postcard',
+  lead:'下線部をタップして、クーリングオフ通知はがきを完成させよう。',
+  bodyHTML:`<div class="to"><span class="blank hot" data-b="b1">（あて先）</span>　御中</div>
+   <div style="text-align:center;font-family:'Noto Serif JP';font-weight:900;letter-spacing:.3em;margin:.3em 0">通知書</div>
+   次の契約を<span class="blank" data-b="b2">（どうする？）</span>。<br>
+   契約年月日　<span class="blank" data-b="b3">（いつ？）</span><br>
+   サービス名　プレミアム美肌コース<br>
+   契約金額　<span class="blank" data-b="b4">（いくら？）</span><br>
+   支払った代金は返金し、受け取った商品は引き取ってください。<br>
+   <div style="text-align:right;margin-top:.5em">4月20日　春川 ハルカ</div>`,
+  blanks:{
+   b1:{q:'だれ宛てに出す？',opts:['ビューティサロン月光','消費生活センター','春川ハルカ'],ok:0},
+   b2:{q:'なんの通知？',opts:['契約を解除（クーリングオフ）します','契約を継続します','値引きをお願いします'],ok:0},
+   b3:{q:'契約年月日は？（契約書を思い出そう）',opts:['4月10日','4月17日','4月1日'],ok:0},
+   b4:{q:'金額は？（総額で書く）',opts:['259,200円','3,000円','129,600円'],ok:0},
+  },
+  afterNote:'<b>ポイント：</b>はがきは<b>両面をコピーして保管</b>し、「<b>特定記録郵便</b>」など記録が残る方法で送る。クレジット契約なら<b>信販会社にも同じ通知</b>を出す。',
+  cal:{title:'4月',firstDow:2,days:30,base:10,ok:17,
+   lead:'契約書面を受け取ったのは<b>4月10日</b>。クーリングオフができる<b>最終日</b>はいつ？（受け取った日を1日目と数える）',
+   legend:'■黄色＝書面を受け取った日',
+   okNote:'<b>正解！ 最終日は4月17日。</b>受け取った日（10日）を1日目と数えて8日目。<br>※今回は書面不備で<b>そもそも期間が始まっていない</b>から、17日を過ぎていても解除できた。',
+   ngNote:'ちがうようだ。<b>10日を「1日目」</b>として、指を折って8日目まで数えてみよう。'},
+ },
+ resultLead:'通知はがきが受理され、ハルカさんの契約は解除。支払ったお金も全額もどってきた。',
+ summary:[
+  '<b>キャッチセールス</b>＝路上で呼び止めて契約させる手口。法律上は<b>訪問販売</b>あつかい。',
+  '<b>クーリングオフ</b>：訪問販売は法定書面の受領日から<b>8日以内</b>（受領日を1日目と数える）。',
+  '「解約不可」の特約が書いてあっても<b>無効</b>。クーリングオフは特約で消せない。',
+  '書面に<b>不備</b>があれば、8日間の<b>期間は始まらない</b>。',
+  '通知は<b>はがき等の書面</b>で。両面コピーを保管し、記録が残る郵便で送る。',
+  '<b>成年年齢は18歳</b>。18歳になると未成年者取消しは使えない——だからこそ契約は慎重に。',
+ ]},
+
+/* ---------- FILE 02 架空請求・ワンクリック詐欺 ---------- */
+{no:'02',title:'身に覚えのない請求',mode:'架空請求・ワンクリック詐欺',
+ client:'ケンタ（15・中学3年）',
+ chat:[
+  ['sys','消費生活センター 相談受付システム'],
+  ['l','た、たすけてください！ スマホに変な請求が来てて…！','ケンタ（15・中3）'],
+  ['l','動画サイトのリンクを押したら、いきなり「ご登録ありがとうございます 299,800円」って画面になって','ケンタ'],
+  ['l','「本日中に支払わないと法的措置」って書いてあるんです。SMSも来ました','ケンタ'],
+  ['r','まず深呼吸。<b>絶対に、まだ何もしないで</b>ください。画面を見せてもらえますか','わたし（相談員）'],
+  ['l','これです…！ 親に言ったら怒られるし、お年玉で払っちゃおうかと…','ケンタ'],
+  ['r','払ってはいけません。その画面、いっしょに調べましょう','わたし（相談員）'],
+ ],
+ evTitle:'届いたSMSと請求画面',evLead:'あやしいところをタップしてマーカーを引こう。',
+ needSpots:5,
+ doc:`<div class="phone"><div class="scr">
+   <div class="bar"><span>SMS</span><span>今日 16:42</span></div>
+   <div class="body">
+     <div class="sms">【重要】動画サイト未納料金が発生しております。<span class="spot" data-id="s1">本日中にご連絡なき場合、法的措置に移行します</span>。お問い合わせ：<span class="spot" data-id="s2">03-XXXX-XXXX（お客様サポート）</span></div>
+   </div>
+   <div class="bar"><span>ブラウザ</span><span><span class="spot" data-id="s3">http://video-plaza.xyz/reg</span></span></div>
+   <div class="body">
+     <div style="background:#fff;border:1px solid #DDD6C8;padding:12px;text-align:center">
+       <div style="font-weight:900;color:#C73A2A;font-size:1.1em">ご登録が完了しました</div>
+       <div style="margin:.4em 0">会員料金：<b>299,800円</b></div>
+       <div style="font-size:.85em"><span class="spot" data-id="s4">お客様の端末情報・位置情報を記録しました（IP: 192.0.2.15）</span></div>
+       <div style="font-size:.8em;color:#8A8270;margin-top:.4em"><span class="spot" data-dud="1">利用規約はこちら</span>／<span class="spot" data-id="s5">退会をご希望の方は電話にて個人情報をお伝えください</span></div>
+     </div>
+     <div style="font-size:.75em;color:#8A8270;margin-top:6px"><span class="spot" data-dud="2">推奨環境：最新ブラウザ</span></div>
+   </div>
+ </div></div>`,
+ spots:{
+  s1:{label:'「本日中に」「法的措置」でおどす',expl:'<b>期限で焦らせて考えさせない</b>のは詐欺の定番。本物の裁判手続きがSMSで来ることはない。'},
+  s2:{label:'電話させようとする',expl:'連絡した人だけを狙う<b>カモリスト</b>入りが目的。電話番号・名前を知られてしまう。'},
+  s3:{label:'あやしいURL（.xyz）',expl:'公式をよそおう<b>にせサイト</b>。正規サービスの請求はアプリや公式ドメインから来る。'},
+  s4:{label:'「端末情報・IPを記録」',expl:'IPアドレスだけで<b>個人は特定できない</b>。不安をあおるハッタリ。'},
+  s5:{label:'「退会は電話で個人情報を」',expl:'退会と称して<b>個人情報を取る</b>のが狙い。教えてはいけない。'},
+ },
+ dudExpl:'ここは問題なし（-30）。規約リンクや推奨環境の表示<b>そのもの</b>は普通のサイトにもある。',
+ quiz:{lead:'リンクを押しただけで「登録完了・料金請求」——この手口を何という？',
+  opts:[
+   {n:'ワンクリック詐欺（架空請求）',d:'クリックしただけで契約が成立したように見せかけ、支払わせる手口。',ok:true},
+   {n:'フィッシング詐欺',d:'本物そっくりの偽サイトでID・パスワードを盗む手口。',ok:false},
+   {n:'キャッチセールス',d:'路上で呼び止めて契約させる手口。',ok:false},
+  ],
+  after:'<b>正解：ワンクリック詐欺。</b>では反撃だ——といっても、相手は詐欺師。<b>連絡はしない</b>。まず、あわてるケンタくんの誤解を解いていく。'},
+ foe:'ケンタくんの不安',battleBtn:'ケンタくんに説明する',
+ battle:[
+  {say:'でも「ご登録完了」って出たんですよ！？ 契約しちゃったってことですよね！？ 払わないと…！',
+   cards:[
+    {n:'契約は合意で成立する',d:'契約は「申込み」と「承諾」の意思が合ってはじめて成立。金額や条件を知らずに押しても契約にはならない。',ok:true,
+     re:'契約は<b>おたがいの合意</b>があって成立するもの。金額も条件も知らされずクリックしただけでは、<b>契約は成立していない</b>。'},
+    {n:'クーリングオフ制度',d:'一定の取引は8日以内なら解除できる。',ok:false,
+     ng:'おしい、でもちがう。クーリングオフは<b>成立した契約</b>をやめる制度。今回はそもそも<b>契約が成立していない</b>。'},
+    {n:'未成年者取消し',d:'未成年者の契約は取り消せる。',ok:false,
+     ng:'ケンタくんは15歳だからそれも使えるが——その前に、<b>そもそも契約が成立していない</b>ことを教えよう。'},
+   ]},
+  {say:'じゃあこの「法的措置」は！？ 裁判になったらどうするんですか！ 電話して謝ったほうが…',
+   cards:[
+    {n:'無視して証拠を保存',d:'架空請求には返信も電話もせず、画面とSMSを保存して相談する。',ok:true,
+     re:'架空請求への正解は<b>「無視」</b>。ただし画面とSMSは<b>スクショで保存</b>——証拠になる。電話したら相手の思うツボだ。'},
+    {n:'すぐ電話で抗議',d:'間違いだと強く伝えれば取り下げてくれるはず。',ok:false,
+     ng:'それが<b>一番危ない</b>。連絡先を知られて、次のターゲットリストに載ってしまう。'},
+    {n:'半額だけ払って交渉',d:'誠意を見せれば減額してくれるかもしれない。',ok:false,
+     ng:'1円でも払えば「払う人」と認定されて<b>請求がエスカレート</b>する。絶対に払わない。'},
+   ]},
+  {say:'ほんとに無視して大丈夫…？ もし本物の裁判所から手紙が来たら…？',
+   cards:[
+    {n:'本物の督促だけは無視しない',d:'裁判所からの「支払督促」「訴状」が郵便（特別送達）で届いた場合だけは放置せず、すぐセンターへ。',ok:true,
+     re:'いい質問だ。<b>裁判所からの特別送達</b>だけは無視してはいけない——放置すると不利になる。その時は<b>すぐ188へ</b>。SMSやメールの「法的措置」は全部ハッタリだ。'},
+    {n:'裁判所の手紙も無視',d:'どうせ全部ウソだから何が来ても無視でいい。',ok:false,
+     ng:'それは危険。<b>本物の支払督促を放置</b>すると負けたことになる場合がある。見分け方を教えよう。'},
+    {n:'弁護士を今すぐ雇う',d:'裁判に備えて今から準備すべき。',ok:false,
+     ng:'今の段階では不要。まずは<b>無視と証拠保存</b>、そして相談だ。'},
+   ]},
+ ],
+ winTelop:[['ケンタ','そっか…契約してないなら、こわがる必要なかったんだ…'],
+   ['相談員（きみ）','そのとおり。仕上げに、<b>正しい対応</b>を整理しておこう。'],],
+ badTelop:[['ケンタ','やっぱりこわいから払っちゃいます…お年玉ぜんぶ…'],
+   ['ナレーション','ケンタくんの連絡先は「カモリスト」に載り、請求は倍になった——<b>BAD END</b>'],
+   ['ナレーション','……そうはさせない。説明をやり直そう。']],
+ final:{type:'sortlist',
+  lead:'ケンタくんへの指示書をつくる。それぞれ「やる」「やらない」に仕分けよう。',
+  items:[
+   {t:'画面とSMSをスクショして保存する',ok:true,why:'証拠として保存。相談時にも役立つ。'},
+   {t:'記載の番号に電話して抗議する',ok:false,why:'連絡した瞬間にカモリスト入り。絶対にしない。'},
+   {t:'188（消費者ホットライン）に相談する',ok:true,why:'ひとりで抱えず、まず相談。'},
+   {t:'請求画面のURLをもう一度開いて確認する',ok:false,why:'再アクセスは不要。新たな表示で不安をあおられるだけ。'},
+   {t:'家族に正直に話す',ok:true,why:'かくすと相手の思うツボ。話せば守ってもらえる。'},
+   {t:'お金を払って終わらせる',ok:false,why:'一度でも払うと請求はエスカレートする。'},
+   {t:'裁判所からの特別送達が来たら放置せず相談する',ok:true,why:'本物の支払督促だけは無視NG。すぐセンターへ。'},
+   {t:'退会のため名前と住所をフォームに入力する',ok:false,why:'個人情報を渡すのが相手の狙い。'},
+  ]},
+ resultLead:'ケンタくんは請求を無視して証拠を保存。請求が続くこともなく、事件は解決した。',
+ summary:[
+  '<b>ワンクリック詐欺</b>：クリックだけでは<b>契約は成立しない</b>（契約＝申込みと承諾の合意）。',
+  '架空請求は<b>無視</b>が正解。払わない・連絡しない・個人情報を渡さない。',
+  '画面やSMSは<b>スクショで証拠保存</b>。',
+  '「IPを記録」「法的措置」は<b>不安をあおるハッタリ</b>。',
+  'ただし<b>裁判所からの特別送達（支払督促・訴状）だけは無視しない</b>で、すぐ相談。',
+  'こまったら<b>188</b>。ひとりで抱えない、かくさない。',
+ ]},
+
+/* ---------- FILE 03 定期購入トラブル ---------- */
+{no:'03',title:'「お試し500円」の底なし沼',mode:'詐欺的な定期購入',
+ client:'ミサキの母（42・会社員）',
+ chat:[
+  ['sys','消費生活センター 相談受付システム'],
+  ['l','SNSの広告で「お試し500円」のダイエットサプリを注文したんです','ミサキの母（42）'],
+  ['l','そうしたら翌月も商品が届いて、今度は<b>7,980円</b>の請求書が入っていて','ミサキの母'],
+  ['l','電話したら「定期コースなので、あと3回は購入していただきます」と言われました。そんな説明あったかしら…','ミサキの母'],
+  ['r','注文したときの画面は残っていますか？','わたし（相談員）'],
+  ['l','娘が履歴から探してくれました。これです','ミサキの母'],
+  ['r','では、この注文画面をくわしく調べてみましょう','わたし（相談員）'],
+ ],
+ evTitle:'通販サイトの注文画面',evLead:'あやしいところをタップしてマーカーを引こう。',
+ needSpots:4,
+ doc:`<div class="phone"><div class="scr">
+   <div class="bar"><span>ショップ</span><span>注文履歴より</span></div>
+   <div class="shop-hero">
+     <div class="p2">今だけ！先着300名様</div>
+     <div class="p1"><span class="spot" data-id="s1">初回 特別価格 500円</span></div>
+     <div class="p2">スリムビューティ粒 30日分</div>
+   </div>
+   <div class="body">
+     <div style="font-size:.9em"><span class="spot" data-id="s2">＼ 飲むだけで理想のカラダへ ／ ご愛用者満足度98%！</span></div>
+     <a class="shop-btn">今すぐ500円で申し込む ▶</a>
+     <div style="font-size:8.5px;color:#9A9280;line-height:1.7">
+       <span class="spot" data-id="s3">※本コースは4回以上の継続が条件のお得な定期コースです。2回目以降は通常価格7,980円をお届けします（総額24,440円）。</span><br>
+       <span class="spot" data-id="s4">※解約はお電話のみで受け付けます（受付：平日10時〜11時）。</span><br>
+       <span class="spot" data-dud="1">※広告には個人の感想が含まれます。</span>
+     </div>
+     <div style="border-top:1px solid #DDD6C8;margin-top:8px;padding-top:6px;font-size:.8em">
+       ご注文確認：スリムビューティ粒×1　<b>500円</b>　<span class="spot" data-dud="2">送料無料</span><br>
+       <button class="shop-btn" style="border:none;width:95%">注文を確定する</button>
+     </div>
+   </div>
+ </div></div>`,
+ spots:{
+  s1:{label:'「初回500円」だけを強調',expl:'初回価格を大きく見せて<b>定期契約に誘い込む</b>典型パターン。'},
+  s2:{label:'「飲むだけで」「満足度98%」',expl:'効果を保証するような<b>誇大な表示</b>。打消し表示が小さいのも問題。'},
+  s3:{label:'極小文字の「4回継続・総額24,440円」',expl:'<b>回数しばりと総額</b>が最重要情報なのに極小文字。2022年から<b>最終確認画面での明示が義務</b>になった。'},
+  s4:{label:'「解約は電話のみ・受付1時間」',expl:'わざと解約しにくくする<b>解約妨害</b>。契約より解約を難しくする設計は違法のおそれ。'},
+ },
+ dudExpl:'ここは問題なし（-30）。送料無料や感想の注記<b>そのもの</b>は正常な表示だ。',
+ quiz:{lead:'「初回激安」をエサに回数しばりの契約をさせるこの手口、対抗するカギはどれ？',
+  opts:[
+   {n:'最終確認画面のルール',d:'ネット通販では注文確定前の画面に、分量・回数・総額・解約方法をはっきり表示する義務がある（特定商取引法）。',ok:true},
+   {n:'クーリングオフ制度',d:'8日以内なら無条件解除できる制度。',ok:false},
+   {n:'製造物責任法（PL法）',d:'製品の欠陥で被害が出たときの賠償ルール。',ok:false},
+  ],
+  after:'<b>正解。</b>そして重要な事実——<b>ネット通販にクーリングオフは無い</b>。だからこそ「表示のルール」で戦う。'},
+ foe:'通販会社オペレーター',battleBtn:'販売会社に連絡する',
+ battle:[
+  {say:'お客様、画面に<b>「定期コース」と記載済み</b>です。ご確認のうえ注文されたのでは？ 残り3回分はお支払いいただきます。',
+   cards:[
+    {n:'最終確認画面の表示義務',d:'2022年改正特商法：注文確定直前の画面に回数・総額等を明示する義務。誤認させる表示なら申込みを取り消せる。',ok:true,
+     re:'回数しばりと総額が<b>極小文字で隅に書いてあるだけ</b>。確定画面に明示する義務を果たしていない。<b>誤認による申込みは取消しできます</b>。'},
+    {n:'クーリングオフ制度',d:'8日以内なら無条件解除。',ok:false,
+     ng:'残念、<b>通信販売にクーリングオフは無い</b>。ここを勘違いすると業者に鼻で笑われる。表示のルールで攻めよう。'},
+    {n:'お客様は神様の原則',d:'客の要望には応えるべき。',ok:false,
+     ng:'そんな法律はない。感情論ではなく<b>表示義務違反</b>という事実で押す。'},
+   ]},
+  {say:'そう言われましても、<b>次回分はもう発送準備に入っています</b>。今からのキャンセルは無理ですね。',
+   cards:[
+    {n:'取消しの効果',d:'誤認で申込みが取り消されれば契約ははじめから無効。発送準備は業者側の事情にすぎない。',ok:true,
+     re:'取消しが認められれば契約は<b>はじめから無かったこと</b>になる。発送準備は<b>そちらの都合</b>であり、支払い義務は生じません。'},
+    {n:'受取拒否すればいい',d:'届いても受け取らなければセーフ。',ok:false,
+     ng:'受取拒否だけでは<b>契約が残ったまま</b>。まず契約自体を取り消すのが先だ。'},
+    {n:'仕方ないので1回だけ払う',d:'発送済みの分だけ払って手を打つ。',ok:false,
+     ng:'払う根拠がない。ここで折れると残り全部の支払いに流れこむ。'},
+   ]},
+  {say:'…では解約はお電話で。<b>受付は平日10時から11時のみ</b>、つながらなくても当社は責任を負いかねます。',
+   cards:[
+    {n:'解約妨害の禁止',d:'解約を不当に妨げる行為は特商法で禁止。電話がつながらない場合の記録を残し、書面・メールで通知して消費生活センターへ。',ok:true,
+     re:'わざと解約させない仕組みは<b>法律で禁止された妨害行為</b>。発信履歴を記録し、<b>メールと書面で解約を通知</b>します。センターからも指導が入りますよ。'},
+    {n:'あきらめて払い続ける',d:'つながらないなら仕方ない。',ok:false,
+     ng:'それこそ業者の狙い。<b>記録を残して書面で通知</b>という手がある。'},
+    {n:'会社に乗り込む',d:'直接オフィスへ行って談判する。',ok:false,
+     ng:'危険だし不要。<b>記録と書面</b>のほうがずっと強い。'},
+   ]},
+ ],
+ winTelop:[['オペレーター','……上長に確認しました。今回のご注文は取消しとさせていただきます'],
+   ['ミサキの母','よかった…！ 請求書とにらめっこの毎日だったんです'],
+   ['相談員（きみ）','最後に、<b>取消しの通知メール</b>を証拠として送っておきましょう。']],
+ badTelop:[['ミサキの母','もういいわ…残り3回分、払います…総額2万4千円…'],
+   ['ナレーション','翌月も、その翌月も商品は届き続けた——<b>BAD END</b>'],
+   ['ナレーション','……ここで引いてはいけない。もう一度だ。']],
+ final:{type:'compose',
+  lead:'下線部をタップして、取消し通知メールを完成させよう。',
+  header:'新規メール',
+  bodyHTML:`<div class="to">宛先：<span class="blank hot" data-b="b1">（どこへ？)</span></div>
+   <div style="border-bottom:1px solid var(--line);padding-bottom:.3em;margin-bottom:.5em">件名：<span class="blank" data-b="b2">（用件）</span></div>
+   注文番号 SB-88112 の件でご連絡します。<br>
+   貴社サイトの注文画面では、<span class="blank" data-b="b3">（何が問題？）</span>。<br>
+   よって本申込みを<span class="blank" data-b="b4">（どうする？）</span>。<br>
+   本メールの送信記録は保存しています。<br>
+   <div style="text-align:right;margin-top:.5em">申込者：ミサキの母</div>`,
+  blanks:{
+   b1:{q:'メールはどこへ送る？',opts:['販売会社（お客様窓口）','消費生活センター','SNSの広告主'],ok:0},
+   b2:{q:'件名は？',opts:['定期購入申込みの取消しについて','商品の感想','再注文のお願い'],ok:0},
+   b3:{q:'問題点はどれ？（証拠しらべを思い出そう）',opts:['回数条件と総額が確定画面に明示されていませんでした','商品の色が写真とちがいました','送料が高すぎました'],ok:0},
+   b4:{q:'結論は？',opts:['取り消します（誤認による申込みのため）','継続します','半額にしてください'],ok:0},
+  },
+  afterNote:'<b>ポイント：</b>ネット通販に<b>クーリングオフは無い</b>。だから注文前に<b>最終確認画面をスクショ</b>する習慣を。解約連絡は<b>記録が残る方法</b>で。',
+ },
+ resultLead:'取消しが認められ、支払済みの500円以外の請求はすべて消えた。',
+ summary:[
+  '<b>通信販売にクーリングオフは無い</b>（返品は「返品特約」の表示に従う）。',
+  '定期購入は<b>回数しばり・総額・解約方法</b>を必ず確認。「初回○円」に飛びつかない。',
+  '2022年改正特商法：<b>最終確認画面</b>に回数・総額等の明示が義務。誤認させる表示なら<b>取消し可能</b>。',
+  '<b>解約妨害は違法</b>。つながらない電話は履歴を記録し、書面・メールで通知。',
+  '注文確定前の画面は<b>スクショで保存</b>する習慣を。',
+  'こまったら<b>188</b>へ。',
+ ]},
+];
+
+"use strict";
+/* ---------- FILE 04 マルチ商法 ---------- */
+EPIS.push(
+{no:'04',title:'先輩からの「うまい話」',mode:'マルチ商法（連鎖販売取引）',
+ client:'ユウタ（19・大学1年）',
+ chat:[
+  ['sys','消費生活センター 相談受付システム'],
+  ['l','サークルの先輩に誘われて、投資を学べる教材を買ったんですけど…50万円で','ユウタ（19・大学1年）'],
+  ['l','「学生ローンで借りればすぐ回収できる」って言われて、その場で借りて払いました','ユウタ'],
+  ['l','しかも「友達を2人紹介すれば10万円入る。それで返せばいい」って。なんか、思ってたのと違って…','ユウタ'],
+  ['r','契約してから何日たちましたか？','わたし（相談員）'],
+  ['l','2週間くらいです。もう8日過ぎてるから、ダメですよね…ネットで見ました','ユウタ'],
+  ['r','いいえ。<b>この取引は8日ではありません。</b>まず、勧誘のときの資料を見せてください','わたし（相談員）'],
+ ],
+ evTitle:'勧誘DMとセミナー資料',evLead:'あやしいところをタップしてマーカーを引こう。',
+ needSpots:4,
+ doc:`<div class="phone"><div class="scr">
+   <div class="bar"><span>メッセージ｜先輩</span><span>2週間前</span></div>
+   <div class="body">
+     <div class="sms">ユウタ久しぶり！<span class="spot" data-id="s1">絶対もうかる話</span>があるんだけど、今度会えない？ すごい人紹介するよ🔥</div>
+     <div class="sms" style="margin-top:8px"><span class="spot" data-dud="1">土曜の14時にカフェ集合で！</span></div>
+   </div>
+ </div></div>
+ <div class="slide">
+   <div class="s2">未来投資アカデミー 会員募集</div>
+   <div class="s1">スマホ1台で<br><span class="spot" data-id="s2">誰でも月収30万円</span></div>
+   <div class="s2"><span class="spot" data-id="s3">お金がなくても大丈夫！ 学生ローンは「未来への自己投資」</span></div>
+   <div class="s2" style="margin-top:.8em;border-top:1px solid #444;padding-top:.8em">
+     <span class="spot" data-id="s4">友達2人を紹介するごとに 紹介料10万円！<br>紹介した友達が紹介しても報酬GET！</span></div>
+ </div>`,
+ spots:{
+  s1:{label:'「絶対もうかる」',expl:'投資に「絶対」はない。<b>断定的な利益の約束</b>は違法な勧誘トーク。'},
+  s2:{label:'「誰でも月収30万円」',expl:'根拠のない収入例。<b>うまい話は向こうから来ない</b>。'},
+  s3:{label:'「借金は自己投資」',expl:'<b>借金をさせてまで契約させる</b>のは悪質勧誘の決定的サイン。'},
+  s4:{label:'「紹介するほど報酬」のピラミッド',expl:'人を勧誘して報酬を得る仕組み＝<b>連鎖販売取引（マルチ商法）</b>。紹介相手がいなくなれば必ず行きづまる。'},
+ },
+ dudExpl:'ここは問題なし（-30）。待ち合わせの連絡<b>そのもの</b>は普通のやりとりだ。',
+ quiz:{lead:'「商品を買わせて、人を紹介させて、報酬で釣る」——この取引の法律上の名前は？',
+  opts:[
+   {n:'連鎖販売取引（マルチ商法）',d:'組織に人を誘い、その人がさらに人を誘う連鎖で商品や権利を売る取引。特定商取引法で厳しく規制。',ok:true},
+   {n:'ねずみ講（無限連鎖講）',d:'商品がなくお金だけが回る仕組み。全面禁止の犯罪。マルチとは区別される。',ok:false},
+   {n:'訪問販売',d:'自宅などを訪問して契約させる取引。',ok:false},
+  ],
+  after:'<b>正解：連鎖販売取引。</b>教材という「商品」があるからねずみ講ではないが、規制はむしろ<b>厳しい</b>。そしてクーリングオフ期間は——<b>20日間</b>だ。'},
+ foe:'アカデミーの先輩',battleBtn:'先輩に連絡する',
+ battle:[
+  {say:'ユウタから聞いたよ〜。やめたいって？ でもこれは<b>ビジネスであって、あやしい商法じゃない</b>。教材っていう商品もちゃんとあるしね。',
+   cards:[
+    {n:'連鎖販売取引の規制',d:'商品があっても「紹介で報酬」の仕組みは連鎖販売取引。特商法の厳しい規制（書面交付・禁止行為）の対象。',ok:true,
+     re:'商品があっても、<b>人を紹介して報酬を得る仕組み</b>は法律上の<b>連鎖販売取引</b>。「ビジネスだから」では規制から逃げられません。'},
+    {n:'ねずみ講だから犯罪',d:'この仕組みはねずみ講で全面禁止のはず。',ok:false,
+     ng:'商品がある以上ねずみ講とは言い切れない。だが<b>連鎖販売取引の規制</b>で十分戦える。正確に行こう。'},
+    {n:'友情の原則',d:'先輩なら後輩を大事にすべき。',ok:false,
+     ng:'気持ちはわかるが法律の話をしよう。<b>取引の種類</b>を突きつける。'},
+   ]},
+  {say:'まあ聞きなよ。契約して<b>もう2週間</b>でしょ？ クーリングオフは8日まで。<b>とっくに期限切れ</b>だって。ネットにも書いてあるよ？',
+   cards:[
+    {n:'連鎖販売は20日間',d:'連鎖販売取引のクーリングオフ期間は法定書面の受領から20日間。訪問販売の8日より長い。',ok:true,
+     re:'8日は訪問販売の話。<b>連鎖販売取引は20日間</b>です。契約から2週間——<b>まだ期間内</b>ですよ、先輩。'},
+    {n:'期間は8日だからあきらめる',d:'ネットに書いてあるならそうなのだろう。',ok:false,
+     ng:'ネット情報のうのみは危険。<b>取引の種類ごとに期間はちがう</b>。'},
+    {n:'未成年者取消し',d:'未成年の契約は取り消せる。',ok:false,
+     ng:'ユウタくんは19歳、成年だ。ここで使うべきは<b>期間のルール</b>。'},
+   ]},
+  {say:'……くっ。でもさ、教材はもう<b>開封して使ってる</b>よね？ ローンも組んじゃったし、いまさら戻せないよ。',
+   cards:[
+    {n:'開封済みでも解除できる',d:'連鎖販売のクーリングオフは商品を使用していても可能な場合が多く、ローン（個別信用購入あっせん）も同時に解除を通知できる。',ok:true,
+     re:'クーリングオフすれば<b>開封していても解除可能</b>、費用の請求もできません。ローン会社にも<b>同時に通知</b>して支払いを止めます。'},
+    {n:'使った分だけ払う',d:'使用済みなら使用料を払うのが筋。',ok:false,
+     ng:'クーリングオフでは<b>使用料も請求できない</b>のが原則。全額戻す。'},
+    {n:'教材を転売して回収',d:'メルカリで売れば損失は減らせる。',ok:false,
+     ng:'それでは被害の連鎖に加担しかねない。<b>正面から解除</b>だ。'},
+   ]},
+ ],
+ winTelop:[['先輩','わ、わかったよ…。解約書類、送るから…'],
+   ['ユウタ','はぁ〜…。ローン、どうなるかと思った…'],
+   ['相談員（きみ）','はがきで正式に通知します。<b>ローン会社あての通知も忘れずに</b>。']],
+ badTelop:[['ユウタ','もういいです…友達を2人紹介すれば、返せるし…'],
+   ['ナレーション','ユウタくんは友人を失い、借金だけが残った——<b>BAD END</b>'],
+   ['ナレーション','……被害の連鎖を、ここで断ち切る。もう一度。']],
+ final:{type:'postcard',
+  lead:'下線部をタップして、クーリングオフ通知はがきを完成させよう。',
+  bodyHTML:`<div class="to"><span class="blank hot" data-b="b1">（あて先）</span>　御中</div>
+   <div style="text-align:center;font-family:'Noto Serif JP';font-weight:900;letter-spacing:.3em;margin:.3em 0">通知書</div>
+   次の契約を<span class="blank" data-b="b2">（どうする？）</span>。<br>
+   契約年月日　5月2日（書面受領日）<br>
+   商品名　投資教材「未来アカデミーPRO」<br>
+   契約金額　500,000円<br>
+   なお、同内容を<span class="blank" data-b="b3">（もう1通どこへ？）</span>にも通知します。<br>
+   支払った代金は返金してください。<br>
+   <div style="text-align:right;margin-top:.5em">5月16日　ユウタ</div>`,
+  blanks:{
+   b1:{q:'だれ宛てに出す？',opts:['未来投資アカデミー（販売業者）','大学のサークル','先輩個人'],ok:0},
+   b2:{q:'なんの通知？',opts:['契約を解除（クーリングオフ）します','会員ランクを上げてください','紹介料を請求します'],ok:0},
+   b3:{q:'もう1通はどこへ？（お金の流れを思い出そう）',opts:['ローン会社（信販会社）','消費生活センター','先輩の親'],ok:0},
+  },
+  afterNote:'<b>ポイント：</b>ローンを組まされた契約は、<b>販売業者とローン会社の両方</b>へ通知。はがきは両面コピー保管＋記録が残る郵便で。',
+  cal:{title:'5月',firstDow:4,days:31,base:2,ok:21,
+   lead:'法定書面を受け取ったのは<b>5月2日</b>。連鎖販売取引のクーリングオフの<b>最終日</b>は？（受領日を1日目として<b>20日間</b>）',
+   legend:'■黄色＝書面を受け取った日',
+   okNote:'<b>正解！ 最終日は5月21日。</b>連鎖販売取引は<b>20日間</b>——訪問販売の8日とセットで覚えよう。',
+   ngNote:'ちがうようだ。連鎖販売は<b>20日間</b>。2日を「1日目」として20日目を数えよう。'},
+ },
+ resultLead:'契約とローンはともに解除。50万円はユウタくんの手もとに戻った。',
+ summary:[
+  '<b>マルチ商法＝連鎖販売取引</b>。商品があっても「紹介で報酬」の仕組みなら該当。',
+  'クーリングオフ期間は<b>20日間</b>（訪問販売・キャッチセールスは8日）。',
+  '<b>「絶対もうかる」「借金は自己投資」</b>は違法・悪質勧誘の決まり文句。',
+  'ローン付き契約の解除は<b>販売業者と信販会社の両方に通知</b>。',
+  '成人年齢18歳→<b>18・19歳がマルチの主要ターゲット</b>。誘う側になれば加害者。',
+  '断りにくい相手からの勧誘こそ<b>188</b>に相談。',
+ ]},
+
+/* ---------- FILE 05 フリマアプリ ---------- */
+{no:'05',title:'届いたのは偽物',mode:'フリマアプリのトラブル',
+ client:'ダイチ（16・高校2年）',
+ chat:[
+  ['sys','消費生活センター 相談受付システム'],
+  ['l','フリマアプリで限定スニーカーを買ったんです。3万円。おこづかい貯めて…','ダイチ（16・高2）'],
+  ['l','でも届いたの、たぶん偽物なんです。ロゴの位置が変だし、箱もぺらぺらで','ダイチ'],
+  ['l','出品者に連絡したら「ノークレーム・ノーリターンて書いただろ」って。もう受取評価しちゃおうかな、疲れたし…','ダイチ'],
+  ['r','待って！ <b>受取評価はまだ押さないで</b>ください。取引画面を見せてもらえますか','わたし（相談員）'],
+  ['l','え、ダメなんですか！？ これです','ダイチ'],
+ ],
+ evTitle:'フリマアプリの取引画面',evLead:'あやしいところをタップしてマーカーを引こう。',
+ needSpots:4,
+ doc:`<div class="phone"><div class="scr">
+   <div class="bar"><span>フリマアプリ</span><span>取引画面</span></div>
+   <div class="body">
+     <div class="item-ph">SNEAKER PHOTO</div>
+     <div style="font-weight:900">エアストリーム95 限定モデル 新品 ￥30,000</div>
+     <div style="font-size:.85em;line-height:1.8;border:1px solid #DDD6C8;padding:8px;margin:8px 0">
+       <span class="spot" data-id="s1">正規品保証！ 国内正規店購入</span>（<span class="spot" data-id="s2">レシートは紛失しました</span>）<br>
+       <span class="spot" data-id="s3">プロフ必読。ノークレーム・ノーリターンでお願いします</span><br>
+       <span class="spot" data-dud="1">送料込み・らくらく便で発送</span>
+     </div>
+     <div style="font-size:.85em;background:#FFF5F5;border:1px solid #F0C0C0;padding:8px">
+       出品者メッセージ：<br>
+       <span class="spot" data-id="s4">「疑うなら評価だけ先にお願いします。話はそれから」</span>
+     </div>
+     <div style="font-size:.8em;color:#8A8270;margin-top:6px"><span class="spot" data-dud="2">出品者評価：★4.8（302件）</span></div>
+   </div>
+ </div></div>`,
+ spots:{
+  s1:{label:'「正規品保証」と言い切る',expl:'本物の保証は<b>購入証明とセット</b>。言葉だけの「保証」は根拠がない。'},
+  s2:{label:'「レシートは紛失」',expl:'真正性を確認できる証拠が<b>都合よく無い</b>。偽物出品の常套句。'},
+  s3:{label:'「ノークレーム・ノーリターン」',expl:'この特約があっても、<b>説明と違う物（偽物）</b>への責任は消えない。'},
+  s4:{label:'「先に受取評価を」',expl:'受取評価をすると<b>代金が出品者に渡り</b>、アプリの補償を受けにくくなる。絶対に先に押させる手口に乗らない。'},
+ },
+ dudExpl:'ここは問題なし（-30）。送料や評価数の表示<b>そのもの</b>は通常のものだ。',
+ quiz:{lead:'フリマアプリの「個人間取引」。ネットショップでの買い物と法律上いちばん違う点は？',
+  opts:[
+   {n:'特商法の保護が及ばない',d:'売主が事業者でない個人どうしの取引には、特定商取引法（通販の表示義務など）が原則適用されない。民法がベース。',ok:true},
+   {n:'クーリングオフできる',d:'個人間でも8日以内なら無条件解除できる。',ok:false},
+   {n:'未成年は利用できない',d:'法律で未成年のフリマ利用は禁止されている。',ok:false},
+  ],
+  after:'<b>正解。</b>個人間取引は<b>特商法もクーリングオフも原則対象外</b>。だが無法地帯ではない——<b>民法</b>と<b>アプリの規約</b>が武器になる。'},
+ foe:'出品者',battleBtn:'出品者と交渉する',
+ battle:[
+  {say:'だから<b>ノークレーム・ノーリターン</b>って書いただろ。同意して買ったのはそっちだよね？',
+   cards:[
+    {n:'契約不適合責任',d:'届いた物が説明（正規品）と違う場合、売主は責任を負う。ノークレーム特約があっても、偽物と知りながら隠した場合などは免責されない。',ok:true,
+     re:'「正規品」という説明で売った以上、偽物なら<b>契約の内容に適合していません</b>。その特約で<b>偽物の責任までは消せない</b>。'},
+    {n:'クーリングオフ制度',d:'8日以内なら無条件解除できる。',ok:false,
+     ng:'個人間取引は<b>クーリングオフの対象外</b>。ここで持ち出すと足元を見られる。民法で行こう。'},
+    {n:'ノークレームは常に無効',d:'そんな特約はそもそも書いてはいけない。',ok:false,
+     ng:'言いすぎだ。特約自体は書ける。<b>「説明と違う」場合に通用しない</b>のがポイント。'},
+   ]},
+  {say:'偽物って証拠あんの？ <b>気のせいじゃない？</b> とにかく先に受取評価してよ。話はそれから聞くから。',
+   cards:[
+    {n:'受取評価前に事務局へ',d:'受取評価をすると代金が支払われ補償が難しくなる。評価せず、写真の証拠を添えて運営事務局に判断を仰ぐ。',ok:true,
+     re:'評価は<b>しません</b>。ロゴ・タグ・箱の写真を撮り、<b>事務局に鑑定と取引キャンセルを申請</b>します。判断は運営が下す。'},
+    {n:'先に評価して誠意を見せる',d:'評価すれば相手も対応してくれるはず。',ok:false,
+     ng:'評価した瞬間<b>代金が相手に渡る</b>。それが狙いだ。'},
+    {n:'SNSで晒して圧力',d:'拡散すれば返金に応じるだろう。',ok:false,
+     ng:'それは<b>こちらが加害者</b>になりかねない。正規ルート＝事務局だ。'},
+   ]},
+  {say:'じ、事務局はやめろって！ …わかったよ、でも<b>直接口座に振り込むから評価だけは</b>…な？ アプリ通すと手数料かかるしさぁ。',
+   cards:[
+    {n:'直接取引の禁止',d:'アプリ外の直接取引は規約違反で、補償も一切受けられなくなる。すべてアプリ内で記録を残す。',ok:true,
+     re:'アプリ外の直接取引は<b>規約違反</b>で、トラブル時の<b>補償が全部消える</b>。取引もお金も、<b>すべてアプリの中で</b>。'},
+    {n:'口座番号を教える',d:'返金してくれるなら口座を教えるのが早い。',ok:false,
+     ng:'個人情報を渡すうえ記録も残らない。<b>アプリ内から出ない</b>のが鉄則。'},
+    {n:'半額返金で妥協',d:'手間を考えれば半額でも御の字。',ok:false,
+     ng:'偽物に払うお金は<b>0円</b>でいい。事務局判断を待とう。'},
+   ]},
+ ],
+ winTelop:[['ナレーション','事務局の調査の結果、商品は偽造品と判定。取引はキャンセルされた'],
+   ['ダイチ','3万円、戻ってきた…！ 評価押さなくてよかったぁ…'],
+   ['相談員（きみ）','偽ブランド品は買うのも売るのもトラブルのもと。最後に取引のセオリーをまとめよう。']],
+ badTelop:[['ダイチ','評価…押しちゃいました。そしたら出品者、アカウント消えてて…'],
+   ['ナレーション','代金は出品者へ。補償の道は閉ざされた——<b>BAD END</b>'],
+   ['ナレーション','……時間を戻そう。評価ボタンは、まだ押していない。']],
+ final:{type:'compose',
+  lead:'事務局へ送る報告メッセージを完成させよう。',
+  header:'事務局へのお問い合わせ',
+  bodyHTML:`<div class="to">宛先：<span class="blank hot" data-b="b1">（どこへ？）</span></div>
+   取引ID：TR-55023 について報告します。<br>
+   届いた商品は<span class="blank" data-b="b2">（どんな状態？）</span>。<br>
+   証拠として<span class="blank" data-b="b3">（何を添える？）</span>を添付します。<br>
+   受取評価は<span class="blank" data-b="b4">（どうしている？）</span>。<br>
+   取引のキャンセルと返金の対応をお願いします。`,
+  blanks:{
+   b1:{q:'この報告はどこへ？',opts:['フリマアプリの運営事務局','出品者本人','警察'],ok:0},
+   b2:{q:'商品の状態は？',opts:['説明の「正規品」と異なり偽造品の疑いがあります','思ったより汚れていました','サイズが合いませんでした'],ok:0},
+   b3:{q:'証拠として添えるのは？',opts:['ロゴ・タグ・箱の写真','自分の感想文','家族の証言'],ok:0},
+   b4:{q:'受取評価は？',opts:['まだ行っていません','先ほど済ませました','相手に頼まれた通り押しました'],ok:0},
+  },
+  afterNote:'<b>ポイント：</b>フリマは<b>受取評価＝代金支払い</b>。中身を確認するまで絶対に押さない。やりとりと決済は<b>必ずアプリ内</b>で。',
+ },
+ resultLead:'取引はキャンセルされ、全額が返金された。出品者は利用停止となった。',
+ summary:[
+  '個人間取引（フリマ）は<b>特商法・クーリングオフの対象外</b>。民法とアプリ規約がルール。',
+  '<b>「ノークレーム・ノーリターン」でも偽物の責任は消えない</b>（契約不適合責任）。',
+  '<b>受取評価は中身を確認してから</b>。評価＝代金支払い。',
+  'トラブルは出品者と直接やり合わず<b>事務局へ</b>。証拠写真を添える。',
+  '<b>アプリ外の直接取引・振込は絶対にしない</b>（補償が消える）。',
+  '未成年の利用は保護者の同意が前提。こまったら<b>188</b>。',
+ ]},
+
+/* ---------- FILE 06 点検商法・送り付け商法 ---------- */
+{no:'06',title:'ねらわれた祖母',mode:'点検商法・送り付け商法',
+ client:'アオイ（14・中学2年）',
+ chat:[
+  ['sys','消費生活センター 相談受付システム'],
+  ['l','おばあちゃんの家のことで相談です。なんか変なんです','アオイ（14・中2）'],
+  ['l','先週「無料で屋根を点検します」って人が来て、「瓦がずれてて今にも雨もりする」って言われて、その場で<b>98万円</b>の修理を契約したみたいで','アオイ'],
+  ['l','おじさん（父）が屋根に登ったら、<b>どこもこわれてなかった</b>そうです','アオイ'],
+  ['l','あと、頼んでない健康食品の箱も届いてて。「開けたらお金払うのかな」っておばあちゃん困ってます','アオイ'],
+  ['r','よく相談してくれました。契約書と、届いた荷物の情報を見せてください','わたし（相談員）'],
+ ],
+ evTitle:'工事契約書と届いた荷物',evLead:'あやしいところをタップしてマーカーを引こう。',
+ needSpots:5,
+ doc:`<div class="doc"><div class="stampword">写</div>
+   <h3>屋根修繕工事 請負契約書</h3>
+   <table>
+     <tr><td class="h">工事内容</td><td><span class="spot" data-id="s1">瓦全面ふき替え・防水（至急）</span></td></tr>
+     <tr><td class="h">請負金額</td><td><span class="spot" data-id="s2">980,000円（本日契約特価・通常158万円）</span></td></tr>
+     <tr><td class="h">着工日</td><td><span class="spot" data-id="s3">明日 午前8時</span></td></tr>
+     <tr><td class="h">支払方法</td><td><span class="spot" data-dud="1">工事完了後 現金一括</span></td></tr>
+   </table>
+   <p class="clause"><span class="spot" data-id="s4">担当者メモ：このままでは今夜の雨で天井が落ちます、と説明しご納得のうえ即日ご契約。</span></p>
+   <p class="small">ホームレスキュー株式会社　契約日：6月5日（書面お渡し日）</p>
+ </div>
+ <div class="doc">
+   <h3>届いた荷物（頼んでいない）</h3>
+   <table>
+     <tr><td class="h">品名</td><td>健康食品「長寿の泉」3箱</td></tr>
+     <tr><td class="h">送り主</td><td>ヘルシー通販センター（注文記録なし）</td></tr>
+     <tr><td class="h">同封物</td><td><span class="spot" data-id="s5">請求書 29,800円「ご返送なき場合はご購入とみなします」</span></td></tr>
+     <tr><td class="h">状態</td><td><span class="spot" data-dud="2">未開封（玄関に保管中）</span></td></tr>
+   </table>
+ </div>`,
+ spots:{
+  s1:{label:'「至急」の全面工事',expl:'点検と称して不安をあおり<b>大工事に誘導</b>。他社の見積もりを取らせない。'},
+  s2:{label:'「本日契約特価」98万円',expl:'即決させるための<b>その場限りの値引き</b>。相場確認の時間をうばう。'},
+  s3:{label:'着工は「明日」',expl:'<b>クーリングオフの前に工事を終わらせる</b>ための急ぎ設定。'},
+  s4:{label:'「今夜天井が落ちる」と告げた',expl:'事実と異なる説明でおどして契約させる<b>不実告知</b>。取消しの理由になる。'},
+  s5:{label:'「返送なければ購入とみなす」',expl:'送り付け商法の脅し文句。<b>一方的に送られた商品に支払い義務はない</b>。'},
+ },
+ dudExpl:'ここは問題なし（-30）。支払方法の記載や未開封の保管<b>そのもの</b>は正常だ。',
+ quiz:{lead:'「無料点検」から高額工事へ、そして頼んでいない商品——2つの手口の組み合わせは？',
+  opts:[
+   {n:'点検商法＋送り付け商法',d:'点検を口実に不安をあおって契約させる手口と、注文していない商品を送りつけて請求する手口。',ok:true},
+   {n:'キャッチセールス＋マルチ商法',d:'路上勧誘と紹介ビジネスの組み合わせ。',ok:false},
+   {n:'ワンクリック詐欺＋フィッシング',d:'ネット上の請求と情報詐取の組み合わせ。',ok:false},
+  ],
+  after:'<b>正解。</b>高齢者を狙う典型コンボだ。点検商法は<b>訪問販売</b>としてクーリングオフ8日、送り付けは<b>そもそも払う義務なし</b>。反撃開始だ。'},
+ foe:'ホームレスキュー営業部長',battleBtn:'業者に連絡する',
+ battle:[
+  {say:'点検の結果をご説明して、<b>奥様がぜひにと頼まれた</b>んですよ？ 正式な請負契約です。明日には着工します。',
+   cards:[
+    {n:'訪問販売のクーリングオフ',d:'点検商法は訪問販売。法定書面の受領日から8日以内なら無条件で解除できる。着工前ならなおさら。',ok:true,
+     re:'訪問による契約は<b>訪問販売</b>。書面受領（6月5日）から<b>8日以内なので無条件解除</b>します。着工は中止してください。'},
+    {n:'工事はもう仕方ない',d:'契約した以上、着工前でも断れない。',ok:false,
+     ng:'あきらめるのが一番の失敗。<b>期間内の解除権</b>がある。'},
+    {n:'相見積もりの原則',d:'工事は2社以上の見積もりが法律で義務。',ok:false,
+     ng:'そんな義務はない（推奨ではある）。使うべきは<b>解除権</b>。'},
+   ]},
+  {say:'解除ですって？ しかしですねぇ、<b>「今夜天井が落ちる」ほど危険だから</b>契約されたんでしょう？ 危険を放置するんですか？',
+   cards:[
+    {n:'不実告知による取消し',d:'事実と異なることを告げて契約させた場合、消費者契約法により契約を取り消せる。実際には屋根に異常はなかった。',ok:true,
+     re:'家族が確認したところ、<b>屋根に異常はありませんでした</b>。事実と異なる説明での契約は<b>不実告知</b>——クーリングオフとは別に、<b>取消しの対象</b>です。'},
+    {n:'天井の強度計算書を要求',d:'本当に危険か計算書を出させる。',ok:false,
+     ng:'議論を土俵に乗せる必要はない。<b>ウソの説明</b>という事実で切る。'},
+    {n:'こわいので工事だけは実施',d:'万一があるので工事はやってもらう。',ok:false,
+     ng:'それが狙いだ。必要なら<b>信頼できる業者に別途見積もり</b>を取ればいい。'},
+   ]},
+  {say:'チッ…。ところで、お届けした健康食品ですが。<b>受け取った以上、ご返送がなければ買い取り</b>ですよ。規約に書いてあります。',
+   cards:[
+    {n:'送り付けは支払い義務なし',d:'一方的に送り付けられた商品は、2021年の法改正で直ちに処分してよく、代金の支払い義務も返送義務もない。',ok:true,
+     re:'注文していない商品に<b>支払い義務も返送義務もありません</b>。法改正で<b>直ちに処分してよい</b>ことになっています。「買い取り規約」は無効です。'},
+    {n:'14日間保管して返送',d:'昔のルール通り14日保管してから着払いで返す。',ok:false,
+     ng:'それは<b>改正前の古いルール</b>。今は保管も返送も不要だ。'},
+    {n:'開封せず代金だけ払う',d:'角を立てないよう払っておく。',ok:false,
+     ng:'1円も払う必要がない。払えば<b>次の送り付け</b>を呼ぶ。'},
+   ]},
+ ],
+ winTelop:[['営業部長','……本社と相談します。契約は、白紙で……'],
+   ['アオイ','おばあちゃん、よかったね！'],
+   ['相談員（きみ）','仕上げに解除のはがきを出して、証拠を固めます。<b>家族が気づいたことが最大のファインプレー</b>でした。']],
+ badTelop:[['ナレーション','工事は翌朝はじまり、98万円が支払われた。屋根は最初からこわれていなかった——<b>BAD END</b>'],
+   ['ナレーション','……着工前に止める。もう一度だ。']],
+ final:{type:'postcard',
+  lead:'祖母の代わりに、解除通知はがきを完成させよう。',
+  bodyHTML:`<div class="to"><span class="blank hot" data-b="b1">（あて先）</span>　御中</div>
+   <div style="text-align:center;font-family:'Noto Serif JP';font-weight:900;letter-spacing:.3em;margin:.3em 0">通知書</div>
+   次の契約を<span class="blank" data-b="b2">（どうする？）</span>。<br>
+   契約年月日　6月5日（書面受領日）<br>
+   工事名　屋根修繕工事一式<br>
+   契約金額　<span class="blank" data-b="b3">（いくら？）</span><br>
+   なお、本契約は事実と異なる説明（不実告知）によるものであり、<br>あわせて取消しも主張します。<br>
+   <div style="text-align:right;margin-top:.5em">6月9日　（祖母の氏名）</div>`,
+  blanks:{
+   b1:{q:'だれ宛てに出す？',opts:['ホームレスキュー株式会社','ヘルシー通販センター','町内会'],ok:0},
+   b2:{q:'なんの通知？',opts:['契約を解除（クーリングオフ）します','工事日程を変更します','値引きを求めます'],ok:0},
+   b3:{q:'金額は？',opts:['980,000円','29,800円','1,580,000円'],ok:0},
+  },
+  afterNote:'<b>ポイント：</b>解除のはがきに加え、事実と異なる説明の内容（だれが・いつ・何と言ったか）を<b>メモで残す</b>と強い。送り付け商品は処分してOK、<b>お金は払わない</b>。',
+  cal:{title:'6月',firstDow:1,days:30,base:5,ok:12,
+   lead:'書面を受け取ったのは<b>6月5日</b>。クーリングオフの<b>最終日</b>は？（受領日を1日目として8日間）',
+   legend:'■黄色＝書面を受け取った日',
+   okNote:'<b>正解！ 最終日は6月12日。</b>訪問販売は8日間。家族が早く気づけば、じゅうぶん間に合う。',
+   ngNote:'ちがうようだ。5日を「1日目」として8日目を数えよう。'},
+ },
+ resultLead:'工事契約は白紙に。健康食品の請求も止まり、祖母の98万円は守られた。',
+ summary:[
+  '<b>点検商法</b>：「無料点検」→不安をあおって高額契約。<b>訪問販売としてクーリングオフ8日</b>。',
+  '事実と異なる説明での契約は<b>不実告知</b>→消費者契約法で<b>取消し可能</b>。',
+  '<b>送り付け商法</b>：一方的に届いた商品は<b>支払い義務なし・返送不要・直ちに処分OK</b>（2021年改正）。',
+  '「本日特価」「着工は明日」は<b>考えさせない・解除させない</b>ためのサイン。',
+  '高齢の家族には<b>「契約する前に家族に電話」</b>の約束を。気づいた家族の一報が最大の防御。',
+  '地域の見守りと<b>188</b>。今回のアオイさんのような相談が被害を止める。',
+ ]},
+);
+
+"use strict";
+/* ================= エンジン ================= */
+function epMax(ep){
+  const spotsN=Object.keys(ep.spots).length;
+  let f=0;
+  if(ep.final.type==='sortlist')f=ep.final.items.length*40;
+  else f=Object.keys(ep.final.blanks).length*50+(ep.final.cal?150:0);
+  return spotsN*100+100+ep.battle.length*200+f;
+}
+function rankOf(sc,ep){
+  const r=sc/epMax(ep);
+  if(r>=0.92)return['S','完璧な相談員ぶり。センター長も舌を巻いている。'];
+  if(r>=0.75)return['A','見事な解決！ 知識カードの使い方が正確だった。'];
+  if(r>=0.55)return['B','無事解決。証拠しらべの精度を上げるとさらに上へ。'];
+  return['C','解決はできた。まとめを読み直してリベンジしよう。'];
+}
+
+/* ---------- ファイル選択 ---------- */
+function scTitle(){
+  G.ep=null;$('#hdEp').textContent='FILE SELECT';
+  G.score=0;addScore(0);
+  let grid='';
+  EPIS.forEach((ep,i)=>{
+    const rk=G.clear[i]?`<span class="rk">${G.clear[i]}</span>`:'';
+    grid+=`<button class="epCard" data-i="${i}">${rk}
+      <span class="no">FILE ${ep.no}</span>
+      <div class="tt">${ep.title}</div>
+      <div class="md">手口：${ep.mode}｜相談者：${ep.client}</div>
+    </button>`;
+  });
+  mn.innerHTML=`
+   <div class="fade">
+     <div style="text-align:center;padding-top:2vh">
+       <span class="tag">家庭科｜消費生活</span>
+       <h1 class="big">消費者クエスト<span class="sub">SHOHISHA QUEST — 調査ファイル</span></h1>
+       <p class="lead">きみは消費生活センターの新米相談員。<br>証拠を調べ、手口を見抜き、正しい知識でトラブルを解決せよ。</p>
+     </div>
+     <div class="epGrid">${grid}</div>
+     <p class="lead" style="text-align:center;font-size:.85em">FILE 01 から順に挑むのがおすすめ。クリアするとランクが記録される。</p>
+   </div>`;
+  document.querySelectorAll('.epCard').forEach(b=>{
+    b.onclick=()=>startEp(+b.dataset.i);
+  });
+}
+function startEp(i){
+  G.epIdx=i;G.ep=EPIS[i];
+  G.score=0;addScore(0);
+  G.found=0;G.duds=0;G.battleMiss=0;G.calMiss=0;G.fua=0;G.turn=0;
+  $('#hdEp').textContent=`FILE ${G.ep.no}｜${G.ep.title}`;
+  scBrief();
+}
+
+/* ---------- 相談（チャット） ---------- */
+function scBrief(){
+  const ep=G.ep;
+  mn.innerHTML=`
+   <div class="fade">
+     <h2 class="sec">受付記録｜FILE ${ep.no}</h2>
+     <div class="chat" id="chatBox"></div>
+     <div style="text-align:center;margin-top:14px"><button class="btn" id="chatNext">▼</button></div>
+   </div>`;
+  let i=0;
+  const box=$('#chatBox');
+  const push=()=>{
+    if(i>=ep.chat.length){
+      $('#chatNext').textContent='証拠を調べる';
+      $('#chatNext').classList.add('accent');
+      $('#chatNext').onclick=scEvidence;
+      return;
+    }
+    const [side,text,nm]=ep.chat[i++];
+    const d=document.createElement('div');
+    d.className='msg '+side;
+    d.innerHTML=(nm?`<span class="nm">${nm}</span>`:'')+text;
+    box.appendChild(d);
+    scrollBottom();
+  };
+  push();push();
+  $('#chatNext').onclick=push;
+}
+
+/* ---------- 証拠しらべ ---------- */
+function scEvidence(){
+  const ep=G.ep;G.found=0;G.duds=0;
+  mn.innerHTML=`
+   <div class="fade">
+     <h2 class="sec">証拠しらべ｜${ep.evTitle}</h2>
+     <p class="lead">${ep.evLead}　発見 <span id="spotCount">0 / ${ep.needSpots}</span></p>
+     ${ep.doc}
+     <div id="fusenBox"></div>
+     <div style="text-align:center"><button class="btn accent hidden" id="evNext">手口を特定する</button></div>
+   </div>`;
+  document.querySelectorAll('.spot').forEach(sp=>{
+    sp.addEventListener('pointerdown',e=>{
+      e.preventDefault();
+      if(sp.classList.contains('found')||sp.classList.contains('dud'))return;
+      if(sp.dataset.id){
+        sp.classList.add('found');
+        G.found++;addScore(100);
+        const d=ep.spots[sp.dataset.id];
+        const f=document.createElement('div');
+        f.className='fusen';
+        f.innerHTML=`<b>発見！</b>${d.label}<br>${d.expl}`;
+        $('#fusenBox').appendChild(f);
+        $('#spotCount').textContent=`${G.found} / ${ep.needSpots}`;
+        if(G.found>=ep.needSpots){
+          $('#evNext').classList.remove('hidden');
+          telop([['相談員（きみ）','……そろった。証拠は<b>あやしい所だらけ</b>だ。']]);
+        }
+      } else {
+        sp.classList.add('dud');
+        G.duds++;addScore(-30);
+        const f=document.createElement('div');
+        f.className='fusen';f.style.borderLeftColor='#A0A0A0';f.style.background='#EEECE4';
+        f.innerHTML=ep.dudExpl;
+        $('#fusenBox').appendChild(f);
+      }
+      scrollBottom();
+    });
+  });
+  $('#evNext').onclick=scQuiz;
+}
+
+/* ---------- 手口特定 ---------- */
+function scQuiz(){
+  const ep=G.ep;
+  mn.innerHTML=`
+   <div class="fade">
+     <h2 class="sec">分析｜手口の特定</h2>
+     <p class="lead">${ep.quiz.lead}</p>
+     <div class="cards" id="qc"></div>
+     <div id="qres"></div>
+   </div>`;
+  const opts=[...ep.quiz.opts].sort(()=>Math.random()-.5);
+  const box=$('#qc');
+  opts.forEach(o=>{
+    const c=document.createElement('div');
+    c.className='card';
+    c.innerHTML=`<div class="cn">${o.n}</div><div class="cd">${o.d}</div>`;
+    c.onclick=()=>{
+      if(o.ok){
+        c.classList.add('correct');addScore(100);
+        cutin('手口特定','var(--ok)');
+        $('#qres').innerHTML=`<div class="note">${ep.quiz.after}</div>
+        <div style="text-align:center"><button class="btn accent" id="goBt">${ep.battleBtn}</button></div>`;
+        $('#goBt').onclick=scBattle;
+        box.querySelectorAll('.card').forEach(x=>x.onclick=null);
+        scrollBottom();
+      } else {
+        c.classList.add('wrong');addScore(-30);
+      }
+    };
+    box.appendChild(c);
+  });
+}
+
+/* ---------- 対決 ---------- */
+function scBattle(){
+  const ep=G.ep;
+  G.turn=0;G.fua=0;
+  mn.innerHTML=`
+   <div class="fade">
+     <h2 class="sec">対決｜${ep.foe}</h2>
+     <div class="gauges">
+       <div class="g" id="gLie"><div class="lb">相手の言い逃れ</div><div class="bar"><div class="fill" style="width:100%"></div></div></div>
+       <div class="g" id="gFua"><div class="lb">相談者の不安</div><div class="bar"><div class="fill" style="width:0%"></div></div></div>
+     </div>
+     <p class="lead">主張のスキを突ける<b>知識カード</b>を選べ。まちがえると相談者の不安が増える（3でやり直し）。</p>
+     <div id="btSay"></div>
+     <div class="cards" id="btCards"></div>
+   </div>`;
+  battleTurn();
+}
+function battleTurn(){
+  const ep=G.ep;
+  const t=ep.battle[G.turn];
+  $('#gLie .fill').style.width=(100*(ep.battle.length-G.turn)/ep.battle.length)+'%';
+  $('#gFua .fill').style.width=(G.fua/3*100)+'%';
+  $('#btSay').innerHTML=`<div class="note gray"><b>${ep.foe}：</b>${t.say}</div>`;
+  const box=$('#btCards');box.innerHTML='';
+  [...t.cards].sort(()=>Math.random()-.5).forEach(o=>{
+    const c=document.createElement('div');
+    c.className='card';
+    c.innerHTML=`<div class="cn">${o.n}</div><div class="cd">${o.d}</div>`;
+    c.onclick=()=>{
+      if(o.ok){
+        c.classList.add('correct');
+        cutin('反論成立');addScore(200);
+        box.querySelectorAll('.card').forEach(x=>x.onclick=null);
+        telop([['相談員（きみ）',o.re]],()=>{
+          G.turn++;
+          if(G.turn>=ep.battle.length){
+            $('#gLie .fill').style.width='0%';
+            cutin('完全論破','var(--ok)');
+            telop(ep.winTelop,scFinal);
+          } else battleTurn();
+        });
+      } else {
+        c.classList.add('wrong');
+        G.battleMiss++;G.fua++;addScore(-50);
+        $('#gFua .fill').style.width=(G.fua/3*100)+'%';
+        if(G.fua>=3){
+          telop(ep.badTelop,()=>{G.fua=0;battleTurn();});
+        } else {
+          telop([['相談員（きみ）',o.ng||'……ちがう、これじゃない。']]);
+        }
+      }
+    };
+    box.appendChild(c);
+  });
+  scrollBottom();
+}
+
+/* ---------- 手続き（3形式） ---------- */
+function scFinal(){
+  const f=G.ep.final;
+  if(f.type==='sortlist')scSort();
+  else scWrite();
+}
+/* はがき／メール（穴埋め共通） */
+function scWrite(){
+  const ep=G.ep,f=ep.final;
+  const isMail=f.type==='compose';
+  mn.innerHTML=`
+   <div class="fade">
+     <h2 class="sec">手続き｜${isMail?(f.header||'通知メール'):'クーリングオフ通知はがき'}</h2>
+     <p class="lead">${f.lead}</p>
+     <div class="postcard" id="pc">
+       ${f.bodyHTML}
+       <div class="stamp" id="stamp">${isMail?'送信':'受理'}</div>
+     </div>
+     <div id="pcNextWrap" class="hidden">
+       <div class="note">${f.afterNote}</div>
+       <div id="calWrap"></div>
+       <div id="calRes"></div>
+       <div style="text-align:center" id="finBtnWrap"></div>
+     </div>
+   </div>`;
+  document.querySelectorAll('.blank').forEach(bl=>{
+    bl.addEventListener('pointerdown',e=>{
+      e.preventDefault();
+      if(bl.classList.contains('filled'))return;
+      openChoice(f.blanks[bl.dataset.b],bl);
+    });
+  });
+}
+let cbTarget=null;
+function openChoice(def,bl){
+  cbTarget={def,bl};
+  $('#cbQ').textContent=def.q;
+  const o=$('#cbO');o.innerHTML='';
+  def.opts.forEach((t,i)=>{
+    const b=document.createElement('button');
+    b.className='copt';b.textContent=t;
+    b.onclick=()=>{
+      if(i===def.ok){
+        bl.textContent=t;bl.classList.add('filled');bl.classList.remove('hot');
+        addScore(50);
+        $('#cbar').style.display='none';
+        const rest=[...document.querySelectorAll('.blank:not(.filled)')];
+        if(rest.length){rest[0].classList.add('hot');}
+        else{
+          $('#stamp').classList.add('on');
+          setTimeout(()=>{
+            $('#pcNextWrap').classList.remove('hidden');
+            const cal=G.ep.final.cal;
+            if(cal)buildCal(cal);
+            else{
+              $('#finBtnWrap').innerHTML='<button class="btn accent" id="goRes">解決へ</button>';
+              $('#goRes').onclick=scResult;
+            }
+            scrollBottom();
+          },600);
+        }
+      } else {
+        addScore(-30);
+        b.style.background='#F5B8B0';
+      }
+    };
+    o.appendChild(b);
+  });
+  $('#cbar').style.display='block';
+}
+function buildCal(cfg){
+  $('#calWrap').innerHTML=`
+    <h2 class="sec">最終確認｜期限の計算</h2>
+    <p class="lead">${cfg.lead}</p>
+    <div class="cal"><h4>${cfg.title}</h4><div class="grid" id="calGrid"></div>
+    <p class="legend">${cfg.legend}</p></div>`;
+  const g=$('#calGrid');
+  ['日','月','火','水','木','金','土'].forEach(d=>{
+    const e=document.createElement('div');e.className='dow';e.textContent=d;g.appendChild(e);
+  });
+  for(let i=0;i<cfg.firstDow;i++){const e=document.createElement('div');g.appendChild(e);}
+  for(let d=1;d<=cfg.days;d++){
+    const e=document.createElement('div');
+    e.className='d'+(d===cfg.base?' base':'')+(d<cfg.base?' mute':'');
+    e.textContent=d;
+    if(d>cfg.base){
+      e.onclick=()=>{
+        if($('#calRes').dataset.done)return;
+        if(d===cfg.ok){
+          e.classList.add('pick');
+          addScore(Math.max(50,150-G.calMiss*50));
+          $('#calRes').dataset.done='1';
+          $('#calRes').innerHTML=`<div class="note">${cfg.okNote}</div>`;
+          $('#finBtnWrap').innerHTML='<button class="btn accent" id="goRes">解決へ</button>';
+          $('#goRes').onclick=scResult;
+          scrollBottom();
+        } else {
+          G.calMiss++;addScore(-20);
+          $('#calRes').innerHTML=`<div class="note">${cfg.ngNote}</div>`;
+        }
+      };
+    }
+    g.appendChild(e);
+  }
+  scrollBottom();
+}
+/* 仕分け（やる・やらない） */
+function scSort(){
+  const ep=G.ep,f=ep.final;
+  mn.innerHTML=`
+   <div class="fade">
+     <h2 class="sec">手続き｜対応指示書</h2>
+     <p class="lead">${f.lead}</p>
+     <div id="sortBox"></div>
+     <div style="text-align:center"><button class="btn accent hidden" id="goRes">解決へ</button></div>
+   </div>`;
+  const box=$('#sortBox');
+  let done=0;
+  [...f.items].sort(()=>Math.random()-.5).forEach(it=>{
+    const d=document.createElement('div');
+    d.className='sortItem';
+    d.innerHTML=`<span>${it.t}</span>
+      <span class="sbs">
+        <button class="sbtn do">やる</button>
+        <button class="sbtn dont">やらない</button>
+      </span>
+      <div class="why"></div>`;
+    const judge=ansDo=>{
+      if(d.classList.contains('done'))return;
+      d.classList.add('done');
+      const correct=(ansDo===it.ok);
+      d.classList.add(correct?'ok':'ng');
+      addScore(correct?40:-30);
+      d.querySelector('.why').innerHTML=(correct?'<b>正解。</b>':'<b>おっと、逆だ。</b>')+it.why;
+      done++;
+      if(done>=f.items.length){
+        $('#goRes').classList.remove('hidden');
+        scrollBottom();
+      }
+    };
+    d.querySelector('.do').onclick=()=>judge(true);
+    d.querySelector('.dont').onclick=()=>judge(false);
+    box.appendChild(d);
+  });
+  $('#goRes').onclick=scResult;
+}
+
+/* ---------- 解決報告 ---------- */
+function scResult(){
+  const ep=G.ep;
+  const[rk,msg]=rankOf(G.score,ep);
+  const prev=G.clear[G.epIdx];
+  if(!prev||'SABC'.indexOf(rk)<'SABC'.indexOf(prev))G.clear[G.epIdx]=rk;
+  hubReport(G.epIdx, G.score/epMax(ep), G.clear[G.epIdx], ep.no);
+  const sm=ep.summary.map(s=>`<li>${s}</li>`).join('');
+  const nextIdx=G.epIdx+1;
+  const nextBtn=nextIdx<EPIS.length
+    ?`<button class="btn accent" id="goNext">次のFILE ${EPIS[nextIdx].no}へ</button>`:'';
+  mn.innerHTML=`
+   <div class="fade">
+     <div style="text-align:center;margin-top:1em"><span class="tag">FILE ${ep.no} CLOSED</span></div>
+     <h2 class="sec">解決報告</h2>
+     <p class="lead">${ep.resultLead}</p>
+     <table class="res">
+       <tr><td>SCORE</td><td>${G.score} / ${epMax(ep)}</td></tr>
+       <tr><td>証拠の誤マーカー</td><td>${G.duds} 回</td></tr>
+       <tr><td>反論ミス</td><td>${G.battleMiss} 回</td></tr>
+     </table>
+     <div class="rank">${rk}</div>
+     <p class="lead" style="text-align:center;font-weight:700">${msg}</p>
+     <div class="pointbox">
+       <h4>テストに出る！ FILE ${ep.no} のまとめ</h4>
+       <ul>${sm}</ul>
+     </div>
+     <div class="p188">こまったら、消費者ホットライン<div class="n">１８８</div>（いやや！）　最寄りの消費生活センターにつながる</div>
+     <div style="text-align:center;margin:1em 0">
+       ${nextBtn}
+       <button class="btn" id="goRetry">もう一度</button>
+       <button class="btn ghost" id="goTitle">ファイル選択へ</button>
+     </div>
+   </div>`;
+  if(nextIdx<EPIS.length)$('#goNext').onclick=()=>startEp(nextIdx);
+  $('#goRetry').onclick=()=>startEp(G.epIdx);
+  $('#goTitle').onclick=scTitle;
+}
+hubBoot();
+scTitle();
+
+</script>
+</body>
+</html>
