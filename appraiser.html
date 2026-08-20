@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>贋作鑑定士 -THE APPRAISER-</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Shippori+Mincho+B1:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#100c0a; --wine:#4a1f24; --gold:#c9a227; --gold-hi:#f2dc9b; --gold-light:#e8c86a;
+  --parchment:#f2e8d5; --ink:#241c14; --danger:#b3362f;
+  --serif:"DotGothic16","Shippori Mincho B1","Hiragino Mincho ProN",serif;
+  --sans:"DotGothic16","Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--parchment);font-family:var(--sans)}
+#c3d{position:fixed;inset:0;display:block;touch-action:none;width:100vw;height:100dvh;
+  image-rendering:pixelated;image-rendering:crisp-edges}
+#vignette{position:fixed;inset:0;pointer-events:none;z-index:6;
+  background:radial-gradient(ellipse 120% 90% at 50% 42%, transparent 52%, rgba(5,3,2,.62) 100%)}
+button{font-family:inherit}
+.gold-text{background:linear-gradient(180deg,var(--gold-hi) 20%,var(--gold) 70%,#8a6d15);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* ---------- ボタン(ドット調) ---------- */
+.btn{
+  display:inline-block;font-family:var(--serif);letter-spacing:.1em;
+  background:var(--gold);color:var(--ink);border:3px solid #5c460e;border-radius:0;
+  padding:12px 26px;font-size:1rem;cursor:pointer;
+  box-shadow:0 4px 0 #3a2c08,inset 0 3px 0 rgba(255,250,225,.45),inset 0 -3px 0 rgba(60,40,5,.35);
+  transition:transform .08s;
+}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #3a2c08,inset 0 3px 0 rgba(255,250,225,.45),inset 0 -3px 0 rgba(60,40,5,.35)}
+.btn.ghost{background:#1a100d;color:var(--gold-light);border:3px solid var(--gold);
+  box-shadow:0 4px 0 #0c0806,inset 0 0 0 1px rgba(0,0,0,.4)}
+.btn.ghost:active{box-shadow:0 1px 0 #0c0806,inset 0 0 0 1px rgba(0,0,0,.4)}
+.btn:disabled{opacity:.35;pointer-events:none}
+.btn.sm{padding:9px 16px;font-size:.82rem}
+
+/* ---------- 汎用オーバーレイ(小画面でもスクロールで収まる) ---------- */
+.overlay{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;
+  align-items:center;padding:20px 16px;text-align:center;
+  background:rgba(10,7,6,.9);backdrop-filter:blur(4px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.overlay.open{display:flex;animation:fadeIn .45s ease}
+.overlay::before,.overlay::after{content:"";margin:auto;flex-shrink:0}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.flourish{color:var(--gold);letter-spacing:.6em;font-size:.75rem;opacity:.9}
+.flourish::before{content:"— ✦ —"}
+.eyebrow{letter-spacing:.42em;font-size:.68rem;color:var(--gold);font-family:var(--serif)}
+.big-title{font-family:var(--serif);font-weight:800;font-size:clamp(2.4rem,9vw,4.4rem);
+  letter-spacing:.1em;filter:drop-shadow(0 0 26px rgba(201,162,39,.35))}
+.card{
+  width:min(92vw,560px);background:linear-gradient(180deg,rgba(46,20,23,.78),rgba(24,12,13,.78));
+  border:3px solid rgba(201,162,39,.7);outline:1px solid rgba(201,162,39,.25);outline-offset:4px;
+  border-radius:0;padding:20px 24px;line-height:2;font-size:.92rem;text-align:left
+}
+.card b{color:var(--gold-light)}
+.ctrl-note{font-size:.8rem;opacity:.85;line-height:1.9;margin-top:10px}
+.warn{width:min(92vw,560px);background:rgba(179,54,47,.16);border:3px solid var(--danger);
+  border-radius:0;padding:12px 14px;font-size:.82rem;line-height:1.7;text-align:left;display:none;margin-top:14px}
+@media(max-height:720px){
+  .card,.dossier{padding:14px 16px;font-size:.85rem;line-height:1.8}
+  .mini-frame{width:min(38vw,150px)}
+  #popup .pframe{max-height:44dvh}
+  #popup img{max-height:calc(44dvh - 40px)}
+  .big-title{font-size:clamp(1.9rem,7vw,3rem)}
+  .rules,.ctrl-note{line-height:1.7}
+}
+@media(max-width:420px){
+  .btn{padding:11px 16px;font-size:.9rem}
+  .card,.dossier{width:94vw}
+}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;top:0;left:0;right:0;z-index:20;display:none;justify-content:center;gap:0;pointer-events:none}
+#hud.on{display:flex}
+#hud .bar{display:flex;gap:22px;align-items:baseline;background:linear-gradient(180deg,rgba(10,7,6,.85),rgba(10,7,6,.45));
+  border-bottom:1px solid rgba(201,162,39,.45);padding:9px 26px 8px;font-family:var(--serif);font-size:.8rem;
+  letter-spacing:.12em;color:var(--gold-light);backdrop-filter:blur(3px)}
+#hud .bar span b{color:var(--parchment);font-size:.95rem}
+#hintBtn{position:fixed;top:54px;right:12px;z-index:20;display:none}
+#hintBtn.on{display:block}
+#hintToast{position:fixed;top:104px;left:50%;transform:translateX(-50%);z-index:25;display:none;
+  width:min(92vw,520px);background:rgba(18,12,9,.94);border:3px solid var(--gold);
+  border-radius:0;padding:14px 16px;font-size:.87rem;line-height:1.9;text-align:left}
+#hintToast b{color:var(--gold-light)}
+#interactBtn{position:fixed;bottom:118px;left:50%;transform:translateX(-50%);z-index:20;display:none}
+#msgBand{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);z-index:22;display:none;
+  background:rgba(10,7,6,.8);border-top:1px solid rgba(201,162,39,.6);border-bottom:1px solid rgba(201,162,39,.6);
+  padding:10px 26px;font-family:var(--serif);letter-spacing:.14em;font-size:.95rem;
+  width:max-content;max-width:92vw;text-align:center}
+
+/* ---------- バーチャルパッド ---------- */
+#joy{position:fixed;left:calc(18px + env(safe-area-inset-left));bottom:calc(18px + env(safe-area-inset-bottom));width:118px;height:118px;z-index:21;display:none;
+  border:1px solid rgba(201,162,39,.55);border-radius:50%;
+  background:radial-gradient(circle,rgba(20,12,9,.5),rgba(20,12,9,.2))}
+#joyKnob{position:absolute;left:50%;top:50%;width:50px;height:50px;border-radius:50%;
+  transform:translate(-50%,-50%);background:radial-gradient(circle at 35% 30%,var(--gold-hi),#a8842a);
+  box-shadow:0 4px 10px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,248,220,.5)}
+.touch #joy{display:block}
+
+/* ---------- 依頼書 ---------- */
+.dossier{width:min(92vw,540px);background:linear-gradient(180deg,#f5ecd9,#e9dcc2);color:var(--ink);
+  border-radius:0;border:3px solid #5a4632;padding:24px 26px;font-size:.92rem;line-height:2;
+  box-shadow:0 16px 40px rgba(0,0,0,.65),inset 0 0 60px rgba(120,90,40,.12);position:relative;text-align:left}
+.dossier::before{content:"依頼資料";position:absolute;top:-13px;left:20px;background:var(--wine);
+  color:var(--gold-light);font-family:var(--serif);font-size:.74rem;letter-spacing:.32em;padding:5px 16px}
+.dossier dt{float:left;width:5.5em;font-weight:700;color:#5a4632}
+.dossier dd{margin-left:6em;border-bottom:1px dashed rgba(36,28,20,.25)}
+.dossier p{margin-top:12px;font-size:.86rem}
+.base-price{margin-top:12px;font-family:var(--serif);font-weight:800;font-size:1.05rem;color:#7a1f1f}
+.mini-frame{width:min(52vw,210px);margin:2px auto 14px;background:#0a0705;padding:8px;
+  border:5px solid transparent;
+  border-image:linear-gradient(135deg,#8a6d15,#f2dc9b 28%,#a8842a 55%,#f0d98f 80%,#8a6d15) 1;
+  box-shadow:0 12px 30px rgba(0,0,0,.6)}
+.mini-frame img{display:block;width:100%;max-height:32dvh;object-fit:contain}
+.trivia{margin-top:14px;padding-top:14px;border-top:1px dashed rgba(242,232,213,.3);font-size:.86rem}
+.rank{font-family:var(--serif);font-size:clamp(1.6rem,7vw,2.3rem);font-weight:800}
+.go-title{font-family:var(--serif);font-size:clamp(2rem,9vw,3rem);font-weight:800;color:var(--danger);
+  text-shadow:0 0 30px rgba(179,54,47,.4)}
+
+/* ---------- 鑑定ポップアップ ---------- */
+#popup{z-index:40}
+#pLot{font-family:var(--serif);letter-spacing:.3em;font-size:.72rem;color:var(--gold);margin-bottom:4px}
+#pLabel{font-family:var(--serif);font-size:1.5rem;font-weight:800;letter-spacing:.15em;margin-bottom:12px}
+#popup .pframe{width:min(80vw,380px);max-height:54dvh;background:#0a0705;padding:14px;
+  border:7px solid transparent;
+  border-image:linear-gradient(135deg,#8a6d15,#f2dc9b 28%,#a8842a 55%,#f0d98f 80%,#8a6d15) 1;
+  box-shadow:0 18px 50px rgba(0,0,0,.75),inset 0 0 0 1px rgba(242,232,213,.15)}
+#popup img{display:block;width:100%;max-height:calc(54dvh - 40px);object-fit:contain}
+.p-nav{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.p-arrow{background:#1a100d;border:3px solid var(--gold);color:var(--gold-light);
+  border-radius:0;width:46px;height:46px;font-size:1.2rem;cursor:pointer;box-shadow:0 3px 0 #0c0806}
+.p-arrow:active{transform:translateY(2px);box-shadow:0 1px 0 #0c0806}
+#pClose{position:absolute;top:14px;right:18px;background:none;border:none;color:var(--parchment);
+  font-size:1.8rem;cursor:pointer;opacity:.75}
+#pConfirm{display:none;flex-direction:column;gap:12px;margin-top:16px;align-items:center}
+#pConfirm .q{font-family:var(--serif);font-size:.95rem;letter-spacing:.1em}
+#pConfirm .row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+
+/* ---------- オークションUI ---------- */
+#aucUI{position:fixed;left:0;right:0;bottom:0;z-index:24;display:none;flex-direction:column;
+  align-items:center;gap:8px;padding:0 12px 16px;pointer-events:none}
+#aucUI.on{display:flex}
+#priceCap{letter-spacing:.4em;font-size:.66rem;color:var(--gold);font-family:var(--serif)}
+#priceBoard{font-family:var(--serif);font-weight:800;font-size:clamp(1.7rem,7vw,2.6rem);
+  filter:drop-shadow(0 0 24px rgba(201,162,39,.45));font-variant-numeric:tabular-nums}
+#bidLog{width:min(92vw,520px);max-height:114px;overflow:hidden;display:flex;flex-direction:column-reverse;gap:5px;font-size:.84rem}
+#bidLog div{background:rgba(10,7,6,.75);border-left:2px solid var(--gold);padding:6px 12px;animation:fadeIn .3s ease;text-align:left}
+#bidLog div.alert{background:rgba(179,54,47,.45);border-left-color:#ff8a7a;font-weight:700}
+#hammerBtn{pointer-events:auto;display:none}
+
+/* ---------- スタンプ ---------- */
+.stamp{position:fixed;top:44%;left:50%;z-index:60;pointer-events:none;
+  font-family:var(--serif);font-weight:800;font-size:clamp(3rem,16vw,6rem);
+  padding:8px 30px;border:6px solid;border-radius:0;letter-spacing:.1em;
+  transform:translate(-50%,-50%) rotate(-12deg) scale(3);opacity:0}
+.stamp.show{animation:stampIn .5s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes stampIn{to{transform:translate(-50%,-50%) rotate(-12deg) scale(1);opacity:1}}
+.stamp.fake{color:var(--danger);border-color:var(--danger);background:rgba(20,10,9,.85)}
+.stamp.real{color:var(--gold-light);border-color:var(--gold-light);background:rgba(15,12,7,.85)}
+#fadeVeil{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .7s ease;z-index:28}
+</style>
+</head>
+<body>
+<canvas id="c3d"></canvas>
+<div id="vignette"></div>
+
+<div id="hud"><div class="bar">
+  <span id="hudStage"></span><span>⏱ <b id="timer">0</b>秒</span><span>売上 <b id="hudTotal">0円</b></span><span>🏅 <b id="hudPts">0</b>pt</span>
+</div></div>
+<button class="btn ghost sm" id="hintBtn">専門家に相談(−30%)</button>
+<div id="hintToast"></div>
+<button class="btn" id="interactBtn">検分する</button>
+<div id="msgBand"></div>
+<div id="joy"><div id="joyKnob"></div></div>
+
+<!-- タイトル -->
+<div class="overlay open" id="titleOv">
+  <div class="eyebrow">GRAND AUCTION HOUSE</div>
+  <div class="big-title gold-text">贋作鑑定士</div>
+  <div style="font-family:var(--serif);letter-spacing:.55em;opacity:.8;font-size:.85rem;margin-top:2px">THE APPRAISER</div>
+  <div class="flourish" style="margin:16px 0"></div>
+  <div class="card">
+    あなたは名門オークションハウスの<b>鑑定士</b>。薄暗いギャラリーに並ぶ作品のうち、<b>本物は1点だけ</b>。<br>
+    出題は<b>31の名画から毎回ランダムに6問</b>。後半ほど贋作は精巧になる。<br>
+    ① 歩き回って作品を見比べ、真作を鑑定する<br>
+    ② 作品を携えてオークション会場へ<br>
+    ③ 自らオークショニストとして競売を開催。<b>高額落札でクリア</b>、贋作なら見破られて<b>ゲームオーバー</b>
+    <div class="ctrl-note"><b>操作</b>&nbsp;
+      PC:WASD/矢印キーで移動、作品に近づいてボタンかクリックで検分<br>
+      スマホ:<b>床をタップ</b>するとその場所へ歩きます(左のパッドでも移動可)。作品タップで検分</div>
+  </div>
+  <div class="warn" id="imgWarn">⚠ 名画の画像を読み込めませんでした。通信環境をご確認ください。Claudeのプレビュー内では外部画像がブロックされるため、<b>ダウンロードしてブラウザで開くか、GitHub Pagesで公開</b>してください。</div>
+  <div style="margin-top:22px"><button class="btn" id="startBtn">鑑定を始める</button></div>
+</div>
+
+<!-- 依頼書 -->
+<div class="overlay" id="introOv">
+  <div class="eyebrow" id="introNo"></div>
+  <div style="font-family:var(--serif);font-size:clamp(1.4rem,6vw,2rem);font-weight:800;margin:6px 0 18px" class="gold-text" id="introTitle"></div>
+  <div class="dossier">
+    <dl><dt>作者</dt><dd id="dArtist"></dd><dt>制作年</dt><dd id="dYear"></dd><dt>技法</dt><dd id="dMedium"></dd><dt>所蔵</dt><dd id="dMuseum"></dd></dl>
+    <p id="dStory"></p>
+    <div class="base-price">落札予想価格:<span id="dPrice"></span></div>
+  </div>
+  <div style="margin-top:20px"><button class="btn" id="introGo">ギャラリーへ入る</button></div>
+</div>
+
+<!-- 鑑定ポップアップ -->
+<div class="overlay" id="popup">
+  <button id="pClose">✕</button>
+  <div id="pLot">LOT</div>
+  <div id="pLabel" class="gold-text"></div>
+  <div class="pframe"><img id="pImg" alt="鑑定対象の作品"></div>
+  <div class="p-nav" id="pNav">
+    <button class="p-arrow" id="pPrev">‹</button>
+    <button class="btn" id="pPick">本物と鑑定する</button>
+    <button class="p-arrow" id="pNext">›</button>
+  </div>
+  <div id="pConfirm">
+    <div class="q" id="pConfirmQ"></div>
+    <div class="row">
+      <button class="btn" id="pYes">出品する</button>
+      <button class="btn ghost" id="pNo">考え直す</button>
+    </div>
+  </div>
+</div>
+
+<!-- オークションUI -->
+<div id="aucUI">
+  <div id="priceCap">CURRENT BID</div>
+  <div id="priceBoard" class="gold-text">0円</div>
+  <div id="bidLog"></div>
+  <button class="btn" id="hammerBtn">ハンマーを振る</button>
+</div>
+
+<!-- クリア -->
+<div class="overlay" id="clearOv">
+  <div class="eyebrow">SOLD</div>
+  <div class="rank gold-text">落札!</div>
+  <div class="card" style="margin-top:14px">
+    <div class="mini-frame"><img id="cImg" alt="落札作品"></div>
+    『<span id="cName"></span>』<br>
+    <span style="font-family:var(--serif);font-size:1.5rem;font-weight:800" class="gold-text" id="cPrice"></span><br>
+    <span id="cPts" style="color:var(--gold-light);font-size:1.05rem"></span><br>
+    <span style="font-size:.83rem;opacity:.85" id="cBonus"></span>
+    <div class="trivia"><b>◆ 鑑定士の豆知識</b><br><span id="cTrivia"></span></div>
+  </div>
+  <div style="margin-top:20px"><button class="btn" id="nextBtn">次の依頼へ</button></div>
+</div>
+
+<!-- ゲームオーバー -->
+<div class="overlay" id="goOv">
+  <div class="go-title">鑑定失敗</div>
+  <div class="card" style="margin-top:14px">
+    出品した作品は<b style="color:var(--danger)">贋作</b>だった。目の肥えた客に見破られ、会場は騒然。オークションハウスの信用は地に落ちた……。
+    <div class="trivia">
+      <b id="goReal" style="color:var(--gold-light)"></b>
+      <div class="mini-frame" style="margin-top:10px"><img id="goImg" alt="本物の作品"></div>
+      <b>◆ 見破りのポイント</b><br><span id="goHint"></span></div>
+  </div>
+  <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+    <button class="btn" id="retryBtn">同じ依頼に再挑戦</button>
+    <button class="btn ghost" id="reloadBtn">タイトルへ</button>
+  </div>
+</div>
+
+<!-- エンディング -->
+<div class="overlay" id="endOv">
+  <div class="eyebrow">ALL STAGES CLEAR</div>
+  <div class="rank gold-text" style="margin-top:8px">全作品、真作にて落札</div>
+  <div class="card" style="margin-top:14px;text-align:center">
+    累計売上<br>
+    <span style="font-family:var(--serif);font-size:1.7rem;font-weight:800" class="gold-text" id="finalTotal"></span><br>
+    獲得ポイント<br>
+    <span style="font-family:var(--serif);font-size:1.4rem;font-weight:800" class="gold-text" id="endPts"></span><br><br>
+    あなたの称号<br>
+    <span class="rank gold-text" id="finalRank"></span><br>
+    <span style="font-size:.83rem;opacity:.85" id="finalComment"></span>
+  </div>
+  <div style="margin-top:20px"><button class="btn" id="againBtn">もう一度挑戦する</button></div>
+</div>
+
+<div class="stamp" id="stamp"></div>
+<div id="fadeVeil"></div>
+
+<script src="config.js"></script>
+<script src="hub-progress.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+/* ==================== 作品データ(史実) ==================== */
+const STAGES=[
+  { name:"モナ・リザ", artist:"レオナルド・ダ・ヴィンチ", year:"1503〜1519年頃",
+    medium:"ポプラ板に油彩", museum:"ルーヴル美術館(フランス・パリ)",
+    story:"ルネサンスの巨匠が晩年まで手元に置き、加筆を続けたとされる肖像画。輪郭を煙のようにぼかす「スフマート」技法が特徴。",
+    trivia:"1911年にルーヴル美術館から盗まれ、2年後にイタリアで発見された。この盗難事件が世界的な知名度を決定づけたと言われる。",
+    hint:"本物は落ち着いた黄褐色の色調。色が派手すぎたり不自然に明るいものは贋作だ。",
+    files:["Mona Lisa, by Leonardo da Vinci, from C2RMF retouched.jpg","Mona Lisa.jpg","Leonardo da Vinci - Mona Lisa (Louvre, Paris).jpg"],
+    candidates:3, base:900e8, pool:"easy" },
+  { name:"冨嶽三十六景 神奈川沖浪裏", artist:"葛飾北斎", year:"1831年頃(天保2年頃)",
+    medium:"多色摺木版画(浮世絵)", museum:"メトロポリタン美術館ほか世界各地",
+    story:"巨大な波の向こうに富士山を望む、世界で最も有名な日本美術のひとつ。版画のため複数枚が現存する。",
+    trivia:"波の藍色には当時輸入されたばかりの化学顔料ベロ藍(プルシアンブルー)が使われている。ドビュッシーの交響詩『海』の楽譜表紙にも採用された。",
+    hint:"本物の波は深い藍色。色相がずれて緑や紫に寄っているものは贋作だ。",
+    files:["The Great Wave off Kanagawa.jpg","Great Wave off Kanagawa2.jpg","Tsunami by hokusai 19th century.jpg"],
+    candidates:3, base:5e8, pool:"easy" },
+  { name:"真珠の耳飾りの少女", artist:"ヨハネス・フェルメール", year:"1665年頃",
+    medium:"カンヴァスに油彩", museum:"マウリッツハイス美術館(オランダ・ハーグ)",
+    story:"「北方のモナ・リザ」とも呼ばれる肖像画。ターバンの青には、当時金と同等に高価だったラピスラズリ由来のウルトラマリンが使われた。",
+    trivia:"フェルメールの現存作品は30数点のみ。20世紀には画家メーヘレンによるフェルメール贋作事件が世界を揺るがせた——まさに鑑定士の腕が試された画家である。",
+    hint:"ターバンの青と唇の赤の対比が生命線。彩度や明るさがわずかに違うものを探せ。",
+    files:["Girl with a Pearl Earring.jpg","Johannes Vermeer (1632-1675) - The Girl With The Pearl Earring (1665).jpg","Meisje met de parel.jpg","1665 Girl with a Pearl Earring.jpg"],
+    candidates:4, base:300e8, pool:"mid" },
+  { name:"星月夜", artist:"フィンセント・ファン・ゴッホ", year:"1889年",
+    medium:"カンヴァスに油彩", museum:"ニューヨーク近代美術館(MoMA)",
+    story:"南フランスの療養院から見た夜空を、渦巻くような筆致で描いた代表作。実景と記憶・想像を組み合わせて描かれた。",
+    trivia:"ゴッホが生前に売れた絵はほぼ1枚だけだったとされる。現在は1枚が数百億円で取引される、美術史上もっとも劇的な「死後の逆転」である。",
+    hint:"夜空の青の深さと月の黄色のバランスに注目。全体がわずかに明るい・暗いものは贋作だ。",
+    files:["Van Gogh - Starry Night - Google Art Project.jpg","VanGogh-starry night ballance1.jpg"],
+    candidates:4, base:400e8, pool:"mid" },
+  { name:"叫び", artist:"エドヴァルド・ムンク", year:"1893年",
+    medium:"厚紙にテンペラ・パステルほか", museum:"オスロ国立美術館(ノルウェー)",
+    story:"燃えるような夕焼けの下、橋の上で耳をふさぐ人物を描いた表現主義の代表作。ムンクは同じ主題を複数バージョン制作した。",
+    trivia:"パステル版は2012年のオークションで約1億2000万ドル(当時約96億円)で落札され、当時の絵画落札額の世界記録を更新。1994年と2004年には盗難事件も起きた。",
+    hint:"空の朱色がわずかにくすんでいたり、色相が数度ずれているものは贋作。最上級の集中力で見比べろ。",
+    files:["Edvard Munch, 1893, The Scream, oil, tempera and pastel on cardboard, 91 x 73 cm, National Gallery of Norway.jpg","The Scream.jpg","Edvard Munch - The Scream - Google Art Project.jpg"],
+    candidates:5, base:150e8, pool:"hard" },
+  { name:"ヴィーナスの誕生", artist:"サンドロ・ボッティチェッリ", year:"1485年頃",
+    medium:"カンヴァスにテンペラ", museum:"ウフィツィ美術館(イタリア・フィレンツェ)",
+    story:"海の泡から生まれた女神が貝殻に乗って岸へ運ばれる場面。メディチ家のために描かれたとされるルネサンスの傑作。",
+    trivia:"当時カンヴァス(布)に描かれた大作は珍しく、板絵が主流だった。500年以上前の作品ながら保存状態の良さでも知られる。",
+    hint:"肌の色味と海の淡い緑のバランスが鍵。ほんのわずかな彩度の違いを見抜け。",
+    files:["Sandro Botticelli - La nascita di Venere - Google Art Project - edited.jpg","La nascita di Venere (Botticelli).jpg","Birth of Venus Botticelli.jpg","Sandro Botticelli - La nascita di Venere - Google Art Project.jpg"],
+    candidates:5, base:800e8, pool:"hard" }
+];
+/* ==================== 追加出題プール(史実データ) ==================== */
+const ARTWORKS_EXTRA=[
+ {name:"牛乳を注ぐ女",artist:"ヨハネス・フェルメール",year:"1660年頃",medium:"カンヴァスに油彩",museum:"アムステルダム国立美術館",
+  story:"台所で牛乳を注ぐ女性の静謐な一瞬。窓から差し込む光の描写が見どころ。",
+  trivia:"パンの表面は絵具を点々と置く技法で質感が表現されている。オランダ黄金時代の「静けさ」の代表作。",
+  hint:"黄色い胴着と青いエプロンの対比が生命線。彩度のわずかな違いに注目。",
+  files:["Johannes Vermeer - Het melkmeisje - Google Art Project.jpg","Johannes Vermeer - De melkmeid.jpg"],base:250e8},
+ {name:"夜警",artist:"レンブラント・ファン・レイン",year:"1642年",medium:"カンヴァスに油彩",museum:"アムステルダム国立美術館",
+  story:"市民自警団の集団肖像画。光と影の劇的な対比(キアロスクーロ)で人物を浮かび上がらせた。",
+  trivia:"実は昼の場面。ニスの黒ずみで夜に見えたことから「夜警」と呼ばれるようになった。過去に刃物で切りつけられる事件も起きている。",
+  hint:"闇の深さと、中央に差す光の金色。明るさが不自然なものは贋作だ。",
+  files:["The Night Watch - HD.jpg","Rembrandt van Rijn-De Nachtwacht-1642.jpg","La ronda de noche, por Rembrandt van Rijn.jpg"],base:700e8},
+ {name:"民衆を導く自由の女神",artist:"ウジェーヌ・ドラクロワ",year:"1830年",medium:"カンヴァスに油彩",museum:"ルーヴル美術館(パリ)",
+  story:"1830年の七月革命を主題に、三色旗を掲げる女神が民衆を率いる姿を描いたロマン主義の代表作。",
+  trivia:"かつてのフランス100フラン紙幣の図柄にもなった。女神は自由の擬人像「マリアンヌ」とされる。",
+  hint:"翻る三色旗の青・白・赤。色相のずれを見逃すな。",
+  files:["Eugène Delacroix - Le 28 Juillet. La Liberté guidant le peuple.jpg","Eugène Delacroix - La liberté guidant le peuple.jpg","Liberty Leading the People.jpg"],base:500e8},
+ {name:"雲海の上の旅人",artist:"カスパー・ダーヴィト・フリードリヒ",year:"1818年頃",medium:"カンヴァスに油彩",museum:"ハンブルク美術館(ドイツ)",
+  story:"霧の海を見下ろす後ろ姿の旅人。ドイツ・ロマン主義を象徴する一枚。",
+  trivia:"人物を後ろ姿で描く「リュッケンフィグーア」の代表例。観る者は旅人と同じ視点で風景に向き合うことになる。",
+  hint:"霧の白と岩の暗色のコントラスト。全体の明暗バランスを見比べろ。",
+  files:["Caspar David Friedrich - Wanderer above the sea of fog.jpg","Caspar David Friedrich 032.jpg"],base:120e8},
+ {name:"グランド・ジャット島の日曜日の午後",artist:"ジョルジュ・スーラ",year:"1884〜86年",medium:"カンヴァスに油彩",museum:"シカゴ美術館(アメリカ)",
+  story:"セーヌ川の中州で休日を過ごす人々を、無数の色の点で描いた新印象主義の金字塔。",
+  trivia:"「点描法」で完成まで約2年を費やした。近くで見ると色の点、離れると混ざって見える視覚の科学を利用している。",
+  hint:"点描の色の粒がつくる柔らかい色調。彩度が高すぎるものは怪しい。",
+  files:["A Sunday on La Grande Jatte, Georges Seurat, 1884.png","Georges Seurat - A Sunday on La Grande Jatte -- 1884 - Google Art Project.jpg"],base:400e8},
+ {name:"接吻",artist:"グスタフ・クリムト",year:"1907〜08年",medium:"カンヴァスに油彩・金箔",museum:"ベルヴェデーレ宮殿(ウィーン)",
+  story:"金箔に包まれて抱き合う男女。クリムト「黄金時代」の頂点とされる。",
+  trivia:"クリムトの父は金細工師で、金箔の扱いは家業ゆずり。ウィーンから門外不出の国民的絵画である。",
+  hint:"金の輝きの色味が命。黄金が緑や赤に転んでいたら贋作だ。",
+  files:["The Kiss - Gustav Klimt - Google Cultural Institute.jpg","Gustav Klimt 016.jpg"],base:350e8},
+ {name:"ラス・メニーナス",artist:"ディエゴ・ベラスケス",year:"1656年",medium:"カンヴァスに油彩",museum:"プラド美術館(マドリード)",
+  story:"王女マルガリータと女官たち、そして画家自身まで描き込まれた「絵画の中の絵画」。",
+  trivia:"奥の鏡に国王夫妻が映り込む仕掛けが有名。ピカソはこの絵を研究して50点以上の連作を描いた。",
+  hint:"落ち着いた褐色の空間と王女の淡いドレス。明暗の階調を見比べろ。",
+  files:["Las Meninas, by Diego Velázquez, from Prado in Google Earth.jpg","Las Meninas 01.jpg"],base:600e8},
+ {name:"オフィーリア",artist:"ジョン・エヴァレット・ミレイ",year:"1851〜52年",medium:"カンヴァスに油彩",museum:"テート・ブリテン(ロンドン)",
+  story:"シェイクスピア『ハムレット』の悲劇のヒロインが川に浮かぶ場面。植物の描写は植物図鑑級の精密さ。",
+  trivia:"モデルのエリザベス・シダルは浴槽に浮かんで長時間ポーズを続け、ひどい風邪をこじらせたという逸話が残る。",
+  hint:"川面の深い緑と草花の色。緑の色相のずれを探せ。",
+  files:["John Everett Millais - Ophelia - Google Art Project.jpg","Millais - Ophelia.jpg"],base:150e8},
+ {name:"バベルの塔",artist:"ピーテル・ブリューゲル(父)",year:"1563年",medium:"板に油彩",museum:"ウィーン美術史美術館",
+  story:"旧約聖書の巨塔を、驚くべき細密描写で描いた一枚。無数の人と建設機械が書き込まれている。",
+  trivia:"塔のモデルはローマのコロッセオとされる。よく見ると建設の工程が階層ごとに描き分けられている。",
+  hint:"レンガの赤茶と空の青のバランス。全体の色温度を見比べろ。",
+  files:["Pieter Bruegel the Elder - The Tower of Babel (Vienna) - Google Art Project - edited.jpg","Pieter Bruegel the Elder - The Tower of Babel (Vienna) - Google Art Project.jpg","Brueghel-tower-of-babel.jpg"],base:300e8},
+ {name:"アルノルフィーニ夫妻像",artist:"ヤン・ファン・エイク",year:"1434年",medium:"板に油彩",museum:"ナショナル・ギャラリー(ロンドン)",
+  story:"商人夫妻の婚礼場面とされる肖像。油彩技法を極めた初期フランドル絵画の傑作。",
+  trivia:"奥の凸面鏡には画家自身らしき姿が映り、壁には「ヤン・ファン・エイクここにありき」と署名がある。",
+  hint:"緑のドレスと赤い寝台。この2色の彩度が鑑定の決め手。",
+  files:["Van Eyck - Arnolfini Portrait.jpg","The Arnolfini portrait (1434).jpg"],base:280e8},
+ {name:"印象・日の出",artist:"クロード・モネ",year:"1872年",medium:"カンヴァスに油彩",museum:"マルモッタン・モネ美術館(パリ)",
+  story:"ル・アーヴルの港の朝焼けを素早い筆致で描いた一枚。「印象派」という言葉の由来になった。",
+  trivia:"批評家が「印象しか描いていない」と揶揄した言葉が、そのまま美術史上の一大運動の名前になった。1985年に盗難され5年後に発見された。",
+  hint:"朝靄の青灰色に浮かぶ太陽の朱色。この対比が崩れていたら贋作。",
+  files:["Monet - Impression, Sunrise.jpg","Claude Monet, Impression, soleil levant.jpg","Claude Monet, Impression, soleil levant, 1872.jpg"],base:250e8},
+ {name:"ひまわり",artist:"フィンセント・ファン・ゴッホ",year:"1888年",medium:"カンヴァスに油彩",museum:"ナショナル・ギャラリー(ロンドン)ほか・連作",
+  story:"アルルの黄色い家を飾るために描かれた連作。黄色に黄色を重ねる大胆な色彩が特徴。",
+  trivia:"1987年に日本の保険会社が約58億円で落札して世界を驚かせた。その1点は今も東京で公開されている。",
+  hint:"何段階もの黄色の重なり。黄が緑や橙に転んでいるものを弾け。",
+  files:["Vincent Willem van Gogh 127.jpg","Vincent van Gogh - Sunflowers - VGM F458.jpg","Van Gogh Vase with Fifteen Sunflowers.jpg"],base:200e8},
+ {name:"夜のカフェテラス",artist:"フィンセント・ファン・ゴッホ",year:"1888年",medium:"カンヴァスに油彩",museum:"クレラー・ミュラー美術館(オランダ)",
+  story:"アルルの星空の下、ガス灯に照らされたカフェのテラス。夜を黒を使わずに描いた実験作。",
+  trivia:"署名はないが真作とされる。ゴッホは「夜は昼よりも色彩豊かだ」と手紙に書いている。",
+  hint:"カフェの黄色と夜空の群青の対比。どちらかがくすんでいたら贋作。",
+  files:["Vincent Willem van Gogh - Cafe Terrace at Night (Yorck).jpg","Van Gogh - Terrasse des Cafés an der Place du Forum in Arles am Abend1.jpg"],base:220e8},
+ {name:"風神雷神図屏風",artist:"俵屋宗達",year:"17世紀前半(江戸時代)",medium:"紙本金地着色・二曲一双",museum:"建仁寺蔵(京都国立博物館寄託)",
+  story:"金地の余白を大胆に活かし、風神と雷神を左右に配した琳派の原点。",
+  trivia:"後に尾形光琳、さらに酒井抱一が模写し、約100年ごとに受け継がれた「琳派のリレー」として知られる。",
+  hint:"金地の輝きと、緑の風神・白の雷神の対比。金の色味を見よ。",
+  files:["Fujinraijin-tawaraya.jpg","Wind God Fujin (left) and Thunder God Raijin (right) by Tawaraya Sotatsu.jpg"],base:180e8},
+ {name:"灰色と黒のアレンジメント第1番(ホイッスラーの母)",artist:"ジェームズ・マクニール・ホイッスラー",year:"1871年",medium:"カンヴァスに油彩",museum:"オルセー美術館(パリ)",
+  story:"横向きに座る画家の母を、灰と黒の抑えた色調でまとめた肖像画。",
+  trivia:"画家自身は人物画ではなく「色彩の配置(アレンジメント)」として題名を付けた。アメリカでは「母の象徴」として切手にもなった。",
+  hint:"灰色の階調がすべて。ほんのわずかな明るさの違いを見抜け。",
+  files:["Whistlers Mother high res.jpg","James McNeill Whistler - Arrangement in Grey and Black No. 1 (Whistler's Mother) - Google Art Project.jpg","Whistler's Mother.jpg"],base:130e8,mono:true},
+ {name:"ウィトルウィウス的人体図",artist:"レオナルド・ダ・ヴィンチ",year:"1490年頃",medium:"紙にペンとインク",museum:"アカデミア美術館(ヴェネツィア)",
+  story:"円と正方形に内接する人体。古代ローマの建築家ウィトルウィウスの比例論を図解した素描。",
+  trivia:"光に弱いため常設展示されず、公開は数年に一度きり。芸術と科学を結ぶレオナルドの象徴として知られる。",
+  hint:"古い紙の生成り色とインクの茶。紙の色味の違いを探せ。",
+  files:["Da Vinci Vitruve Luc Viatour.jpg","Vitruvian Man by Leonardo da Vinci.jpg"],base:160e8},
+ {name:"プリマヴェーラ(春)",artist:"サンドロ・ボッティチェッリ",year:"1480年頃",medium:"板にテンペラ",museum:"ウフィツィ美術館(フィレンツェ)",
+  story:"春の訪れを神話の神々で描いた寓意画。ヴィーナスを中央に、三美神や花の女神フローラが並ぶ。",
+  trivia:"画面には500種を超える植物が描き分けられていると言われ、植物学的にも研究対象になっている。",
+  hint:"深い緑の森と花々の色。緑の深さを見比べるのが近道だ。",
+  files:["Botticelli-primavera.jpg","Sandro Botticelli - La Primavera - Google Art Project.jpg"],base:550e8},
+ {name:"アテナイの学堂",artist:"ラファエロ・サンティ",year:"1509〜10年",medium:"フレスコ",museum:"ヴァチカン宮殿・署名の間",
+  story:"プラトンとアリストテレスを中心に、古代の賢者たちが一堂に会する壮大な構想画。",
+  trivia:"中央のプラトンの顔はレオナルド・ダ・ヴィンチがモデルとも言われる。手前で頬杖をつく人物はミケランジェロがモデルとされる。",
+  hint:"建築の白と賢者たちの衣の赤・青。色相のわずかな回転を見抜け。",
+  files:["\"The School of Athens\" by Raffaello Sanzio da Urbino.jpg","Sanzio 01.jpg","Raffael 058.jpg"],base:650e8},
+ {name:"アダムの創造",artist:"ミケランジェロ・ブオナローティ",year:"1512年頃",medium:"フレスコ",museum:"システィーナ礼拝堂(ヴァチカン)",
+  story:"神がアダムに命を吹き込む瞬間。天井画の中でも最も有名な一場面。",
+  trivia:"触れそうで触れない指先の隙間が想像力をかき立てる。神を包む布が人間の脳の形だという説もある。",
+  hint:"肌の色と背景の空色。肌が赤すぎたり青ざめていたら贋作だ。",
+  files:["Michelangelo - Creation of Adam (cropped).jpg","Creación de Adán.jpg","God2-Sistine Chapel.png"],base:700e8},
+ {name:"ムーラン・ド・ラ・ギャレットの舞踏会",artist:"ピエール=オーギュスト・ルノワール",year:"1876年",medium:"カンヴァスに油彩",museum:"オルセー美術館(パリ)",
+  story:"モンマルトルの野外ダンスホールの賑わい。木漏れ日が人々の上で踊る印象派の代表作。",
+  trivia:"1990年のオークションで約119億円で落札され、当時の絵画取引額の世界記録級となった。",
+  hint:"木漏れ日の光の斑点。青みがかった影の色が濁っていたら怪しい。",
+  files:["Pierre-Auguste Renoir, Le Moulin de la Galette.jpg","Auguste Renoir - Dance at Le Moulin de la Galette (Musée d'Orsay).jpg","Renoir21.jpg"],base:300e8},
+ {name:"コンポジションVII",artist:"ワシリー・カンディンスキー",year:"1913年",medium:"カンヴァスに油彩",museum:"トレチャコフ美術館(モスクワ)",
+  story:"具体的な形を捨て、色と線の渦だけで感情を描いた抽象絵画の記念碑的大作。",
+  trivia:"30点以上の習作を重ねたのに、本番はわずか数日で一気に描き上げたと伝わる。カンディンスキーは音を色として感じる感覚の持ち主で、「絵画で音楽を描こう」とした。",
+  hint:"渦巻く色彩の配合そのものが答え。全体の色相がわずかに回っていたら贋作だ。",
+  files:["Vassily Kandinsky, 1913 - Composition 7.jpg","Wassily Kandinsky - Composition VII - Google Art Project.jpg","Kandinsky - Composition VII.jpg"],base:350e8},
+ {name:"コンポジションVIII",artist:"ワシリー・カンディンスキー",year:"1923年",medium:"カンヴァスに油彩",museum:"グッゲンハイム美術館(ニューヨーク)",
+  story:"円・三角・直線が画面を舞う、バウハウス時代の幾何学的抽象の代表作。",
+  trivia:"渦巻く初期の抽象から一転、理論的で澄んだ構成へ。カンディンスキー自身が自作の頂点のひとつと考えていた。",
+  hint:"大きな円の紫と黒のにじみ、地の生成り色。地色の変化を見逃すな。",
+  files:["Vassily Kandinsky, 1923 - Composition 8, huile sur toile, 140 cm x 201 cm, Musée Guggenheim, New York.jpg","Kandinsky Composition VIII.jpg"],base:320e8},
+ {name:"赤・青・黄のコンポジション",artist:"ピート・モンドリアン",year:"1930年",medium:"カンヴァスに油彩",museum:"チューリッヒ美術館(スイス)",
+  story:"垂直・水平の黒い線と三原色だけに世界を還元した「新造形主義」の到達点。",
+  trivia:"このスタイルはデザイン界に絶大な影響を与え、イヴ・サンローランの「モンドリアン・ルック」などファッションにまで波及した。",
+  hint:"赤・青・黄の三原色の純度が命。少しでも濁っていたら贋作だ。",
+  files:["Piet Mondriaan, 1930 - Mondrian Composition II in Red, Blue, and Yellow.jpg","Mondrian Composition II in Red, Blue, and Yellow.jpg","Mondrian CompRYB.jpg"],base:280e8},
+ {name:"セネシオ",artist:"パウル・クレー",year:"1922年",medium:"ガーゼに油彩",museum:"バーゼル市立美術館(スイス)",
+  story:"円い顔を色面と幾何学で描いた、クレーの「顔」シリーズの代表作。",
+  trivia:"クレーはバウハウスで教壇に立ち、「芸術とは見えるものを再現することではなく、見えるようにすることだ」という言葉を残した。",
+  hint:"オレンジがかった肌の暖かさが基準。冷たく転んだ色を弾け。",
+  files:["Paul Klee - Senecio (Baldgreis) - Google Art Project.jpg","Senecio2.JPG","Paul Klee, Senecio, 1922.jpg"],base:150e8},
+ {name:"黒の正方形",artist:"カジミール・マレーヴィチ",year:"1915年",medium:"カンヴァスに油彩",museum:"トレチャコフ美術館(モスクワ)",
+  story:"白い地に黒い正方形。それだけ。絵画を「何も描かない」極限まで還元した美術史上の事件。",
+  trivia:"初展示ではロシアの家庭でイコン(聖像)を飾る「聖なる角」の高い位置に掲げられ、物議を醸した。X線調査では黒の下に別の絵が隠れていることが判明している。",
+  hint:"色は封じられた。黒の深さと余白の白、明るさだけが手がかりだ。",
+  files:["Kazimir Malevich, 1915, Black Suprematic Square, oil on linen canvas, 79.5 x 79.5 cm, Tretyakov Gallery, Moscow.jpg","Malevich.black-square.jpg","Black Square (Malevich, 1915).jpg"],base:250e8,mono:true}
+];
+const ARTWORKS=STAGES.concat(ARTWORKS_EXTRA);
+const RUN_LENGTH=6;
+const DIFFS=[{candidates:3,pool:"easy"},{candidates:3,pool:"easy"},{candidates:4,pool:"mid"},{candidates:4,pool:"mid"},{candidates:5,pool:"hard"},{candidates:5,pool:"hard"}];
+const POOLS={
+  easy:[{hue:35},{sat:.45},{hue:-45,sat:1.3},{bri:1.35},{sat:1.7}],
+  mid: [{hue:15},{sat:.75},{bri:1.15},{hue:-14},{sat:1.3,bri:.95},{bri:.85}],
+  hard:[{hue:8},{sat:.87},{bri:1.07},{hue:-7},{bri:.93,sat:1.1},{hue:6,bri:1.04}]
+};
+/* ほぼ無彩色の作品用(色相・彩度が効かないため明度で差をつける) */
+const MONO_POOLS={
+  easy:[{bri:1.5},{bri:.6},{bri:1.3},{bri:.75}],
+  mid: [{bri:1.25},{bri:.8},{bri:1.16},{bri:.87}],
+  hard:[{bri:1.12},{bri:.9},{bri:1.07},{bri:.94}]
+};
+const BIDDERS=["英国の老収集家","匿名の電話入札","スイスの財団","香港の実業家","美術館の代理人","仮面の貴婦人","新興IT富豪","王室関係者"];
+
+/* ==================== ユーティリティ ==================== */
+const $=id=>document.getElementById(id);
+const fmtYen=n=>{n=Math.round(n);
+  if(n>=1e8){const o=Math.floor(n/1e8),m=Math.round(n%1e8/1e4);return m>0?`${o}億${m.toLocaleString()}万円`:`${o}億円`;}
+  if(n>=1e4)return`${Math.round(n/1e4).toLocaleString()}万円`;return`${n.toLocaleString()}円`;};
+const rand=a=>a[Math.floor(Math.random()*a.length)];
+const openOv=id=>$(id).classList.add("open");
+const closeOv=id=>$(id).classList.remove("open");
+function stampShow(t,c){const st=$("stamp");st.textContent=t;st.className="stamp "+c;void st.offsetWidth;st.classList.add("show");setTimeout(()=>st.className="stamp",2200);}
+function msg(t,ms){const b=$("msgBand");b.textContent=t;b.style.display="block";clearTimeout(msg._t);if(ms)msg._t=setTimeout(()=>b.style.display="none",ms);}
+function msgOff(){$("msgBand").style.display="none";}
+function gavel(){
+  try{
+    const ac=gavel.ac||(gavel.ac=new (window.AudioContext||window.webkitAudioContext)());
+    if(ac.state==="suspended")ac.resume();
+    const t0=ac.currentTime;
+    // 木槌の打撃(帯域ノイズのクラック音)
+    const dur=.07,buf=ac.createBuffer(1,Math.floor(ac.sampleRate*dur),ac.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.5);
+    const src=ac.createBufferSource();src.buffer=buf;
+    const bp=ac.createBiquadFilter();bp.type="bandpass";bp.frequency.value=2200;bp.Q.value=1.1;
+    const ng=ac.createGain();ng.gain.setValueAtTime(.9,t0);ng.gain.exponentialRampToValueAtTime(.001,t0+.08);
+    src.connect(bp);bp.connect(ng);ng.connect(ac.destination);src.start(t0);
+    // 台座の胴鳴り(低いトン)
+    const o=ac.createOscillator();o.type="sine";
+    o.frequency.setValueAtTime(150,t0);o.frequency.exponentialRampToValueAtTime(52,t0+.1);
+    const og=ac.createGain();og.gain.setValueAtTime(.7,t0);og.gain.exponentialRampToValueAtTime(.001,t0+.14);
+    o.connect(og);og.connect(ac.destination);o.start(t0);o.stop(t0+.15);
+  }catch(e){}
+}
+function gavelDouble(){gavel();setTimeout(gavel,190);}
+
+/* ==================== 画像処理 ==================== */
+/* Commons公式APIでファイルの実在確認+CORS対応の直リンク(upload.wikimedia.org)を取得 */
+async function resolveCommonsUrl(name){
+  try{
+    const api="https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&redirects=1"
+      +"&prop=imageinfo&iiprop=url&iiurlwidth=800&titles="+encodeURIComponent("File:"+name);
+    const r=await fetch(api);
+    const j=await r.json();
+    const pages=j.query&&j.query.pages;
+    if(!pages)return null;
+    for(const k in pages){
+      const ii=pages[k].imageinfo;
+      if(ii&&ii[0])return ii[0].thumburl||ii[0].url;
+    }
+  }catch(e){}
+  return null;
+}
+function loadImageFrom(url){
+  return new Promise(res=>{
+    const img=new Image();img.crossOrigin="anonymous";
+    img.onload=()=>res(img);img.onerror=()=>res(null);
+    img.src=url;
+  });
+}
+const artImgCache={};
+async function loadArtImage(art){
+  if(art.name in artImgCache)return artImgCache[art.name];
+  let result=null;
+  for(const n of art.files){
+    const url=await resolveCommonsUrl(n);
+    if(!url)continue;
+    const img=await loadImageFrom(url);
+    if(img){result=img;break;}
+  }
+  artImgCache[art.name]=result;
+  return result;
+}
+function adjustCanvas(img,adj){
+  const MAX=720,sc=Math.min(1,MAX/img.width);
+  const w=Math.round(img.width*sc),h=Math.round(img.height*sc);
+  const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+  const ctx=cv.getContext("2d");ctx.drawImage(img,0,0,w,h);
+  const hue=(adj.hue||0)*Math.PI/180,sat=adj.sat===undefined?1:adj.sat,bri=adj.bri===undefined?1:adj.bri;
+  if(hue===0&&sat===1&&bri===1)return cv;
+  try{
+    const d=ctx.getImageData(0,0,w,h),p=d.data;
+    const c=Math.cos(hue),s=Math.sin(hue);
+    const m=[.213+.787*c-.213*s,.715-.715*c-.715*s,.072-.072*c+.928*s,
+             .213-.213*c+.143*s,.715+.285*c+.140*s,.072-.072*c-.283*s,
+             .213-.213*c-.787*s,.715-.715*c+.715*s,.072+.928*c+.072*s];
+    for(let i=0;i<p.length;i+=4){
+      let r=p[i],g=p[i+1],b=p[i+2];
+      let nr=m[0]*r+m[1]*g+m[2]*b, ng=m[3]*r+m[4]*g+m[5]*b, nb=m[6]*r+m[7]*g+m[8]*b;
+      const lum=.299*nr+.587*ng+.114*nb;
+      nr=(lum+(nr-lum)*sat)*bri; ng=(lum+(ng-lum)*sat)*bri; nb=(lum+(nb-lum)*sat)*bri;
+      p[i]=nr<0?0:nr>255?255:nr; p[i+1]=ng<0?0:ng>255?255:ng; p[i+2]=nb<0?0:nb>255?255:nb;
+    }
+    ctx.putImageData(d,0,0);
+  }catch(e){}
+  return cv;
+}
+function placeholderCanvas(name){
+  const cv=document.createElement("canvas");cv.width=600;cv.height=800;
+  const ctx=cv.getContext("2d");
+  const gr=ctx.createLinearGradient(0,0,0,800);gr.addColorStop(0,"#2b2019");gr.addColorStop(1,"#171009");
+  ctx.fillStyle=gr;ctx.fillRect(0,0,600,800);
+  ctx.strokeStyle="#c9a227";ctx.lineWidth=4;ctx.strokeRect(24,24,552,752);
+  ctx.fillStyle="#e8c86a";ctx.font="700 40px serif";ctx.textAlign="center";
+  ctx.fillText("『"+name+"』",300,380);
+  ctx.font="24px sans-serif";ctx.fillStyle="#f2e8d5";ctx.fillText("画像未読込",300,440);
+  return cv;
+}
+function plaqueCanvas(n){
+  const cv=document.createElement("canvas");cv.width=256;cv.height=110;
+  const ctx=cv.getContext("2d");
+  const gr=ctx.createLinearGradient(0,0,0,110);
+  gr.addColorStop(0,"#f0d98f");gr.addColorStop(.5,"#c9a227");gr.addColorStop(1,"#8a6d15");
+  ctx.fillStyle=gr;ctx.fillRect(0,0,256,110);
+  ctx.strokeStyle="#5c460e";ctx.lineWidth=6;ctx.strokeRect(6,6,244,98);
+  ctx.fillStyle="#33260a";ctx.font="800 58px serif";ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillText("No."+n,128,58);
+  return cv;
+}
+
+/* ==================== Three.js ==================== */
+const canvas=$("c3d");
+const renderer=new THREE.WebGLRenderer({canvas,antialias:false});
+renderer.setPixelRatio(1);
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.12;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0a0705);
+scene.fog=new THREE.Fog(0x0a0705,20,46);
+const camera=new THREE.PerspectiveCamera(52,1,.1,140);
+function resize(){
+  const PIX=Math.max(2,Math.round(Math.min(innerWidth,innerHeight)/230)); // ドットの粗さ
+  const w=Math.max(180,Math.floor(innerWidth/PIX)),h=Math.max(140,Math.floor(innerHeight/PIX));
+  renderer.setSize(w,h,false);
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+}
+addEventListener("resize",resize);resize();
+/* テクスチャをドット調(ニアレスト補間)にする */
+function pixTex(t){t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;t.generateMipmaps=false;return t;}
+scene.add(new THREE.AmbientLight(0x6a5340,.5));
+const hemi=new THREE.HemisphereLight(0x8a6d4a,0x1a0e08,.35);scene.add(hemi);
+
+const M={
+  gold:new THREE.MeshStandardMaterial({color:0xc9a227,metalness:.9,roughness:.28}),
+  goldDim:new THREE.MeshStandardMaterial({color:0x9a7c1e,metalness:.85,roughness:.4}),
+  darkWood:new THREE.MeshStandardMaterial({color:0x261509,roughness:.55}),
+  wine:new THREE.MeshStandardMaterial({color:0x4a1f24,roughness:.9}),
+  wineDeep:new THREE.MeshStandardMaterial({color:0x33151a,roughness:.95}),
+  velvet:new THREE.MeshStandardMaterial({color:0x6e2027,roughness:1}),
+  marble:new THREE.MeshStandardMaterial({color:0xd9cfbd,roughness:.35}),
+  black:new THREE.MeshStandardMaterial({color:0x121010,roughness:.8}),
+  liner:new THREE.MeshStandardMaterial({color:0x1c1208,roughness:.7}),
+};
+
+/* --- 手続きテクスチャ群 --- */
+function parquetTex(){
+  const S=512,cv=document.createElement("canvas");cv.width=cv.height=S;
+  const ctx=cv.getContext("2d");
+  ctx.fillStyle="#20130a";ctx.fillRect(0,0,S,S);
+  const cell=64;
+  for(let y=0;y<S/cell;y++)for(let x=0;x<S/cell;x++){
+    const diag=(x+y)%2===0;
+    const base=46+Math.random()*10;
+    ctx.save();ctx.translate(x*cell,y*cell);
+    for(let i=0;i<4;i++){
+      ctx.fillStyle=`rgb(${base+i*5|0},${base*.62+i*3|0},${base*.32+i*2|0})`;
+      if(diag)ctx.fillRect(0,i*16,cell-2,14);
+      else ctx.fillRect(i*16,0,14,cell-2);
+    }
+    ctx.restore();
+  }
+  ctx.fillStyle="rgba(255,225,170,.045)";ctx.fillRect(0,0,S,S);
+  const t=pixTex(new THREE.CanvasTexture(cv));t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(5,4);t.encoding=THREE.sRGBEncoding;return t;
+}
+function damaskTex(){
+  const S=256,cv=document.createElement("canvas");cv.width=cv.height=S;
+  const ctx=cv.getContext("2d");
+  ctx.fillStyle="#481e23";ctx.fillRect(0,0,S,S);
+  ctx.strokeStyle="rgba(210,160,120,.10)";ctx.lineWidth=2;
+  for(let y=0;y<4;y++)for(let x=0;x<4;x++){
+    const cx=x*64+((y%2)*32),cy=y*64+32;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy-20);ctx.quadraticCurveTo(cx+16,cy,cx,cy+20);ctx.quadraticCurveTo(cx-16,cy,cx,cy-20);
+    ctx.stroke();
+  }
+  const t=pixTex(new THREE.CanvasTexture(cv));t.wrapS=t.wrapT=THREE.RepeatWrapping;t.encoding=THREE.sRGBEncoding;return t;
+}
+function carpetTex(){
+  const cv=document.createElement("canvas");cv.width=256;cv.height=512;
+  const ctx=cv.getContext("2d");
+  ctx.fillStyle="#5c1a1f";ctx.fillRect(0,0,256,512);
+  ctx.strokeStyle="#c9a227";ctx.lineWidth=8;ctx.strokeRect(10,10,236,492);
+  ctx.lineWidth=3;ctx.strokeRect(24,24,208,464);
+  ctx.fillStyle="rgba(201,162,39,.5)";
+  for(let y=64;y<480;y+=64){
+    ctx.beginPath();ctx.moveTo(128,y-16);ctx.lineTo(146,y);ctx.lineTo(128,y+16);ctx.lineTo(110,y);ctx.closePath();ctx.fill();
+  }
+  const t=pixTex(new THREE.CanvasTexture(cv));t.encoding=THREE.sRGBEncoding;return t;
+}
+function curtainTex(){
+  const cv=document.createElement("canvas");cv.width=512;cv.height=256;
+  const ctx=cv.getContext("2d");
+  for(let x=0;x<512;x++){
+    const v=Math.sin(x*.12)*.5+.5;
+    const r=70+v*60,g=16+v*14,b=20+v*16;
+    ctx.fillStyle=`rgb(${r|0},${g|0},${b|0})`;ctx.fillRect(x,0,1,256);
+  }
+  const t=pixTex(new THREE.CanvasTexture(cv));t.wrapS=THREE.RepeatWrapping;t.repeat.set(2,1);t.encoding=THREE.sRGBEncoding;return t;
+}
+const parquetMat=new THREE.MeshStandardMaterial({map:parquetTex(),roughness:.4,metalness:.15});
+const damaskMat=new THREE.MeshStandardMaterial({map:damaskTex(),roughness:.92});
+
+/* --- 装飾ヘルパー --- */
+function ceilingLight(x,y,z,parent,big){
+  const g=new THREE.Group(),R=big?1.3:.85;
+  const medallion=new THREE.Mesh(new THREE.CircleGeometry(R,26),M.gold);
+  medallion.rotation.x=Math.PI/2;g.add(medallion);
+  const inner=new THREE.Mesh(new THREE.CircleGeometry(R*.55,22),
+    new THREE.MeshStandardMaterial({color:0xffe9b0,emissive:0xffc766,emissiveIntensity:1.8}));
+  inner.rotation.x=Math.PI/2;inner.position.y=-.015;g.add(inner);
+  const glow=new THREE.Mesh(new THREE.CircleGeometry(R*2.1,26),
+    new THREE.MeshBasicMaterial({color:0xffc27a,transparent:true,opacity:.16,depthWrite:false,blending:THREE.AdditiveBlending}));
+  glow.rotation.x=Math.PI/2;glow.position.y=-.03;g.add(glow);
+  const light=new THREE.PointLight(0xffc27a,big?1.3:.95,big?26:17,1.7);light.position.y=-.5;g.add(light);
+  g.position.set(x,y,z);parent.add(g);return g;
+}
+function column(x,z,parent,H){
+  const g=new THREE.Group();
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.26,.3,H-1,18),M.marble);shaft.position.y=(H-1)/2+.35;
+  const baseB=new THREE.Mesh(new THREE.BoxGeometry(.85,.35,.85),M.marble);baseB.position.y=.17;
+  const cap=new THREE.Mesh(new THREE.BoxGeometry(.8,.22,.8),M.gold);cap.position.y=H-.5;
+  g.add(shaft,baseB,cap);g.position.set(x,0,z);parent.add(g);
+}
+function mkPanel(parent,cx,cy,cz,w,h,ry){
+  const g=new THREE.Group();
+  const bar=(bw,bh,px,py)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(bw,bh,.04),M.goldDim);b.position.set(px,py,0);g.add(b);};
+  bar(w,.05,0,h/2);bar(w,.05,0,-h/2);bar(.05,h,-w/2,0);bar(.05,h,w/2,0);
+  g.position.set(cx,cy,cz);g.rotation.y=ry;g.translateZ(.03);parent.add(g);
+}
+function sconce(parent,cx,cy,cz,ry){
+  const g=new THREE.Group();
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(.05,.08,.3,8),M.gold);g.add(base);
+  const f=new THREE.Mesh(new THREE.SphereGeometry(.07,8,8),
+    new THREE.MeshStandardMaterial({color:0xffe9b0,emissive:0xffa940,emissiveIntensity:2.4}));
+  f.position.y=.25;g.add(f);
+  g.position.set(cx,cy,cz);g.rotation.y=ry;g.translateZ(.14);parent.add(g);
+}
+function dust(parent,W,D,H,count){
+  const geo=new THREE.BufferGeometry(),pos=new Float32Array(count*3);
+  for(let i=0;i<count;i++){pos[i*3]=(Math.random()*2-1)*W;pos[i*3+1]=Math.random()*H;pos[i*3+2]=(Math.random()*2-1)*D;}
+  geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
+  const pts=new THREE.Points(geo,new THREE.PointsMaterial({color:0xffdfae,size:.09,transparent:true,opacity:.45,depthWrite:false}));
+  parent.add(pts);return {pts,H};
+}
+function paintingMesh(cv,height,plaqueNo){
+  const asp=cv.width/cv.height,h=height||1.6,w=h*asp;
+  const g=new THREE.Group();
+  const tex=pixTex(new THREE.CanvasTexture(cv));tex.encoding=THREE.sRGBEncoding;
+  const outer=new THREE.Mesh(new THREE.BoxGeometry(w+.28,h+.28,.1),M.gold);outer.position.z=-.07;
+  const liner=new THREE.Mesh(new THREE.BoxGeometry(w+.12,h+.12,.06),M.liner);liner.position.z=-.03;
+  const pic=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:tex,roughness:.85}));
+  pic.position.z=.004;
+  g.add(outer,liner,pic);
+  if(plaqueNo!==undefined){
+    const pt=pixTex(new THREE.CanvasTexture(plaqueCanvas(plaqueNo)));pt.encoding=THREE.sRGBEncoding;
+    const pl=new THREE.Mesh(new THREE.BoxGeometry(.6,.26,.03),
+      new THREE.MeshStandardMaterial({map:pt,metalness:.5,roughness:.35}));
+    pl.position.set(0,-(h/2)-.34,.02);g.add(pl);
+  }
+  g.userData.w=w;g.userData.h=h;return g;
+}
+function easel(){
+  const g=new THREE.Group();const legG=new THREE.CylinderGeometry(.035,.05,2.15,8);
+  const l1=new THREE.Mesh(legG,M.darkWood);l1.position.set(-.44,1.06,.12);l1.rotation.z=.16;
+  const l2=new THREE.Mesh(legG,M.darkWood);l2.position.set(.44,1.06,.12);l2.rotation.z=-.16;
+  const l3=new THREE.Mesh(legG,M.darkWood);l3.position.set(0,1.06,-.35);l3.rotation.x=-.3;
+  const bar=new THREE.Mesh(new THREE.BoxGeometry(1.15,.07,.1),M.darkWood);bar.position.set(0,.82,.2);
+  const top=new THREE.Mesh(new THREE.BoxGeometry(.5,.06,.08),M.darkWood);top.position.set(0,2.0,.02);
+  g.add(l1,l2,l3,bar,top);return g;
+}
+function ropeStand(){
+  const g=new THREE.Group();
+  const post=(x)=>{const p=new THREE.Group();
+    const c=new THREE.Mesh(new THREE.CylinderGeometry(.035,.05,.95,10),M.gold);c.position.y=.48;
+    const b=new THREE.Mesh(new THREE.CylinderGeometry(.14,.16,.05,12),M.gold);b.position.y=.025;
+    const s=new THREE.Mesh(new THREE.SphereGeometry(.06,10,10),M.gold);s.position.y=.98;
+    p.add(c,b,s);p.position.x=x;g.add(p);return p;};
+  post(-.95);post(.95);
+  const curve=new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(-.95,.9,0),new THREE.Vector3(0,.58,0),new THREE.Vector3(.95,.9,0));
+  const rope=new THREE.Mesh(new THREE.TubeGeometry(curve,20,.033,8),M.velvet);
+  g.add(rope);return g;
+}
+
+/* ==================== 主人公(ボクセル鑑定士) ==================== */
+function buildPlayer(){
+  const g=new THREE.Group();
+  const suit=new THREE.MeshStandardMaterial({color:0x191922,roughness:.6});
+  const white=new THREE.MeshStandardMaterial({color:0xf2e8d5,roughness:.6});
+  const skin=new THREE.MeshStandardMaterial({color:0xe8c39a,roughness:.75});
+  const hairM=new THREE.MeshStandardMaterial({color:0x241a10,roughness:.85});
+  // 胴(燕尾服)
+  const body=new THREE.Mesh(new THREE.BoxGeometry(.46,.52,.28),suit);body.position.y=1.0;g.add(body);
+  const shirt=new THREE.Mesh(new THREE.BoxGeometry(.18,.34,.03),white);shirt.position.set(0,1.02,.155);g.add(shirt);
+  const bow=new THREE.Mesh(new THREE.BoxGeometry(.13,.05,.04),M.black);bow.position.set(0,1.2,.16);g.add(bow);
+  const tail=new THREE.Mesh(new THREE.BoxGeometry(.4,.34,.06),suit);tail.position.set(0,.64,-.15);tail.rotation.x=.16;g.add(tail);
+  // 頭
+  const head=new THREE.Mesh(new THREE.BoxGeometry(.36,.32,.34),skin);head.position.y=1.48;g.add(head);
+  const hair=new THREE.Mesh(new THREE.BoxGeometry(.38,.12,.36),hairM);hair.position.y=1.64;g.add(hair);
+  const hairB=new THREE.Mesh(new THREE.BoxGeometry(.38,.2,.1),hairM);hairB.position.set(0,1.52,-.14);g.add(hairB);
+  const mono=new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.02),M.gold);mono.position.set(.09,1.48,.18);g.add(mono);
+  // 腕(肩を支点に回転するピボット構造)
+  const mkArm=s=>{
+    const pivot=new THREE.Group();pivot.position.set(s*.31,1.2,0);
+    const arm=new THREE.Mesh(new THREE.BoxGeometry(.13,.42,.13),suit);arm.position.y=-.2;pivot.add(arm);
+    const glove=new THREE.Mesh(new THREE.BoxGeometry(.13,.11,.13),white);glove.position.y=-.46;pivot.add(glove);
+    g.add(pivot);return pivot;
+  };
+  const aL=mkArm(-1),aR=mkArm(1);
+  // 脚(腰を支点に回転)
+  const mkLeg=s=>{
+    const pivot=new THREE.Group();pivot.position.set(s*.12,.72,0);
+    const leg=new THREE.Mesh(new THREE.BoxGeometry(.16,.5,.16),M.black);leg.position.y=-.25;pivot.add(leg);
+    const shoe=new THREE.Mesh(new THREE.BoxGeometry(.16,.09,.26),M.black);shoe.position.set(0,-.53,.05);pivot.add(shoe);
+    g.add(pivot);return pivot;
+  };
+  const lL=mkLeg(-1),lR=mkLeg(1);
+  const blob=new THREE.Mesh(new THREE.CircleGeometry(.48,16),
+    new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.38,depthWrite:false}));
+  blob.rotation.x=-Math.PI/2;blob.position.y=.012;g.add(blob);
+  g.userData={aL,aR,lL,lR,baseY:0};
+  return g;
+}
+const player=buildPlayer();scene.add(player);
+const carrySlot=new THREE.Group();carrySlot.position.set(0,1.0,.44);player.add(carrySlot);
+
+/* ==================== ギャラリー ==================== */
+const GAL={w:9,d:7};
+const gallery=new THREE.Group();scene.add(gallery);
+let galleryDust;
+(function buildGallery(){
+  const H=4.6;
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(GAL.w*2,GAL.d*2),parquetMat);
+  floor.rotation.x=-Math.PI/2;gallery.add(floor);
+  const rug=new THREE.Mesh(new THREE.PlaneGeometry(3.6,GAL.d*2-1.6),
+    new THREE.MeshStandardMaterial({map:carpetTex(),roughness:1}));
+  rug.rotation.x=-Math.PI/2;rug.rotation.z=Math.PI/2*0;rug.position.y=.012;gallery.add(rug);
+  const mkWall=(w,x,z,ry)=>{
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(w,H),damaskMat);
+    m.position.set(x,H/2,z);m.rotation.y=ry;gallery.add(m);
+    const wain=new THREE.Mesh(new THREE.PlaneGeometry(w,1.1),M.wineDeep);
+    wain.position.set(x,.55,z);wain.rotation.y=ry;wain.translateZ(.015);gallery.add(wain);
+    const trim=new THREE.Mesh(new THREE.BoxGeometry(w,.06,.05),M.goldDim);
+    trim.position.set(x,1.13,z);trim.rotation.y=ry;trim.translateZ(.03);gallery.add(trim);
+    const crown=new THREE.Mesh(new THREE.BoxGeometry(w,.1,.06),M.goldDim);
+    crown.position.set(x,H-.14,z);crown.rotation.y=ry;crown.translateZ(.03);gallery.add(crown);
+    const base=new THREE.Mesh(new THREE.BoxGeometry(w,.14,.06),M.darkWood);
+    base.position.set(x,.07,z);base.rotation.y=ry;base.translateZ(.03);gallery.add(base);
+  };
+  mkWall(GAL.w*2,0,-GAL.d,0);
+  mkWall(GAL.w*2,0,GAL.d,Math.PI);
+  mkWall(GAL.d*2,-GAL.w,0,Math.PI/2);
+  mkWall(GAL.d*2,GAL.w,0,-Math.PI/2);
+  // 壁パネル+燭台(南壁=手前は省略)
+  for(const px of[-6.6,-3.3,3.3,6.6]){mkPanel(gallery,px,2.55,-GAL.d,2.2,1.9,0);}
+  for(const pz of[-4.4,0,4.4]){mkPanel(gallery,-GAL.w,2.55,pz,2.2,1.9,Math.PI/2);mkPanel(gallery,GAL.w,2.55,pz,2.2,1.9,-Math.PI/2);}
+  sconce(gallery,-1.7,2.5,-GAL.d,0);sconce(gallery,1.7,2.5,-GAL.d,0);
+  sconce(gallery,-GAL.w,2.5,-2.2,Math.PI/2);sconce(gallery,-GAL.w,2.5,2.2,Math.PI/2);
+  sconce(gallery,GAL.w,2.5,-2.2,-Math.PI/2);sconce(gallery,GAL.w,2.5,2.2,-Math.PI/2);
+  const ceil=new THREE.Mesh(new THREE.PlaneGeometry(GAL.w*2,GAL.d*2),M.black);
+  ceil.rotation.x=Math.PI/2;ceil.position.y=H;gallery.add(ceil);
+  // 扉(北壁)
+  const door=new THREE.Mesh(new THREE.BoxGeometry(2.5,3.3,.12),M.darkWood);
+  door.position.set(0,1.65,-GAL.d+.07);gallery.add(door);
+  const knobL=new THREE.Mesh(new THREE.SphereGeometry(.06,8,8),M.gold);knobL.position.set(-.25,1.5,-GAL.d+.16);gallery.add(knobL);
+  const knobR=new THREE.Mesh(new THREE.SphereGeometry(.06,8,8),M.gold);knobR.position.set(.25,1.5,-GAL.d+.16);gallery.add(knobR);
+  const doorTrim=new THREE.Mesh(new THREE.BoxGeometry(2.9,3.55,.08),M.gold);
+  doorTrim.position.set(0,1.77,-GAL.d+.03);gallery.add(doorTrim);
+  const pediment=new THREE.Mesh(new THREE.BoxGeometry(3.2,.3,.1),M.gold);
+  pediment.position.set(0,3.7,-GAL.d+.05);gallery.add(pediment);
+  column(-GAL.w+.7,-GAL.d+.7,gallery,H);column(GAL.w-.7,-GAL.d+.7,gallery,H);
+  column(-GAL.w+.7,GAL.d-.7,gallery,H);column(GAL.w-.7,GAL.d-.7,gallery,H);
+  ceilingLight(-3.6,4.58,0,gallery);ceilingLight(3.6,4.58,0,gallery);
+  galleryDust=dust(gallery,GAL.w-1,GAL.d-1,4,120);
+})();
+/* 展示スロット(俯瞰から見える北・東・西の壁沿い) */
+const SLOTS=[
+  {x:-GAL.w+1.0,z:-2.4,ry:Math.PI/2},{x:-GAL.w+1.0,z:2.4,ry:Math.PI/2},
+  {x:GAL.w-1.0,z:-2.4,ry:-Math.PI/2},{x:GAL.w-1.0,z:2.4,ry:-Math.PI/2},
+  {x:-4.8,z:-GAL.d+1.0,ry:0}
+];
+
+/* ==================== オークション会場 ==================== */
+const HALL_X=200;
+const hall=new THREE.Group();hall.position.x=HALL_X;scene.add(hall);
+let hallAudience=[],hallEaselSlot=null,hallSpot=null,hallDust;
+(function buildHall(){
+  const W=8,D=9,H=5.6;
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(W*2,D*2),parquetMat.clone());
+  floor.rotation.x=-Math.PI/2;hall.add(floor);
+  const aisle=new THREE.Mesh(new THREE.PlaneGeometry(2.2,D*2-2),
+    new THREE.MeshStandardMaterial({map:carpetTex(),roughness:1}));
+  aisle.rotation.x=-Math.PI/2;aisle.position.y=.012;hall.add(aisle);
+  const mkWall=(w,x,z,ry)=>{
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(w,H),damaskMat);
+    m.position.set(x,H/2,z);m.rotation.y=ry;hall.add(m);
+    const crown=new THREE.Mesh(new THREE.BoxGeometry(w,.1,.06),M.goldDim);
+    crown.position.set(x,H-.18,z);crown.rotation.y=ry;crown.translateZ(.03);hall.add(crown);};
+  mkWall(W*2,0,-D,0);mkWall(W*2,0,D,Math.PI);mkWall(D*2,-W,0,Math.PI/2);mkWall(D*2,W,0,-Math.PI/2);
+  const ceil=new THREE.Mesh(new THREE.PlaneGeometry(W*2,D*2),M.black);ceil.rotation.x=Math.PI/2;ceil.position.y=H;hall.add(ceil);
+  // ステージ+紗幕
+  const stagePf=new THREE.Mesh(new THREE.BoxGeometry(12,.5,3.8),M.darkWood);
+  stagePf.position.set(0,.25,-7.0);hall.add(stagePf);
+  const step=new THREE.Mesh(new THREE.BoxGeometry(3,.25,.8),M.darkWood);
+  step.position.set(0,.125,-4.9);hall.add(step);
+  const curtain=new THREE.Mesh(new THREE.PlaneGeometry(12,4.4),
+    new THREE.MeshStandardMaterial({map:curtainTex(),roughness:.95}));
+  curtain.position.set(0,2.7,-8.85);hall.add(curtain);
+  const valance=new THREE.Mesh(new THREE.BoxGeometry(12.4,.35,.25),M.gold);
+  valance.position.set(0,4.95,-8.7);hall.add(valance);
+  // 演台
+  const podium=new THREE.Mesh(new THREE.BoxGeometry(.95,1.15,.62),M.darkWood);
+  podium.position.set(-2.2,1.07,-6.3);hall.add(podium);
+  const podTop=new THREE.Mesh(new THREE.BoxGeometry(1.06,.06,.72),M.gold);
+  podTop.position.set(-2.2,1.67,-6.3);hall.add(podTop);
+  // 出品イーゼル
+  const ea=easel();ea.position.set(1.6,.5,-6.7);hall.add(ea);
+  hallEaselSlot=new THREE.Group();hallEaselSlot.position.set(1.6,1.92,-6.45);hall.add(hallEaselSlot);
+  // 光芒+スポット
+  const beam=new THREE.Mesh(new THREE.ConeGeometry(1.9,4.4,24,1,true),
+    new THREE.MeshBasicMaterial({color:0xffe2b0,transparent:true,opacity:.07,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending}));
+  beam.position.set(1.6,3.4,-6.5);hall.add(beam);
+  hallSpot=new THREE.SpotLight(0xffe2b0,1.6,22,.5,.5,1.3);
+  hallSpot.position.set(1.6,5.4,-4.2);hallSpot.target.position.set(1.6,1.8,-6.7);
+  hall.add(hallSpot);hall.add(hallSpot.target);
+  ceilingLight(0,5.58,.5,hall,true);
+  column(-W+.7,-D+.7,hall,H);column(W-.7,-D+.7,hall,H);
+  column(-W+.7,D-.7,hall,H);column(W-.7,D-.7,hall,H);
+  // 観客席(パドル付き)
+  const skins=[0xe8c39a,0xd9a97e,0xc98f66,0xf0d3b0];
+  const hairs=[0x241a10,0x3a2a18,0x55504a,0x1a1a22,0x6e4a22,0xcfc4b0];
+  const suitCols=[0x1c1c26,0x241a2c,0x14202a,0x2a1a16,0x20242a,0x2c2418];
+  const dressCols=[0x5c2340,0x2a3a5c,0x274a35,0x5a2a20,0x3c2a52,0x6e5a20];
+  function makeGuest(){
+    const g=new THREE.Group();
+    const skin=new THREE.MeshStandardMaterial({color:rand(skins),roughness:.8});
+    const hairM=new THREE.MeshStandardMaterial({color:rand(hairs),roughness:.9});
+    const isLady=Math.random()<.45;
+    const cloth=new THREE.MeshStandardMaterial({color:isLady?rand(dressCols):rand(suitCols),roughness:.78});
+    // 座った下半身
+    const hips=new THREE.Mesh(new THREE.BoxGeometry(.42,.2,.4),cloth);hips.position.y=.3;g.add(hips);
+    // 胴体
+    if(isLady){
+      const dress=new THREE.Mesh(new THREE.BoxGeometry(.44,.3,.4),cloth);dress.position.y=.5;g.add(dress);
+      const torso=new THREE.Mesh(new THREE.BoxGeometry(.34,.42,.28),cloth);torso.position.y=.84;g.add(torso);
+      const neck=new THREE.Mesh(new THREE.BoxGeometry(.2,.04,.04),
+        new THREE.MeshStandardMaterial({color:0xf2e8d5,roughness:.4}));neck.position.set(0,1.03,.14);g.add(neck);
+    }else{
+      const torso=new THREE.Mesh(new THREE.BoxGeometry(.38,.5,.28),cloth);torso.position.y=.78;g.add(torso);
+      const shirt=new THREE.Mesh(new THREE.BoxGeometry(.12,.26,.03),
+        new THREE.MeshStandardMaterial({color:0xf2e8d5,roughness:.6}));shirt.position.set(0,.84,.155);g.add(shirt);
+      const bow=new THREE.Mesh(new THREE.BoxGeometry(.1,.04,.03),M.black);bow.position.set(0,.99,.16);g.add(bow);
+    }
+    // 腕(膝の上に手を置いた座り姿勢)
+    for(const s of[-1,1]){
+      const arm=new THREE.Mesh(new THREE.BoxGeometry(.11,.36,.11),cloth);
+      arm.position.set(s*.24,.72,.1);arm.rotation.x=.8;g.add(arm);
+      const hand=new THREE.Mesh(new THREE.BoxGeometry(.1,.09,.1),skin);hand.position.set(s*.2,.52,.26);g.add(hand);
+    }
+    // 頭
+    const hd=new THREE.Mesh(new THREE.BoxGeometry(.28,.26,.26),skin);hd.position.y=1.24;g.add(hd);
+    if(isLady){
+      const hair=new THREE.Mesh(new THREE.BoxGeometry(.3,.1,.28),hairM);hair.position.y=1.4;g.add(hair);
+      const bun=new THREE.Mesh(new THREE.BoxGeometry(.14,.14,.12),hairM);bun.position.set(0,1.36,-.16);g.add(bun);
+      if(Math.random()<.4){
+        const brim=new THREE.Mesh(new THREE.BoxGeometry(.44,.03,.42),cloth);brim.position.y=1.44;g.add(brim);
+        const crown=new THREE.Mesh(new THREE.BoxGeometry(.2,.12,.2),cloth);crown.position.y=1.51;g.add(crown);
+      }
+    }else{
+      const hair=new THREE.Mesh(new THREE.BoxGeometry(.3,.09,.28),hairM);hair.position.y=1.4;g.add(hair);
+      const hairB=new THREE.Mesh(new THREE.BoxGeometry(.3,.14,.08),hairM);hairB.position.set(0,1.3,-.12);g.add(hairB);
+      if(Math.random()<.3){
+        const brim=new THREE.Mesh(new THREE.BoxGeometry(.36,.03,.34),M.black);brim.position.y=1.42;g.add(brim);
+        const crown=new THREE.Mesh(new THREE.BoxGeometry(.2,.2,.2),M.black);crown.position.y=1.54;g.add(crown);
+      }else if(Math.random()<.25){
+        const mono=new THREE.Mesh(new THREE.BoxGeometry(.08,.08,.02),M.gold);mono.position.set(.07,1.24,.14);g.add(mono);
+      }
+    }
+    // 入札パドル
+    const paddleG=new THREE.Group();
+    const stick=new THREE.Mesh(new THREE.BoxGeometry(.03,.34,.03),M.darkWood);stick.position.y=.17;
+    const plate=new THREE.Mesh(new THREE.BoxGeometry(.22,.22,.03),
+      new THREE.MeshStandardMaterial({color:0xf2e8d5,roughness:.6}));plate.position.y=.4;
+    paddleG.add(stick,plate);paddleG.position.set(.28,.86,.12);paddleG.rotation.x=1.35;
+    g.add(paddleG);
+    g.scale.setScalar(.95+Math.random()*.12);
+    g.userData={baseY:.25,phase:Math.random()*6.28,paddle:paddleG,raise:0,stand:false};
+    return g;
+  }
+  for(let r=0;r<4;r++)for(let cIdx=0;cIdx<6;cIdx++){
+    const x=-5.5+cIdx*2.2, z=-1.6+r*2.15;
+    if(Math.abs(x)<1.15)continue; // 中央通路
+    const seat=new THREE.Mesh(new THREE.BoxGeometry(.85,.16,.8),M.velvet);
+    seat.position.set(x,.42,z);hall.add(seat);
+    const legs=new THREE.Mesh(new THREE.BoxGeometry(.8,.42,.72),M.darkWood);
+    legs.position.set(x,.2,z);hall.add(legs);
+    const back=new THREE.Mesh(new THREE.BoxGeometry(.85,.75,.12),M.velvet);
+    back.position.set(x,.9,z+.36);hall.add(back);
+    const backTrim=new THREE.Mesh(new THREE.BoxGeometry(.89,.06,.14),M.goldDim);
+    backTrim.position.set(x,1.3,z+.36);hall.add(backTrim);
+    const p=makeGuest();
+    p.position.set(x,.25,z-.02);
+    hall.add(p);hallAudience.push(p);
+  }
+  hallDust=dust(hall,W-1,D-1,4.5,140);
+})();
+
+/* ==================== 状態・入力 ==================== */
+let mode="title";
+let stage=0,total=0,usedHint=false,startT=0,runList=[],points=0;
+/* ---- ポイント記録(ステージnクリアで n×1000pt、全クリアで計21000pt) ---- */
+const STORE_KEY="manabi-appraiser";
+function loadRec(){try{return JSON.parse(localStorage.getItem(STORE_KEY))||{best:0,lifetime:0}}catch(e){return{best:0,lifetime:0}}}
+function saveRec(r){try{localStorage.setItem(STORE_KEY,JSON.stringify(r))}catch(e){}}
+function awardPoints(pts){
+  points+=pts;
+  const rec=loadRec();
+  rec.lifetime=(rec.lifetime||0)+pts;
+  rec.best=Math.max(rec.best||0,points);
+  saveRec(rec);
+  $("hudPts").textContent=points.toLocaleString();
+  /* まなびの基板へ報告(ハブ経由で開いたときだけ有効) */
+  try{
+    if(window.LearnHub)LearnHub.report({
+      app:"appraiser", done:points, total:21000, best:points,
+      note:`STAGE${stage+1}『${runList[stage].name}』落札`
+    });
+  }catch(e){}
+  try{
+    if(window.parent&&window.parent!==window)
+      window.parent.postMessage({type:"manabi-progress",key:"appraiser",points:points,earned:pts,total:21000},"*");
+  }catch(e){}
+}
+let cands=[],paintGroups=[],exhibits=[],nearIdx=-1,popupIdx=0;
+let carryMesh=null,pickedIdx=0;
+let stageCanvases=[];
+const keys={};
+addEventListener("keydown",e=>{keys[e.key.toLowerCase()]=true;
+  if(mode==="explore"&&(e.key==="e"||e.key==="E")&&nearIdx>=0)openPopup(nearIdx);});
+addEventListener("keyup",e=>{keys[e.key.toLowerCase()]=false;});
+
+const isTouch=("ontouchstart" in window)||navigator.maxTouchPoints>0||matchMedia("(pointer:coarse)").matches;
+if(isTouch)document.body.classList.add("touch");
+const joy={active:false,id:null,cx:0,cy:0,x:0,y:0};
+const joyEl=$("joy"),knob=$("joyKnob");
+joyEl.addEventListener("pointerdown",e=>{
+  joy.active=true;joy.id=e.pointerId;
+  const r=joyEl.getBoundingClientRect();joy.cx=r.left+r.width/2;joy.cy=r.top+r.height/2;
+  joyEl.setPointerCapture(e.pointerId);
+});
+joyEl.addEventListener("pointermove",e=>{
+  if(!joy.active||e.pointerId!==joy.id)return;
+  let dx=e.clientX-joy.cx,dy=e.clientY-joy.cy;
+  const len=Math.hypot(dx,dy),max=44;
+  if(len>max){dx=dx/len*max;dy=dy/len*max;}
+  joy.x=dx/max;joy.y=dy/max;
+  knob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+});
+const joyEnd=e=>{if(e.pointerId===joy.id){joy.active=false;joy.x=joy.y=0;knob.style.transform="translate(-50%,-50%)";}};
+joyEl.addEventListener("pointerup",joyEnd);joyEl.addEventListener("pointercancel",joyEnd);
+
+const tap={x:0,y:0,moved:0,down:false};
+canvas.addEventListener("pointerdown",e=>{tap.down=true;tap.x=e.clientX;tap.y=e.clientY;tap.moved=0;});
+canvas.addEventListener("pointermove",e=>{if(tap.down)tap.moved+=Math.abs(e.movementX||0)+Math.abs(e.movementY||0);});
+canvas.addEventListener("pointerup",e=>{
+  if(tap.down&&tap.moved<10&&mode==="explore")tapPick(e.clientX,e.clientY);
+  tap.down=false;
+});
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
+let moveTarget=null;
+function tapPick(x,y){
+  pointer.set(x/innerWidth*2-1,-(y/innerHeight)*2+1);
+  raycaster.setFromCamera(pointer,camera);
+  const hits=raycaster.intersectObjects(paintGroups,true);
+  if(hits.length){
+    let g=hits[0].object;while(g&&g.userData.candIdx===undefined)g=g.parent;
+    if(g&&player.position.distanceTo(g.getWorldPosition(new THREE.Vector3()))<5.2){openPopup(g.userData.candIdx);return;}
+  }
+  // 床タップ→その地点へ歩く
+  const ray=raycaster.ray;
+  if(Math.abs(ray.direction.y)>1e-4){
+    const t=-ray.origin.y/ray.direction.y;
+    if(t>0){
+      const px=ray.origin.x+ray.direction.x*t, pz=ray.origin.z+ray.direction.z*t;
+      moveTarget=new THREE.Vector3(
+        Math.max(-GAL.w+.8,Math.min(GAL.w-.8,px)),0,
+        Math.max(-GAL.d+.8,Math.min(GAL.d-.8,pz)));
+    }
+  }
+}
+
+/* ==================== ステージ準備 ==================== */
+async function prepareStage(){
+  const S=runList[stage],D=DIFFS[stage];
+  usedHint=false;
+  $("introNo").textContent=`STAGE ${stage+1} / ${runList.length}`;
+  $("introTitle").textContent=`『${S.name}』`;
+  $("dArtist").textContent=S.artist;$("dYear").textContent=S.year;
+  $("dMedium").textContent=S.medium;$("dMuseum").textContent=S.museum;
+  $("dStory").textContent=S.story;$("dPrice").textContent=fmtYen(S.base);
+  const img=await loadArtImage(S);
+  if(!img)$("imgWarn").style.display="block";
+  const pool=[...(S.mono?MONO_POOLS:POOLS)[D.pool]].sort(()=>Math.random()-.5);
+  cands=[];stageCanvases=[];
+  const realIdx=Math.floor(Math.random()*D.candidates);
+  for(let i=0;i<D.candidates;i++){
+    const real=i===realIdx;
+    cands.push({real});
+    stageCanvases.push(img?adjustCanvas(img,real?{}:pool[i%pool.length]):placeholderCanvas(S.name));
+  }
+  exhibits.forEach(e=>gallery.remove(e));exhibits=[];paintGroups=[];
+  SLOTS.slice(0,D.candidates).forEach((s,i)=>{
+    const ex=new THREE.Group();ex.position.set(s.x,0,s.z);ex.rotation.y=s.ry;
+    ex.add(easel());
+    const rope=ropeStand();rope.position.z=1.15;ex.add(rope);
+    const pm=paintingMesh(stageCanvases[i],1.45,i+1);
+    pm.position.set(0,1.78,.3);pm.userData.candIdx=i;
+    ex.add(pm);paintGroups.push(pm);
+    const spot=new THREE.PointLight(0xffe2b0,.6,5.5,1.6);
+    spot.position.set(0,3.1,.9);ex.add(spot);
+    gallery.add(ex);exhibits.push(ex);
+  });
+  player.position.set(0,0,-GAL.d+2.2);player.rotation.y=0;
+  player.userData.baseY=0;
+  if(carryMesh){carrySlot.remove(carryMesh);carryMesh=null;}
+  $("hudStage").textContent=`STAGE ${stage+1}『${S.name}』`;
+  $("hudTotal").textContent=fmtYen(total);
+  $("hintToast").style.display="none";
+  $("hintBtn").disabled=false;
+  openOv("introOv");
+}
+
+/* ==================== ポップアップ+ゲーム内確認 ==================== */
+function openPopup(i){
+  popupIdx=i;mode="popup";moveTarget=null;resetConfirm();updatePopup();openOv("popup");
+  $("interactBtn").style.display="none";
+}
+function updatePopup(){
+  $("pLabel").textContent=`No.${popupIdx+1}`;
+  try{$("pImg").src=stageCanvases[popupIdx].toDataURL("image/jpeg",.9);}
+  catch(e){$("pImg").src=placeholderCanvas(runList[stage].name).toDataURL();}
+}
+function resetConfirm(){$("pConfirm").style.display="none";$("pNav").style.display="flex";}
+$("pPrev").onclick=()=>{popupIdx=(popupIdx-1+cands.length)%cands.length;updatePopup();};
+$("pNext").onclick=()=>{popupIdx=(popupIdx+1)%cands.length;updatePopup();};
+$("pClose").onclick=()=>{closeOv("popup");mode="explore";};
+$("pPick").onclick=()=>{
+  $("pNav").style.display="none";
+  $("pConfirmQ").textContent=`No.${popupIdx+1} を真作としてオークションに出品しますか?`;
+  $("pConfirm").style.display="flex";
+};
+$("pNo").onclick=resetConfirm;
+$("pYes").onclick=()=>{closeOv("popup");startCarry(popupIdx);};
+$("interactBtn").onclick=()=>{if(mode==="explore"&&nearIdx>=0)openPopup(nearIdx);};
+$("hintBtn").onclick=()=>{
+  usedHint=true;$("hintBtn").disabled=true;
+  const t=$("hintToast");t.innerHTML=`<b>専門家の所見:</b>${runList[stage].hint}`;t.style.display="block";
+  setTimeout(()=>t.style.display="none",9000);
+};
+
+/* ==================== 運搬→会場 ==================== */
+function startCarry(i){
+  pickedIdx=i;mode="carry";
+  $("hintBtn").classList.remove("on");$("interactBtn").style.display="none";
+  const ex=exhibits[i];
+  ex.remove(paintGroups[i]);
+  carryMesh=paintingMesh(stageCanvases[i],1.0);
+  carrySlot.add(carryMesh);
+  msg("作品を携え、オークション会場へ——");
+}
+function carryStep(dt,t){
+  const door=new THREE.Vector3(0,0,-GAL.d+.7);
+  const p=player.position;
+  const dir=door.clone().sub(p);dir.y=0;
+  const dist=dir.length();
+  if(dist>.3){
+    dir.normalize();
+    p.addScaledVector(dir,dt*2.5);
+    player.rotation.y=Math.atan2(dir.x,dir.z);
+    walkAnim(t,2.2);
+  }else{
+    mode="fade";
+    $("fadeVeil").style.opacity=1;
+    setTimeout(()=>enterHall(),800);
+  }
+}
+function enterHall(){
+  msgOff();
+  while(hallEaselSlot.children.length)hallEaselSlot.remove(hallEaselSlot.children[0]);
+  hallEaselSlot.add(paintingMesh(stageCanvases[pickedIdx],1.45));
+  if(carryMesh){carrySlot.remove(carryMesh);carryMesh=null;}
+  player.position.set(HALL_X-2.2,0.5,-7.1);player.rotation.y=0;
+  player.userData.baseY=0.5;
+  camera.position.set(HALL_X,6.2,5.6);
+  mode="auction";
+  $("fadeVeil").style.opacity=0;
+  setTimeout(()=>runAuction(),700);
+}
+
+/* ==================== オークション ==================== */
+let aucState=null;
+function raisePaddle(){
+  const p=rand(hallAudience);p.userData.raise=1;
+}
+function runAuction(){
+  const S=runList[stage],real=cands[pickedIdx].real;
+  const sec=(Date.now()-startT)/1000;
+  const timeBonus=sec<25?.5:sec<50?.3:.1;
+  const finalPrice=S.base*(0.7+timeBonus)*(usedHint?0.7:1);
+  aucState={S,real,sec,timeBonus,finalPrice,price:S.base*.35,step:0,waitHammer:false};
+  $("bidLog").innerHTML="";
+  $("priceBoard").textContent=fmtYen(aucState.price);
+  $("hammerBtn").style.display="none";
+  $("aucUI").classList.add("on");
+  addLog(`―― それでは『${S.name}』、開始いたします。`);
+  aucState.iv=setInterval(aucTick,950);
+}
+function addLog(m,alert){const d=document.createElement("div");if(alert)d.className="alert";d.textContent=m;$("bidLog").prepend(d);}
+function aucTick(){
+  const a=aucState;a.step++;
+  if(!a.real&&a.step===4){
+    clearInterval(a.iv);
+    const w=rand(hallAudience);w.userData.stand=true;
+    addLog("「……お待ちなさい。その作品、少しおかしくはないか?」",true);
+    hallSpot.color.set(0xff6a5a);
+    setTimeout(()=>{
+      addLog("「これは贋作だ!色が本物と違う!」",true);
+      stampShow("贋作","fake");gavel();
+      setTimeout(()=>{
+        $("aucUI").classList.remove("on");
+        $("goHint").textContent=a.S.hint;
+        const realNo=cands.findIndex(c=>c.real);
+        $("goReal").textContent=`本物は No.${realNo+1} だった——`;
+        try{$("goImg").src=stageCanvases[realNo].toDataURL("image/jpeg",.9);}catch(e){}
+        mode="result";openOv("goOv");
+        hallSpot.color.set(0xffe2b0);
+        hallAudience.forEach(p=>p.userData.stand=false);
+      },1700);
+    },1300);
+    return;
+  }
+  if(a.step>=7){
+    clearInterval(a.iv);
+    a.waitHammer=true;
+    addLog("―― 他にございませんか?");
+    $("hammerBtn").style.display="inline-block";
+    return;
+  }
+  a.price+=(a.finalPrice-a.S.base*.35)/7*(0.7+Math.random()*.6);
+  a.price=Math.min(a.price,a.finalPrice*.96);
+  $("priceBoard").textContent=fmtYen(a.price);
+  addLog(`${rand(BIDDERS)}:${fmtYen(a.price)}!`);
+  raisePaddle();
+}
+$("hammerBtn").onclick=()=>{
+  const a=aucState;if(!a||!a.waitHammer)return;
+  a.waitHammer=false;$("hammerBtn").style.display="none";
+  gavelDouble();
+  addLog("―― 落札!!");
+  a.price=a.finalPrice;$("priceBoard").textContent=fmtYen(a.price);
+  stampShow("真作","real");
+  setTimeout(()=>{
+    total+=a.finalPrice;
+    const pts=(stage+1)*1000;
+    awardPoints(pts);
+    $("aucUI").classList.remove("on");
+    $("cName").textContent=a.S.name;
+    try{$("cImg").src=stageCanvases[pickedIdx].toDataURL("image/jpeg",.9);}catch(e){}
+    $("cPrice").textContent=fmtYen(a.finalPrice)+" で落札";
+    $("cPts").textContent=`+${pts.toLocaleString()}pt 獲得(累計 ${points.toLocaleString()}pt)`;
+    $("cBonus").textContent=`鑑定時間 ${Math.floor(a.sec)}秒(ボーナス+${Math.round(a.timeBonus*100)}%)`+(usedHint?" / 専門家相談 −30%":" / 独力鑑定ボーナス");
+    $("cTrivia").textContent=a.S.trivia;
+    mode="result";
+    if(stage===runList.length-1){showEnding();openOv("endOv");}
+    else openOv("clearOv");
+  },1800);
+};
+function showEnding(){
+  $("finalTotal").textContent=fmtYen(total);
+  $("endPts").textContent=`${points.toLocaleString()} / 21,000pt`;
+  const max=runList.reduce((s,x)=>s+x.base*1.2,0),r=total/max;
+  let rank,com;
+  if(r>.85){rank="伝説の鑑定眼";com="あなたの眼は世界のオークション史に刻まれた。";}
+  else if(r>.65){rank="一流鑑定士";com="どの美術館もあなたを欲しがるだろう。";}
+  else if(r>.45){rank="頼れる目利き";com="確かな腕前。さらなる高値を目指せ。";}
+  else{rank="駆け出し鑑定士";com="真作は見抜けた。次はスピードと独力鑑定で高値を狙おう。";}
+  $("finalRank").textContent=rank;$("finalComment").textContent=com;
+}
+
+/* ==================== 画面遷移 ==================== */
+$("startBtn").onclick=()=>{closeOv("titleOv");stage=0;total=0;points=0;
+  $("hudPts").textContent="0";
+  runList=[...ARTWORKS].sort(()=>Math.random()-.5).slice(0,RUN_LENGTH);
+  prepareStage();};
+$("introGo").onclick=()=>{closeOv("introOv");mode="explore";
+  $("hud").classList.add("on");$("hintBtn").classList.add("on");startT=Date.now();};
+$("nextBtn").onclick=()=>{closeOv("clearOv");stage++;
+  $("fadeVeil").style.opacity=1;setTimeout(()=>{$("fadeVeil").style.opacity=0;prepareStage();},600);};
+$("retryBtn").onclick=()=>{closeOv("goOv");
+  $("fadeVeil").style.opacity=1;setTimeout(()=>{$("fadeVeil").style.opacity=0;prepareStage();},600);};
+$("reloadBtn").onclick=()=>location.reload();
+$("againBtn").onclick=()=>location.reload();
+
+/* ==================== メインループ ==================== */
+const clock=new THREE.Clock();
+const CAM_OFF=new THREE.Vector3(0,9.6,7.4); // 俯瞰オフセット
+function walkAnim(t,speed){
+  const u=player.userData,s=Math.sin(t*7*speed)*.55;
+  u.aL.rotation.x=s;u.aR.rotation.x=-s;u.lL.rotation.x=-s*.9;u.lR.rotation.x=s*.9;
+  player.position.y=(u.baseY||0)+Math.abs(Math.sin(t*7*speed))*.05;
+}
+function idleAnim(){
+  const u=player.userData,b=u.baseY||0;
+  u.aL.rotation.x*=.85;u.aR.rotation.x*=.85;u.lL.rotation.x*=.85;u.lR.rotation.x*=.85;
+  player.position.y+=(b-player.position.y)*.2;
+}
+function loop(){
+  requestAnimationFrame(loop);
+  const dt=Math.min(clock.getDelta(),.05),t=performance.now()/1000;
+  if(mode==="explore"){
+    let mx=0,mz=0;
+    if(keys.w||keys.arrowup)mz-=1;
+    if(keys.s||keys.arrowdown)mz+=1;
+    if(keys.a||keys.arrowleft)mx-=1;
+    if(keys.d||keys.arrowright)mx+=1;
+    mx+=joy.x;mz+=joy.y;
+    const len=Math.hypot(mx,mz);
+    if(len>.15){
+      moveTarget=null;
+      mx/=Math.max(1,len);mz/=Math.max(1,len);
+      player.position.x+=mx*dt*3.3;
+      player.position.z+=mz*dt*3.3;
+      player.position.x=Math.max(-GAL.w+.8,Math.min(GAL.w-.8,player.position.x));
+      player.position.z=Math.max(-GAL.d+.8,Math.min(GAL.d-.8,player.position.z));
+      player.rotation.y=Math.atan2(mx,mz);
+      walkAnim(t,1);
+    }else if(moveTarget){
+      const dir=moveTarget.clone().sub(player.position);dir.y=0;
+      const dist=dir.length();
+      if(dist>.22){
+        dir.normalize();
+        player.position.addScaledVector(dir,dt*3.3);
+        player.rotation.y=Math.atan2(dir.x,dir.z);
+        walkAnim(t,1);
+      }else{moveTarget=null;idleAnim();}
+    }else idleAnim();
+    nearIdx=-1;let best=4.4;
+    paintGroups.forEach((g,i)=>{
+      const d=player.position.distanceTo(g.getWorldPosition(new THREE.Vector3()));
+      if(d<best){best=d;nearIdx=i;}
+    });
+    const ib=$("interactBtn");
+    if(nearIdx>=0){ib.style.display="block";ib.textContent=`No.${nearIdx+1} を検分する`;}
+    else ib.style.display="none";
+    $("timer").textContent=Math.floor((Date.now()-startT)/1000);
+  }
+  else if(mode==="carry")carryStep(dt,t);
+  else idleAnim();
+
+  // 観客
+  hallAudience.forEach(p=>{
+    const u=p.userData;
+    const targetY=u.stand?.85:.25;
+    p.position.y+=(targetY-p.position.y)*.12;
+    p.rotation.z=Math.sin(t*1.2+u.phase)*.03;
+    if(u.raise>0){u.raise-=.02;}
+    const pr=u.raise>0?0:1.35;
+    u.paddle.rotation.x+=(pr-u.paddle.rotation.x)*.2;
+  });
+  // 塵
+  [galleryDust,hallDust].forEach(d=>{
+    if(!d)return;
+    const pos=d.pts.geometry.attributes.position;
+    for(let i=0;i<pos.count;i++){
+      let y=pos.getY(i)+.0016;
+      if(y>d.H)y=0;
+      pos.setY(i,y);
+    }
+    pos.needsUpdate=true;
+  });
+  // シャンデリアのゆらぎ
+  renderer.toneMappingExposure=1.12+Math.sin(t*2.3)*.02;
+
+  // カメラ
+  if(mode==="auction"||(mode==="result"&&player.position.x>100)){
+    camera.position.lerp(new THREE.Vector3(HALL_X,6.2,5.6),.07);
+    camera.lookAt(HALL_X+0.4,1.1,-6.5);
+  }else{
+    const target=player.position.clone().add(CAM_OFF);
+    camera.position.lerp(target,.14);
+    camera.lookAt(player.position.x,player.position.y+.6,player.position.z-.6);
+  }
+  renderer.render(scene,camera);
+}
+loop();
+loadArtImage(STAGES[0]).then(img=>{if(!img)$("imgWarn").style.display="block";});
+</script>
+</body>
+</html>

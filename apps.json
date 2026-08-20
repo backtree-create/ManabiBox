@@ -152,5 +152,16 @@
     "total": 20,
     "color": "#65E9FF",
     "icon": "target"
+  },
+  {
+    "key": "appraiser",
+    "name": "贋作鑑定士",
+    "subject": "美術",
+    "file": "https://backtree-create.github.io/ManabiBox/appraiser.html",
+    "desc": "本物の名画は1点だけ。贋作を見抜き、オークションで高額落札を狙うドット3D鑑定ゲーム。31作品からランダム出題。",
+    "unit": "pt",
+    "total": 21000,
+    "color": "#C9A227",
+    "icon": "star"
   }
 ]
