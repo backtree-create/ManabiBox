@@ -72,6 +72,17 @@ button{font-family:inherit}
   .btn{padding:11px 16px;font-size:.9rem}
   .card,.dossier{width:94vw}
 }
+@media(max-width:560px){
+  #hud .bar{margin-top:46px;font-size:.72rem;gap:12px;padding:7px 14px}
+  #hintBtn{top:10px}
+}
+
+/* ---------- ホームに戻る ---------- */
+#homeBtn{position:fixed;top:10px;left:10px;z-index:35;display:flex;align-items:center;gap:6px;
+  font-family:var(--serif);font-size:.78rem;letter-spacing:.08em;text-decoration:none;
+  background:#1a100d;color:var(--gold-light);border:3px solid var(--gold);
+  padding:7px 12px;box-shadow:0 3px 0 #0c0806}
+#homeBtn:active{transform:translateY(2px);box-shadow:0 1px 0 #0c0806}
 
 /* ---------- HUD ---------- */
 #hud{position:fixed;top:0;left:0;right:0;z-index:20;display:none;justify-content:center;gap:0;pointer-events:none}
@@ -167,6 +178,7 @@ button{font-family:inherit}
 <body>
 <canvas id="c3d"></canvas>
 <div id="vignette"></div>
+<a id="homeBtn" href="https://backtree-create.github.io/ManabiBox/index.html">⌂ ホーム</a>
 
 <div id="hud"><div class="bar">
   <span id="hudStage"></span><span>⏱ <b id="timer">0</b>秒</span><span>売上 <b id="hudTotal">0円</b></span><span>🏅 <b id="hudPts">0</b>pt</span>
