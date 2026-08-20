@@ -176,7 +176,7 @@ main { flex: 1; display: flex; flex-direction: column; position: relative; z-ind
 .ticks { position: absolute; inset: 0; }
 .tick { position: absolute; top: 34px; transform: translateX(-50%); width: 24px; text-align: center; }
 .tick::before { content: ""; display: block; width: 7px; height: 7px; border-radius: 50%; margin: 3px auto 12px; background: #263c51; border: 1px solid #61798d; transition: .14s ease; }
-.tick span { color: #71869a; font: 400 10px "IBM Plex Mono", monospace; }
+.tick span { color: #8fa5b8; font: 500 13px "IBM Plex Mono", monospace; }
 .tick.is-zero::before { width: 13px; height: 13px; margin-top: 0; margin-bottom: 9px; border-radius: 1px; transform: rotate(45deg); border-color: var(--cyan); background: #0a2736; box-shadow: 0 0 15px rgba(101, 233, 255, .6); }
 .tick.is-zero span { color: var(--cyan); }
 .tick.is-active::before { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
@@ -256,7 +256,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
   .mission { padding-top: 30px; }
   .game-panel { min-height: 270px; }
   .number-line-wrap { padding-left: 24px; padding-right: 24px; overflow-x: clip; }
-  .tick span { font-size: 9px; }
+  .tick span { font-size: 12px; }
   .tick:nth-child(even):not(.is-zero) span { visibility: hidden; }
   .zone-labels { left: 24px; right: 24px; }
   .controls { grid-template-columns: 1fr auto 1fr; gap: 12px; }
@@ -275,6 +275,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
   .game-panel { min-height: 260px; }
   .number-line-wrap { padding-left: 18px; padding-right: 18px; }
   .tick { width: 20px; }
+  .tick span { font-size: 11px; }
   .key-help { display: none !important; }
   .controls { display: flex; flex-wrap: wrap; justify-content: center; min-height: 88px; }
   .multiplier { order: -1; width: 100%; }
@@ -440,7 +441,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
       tick.dataset.value = n;
       tick.style.left = `${percent(n)}%`;
       const label = document.createElement("span");
-      label.textContent = signed(n);
+      label.textContent = String(n);
       tick.append(label);
       fragment.append(tick);
     }
