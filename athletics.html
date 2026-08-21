@@ -27,9 +27,9 @@
 html,body{height:100%;background:var(--navy);overflow:hidden;
   font-family:'Zen Kaku Gothic New',sans-serif;color:var(--white);
   touch-action:manipulation;user-select:none;-webkit-user-select:none}
-#wrap{height:100%;display:flex;align-items:center;justify-content:center;
+#wrap{height:100%;height:100svh;display:flex;align-items:center;justify-content:center;
   background:radial-gradient(120% 90% at 50% 0%, #2A1830 0%, #120A16 60%)}
-#stage{position:relative;width:min(100vw,177.7vh);aspect-ratio:16/9;max-height:100vh;
+#stage{position:relative;width:min(100vw,177.7vh,177.7svh);aspect-ratio:16/9;max-height:100svh;
   background:var(--navy);overflow:hidden;box-shadow:0 0 60px rgba(0,0,0,.6)}
 canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 
@@ -55,7 +55,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #controls{position:absolute;inset:0;pointer-events:none;z-index:6;display:none}
 .padBtn{position:absolute;bottom:4%;pointer-events:auto;
   width:clamp(64px,15vmin,120px);height:clamp(64px,15vmin,120px);border-radius:50%;
-  border:3px solid rgba(242,233,220,.75);background:rgba(20,28,50,.55);
+  border:3px solid rgba(242,233,220,.75);background:rgba(30,18,10,.55);
   color:var(--white);font-family:'Anton',sans-serif;font-size:clamp(20px,4.5vmin,38px);
   letter-spacing:.05em;backdrop-filter:blur(2px);cursor:pointer}
 .padBtn:active{background:rgba(255,197,61,.35);border-color:var(--amber);transform:scale(.94)}
@@ -139,7 +139,7 @@ table.res tr.total td{border-top:2px solid var(--amber-dim);border-bottom:none;
 #rotateHint{position:fixed;inset:0;background:var(--navy);z-index:99;display:none;
   align-items:center;justify-content:center;text-align:center;font-weight:900;
   font-size:clamp(16px,4.5vw,24px);line-height:2;padding:8%}
-@media (orientation:portrait) and (max-width:600px){ #rotateHint{display:flex} }
+@media (orientation:portrait) and (max-width:1024px){ #rotateHint{display:flex} }
 .flash{animation:flash .35s}
 @keyframes flash{0%{background:rgba(255,255,255,.9)}100%{background:transparent}}
 @media (prefers-reduced-motion:reduce){ *{animation:none !important;transition:none !important} }
@@ -343,6 +343,7 @@ function bindBtn(el, down, up){
   el.addEventListener('pointerdown', e=>{ e.preventDefault(); ac(); down(); });
   if(up) el.addEventListener('pointerup', e=>{ e.preventDefault(); up(); });
   if(up) el.addEventListener('pointercancel', ()=>up());
+  if(up) el.addEventListener('pointerleave', ()=>up());
 }
 bindBtn($('#btnL'), ()=>runTap(0));
 bindBtn($('#btnR'), ()=>runTap(1));
@@ -470,7 +471,12 @@ function drawAthlete(px, py, phase, opt={}){
 }
 
 /* ---------------- HUD ---------------- */
-function hud(on){ $('#hud').style.display = on?'flex':'none'; $('#controls').style.display = on?'block':'none'; }
+function hud(on){
+  $('#hud').style.display = on?'flex':'none';
+  $('#controls').style.display = on?'block':'none';
+  const hb=$('#homeBtn');
+  if(hb && !hb.hidden) hb.style.visibility = on?'hidden':'visible';
+}
 function setHud(evName, lbl){ $('#hEvent').textContent=evName; $('#hMainLbl').textContent=lbl; }
 function updHud(mainVal, v, vMax, st){
   $('#hMain').textContent = mainVal;
