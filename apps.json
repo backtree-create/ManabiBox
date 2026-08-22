@@ -196,5 +196,16 @@
     "total": 8,
     "color": "#B36AE2",
     "icon": "maze"
-  }
+  },
+  {
+  "key": "yojijirensei",
+  "name": "四字錬成",
+  "subject": "国語",
+  "file": "https://backtree-create.github.io/ManabiBox/yojijirensei.html",
+  "desc": "漢字を拾い、四文字を正しい順に並べて熟語カードへ錬成するドット絵デッキ構築RPG。全120語・8章に加え、修羅道と無限回廊つき。",
+  "unit": "章",
+  "total": 16,
+  "color": "#C8452F",
+  "icon": "pen"
+}
 ]
