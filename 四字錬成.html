@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>四字錬成 ─ 熟語クラフトRPG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sumi:#0c1119; --sumi2:#131c2b; --panel:#16203247; --ai:#1b3a5c; --ai2:#2a5580;
+  --kin:#d9a441; --kin2:#8a6a26; --shu:#c8452f; --shu2:#8f2f20;
+  --kinari:#f3ead6; --aijiro:#a9c0d4; --gray:#8fa0b5; --take:#6fa96b;
+  --sky1:#16273f; --sky2:#0b111c; --ground:#25405e;
+  --notch: polygon(
+    8px 0, calc(100% - 8px) 0, calc(100% - 8px) 4px, calc(100% - 4px) 4px,
+    calc(100% - 4px) 8px, 100% 8px, 100% calc(100% - 8px),
+    calc(100% - 4px) calc(100% - 8px), calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 8px) calc(100% - 4px), calc(100% - 8px) 100%, 8px 100%,
+    8px calc(100% - 4px), 4px calc(100% - 4px), 4px calc(100% - 8px),
+    0 calc(100% - 8px), 0 8px, 4px 8px, 4px 4px, 8px 4px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0;padding:0;overflow:hidden}
+body{
+  background:var(--sumi); color:var(--kinari);
+  font-family:"DotGothic16","MS Gothic",monospace;
+  font-size:15px; line-height:1.5; letter-spacing:.02em;
+  -webkit-text-size-adjust:100%; image-rendering:pixelated; overscroll-behavior:none;
+}
+/* 麻の葉くずしの地紋 */
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:
+    repeating-linear-gradient(60deg,rgba(169,192,212,.06) 0 1px,transparent 1px 24px),
+    repeating-linear-gradient(-60deg,rgba(169,192,212,.06) 0 1px,transparent 1px 24px),
+    repeating-linear-gradient(0deg,rgba(169,192,212,.05) 0 1px,transparent 1px 24px);
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px);
+}
+#app{position:relative;z-index:1;height:100dvh;max-width:560px;margin:0 auto;
+  padding:6px 10px 8px;display:flex;flex-direction:column;min-height:0}
+.screen{flex:1;display:flex;flex-direction:column;min-height:0;gap:7px}
+.scr-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:7px}
+.scr-foot{flex:0 0 auto;display:flex;flex-direction:column;gap:6px}
+.pane{min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.hidden{display:none !important}
+.grow{flex:1;min-height:0}
+
+/* ---- 枠（金の二重線） ---- */
+.px{clip-path:var(--notch);background:var(--sumi2);border:4px solid var(--ai2);
+  box-shadow:inset 0 0 0 2px rgba(217,164,65,.28)}
+.panel{padding:10px 12px}
+.panel.dark{background:#0f1724}
+
+.hud{flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:2px 2px 4px}
+.hud .t{font-size:17px;color:var(--kin);text-shadow:2px 2px 0 #000}
+.hud .t::before{content:"◆";color:var(--shu);margin-right:6px;font-size:12px}
+.hud .spacer{flex:1}
+.tag{border:2px solid var(--ai2);background:#0f1724;color:var(--gray);font-size:11.5px;padding:0 7px}
+.label{font-size:12px;color:var(--kin)}
+.muted{color:var(--gray);font-size:12.5px}
+.hr{height:2px;background:var(--ai2);margin:8px 0;opacity:.7}
+.row{display:flex;gap:7px}.row>*{flex:1}
+
+.btn{appearance:none;font-family:inherit;font-size:15px;color:var(--kinari);
+  background:var(--ai);border:4px solid var(--ai2);clip-path:var(--notch);
+  padding:9px 10px;width:100%;cursor:pointer;box-shadow:inset 0 -4px 0 rgba(0,0,0,.3)}
+.btn:hover{background:#24557f}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn.primary{background:var(--shu);border-color:var(--kin);color:#fff4e0;
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,.28),inset 0 0 0 2px rgba(255,255,255,.12)}
+.btn.primary:hover{background:#dd5641}
+.btn.ghost{background:#0f1724;border-color:var(--ai);color:var(--gray);font-size:13px;padding:6px 9px}
+.btn.snd{width:auto;padding:4px 8px;font-size:12px}
+.btn:disabled{opacity:.35;cursor:default;transform:none}
+.btn:focus-visible,.seal:focus-visible,.card:focus-visible,.k:focus-visible,.slot:focus-visible{outline:3px solid var(--kin);outline-offset:2px}
+
+/* ---- スプライト ---- */
+.spr{position:relative;display:inline-block;vertical-align:bottom}
+.spr img{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+.spr img:nth-child(1){animation:frA 1.1s steps(1,end) infinite}
+.spr img:nth-child(2){animation:frB 1.1s steps(1,end) infinite}
+@keyframes frA{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes frB{0%,49%{opacity:0}50%,100%{opacity:1}}
+.spr.flash img{filter:brightness(0) invert(1)}
+
+/* ---- 戦闘ステージ ---- */
+.stage{position:relative;flex:1;min-height:118px;overflow:hidden;
+  border:4px solid var(--ai2);clip-path:var(--notch);
+  background:linear-gradient(180deg,var(--sky1),var(--sky2))}
+.stage .moon{position:absolute;top:12px;right:16px;width:26px;height:26px;
+  background:#e8dcbb;box-shadow:0 0 0 4px rgba(232,220,187,.12)}
+.stage .wave{position:absolute;left:0;right:0;bottom:38px;height:46%;opacity:.3;
+  background-image:repeating-radial-gradient(circle at 50% 100%,transparent 0 9px,
+    rgba(169,192,212,.55) 9px 10px,transparent 10px 18px);
+  background-size:36px 18px}
+.stage .ground{position:absolute;left:0;right:0;bottom:0;height:38px;background:var(--ground);
+  border-top:4px solid rgba(217,164,65,.35)}
+.stage .ground::after{content:"";position:absolute;inset:0;
+  background-image:repeating-conic-gradient(rgba(0,0,0,.22) 0 25%,transparent 0 50%);
+  background-size:16px 16px}
+.stage .foe{position:absolute;left:50%;bottom:30px;transform:translateX(-50%)}
+.stage .foe .spr{width:100% !important;height:100% !important}
+.stage .foe{width:clamp(88px,19vh,168px);height:clamp(88px,19vh,168px)}
+.stage .shadow{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);
+  width:clamp(56px,12vh,110px);height:8px;background:rgba(0,0,0,.45)}
+.stage.shake{animation:shk .28s steps(2,end)}
+@keyframes shk{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.bubble{position:absolute;top:8px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  background:#0f1724;border:3px solid var(--shu);clip-path:var(--notch);
+  color:#f6c9bf;font-size:12px;padding:2px 10px}
+.dmg{position:absolute;bottom:56%;font-size:24px;color:var(--kin);
+  text-shadow:2px 2px 0 #000,-2px -2px 0 #000;animation:pop .9s steps(9,end) forwards;pointer-events:none}
+.dmg.weak{color:#ff7a63}
+@keyframes pop{0%{transform:translateY(8px);opacity:1}100%{transform:translateY(-40px);opacity:0}}
+
+/* ---- ゲージ ---- */
+.bar{position:relative;height:14px;background:#070b12;border:3px solid var(--ai2);padding:2px}
+.bar>i{display:block;height:100%;background:var(--take);transition:width .25s steps(6,end)}
+.bar.foe>i{background:var(--shu)}
+.bar::after{content:"";position:absolute;inset:2px;pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0 6px,rgba(0,0,0,.5) 6px 8px)}
+.pips{display:flex;gap:4px}
+.pip{width:13px;height:13px;background:#070b12;border:3px solid var(--ai2)}
+.pip.on{background:var(--kin);border-color:var(--kin)}
+.statline{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--gray)}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.chips span{font-size:11px;border:2px solid var(--kin);color:var(--kin);padding:0 5px}
+.chips span.bad{border-color:var(--shu);color:#f6b5a9}
+.log{font-size:12.5px;color:var(--aijiro);min-height:3.2em}
+.log b{color:var(--kin)}
+
+/* ---- 札 ---- */
+.hand{display:flex;gap:7px;overflow-x:auto;overflow-y:hidden;padding:11px 2px 6px}
+#s-battle .col-a{display:flex;flex-direction:column;gap:7px;min-height:0;flex:1}
+#s-map .col-a{display:flex;flex-direction:column;gap:7px;min-height:0;flex:1}
+#s-map .col-a>.px:first-child{flex:1;display:flex;flex-direction:column;justify-content:center}
+#s-map .col-b{flex:0 0 auto;padding:8px 10px}
+#s-map .route{margin:14px 0 4px}
+#s-map .tile .box{width:38px;height:38px}
+.seal{flex:0 0 auto;width:58px;height:72px;cursor:pointer;position:relative;
+  background:#e7dcc0;border:4px solid #6b4f27;clip-path:var(--notch);
+  color:#1d1a12;font-family:inherit;font-size:30px;line-height:1;
+  display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2)}
+.seal .el{position:absolute;left:0;right:0;top:0;height:6px}
+.seal.sel{transform:translateY(-8px);border-color:var(--kin);box-shadow:inset 0 0 0 3px rgba(217,164,65,.5)}
+.seal .ord{position:absolute;top:3px;right:3px;width:18px;height:18px;background:var(--shu);
+  color:#fff;font-size:12px;line-height:18px;text-align:center}
+.card{flex:0 0 auto;width:128px;min-height:72px;cursor:pointer;text-align:left;
+  background:#16233a;border:4px solid var(--ai2);clip-path:var(--notch);
+  color:var(--kinari);font-family:inherit;padding:7px 8px;
+  display:flex;flex-direction:column;justify-content:space-between;gap:3px}
+.card.sel{transform:translateY(-8px);border-color:var(--kin)}
+.card .name{font-size:16px;color:var(--kin)}
+.card .fx{font-size:11px;line-height:1.3;color:var(--aijiro)}
+.cardtop{display:flex;justify-content:space-between;align-items:center;gap:4px}
+.cost-badge{font-size:11px;color:#1d1a12;background:var(--kin);padding:0 5px}
+.el-badge{font-size:11px;padding:0 5px;color:#0c1119}
+.el-剛{background:var(--shu)}.el-柔{background:#4a7fb5}.el-智{background:var(--take)}
+.dot-剛{background:var(--shu)}.dot-柔{background:#4a7fb5}.dot-智{background:var(--take)}
+.actionbar{display:flex;gap:7px}.actionbar .btn{flex:1}
+
+/* ---- 道中 ---- */
+.route{display:flex;align-items:flex-end;margin:8px 0 2px}
+.tile{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;gap:4px}
+.tile .box{width:34px;height:34px;background:#0f1724;border:3px solid var(--ai2);
+  display:flex;align-items:center;justify-content:center}
+.tile.done .box{border-color:var(--kin2);opacity:.7}
+.tile.now .box{background:#3a2413;border-color:var(--kin);box-shadow:0 0 0 3px rgba(217,164,65,.22)}
+.tile .you{height:30px;display:flex;align-items:flex-end}
+.tile .n{font-size:10.5px;color:var(--gray)}
+.tile.now .n{color:var(--kin)}
+.tile::after{content:"";position:absolute;bottom:22px;left:63%;right:-37%;height:4px;
+  background:repeating-linear-gradient(90deg,var(--ai2) 0 4px,transparent 4px 8px)}
+.tile:last-child::after{display:none}
+.chaphead{display:flex;align-items:center;gap:9px}
+.chaphead .num{font-size:11.5px;color:#fff4e0;background:var(--shu);padding:1px 7px}
+.chaphead h2{margin:0;font-size:19px;font-weight:normal;letter-spacing:.08em}
+
+/* ---- 錬成所 ---- */
+.circle{position:relative;max-width:210px;margin:6px auto;display:grid;
+  grid-template-columns:1fr 1fr;gap:7px;padding:8px;background:#0f1724;
+  border:4px solid var(--ai2);clip-path:var(--notch)}
+.circle.ok{border-color:var(--kin);animation:glow .8s steps(2,end) infinite}
+@keyframes glow{0%,49%{box-shadow:inset 0 0 0 4px rgba(217,164,65,.4)}50%,100%{box-shadow:none}}
+.slot{aspect-ratio:1/1.1;background:#080d15;border:3px dashed #2a5580;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:30px;color:#2a5580}
+.slot.filled{background:#e7dcc0;border:3px solid #6b4f27;color:#1d1a12}
+.inv{display:grid;grid-template-columns:repeat(auto-fill,minmax(48px,1fr));gap:6px}
+.k{aspect-ratio:1/1.06;position:relative;cursor:pointer;font-family:inherit;font-size:23px;
+  background:#e7dcc0;border:3px solid #6b4f27;color:#1d1a12;
+  display:flex;align-items:center;justify-content:center}
+.k .n{position:absolute;bottom:0;right:2px;font-size:10px;color:#6b5236}
+.k .el{position:absolute;left:0;right:0;top:0;height:5px}
+.k.off{opacity:.3}
+
+/* ---- 図鑑 ---- */
+.foecard{display:flex;gap:9px;align-items:center;margin-top:4px}
+.foeinfo{flex:1;min-width:0;line-height:1.35}
+.foename{font-size:15px;color:var(--kin)}
+.foecard .statline{gap:6px;font-size:12px}
+.foecard .muted{font-size:11.5px}
+.dexgrid{display:grid;grid-template-columns:1fr;gap:6px}
+.dex-item{border:3px solid var(--ai2);background:#0f1724;padding:7px 10px}
+.dex-item.got{border-color:var(--kin);background:#16233a}
+.dex-word{font-size:20px;letter-spacing:.12em}
+.dex-word .mask{color:#2a3d55}
+.dex-yomi{font-size:11.5px;color:var(--gray)}
+.near{color:var(--kin);font-size:11.5px}
+
+/* ---- 表紙 ---- */
+#s-title .wrap{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
+  align-items:center;text-align:center;gap:10px}
+.logo{display:flex;justify-content:center;gap:5px}
+.logo span{width:clamp(42px,7vh,58px);height:clamp(46px,8vh,64px);background:var(--shu);
+  border:4px solid var(--kin);color:#fff4e0;font-size:clamp(26px,4.4vh,36px);
+  display:flex;align-items:center;justify-content:center;clip-path:var(--notch);
+  text-shadow:2px 2px 0 rgba(0,0,0,.5);animation:drop .5s steps(4,end) backwards}
+.logo span:nth-child(2){animation-delay:.12s}
+.logo span:nth-child(3){animation-delay:.24s}
+.logo span:nth-child(4){animation-delay:.36s}
+@keyframes drop{from{transform:translateY(-20px);opacity:0}to{transform:none;opacity:1}}
+.blink{animation:bl 1s steps(1,end) infinite;color:var(--kin)}
+@keyframes bl{0%,49%{opacity:1}50%,100%{opacity:.15}}
+.parade{display:flex;justify-content:center;gap:12px}
+.celebox{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.celeinner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center}
+.celebrate{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+.celebrate i{position:absolute;top:-14px;width:8px;height:8px;animation-name:fall;
+  animation-timing-function:linear;animation-iteration-count:infinite}
+@keyframes fall{0%{transform:translateY(-14px) rotate(0deg);opacity:1}
+  100%{transform:translateY(420px) rotate(180deg);opacity:.2}}
+.shukuseal{width:52px;height:52px;background:var(--shu);border:4px solid var(--kin);
+  color:#fff4e0;font-size:28px;line-height:44px;margin-bottom:10px;clip-path:var(--notch);
+  animation:pulse .9s steps(2,end) infinite}
+@keyframes pulse{0%,49%{box-shadow:0 0 0 4px rgba(217,164,65,.35)}50%,100%{box-shadow:none}}
+.celetitle{font-size:20px;color:var(--kin);margin-top:8px}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(6,9,14,.85);
+  display:flex;align-items:center;justify-content:center;padding:20px}
+.modal .box{max-width:360px;width:100%}
+.hardtag{border-color:var(--shu);color:#f6b5a9}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:50;
+  background:#16233a;border:4px solid var(--kin);clip-path:var(--notch);
+  color:var(--kinari);padding:8px 14px;font-size:13px;max-width:88vw;text-align:center;
+  opacity:0;pointer-events:none;transition:opacity .2s steps(2,end)}
+.toast.show{opacity:1}
+
+/* ================= 画面サイズ別 ================= */
+/* スマホ（縦） */
+@media (max-width:599px){
+  body{font-size:14px}
+  .card{width:118px;min-height:66px}
+  .seal{width:52px;height:66px;font-size:27px}
+  .log{min-height:2.6em;font-size:12px}
+  .panel{padding:8px 10px}
+  .dex-word{font-size:18px}
+}
+@media (max-height:640px){
+  .stage{min-height:96px}
+  .seal{height:60px}.card{min-height:60px}
+  .hud{padding:0}
+  .log{min-height:2.2em}
+}
+/* タブレット */
+@media (min-width:600px) and (max-width:1023px){
+  body{font-size:16px}
+  #app{max-width:720px;padding:10px 16px 12px}
+  .stage .foe{width:clamp(120px,24vh,210px);height:clamp(120px,24vh,210px)}
+  .seal{width:66px;height:82px;font-size:34px}
+  .card{width:150px}
+  .dexgrid{grid-template-columns:1fr 1fr}
+  .inv{grid-template-columns:repeat(auto-fill,minmax(58px,1fr))}
+}
+/* PC：戦闘は二段組 */
+@media (min-width:1024px){
+  body{font-size:16px}
+  #app{max-width:1080px;padding:12px 22px 14px}
+  .stage .foe{width:clamp(140px,26vh,240px);height:clamp(140px,26vh,240px)}
+  .seal{width:64px;height:80px;font-size:33px}
+  .card{width:158px}
+  .dexgrid{grid-template-columns:1fr 1fr 1fr}
+  .inv{grid-template-columns:repeat(auto-fill,minmax(56px,1fr))}
+  #s-battle .scr-body{flex-direction:row}
+  #s-battle .col-a{flex:1.35;display:flex;flex-direction:column;gap:7px;min-height:0}
+  #s-battle .col-b{flex:1;display:flex;flex-direction:column;gap:7px;min-height:0}
+  #s-battle .log{min-height:5em}
+  #s-map .scr-body{flex-direction:row}
+  #s-map .col-a{flex:1.7}
+  #s-map .col-b{flex:1;align-self:flex-start}
+  #s-craft .scr-body{flex-direction:row}
+  #s-craft .col-a{flex:1;min-height:0}#s-craft .col-b{flex:1.2;min-height:0;display:flex;flex-direction:column;gap:7px}
+  .route{margin:14px 0 6px}
+  .tile .box{width:40px;height:40px}
+}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ===== タイトル ===== -->
+<section id="s-title" class="screen">
+  <div class="wrap">
+    <div class="logo"><span>四</span><span>字</span><span>錬</span><span>成</span></div>
+    <div class="parade" id="title-parade"></div>
+    <div class="px panel" style="max-width:440px;text-align:left">
+      <p style="margin:0;font-size:13px;color:var(--aijiro)">
+        言葉の意味が失われ、国じゅうの熟語がバラバラの漢字に散った。<br>
+        漢字を拾い、四つ並べて熟語に錬成し、その意味の力で言葉喰いを討て。
+      </p>
+      <div class="hr"></div>
+      <div class="label">あそびかた</div>
+      <div class="muted" style="margin-top:4px">
+        一　道中で漢字を拾う<br>
+        二　錬成所で四文字を正しい順に並べる<br>
+        三　熟語の意味どおりの効果で戦う
+      </div>
+    </div>
+  </div>
+  <div class="scr-foot">
+    <button class="btn primary" onclick="startGame()"><span class="blink">▶</span> はじめから</button>
+    <button class="btn hidden" id="contbtn" onclick="continueGame()">つづきから</button>
+    <button class="btn ghost" id="hubbtn" onclick="goHub()">まなびの基板にもどる</button>
+  </div>
+</section>
+
+<!-- ===== マップ ===== -->
+<section id="s-map" class="screen hidden"></section>
+
+<!-- ===== バトル ===== -->
+<section id="s-battle" class="screen hidden"></section>
+
+<!-- ===== 錬成所 ===== -->
+<section id="s-craft" class="screen hidden"></section>
+
+<!-- ===== 図鑑 ===== -->
+<section id="s-dex" class="screen hidden"></section>
+
+<!-- ===== 編成 ===== -->
+<section id="s-deck" class="screen hidden"></section>
+
+<!-- ===== 結果 ===== -->
+<section id="s-result" class="screen hidden"></section>
+
+</div>
+<div class="modal hidden" id="modal"></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://backtree-create.github.io/ManabiBox/config.js"></script>
+<script src="https://backtree-create.github.io/ManabiBox/hub-progress.js"></script>
+<script>
+"use strict";
+
+/* =========================================================
+   ステップ2：データベース
+   ========================================================= */
+const IDIOMS = [
+ {w:"一石二鳥",y:"いっせきにちょう",el:"剛",cost:2,mean:"一つの行いで二つの得をすること",e:{d:9,h:2,sp:'drop'}},
+ {w:"切磋琢磨",y:"せっさたくま",el:"智",cost:2,mean:"仲間と競い合って互いを高めること",e:{sp:'grind'}},
+ {w:"臥薪嘗胆",y:"がしんしょうたん",el:"柔",cost:2,mean:"目的のため苦しみに耐えること",e:{sp:'revenge'}},
+ {w:"猪突猛進",y:"ちょとつもうしん",el:"剛",cost:2,mean:"まわりを見ずに突き進むこと",e:{d:22,sp:'recoil'}},
+ {w:"温故知新",y:"おんこちしん",el:"智",cost:1,mean:"昔を学び直して新しい発見を得ること",e:{sp:'recall'}},
+ {w:"以心伝心",y:"いしんでんしん",el:"柔",cost:1,mean:"言わなくても心が通じ合うこと",e:{dr:2,en:1}},
+ {w:"十人十色",y:"じゅうにんといろ",el:"智",cost:2,mean:"人それぞれ好みや考えが違うこと",e:{d:5,h:5,sp:'varied'}},
+ {w:"五里霧中",y:"ごりむちゅう",el:"柔",cost:2,mean:"迷って見通しが立たないこと",e:{sp:'fog'}},
+ {w:"疑心暗鬼",y:"ぎしんあんき",el:"柔",cost:2,mean:"疑い出すと何でも怖く見えること",e:{sp:'poison'}},
+ {w:"一期一会",y:"いちごいちえ",el:"剛",cost:3,mean:"一生に一度の出会いを大切にすること",e:{d:32,sp:'once'}},
+ {w:"四面楚歌",y:"しめんそか",el:"智",cost:2,mean:"まわりが敵ばかりで孤立すること",e:{d:8,sp:'surround'}},
+ {w:"危機一髪",y:"ききいっぱつ",el:"剛",cost:1,mean:"ぎりぎりで危険にせまられている状態",e:{d:12,sp:'lowhp'}},
+ {w:"単刀直入",y:"たんとうちょくにゅう",el:"剛",cost:2,mean:"前置きなしにいきなり本題に入ること",e:{d:18,pi:1}},
+ {w:"大器晩成",y:"たいきばんせい",el:"智",cost:1,mean:"大人物は時間をかけて力をつけること",e:{d:5,sp:'turnmul'}},
+ {w:"半信半疑",y:"はんしんはんぎ",el:"柔",cost:1,mean:"半分信じ半分うたがっている状態",e:{d:14,sp:'gamble'}},
+ {w:"電光石火",y:"でんこうせっか",el:"剛",cost:0,mean:"動きが非常にすばやいこと",e:{d:10,dr:1}},
+ {w:"油断大敵",y:"ゆだんたいてき",el:"柔",cost:1,mean:"気をゆるめることが一番の敵だということ",e:{d:10,sp:'dispel'}},
+ {w:"七転八起",y:"しちてんはっき",el:"柔",cost:2,mean:"何度失敗しても立ち上がること",e:{hp:25,sh:8}},
+ {w:"起承転結",y:"きしょうてんけつ",el:"智",cost:2,mean:"話を四つの流れで組み立てること",e:{d:8,sp:'story'}},
+ {w:"千載一遇",y:"せんざいいちぐう",el:"剛",cost:3,mean:"千年に一度しかないほどの好機",e:{d:25,en:2}},
+ {w:"一刀両断",y:"いっとうりょうだん",el:"剛",cost:2,mean:"ためらわず物事をきっぱり決めること",e:{d:20,sp:'guardbreak'}},
+ {w:"縦横無尽",y:"じゅうおうむじん",el:"剛",cost:2,mean:"思いのままに自由に動きまわること",e:{d:6,h:4}},
+ {w:"東奔西走",y:"とうほんせいそう",el:"柔",cost:1,mean:"あちこち忙しく走りまわること",e:{dr:2,sh:6}},
+ {w:"一心不乱",y:"いっしんふらん",el:"智",cost:1,mean:"ひとつのことに心を集中すること",e:{at:6}},
+ {w:"因果応報",y:"いんがおうほう",el:"柔",cost:2,mean:"行いの善悪に応じた報いがあること",e:{sp:'reflect'}},
+ {w:"呉越同舟",y:"ごえつどうしゅう",el:"智",cost:1,mean:"敵どうしが同じ場に居合わせること",e:{d:16,sd:6}},
+ {w:"千差万別",y:"せんさばんべつ",el:"智",cost:2,mean:"どれもそれぞれ違っていること",e:{d:8,h:3,sp:'varied'}},
+ {w:"悪戦苦闘",y:"あくせんくとう",el:"剛",cost:1,mean:"苦しい状況で必死に戦うこと",e:{d:25,sd:5}},
+ {w:"起死回生",y:"きしかいせい",el:"柔",cost:3,mean:"絶望的な状況を一気に立て直すこと",e:{hp:40,sh:10}},
+ {w:"才色兼備",y:"さいしょくけんび",el:"智",cost:2,mean:"才能と美しさをあわせ持つこと",e:{at:3,sh:8}},
+ {w:"適材適所",y:"てきざいてきしょ",el:"智",cost:1,mean:"人を能力に合った場所に置くこと",e:{sp:'makeweak'}},
+ {w:"有言実行",y:"ゆうげんじっこう",el:"剛",cost:2,mean:"言ったことを必ずやりとげること",e:{d:15,at:8}},
+ {w:"前代未聞",y:"ぜんだいみもん",el:"智",cost:2,mean:"今まで聞いたこともない珍しいこと",e:{sp:'random'}},
+ {w:"針小棒大",y:"しんしょうぼうだい",el:"剛",cost:1,mean:"小さなことを大げさに言うこと",e:{d:8,sp:'repeat'}},
+ {w:"二束三文",y:"にそくさんもん",el:"柔",cost:0,mean:"数はあっても値打ちがひどく安いこと",e:{sp:'toss'}},
+ {w:"傍若無人",y:"ぼうじゃくぶじん",el:"剛",cost:2,mean:"人を気にせず勝手にふるまうこと",e:{d:24,sp:'noshield'}},
+ {w:"神出鬼没",y:"しんしゅつきぼつ",el:"柔",cost:1,mean:"自由に現れたり消えたりすること",e:{sp:'stun'}},
+ {w:"心機一転",y:"しんきいってん",el:"柔",cost:1,mean:"気持ちをすっかり切りかえること",e:{sp:'redraw'}},
+ {w:"質実剛健",y:"しつじつごうけん",el:"剛",cost:2,mean:"飾らず中身がしっかりして強いこと",e:{sh:18,at:2}},
+ {w:"天変地異",y:"てんぺんちい",el:"智",cost:3,mean:"自然界に起こる異常な出来事",e:{d:30,sp:'dispel'}},
+ {w:"弱肉強食",y:"じゃくにくきょうしょく",el:"剛",cost:2,mean:"強い者が弱い者をおさえて栄えること",e:{d:12,sp:'enemylow'}},
+ {w:"自業自得",y:"じごうじとく",el:"柔",cost:1,mean:"自分の行いの報いを自分が受けること",e:{sp:'mirror'}},
+ {w:"完全無欠",y:"かんぜんむけつ",el:"智",cost:3,mean:"欠点がまったくないこと",e:{sh:25,at:4}},
+ {w:"用意周到",y:"よういしゅうとう",el:"智",cost:1,mean:"すみずみまで準備が行き届くこと",e:{dr:3}},
+ {w:"単純明快",y:"たんじゅんめいかい",el:"剛",cost:1,mean:"わかりやすくはっきりしていること",e:{d:12,pi:1}},
+ {w:"泰然自若",y:"たいぜんじじゃく",el:"柔",cost:1,mean:"何があっても落ち着いていること",e:{sh:12,sp:'dispel'}},
+ {w:"一網打尽",y:"いちもうだじん",el:"剛",cost:2,mean:"仲間もろとも一度につかまえること",e:{d:4,sp:'handcount'}},
+ {w:"意気消沈",y:"いきしょうちん",el:"柔",cost:1,mean:"元気をなくして落ち込むこと",e:{ad:6}},
+ {w:"三日坊主",y:"みっかぼうず",el:"柔",cost:0,mean:"あきっぽくて長続きしないこと",e:{dr:3,sp:'recoil1'}},
+ {w:"才気煥発",y:"さいきかんぱつ",el:"智",cost:1,mean:"すぐれた才能があふれ出ること",e:{sp:'search'}},
+ {w:"一触即発",y:"いっしょくそくはつ",el:"剛",cost:2,mean:"ふれた途端に爆発しそうな危うさ",e:{d:18,sp:'crit'}},
+ {w:"換骨奪胎",y:"かんこつだったい",el:"智",cost:1,mean:"古いものを作りかえて自分のものにすること",e:{sp:'recycle'}},
+ {w:"一目瞭然",y:"いちもくりょうぜん",el:"智",cost:0,mean:"ひと目見ればはっきりわかること",e:{en:1,dr:1}},
+ {w:"五臓六腑",y:"ごぞうろっぷ",el:"柔",cost:2,mean:"からだの中すべて。心の底まで",e:{hp:30,sh:6}},
+ {w:"悠々自適",y:"ゆうゆうじてき",el:"柔",cost:1,mean:"思いのままにゆったり暮らすこと",e:{hp:15,sh:8}},
+ {w:"誠心誠意",y:"せいしんせいい",el:"智",cost:2,mean:"うそのない真心をつくすこと",e:{at:5,hp:10}},
+ {w:"竜頭蛇尾",y:"りゅうとうだび",el:"剛",cost:1,mean:"始めは勢いがよく終わりが振るわないこと",e:{d:28,sp:'slowdown'}},
+ {w:"森羅万象",y:"しんらばんしょう",el:"智",cost:3,mean:"この世に存在するすべてのもの",e:{d:10,sp:'allelem'}},
+ {w:"不撓不屈",y:"ふとうふくつ",el:"剛",cost:2,mean:"どんな困難にも心が折れないこと",e:{sh:6,sp:'endure'}},
+ {w:"百戦錬磨",y:"ひゃくせんれんま",el:"剛",cost:2,mean:"多くの経験を積んで鍛えられていること",e:{d:4,at:2,sp:'turnmul'}},
+ {w:"一朝一夕",y:"いっちょういっせき",el:"柔",cost:1,mean:"わずかな時間。ほんの短い期間",e:{en:1,dr:1}},
+ {w:"十中八九",y:"じゅっちゅうはっく",el:"智",cost:2,mean:"ほとんど間違いなくそうであること",e:{d:24}},
+ {w:"大同小異",y:"だいどうしょうい",el:"智",cost:1,mean:"細かい違いはあるがだいたい同じこと",e:{d:3,sp:'handcount'}},
+ {w:"言語道断",y:"ごんごどうだん",el:"剛",cost:2,mean:"言葉にできないほどひどいこと",e:{d:28}},
+ {w:"自画自賛",y:"じがじさん",el:"柔",cost:1,mean:"自分で自分をほめること",e:{at:4,hp:8}},
+ {w:"我田引水",y:"がでんいんすい",el:"柔",cost:2,mean:"自分の都合のいいように物事を運ぶこと",e:{sp:'steal'}},
+ {w:"一挙両得",y:"いっきょりょうとく",el:"剛",cost:2,mean:"一つの行動で二つの利益を得ること",e:{d:12,h:2,sp:'drop'}},
+ {w:"四苦八苦",y:"しくはっく",el:"剛",cost:2,mean:"とても苦しみもがくこと",e:{d:32,sd:8}},
+ {w:"音信不通",y:"おんしんふつう",el:"柔",cost:1,mean:"連絡がまったく取れないこと",e:{sp:'stun'}},
+ {w:"意味深長",y:"いみしんちょう",el:"智",cost:1,mean:"言葉の奥に深い意味があること",e:{dr:2,at:3}},
+ {w:"表裏一体",y:"ひょうりいったい",el:"柔",cost:2,mean:"二つのものが切り離せない関係にあること",e:{d:12,sh:12}},
+ {w:"独立独歩",y:"どくりつどっぽ",el:"剛",cost:1,mean:"人にたよらず自分の力で進むこと",e:{d:18,at:2}},
+ {w:"深謀遠慮",y:"しんぼうえんりょ",el:"智",cost:2,mean:"先の先まで深く考えて計画すること",e:{dr:3,sh:8}},
+ {w:"明鏡止水",y:"めいきょうしすい",el:"柔",cost:1,mean:"曇りのない静かな心のたとえ",e:{sh:10,sp:'dispel'}},
+ {w:"沈思黙考",y:"ちんしもっこう",el:"智",cost:1,mean:"黙ってじっくり考えこむこと",e:{en:2,dr:1}},
+ {w:"悪口雑言",y:"あっこうぞうごん",el:"剛",cost:1,mean:"思いつくままに悪口を言い並べること",e:{d:8,h:3}},
+ {w:"一部始終",y:"いちぶしじゅう",el:"智",cost:2,mean:"始めから終わりまでの全部",e:{d:5,sp:'turnmul'}},
+ {w:"異口同音",y:"いくどうおん",el:"智",cost:2,mean:"多くの人が口をそろえて同じことを言うこと",e:{d:8,sp:'allelem'}},
+ {w:"意気揚々",y:"いきようよう",el:"剛",cost:1,mean:"得意げで威勢がいいようす",e:{at:7}},
+ {w:"有名無実",y:"ゆうめいむじつ",el:"柔",cost:1,mean:"名前ばかりで中身がないこと",e:{ad:7}},
+ {w:"温厚篤実",y:"おんこうとくじつ",el:"柔",cost:2,mean:"おだやかで情に厚く誠実なこと",e:{hp:26,sh:8}},
+ {w:"岡目八目",y:"おかめはちもく",el:"智",cost:0,mean:"わきで見ている人のほうがよく分かること",e:{en:1,dr:2}},
+ {w:"花鳥風月",y:"かちょうふうげつ",el:"智",cost:2,mean:"自然の美しい風景や風流な遊び",e:{hp:15,sh:8,dr:2}},
+ {w:"頑固一徹",y:"がんこいってつ",el:"剛",cost:2,mean:"考えを曲げずおし通すこと",e:{sh:22,at:3}},
+ {w:"喜怒哀楽",y:"きどあいらく",el:"柔",cost:2,mean:"よろこび・いかり・かなしみ・たのしみ",e:{d:7,h:4,sp:'varied'}},
+ {w:"急転直下",y:"きゅうてんちょっか",el:"剛",cost:2,mean:"事態が急に変わって解決に向かうこと",e:{d:14,sp:'enemylow'}},
+ {w:"玉石混交",y:"ぎょくせきこんこう",el:"智",cost:1,mean:"すぐれたものとつまらぬものが混じること",e:{d:20,sp:'gamble'}},
+ {w:"金科玉条",y:"きんかぎょくじょう",el:"智",cost:2,mean:"絶対のよりどころとして守る決まり",e:{at:5,sh:10}},
+ {w:"空中楼閣",y:"くうちゅうろうかく",el:"柔",cost:1,mean:"根拠のない空想。しんきろうの楼閣",e:{sp:'fog'}},
+ {w:"群雄割拠",y:"ぐんゆうかっきょ",el:"剛",cost:2,mean:"多くの実力者が各地で勢力を張ること",e:{d:5,sp:'handcount'}},
+ {w:"鶏口牛後",y:"けいこうぎゅうご",el:"剛",cost:1,mean:"大集団の末より小集団の長がよいということ",e:{d:22,sp:'slowdown'}},
+ {w:"言行一致",y:"げんこういっち",el:"智",cost:2,mean:"言うこととすることが同じであること",e:{d:16,at:6}},
+ {w:"公明正大",y:"こうめいせいだい",el:"剛",cost:2,mean:"かくしごとなく正しく堂々としていること",e:{d:22,pi:1}},
+ {w:"極楽浄土",y:"ごくらくじょうど",el:"柔",cost:3,mean:"苦しみのない安らかな世界",e:{hp:45,sh:12}},
+ {w:"山紫水明",y:"さんしすいめい",el:"智",cost:1,mean:"山も水も美しい自然の風景",e:{hp:18,dr:1}},
+ {w:"私利私欲",y:"しりしよく",el:"柔",cost:1,mean:"自分の利益や欲だけを求めること",e:{d:12,sp:'drain'}},
+ {w:"首尾一貫",y:"しゅびいっかん",el:"智",cost:2,mean:"始めから終わりまで筋が通っていること",e:{d:9,sp:'story'}},
+ {w:"春夏秋冬",y:"しゅんかしゅうとう",el:"智",cost:3,mean:"四つの季節。一年を通してのこと",e:{d:11,dr:1,sp:'allelem'}},
+ {w:"純真無垢",y:"じゅんしんむく",el:"柔",cost:1,mean:"けがれがなく心が清らかなこと",e:{sh:16}},
+ {w:"枝葉末節",y:"しようまっせつ",el:"柔",cost:0,mean:"本筋から外れたささいな部分",e:{sp:'toss'}},
+ {w:"支離滅裂",y:"しりめつれつ",el:"智",cost:2,mean:"ばらばらで筋道が立たないこと",e:{d:6,h:5,sp:'varied'}},
+ {w:"心頭滅却",y:"しんとうめっきゃく",el:"柔",cost:2,mean:"雑念を消せば苦しみも感じないということ",e:{sh:8,sp:'endure'}},
+ {w:"迅速果断",y:"じんそくかだん",el:"剛",cost:0,mean:"すばやく思い切って決めること",e:{d:12,dr:1}},
+ {w:"晴耕雨読",y:"せいこううどく",el:"柔",cost:1,mean:"自然に合わせてのびのび暮らすこと",e:{hp:14,dr:2}},
+ {w:"清廉潔白",y:"せいれんけっぱく",el:"智",cost:1,mean:"心が清くやましいところがないこと",e:{sp:'dispel'}},
+ {w:"絶体絶命",y:"ぜったいぜつめい",el:"剛",cost:1,mean:"追いつめられて逃げ場のない状態",e:{d:14,sp:'lowhp'}},
+ {w:"千客万来",y:"せんきゃくばんらい",el:"智",cost:1,mean:"客がひっきりなしに来ること",e:{dr:3}},
+ {w:"前人未到",y:"ぜんじんみとう",el:"剛",cost:3,mean:"まだ誰も足を踏み入れていないこと",e:{d:40,sp:'once'}},
+ {w:"創意工夫",y:"そういくふう",el:"智",cost:1,mean:"新しい考えでよりよい方法を生むこと",e:{sp:'search'}},
+ {w:"大胆不敵",y:"だいたんふてき",el:"剛",cost:2,mean:"度胸があって何も恐れないこと",e:{d:30,sp:'noshield'}},
+ {w:"朝三暮四",y:"ちょうさんぼし",el:"柔",cost:1,mean:"目先の違いにこだわり本質を見失うこと",e:{ad:5,sh:8}},
+ {w:"徹頭徹尾",y:"てっとうてつび",el:"剛",cost:2,mean:"最初から最後まで貫きとおすこと",e:{d:6,sp:'turnmul'}},
+ {w:"独断専行",y:"どくだんせんこう",el:"剛",cost:2,mean:"ひとりで決めて勝手に進めること",e:{d:26,sp:'recoil1'}},
+ {w:"二人三脚",y:"ににんさんきゃく",el:"柔",cost:2,mean:"二人が力を合わせて進むこと",e:{sh:10,dr:2}},
+ {w:"日進月歩",y:"にっしんげっぽ",el:"智",cost:2,mean:"絶え間なく進歩し続けること",e:{sp:'grind3'}},
+ {w:"波乱万丈",y:"はらんばんじょう",el:"柔",cost:2,mean:"変化が激しく劇的であること",e:{d:26,sp:'gamble'}},
+ {w:"八方美人",y:"はっぽうびじん",el:"智",cost:2,mean:"誰にでも如才なく振る舞う人",e:{d:9,sp:'allelem'}},
+ {w:"品行方正",y:"ひんこうほうせい",el:"柔",cost:1,mean:"行いが正しくきちんとしていること",e:{sh:18}},
+ {w:"不言実行",y:"ふげんじっこう",el:"剛",cost:2,mean:"あれこれ言わずに黙って実行すること",e:{d:24,at:4}},
+ {w:"臨機応変",y:"りんきおうへん",el:"智",cost:1,mean:"その場に応じてうまく対応すること",e:{sp:'makeweak'}}
+];
+
+const KANJI = {};
+IDIOMS.forEach(o=>{ o.w.split("").forEach(c=>{ if(!KANJI[c]) KANJI[c]={c:c,el:o.el}; }); });
+const KANJI_LIST = Object.keys(KANJI);
+
+const CHAPTERS = [
+ {name:"誤読の森", nodes:["敵","宝","敵","泉","敵","主"],
+  foes:[
+   {n:"読みちがえ蟲", g:"mushi", hp:46, atk:8,  weak:"剛", pat:["atk","atk","buff"]},
+   {n:"空読みの鬼火", g:"onibi", hp:54, atk:9,  weak:"智", pat:["atk","guard","big"]},
+   {n:"略字のけもの", g:"kemono", hp:58, atk:10, weak:"柔", pat:["atk","atk","drain"]}],
+  boss:{n:"迷い蜘蛛", g:"kumo", hp:120, atk:12, weak:"剛", pat:["atk","buff","atk","big"]}},
+ {name:"曲解の谷", nodes:["敵","宝","敵","泉","敵","主"],
+  foes:[
+   {n:"曲解の影",   g:"kage", hp:64, atk:12, weak:"智", pat:["atk","big","guard"]},
+   {n:"早合点の猿", g:"saru", hp:62, atk:13, weak:"柔", pat:["atk","atk","drain"]},
+   {n:"揚げ足取り", g:"ashi", hp:70, atk:12, weak:"剛", pat:["guard","atk","buff","big"]}],
+  boss:{n:"曲解の大蛇", g:"orochi", hp:155, atk:15, weak:"柔", pat:["atk","buff","big","guard","atk"]}},
+ {name:"忘却の塔", nodes:["敵","宝","敵","泉","敵","主"],
+  foes:[
+   {n:"忘却の霧",   g:"kiri", hp:76, atk:14, weak:"柔", pat:["drain","atk","big"]},
+   {n:"空白の写本", g:"shahon", hp:82, atk:15, weak:"剛", pat:["guard","atk","atk","big"]},
+   {n:"語彙喰い",   g:"kuchi", hp:88, atk:15, weak:"智", pat:["atk","buff","big","atk"]}],
+  boss:{n:"忘却の王", g:"ou", hp:190, atk:18, weak:"智", pat:["atk","buff","big","drain","atk","big"]}},
+ {name:"虚言の関", nodes:["敵","宝","敵","泉","敵","主"],
+  foes:[
+   {n:"出まかせ唐傘", g:"karakasa", hp:95,  atk:17, weak:"智", pat:["atk","drain","big"]},
+   {n:"尾ひれ魚",     g:"ohire",    hp:100, atk:18, weak:"柔", pat:["atk","atk","buff","big"]},
+   {n:"ホラ吹き法螺貝", g:"horagai",hp:105, atk:18, weak:"剛", pat:["guard","big","atk","buff"]}],
+  boss:{n:"高慢天狗", g:"tengu", hp:225, atk:21, weak:"柔", pat:["atk","buff","big","guard","big","atk"]}},
+ {name:"悪態の郷", nodes:["敵","宝","敵","泉","敵","主"],
+  foes:[
+   {n:"悪態の鬼",   g:"oni",    hp:115, atk:20, weak:"柔", pat:["atk","big","buff"]},
+   {n:"嫉妬の般若", g:"hannya", hp:120, atk:21, weak:"剛", pat:["drain","atk","big","guard"]},
+   {n:"陰口の二口", g:"futakuchi",  hp:125, atk:21, weak:"智", pat:["guard","atk","drain","big"]}],
+  boss:{n:"甘言の九尾", g:"kitsune", hp:260, atk:24, weak:"剛", pat:["atk","drain","buff","big","guard","big"]}},
+ {name:"言霊の淵", nodes:["敵","宝","敵","泉","敵","主"],
+  foes:[
+   {n:"無言地蔵", g:"jizo",   hp:135, atk:23, weak:"剛", pat:["drain","big","atk","guard"]},
+   {n:"空筆の付喪神", g:"fude", hp:140, atk:24, weak:"智", pat:["guard","big","atk","buff"]},
+   {n:"万言の鐘", g:"kane",  hp:150, atk:25, weak:"柔", pat:["atk","buff","big","big"]}],
+  boss:{n:"言霊の龍", g:"ryu", hp:300, atk:28, weak:"智", pat:["atk","buff","big","guard","drain","big","atk"]}},
+ {name:"妄言の砂海", nodes:["敵","宝","敵","泉","敵","主"],
+  foes:[
+   {n:"蜃気楼の大蛤", g:"shin",     hp:165, atk:27, weak:"智", pat:["drain","big","guard","atk"]},
+   {n:"虚飾の鏡",     g:"kagami",   hp:175, atk:28, weak:"剛", pat:["atk","buff","big","big"]},
+   {n:"化かしの狸",   g:"tanuki",   hp:185, atk:28, weak:"柔", pat:["guard","atk","drain","big","buff"]}],
+  boss:{n:"闇夜の鵺", g:"nue", hp:340, atk:32, weak:"剛", pat:["atk","buff","big","drain","guard","big","big"]}},
+ {name:"沈黙の果て", nodes:["敵","宝","敵","泉","敵","主"],
+  foes:[
+   {n:"のっぺらぼう", g:"noppera", hp:200, atk:30, weak:"智", pat:["drain","atk","big","guard","big"]},
+   {n:"無字の石碑",   g:"hibun",   hp:210, atk:32, weak:"柔", pat:["guard","buff","big","atk","big"]},
+   {n:"喰らいの餓鬼", g:"gaki",    hp:220, atk:33, weak:"剛", pat:["atk","big","buff","big","drain"]}],
+  boss:{n:"言祖の鳳凰", g:"houou", hp:400, atk:36, weak:"柔", pat:["atk","buff","big","guard","drain","big","big","atk"]}}
+];
+
+
+/* =========================================================
+   音（和楽器風シンセ・外部ファイルなし）
+   ========================================================= */
+const AU = {ctx:null, mas:null, on:true, timer:null, cur:null, step:0, next:0, nz:null};
+function actx(){
+  if(!AU.ctx){
+    const C = window.AudioContext || window.webkitAudioContext;
+    if(!C) return null;
+    try{
+      AU.ctx = new C();
+      AU.mas = AU.ctx.createGain(); AU.mas.gain.value = 0.22; AU.mas.connect(AU.ctx.destination);
+      const len = AU.ctx.sampleRate*0.5, buf = AU.ctx.createBuffer(1,len,AU.ctx.sampleRate), d = buf.getChannelData(0);
+      for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+      AU.nz = buf;
+    }catch(e){ return null; }
+  }
+  if(AU.ctx.state === "suspended") AU.ctx.resume();
+  return AU.ctx;
+}
+function envGain(src,t,a,d,peak){
+  const g = AU.ctx.createGain();
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.linearRampToValueAtTime(peak,t+a);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+a+d);
+  src.connect(g); g.connect(AU.mas); return g;
+}
+/* 箏・三味線風の撥弦音 */
+function pluck(f,t,dur,vol){
+  const c = actx(); if(!c||!AU.on||!f) return;
+  const o = c.createOscillator(); o.type = "triangle"; o.frequency.setValueAtTime(f,t);
+  const o2 = c.createOscillator(); o2.type = "sine"; o2.frequency.setValueAtTime(f*2.02,t);
+  envGain(o,t,0.004,dur,vol||0.16); envGain(o2,t,0.003,dur*0.35,(vol||0.16)*0.45);
+  o.start(t); o.stop(t+dur+0.05); o2.start(t); o2.stop(t+dur*0.4+0.05);
+}
+function tone(f,t,dur,type,vol){
+  const c = actx(); if(!c||!AU.on||!f) return;
+  const o = c.createOscillator(); o.type = type||"square"; o.frequency.setValueAtTime(f,t);
+  envGain(o,t,0.005,dur,vol||0.14); o.start(t); o.stop(t+dur+0.05);
+}
+function slide(f1,f2,t,dur,type,vol){
+  const c = actx(); if(!c||!AU.on) return;
+  const o = c.createOscillator(); o.type = type||"sawtooth";
+  o.frequency.setValueAtTime(f1,t); o.frequency.exponentialRampToValueAtTime(Math.max(30,f2),t+dur);
+  envGain(o,t,0.005,dur,vol||0.14); o.start(t); o.stop(t+dur+0.05);
+}
+/* 鼓・太鼓風 */
+function drum(t,dur,vol,cut,q){
+  const c = actx(); if(!c||!AU.on||!AU.nz) return;
+  const src = c.createBufferSource(); src.buffer = AU.nz;
+  const bq = c.createBiquadFilter(); bq.type = "bandpass"; bq.frequency.value = cut||1200; bq.Q.value = q||1.2;
+  src.connect(bq); envGain(bq,t,0.002,dur,vol||0.12); src.start(t); src.stop(t+dur+0.05);
+}
+function sfx(name){
+  const c = actx(); if(!c||!AU.on) return;
+  const t = c.currentTime;
+  switch(name){
+    case "tap":   tone(1046,t,0.05,"square",0.09); break;
+    case "slash": drum(t,0.09,0.16,2600,0.8); slide(760,220,t,0.14,"square",0.12); break;
+    case "idiom": [0,3,7,12].forEach(function(n,i){ pluck(392*Math.pow(2,n/12),t+i*0.055,0.32,0.16); }); break;
+    case "craft": [0,2,7,9,12].forEach(function(n,i){ pluck(523*Math.pow(2,n/12),t+i*0.07,0.5,0.17); });
+                  drum(t,0.4,0.1,600,0.6); break;
+    case "ng":    tone(180,t,0.12,"square",0.12); tone(140,t+0.13,0.2,"square",0.12); break;
+    case "hurt":  drum(t,0.16,0.2,320,0.7); slide(300,90,t,0.22,"sawtooth",0.13); break;
+    case "heal":  [0,4,7].forEach(function(n,i){ pluck(523*Math.pow(2,n/12),t+i*0.08,0.45,0.14); }); break;
+    case "get":   pluck(784,t,0.25,0.15); pluck(1046,t+0.09,0.35,0.15); break;
+    case "gong":  drum(t,1.2,0.22,180,0.5); tone(98,t,1.1,"sine",0.16); tone(147,t+0.02,0.9,"sine",0.08); break;
+    case "win":   [0,4,7,12,7,12].forEach(function(n,i){ pluck(523*Math.pow(2,n/12),t+i*0.11,0.5,0.18); });
+                  drum(t,0.5,0.14,500,0.6); break;
+    case "lose":  [0,-2,-5,-9].forEach(function(n,i){ tone(392*Math.pow(2,n/12),t+i*0.18,0.4,"triangle",0.13); }); break;
+  }
+}
+/* ---- BGM（ヨナ抜き音階＝道中／都節音階＝戦闘） ---- */
+const TUNES = {
+ field:{bpm:104, root:293.66, sc:[0,2,4,7,9],
+   mel:[0,-1,2,-1,4,-1,2,0,-1,4,5,-1,4,2,-1,-1],
+   bas:[0,-1,-1,-1,2,-1,-1,-1,4,-1,-1,-1,2,-1,-1,-1],
+   per:[2,0,1,0,2,0,1,0,2,0,1,0,2,0,1,1]},
+ battle:{bpm:142, root:261.63, sc:[0,1,5,7,8],
+   mel:[0,2,-1,3,2,-1,0,-1,3,4,-1,3,2,0,-1,-1],
+   bas:[0,-1,0,-1,3,-1,3,-1,2,-1,2,-1,0,-1,0,-1],
+   per:[2,1,1,0,2,0,1,1,2,1,1,0,2,1,2,1]},
+ clear:{bpm:100, root:261.63, sc:[0,2,4,7,9],
+   mel:[5,-1,6,7,-1,8,-1,9,10,-1,9,-1,8,-1,7,-1],
+   bas:[0,-1,2,-1,4,-1,2,-1,0,-1,2,-1,4,-1,4,-1],
+   per:[2,0,1,0,2,0,1,1,2,0,1,0,2,1,2,1]},
+ boss:{bpm:152, root:196.00, sc:[0,1,5,7,8],
+   mel:[5,-1,6,-1,5,-1,9,8,7,-1,6,-1,5,-1,4,-1],
+   bas:[0,0,-1,0,0,0,-1,0,1,1,-1,1,0,0,-1,0],
+   per:[2,0,2,0,2,1,2,1,2,0,2,0,2,1,2,2]}
+};
+function freqOf(t,d){
+  if(d<0) return 0;
+  const n = t.sc.length, oct = Math.floor(d/n);
+  return t.root*Math.pow(2,(t.sc[((d%n)+n)%n]+12*oct)/12);
+}
+function stopSeq(){ if(AU.timer){ clearInterval(AU.timer); AU.timer=null; } }
+function playBGM(name){
+  if(AU.cur===name && AU.timer) return;
+  AU.cur = name; stopSeq();
+  if(!name || !AU.on || !actx()) return;
+  AU.step = 0; AU.next = AU.ctx.currentTime+0.08;
+  AU.timer = setInterval(seqTick,25);
+}
+function seqTick(){
+  const t = TUNES[AU.cur]; if(!t||!AU.ctx){ stopSeq(); return; }
+  const spb = 60/t.bpm/2;
+  while(AU.next < AU.ctx.currentTime+0.16){
+    const i = AU.step%16, at = AU.next;
+    if(t.mel[i]>=0) pluck(freqOf(t,t.mel[i]),at,spb*1.7,0.15);
+    if(t.bas[i]>=0) tone(freqOf(t,t.bas[i])/2,at,spb*1.3,"triangle",0.12);
+    if(t.per[i]) drum(at,0.07,t.per[i]===2?0.14:0.08,t.per[i]===2?260:1500,t.per[i]===2?0.6:1.4);
+    AU.next += spb; AU.step++;
+  }
+}
+function toggleSound(){
+  AU.on = !AU.on;
+  if(!AU.on){ stopSeq(); }
+  else { const c = AU.cur; AU.cur = null; playBGM(c||"field"); }
+  const b = document.getElementById("sndbtn");
+  if(b) b.textContent = AU.on ? "音 ON" : "音 OFF";
+}
+
+/* =========================================================
+   ゲーム状態
+   ========================================================= */
+const SPR = {
+  mushi:{p:["#140f2b","#8fd94f","#4a9130","#f6efdc","#1b1430"],r:["..1111..1111..",".122221122221.","12222222222221","12452452222221","12222222222221","13222332223321","12222222222221",".122222222221.","..1111111111..","..1..1..1..1.."]},
+  onibi:{p:["#071026","#8fe9ff","#2f7ad6","#0b1a3a","#ffd166"],r:["....11....","...1221...","..122221..",".12233221.","1223223221","1233433321","1232332321","1233333321",".12333321.","..122221..","...1221...","....11...."]},
+  kemono:{p:["#160d1f","#d98a3f","#8a4f22","#ffe98a","#f6efdc"],r:["11........11","1221......1221","122211..112221","1222221122221","1222222222221","123342233421","122222222222","112222222211",".1225555221.",".1252552521.","..11222211.","...1....1..."]},
+  kumo:{p:["#0b1220","#4a6ea8","#26406b","#d24b3a"],r:["2............2",".22........22.","..22......22..","...12222221...","..1223333221..","..1234443221..","..1233333321..","..1223333221..","...12222221...","..22......22..",".22..2..2..22.","2...2....2...2"]},
+  kage:{p:["#05070c","#243a58","#16233a","#d24b3a","#6f8fb5"],r:["...111111...","..12222221..",".1233333321.","123333333321","123343343321","123333333321","122333333221","152222222251","122222222221",".1222222221.",".1211221121.","..1......1.."]},
+  saru:{p:["#1a0f14","#b06a3a","#f0c39a","#5c3218","#e34a3a"],r:["..11....11..",".1221..1221.","112211112211","122222222221","123333333321","123133331321","123333333321","123353353321","123333333321","112333333211",".112222221.","..11....11.."]},
+  ashi:{p:["#1a1024","#d8a878","#a06a40","#e34a3a"],r:[".11.11.11..","1421421421.","1221221221.","12212212211","12222222221","12222222221","13222222231",".1222222221",".122222221.","..1222221..","...11111..."]},
+  orochi:{p:["#0b1a10","#4fb36b","#8a2233","#ffd166","#0b1a10","#f6efdc"],r:["..1........1..",".121......121.",".122111111221.","11222222222211","12452222225421","12222222222221","11222222222211",".113333333311.","..136333631...","...11111111...",".122222222221.","11322222223311",".111111111111."]},
+  kiri:{p:["#0e1024","#b9c2e8","#6b74a8","#ffffff","#2a3050"],r:["..111111..",".12222221.","1222222221","1225225221","1222222221","1223223221","1222222221","1322222231","1122222211","1.122221.1","..1.11.1.."]},
+  shahon:{p:["#141024","#f6efdc","#b9ae90","#8a3f3f","#ffd166"],r:["..44444444..",".4122222214.","412222222214","412222222214","412233332214","412233332214","412222222214","412222222214",".4122222214.","..44444444..","...1....1..."]},
+  kuchi:{p:["#12081a","#6b1030","#e34a3a","#f6efdc","#ffd166"],r:["..111111..",".13333331.","1355335531","1333333331","1144444411","1424242421","1222222221","1242424241","1144444411",".13333331.","..111111.."]},
+  ou:{p:["#0a0f18","#f3ead6","#b3a888","#d9a441","#d24b3a"],r:[".4..4..4..4.",".4444444444.",".4434434344.","..11111111..",".1222222221.","122222222221","122552255221","122552255221","122222222221","122212212221",".1222222221.",".1121212211.","..11111111.."]},
+  hero:{p:["#0e1420","#f0c9a0","#4a7fb5","#1b3a5c","#d24b3a"],r:["..1111..",".144441.","1122221","1121121","11222211",".133331.","13333331","13333331",".133331.",".13..31.",".11..11."]},
+  oni:{p:["#1a0a0c","#c8452f","#8f2f20","#d9a441","#f3ead6"],r:["..1......1..",".121....121.",".1221111221.","112222222211","122222222221","122442244221","122222222221","122211112221","112555555211",".1251515121.","..11222211..","...111111..."]},
+  tengu:{p:["#12080a","#c8452f","#1b2436","#f3ead6","#e8776a"],r:["..33333333..",".3333333333.","133222222331","122222222221","122442244221","122225522221","122225522221","122225522221","112225522211",".1225555221.","..11222211..","...111111..."]},
+  hannya:{p:["#14101c","#e8dcc4","#b9a888","#d9a441","#c8452f"],r:["..1......1..",".121....121.",".1221111221.","112222222211","122222222221","122442244221","122212212221","122222222221","115555555511",".1525252521.","..11555511..","...111111..."]},
+  karakasa:{p:["#14101c","#c8452f","#8f2f20","#f3ead6","#6b4f27"],r:[".....1.....","....121....","...12221...","..1232321..",".123232321.","12323232321","11111111111","...14441...","...14341...","...14441...","....555....","...55555..."]},
+  ryu:{p:["#0a1418","#4a8fa8","#2a5f75","#d9a441","#f3ead6"],r:["..1........1..",".121......121.",".122111111221.","11222222222211","12244222244221","12222222222221","11222222222211","22.12222221.22","..1155555511..","..1535353531..","..1155555511..","...11111111..."]},
+  kitsune:{p:["#1a1014","#f3ead6","#d9a441","#c8452f","#b9a888"],r:["11..........11","1221......1221","1223......3221","12233333333221",".122222222221.",".122442244221.",".122222222221.",".112233332211.","..1122222211..","...11222211...","....112211....",".33..1111..33.","3.3........3.3"]},
+  nue:{p:["#0d0a14","#5a4a3a","#8a7050","#d9a441","#f3ead6"],r:["..1........1..",".121......121.",".12211111121.","11222222222211","12244222244221","12222222222221","11222332222211",".122555552221.",".112535352211.","..1122222211.",".12332222331.","11322222223311",".1.11111111.1."]},
+  ohire:{p:["#0b1a24","#4a9fd8","#2a6ea8","#f3ead6","#d9a441"],r:["...111111.11..","..12222211551.",".1222222211551","12242222215551","12222222215551",".1222222211551","..12222211551.","...111111.11.."]},
+  horagai:{p:["#1a1208","#d8b878","#8a6a3a","#f3ead6","#c8452f"],r:[".....11.....","....1221....","...122221...","..12233221..",".1223223221.","122342243221","122322232221",".1225555221.","..11222211..","...111111..."]},
+  futakuchi:{p:["#14101c","#f0d8c0","#1b2436","#c8452f","#14101c"],r:[".3333333333.","333333333333","334444444433","334141414433","334444444433",".3333333333.","..13333331..",".1122222211.","122552255221","122222222221",".1224444221.","..11111111.."]},
+  jizo:{p:["#101418","#b8b8ac","#8a8a80","#c8452f","#6a6a62"],r:["...111111...","..12222221..",".1222222221.","122222222221","122112211221","122222222221","122221122221",".1222222221.","..11111111..",".1444444441.","144444444441","122222222221",".1111111111."]},
+  fude:{p:["#14100c","#6b4f27","#f3ead6","#1b2436","#d9a441"],r:["..1221..","..1221..","..1221..","..1221..",".152251.",".133331.","13433431","13433431","13333331",".133331.","..1331..","...11..."]},
+  kane:{p:["#12100a","#8a7a3a","#5a4a1a","#d9a441","#f3ead6"],r:["....1111....","...122221...","..11111111..",".1222222221.","122222222221","122552255221","122222222221","124222222421","122222222221","125555555521","111111111111",".1111111111."]},
+  shin:{p:["#0a141c","#a9c0d4","#6a8098","#f3ead6","#4a8fa8"],r:["..1......1..","...144441...","..14444441..",".1444444441.","112222222211","122333333221","111111111111","122333333221","112222222211",".1111111111."]},
+  kagami:{p:["#12141c","#d9a441","#c8d8e8","#6a8098","#f3ead6"],r:["...222222...","..22222222..",".2233333322.","223333333322","223353353322","223333333322","223343433322",".2233333322.","..22222222..","...222222...","....1221....","....1221...."]},
+  tanuki:{p:["#140f0a","#8a6a4a","#f3ead6","#1b2436","#6fa96b"],r:[".....55.....","....1551....","1221....1221","112222222211","122222222221","122442244221","123333333321","123313133321","112333333211","122333333221","122233332221",".1122222211.","..11....11.."]},
+  noppera:{p:["#0e1018","#eae2d2","#b8ae9a","#1b2436","#2a3550"],r:["...444444...","..44444444..",".4422222244.","142222222241","122222222221","122222222221","122222222221","122222222221",".1222222221.","..12222221..","..15555551..",".1555555551."]},
+  hibun:{p:["#0e1218","#9aa3a8","#6a7378","#d9a441","#3a4348"],r:["..111111..",".12222221.","1222222221","1222222221","1223223221","1224224221","1222222221","1223333221","1222222221","1122222211","1111111111",".11111111."]},
+  gaki:{p:["#140a10","#a86a5a","#6a3a30","#d9a441","#f3ead6"],r:["...111111...","..12222221..",".1244224421.",".1222222221.",".1155555511.",".1152525511.","..11111111..","1.12222221.1",".1222222221.","122222222221","122333332221",".1122222211.","..1.1..1.1.."]},
+  houou:{p:["#1a1208","#d9a441","#8a6a26","#c8452f","#f3ead6"],r:["......11......",".....1441.....","....112211....","....124421....","...11222211...",".112222222211.","11222222222211","13222222222231",".132222222231.","..1132222311..","....122221....","...12.22.21...","..4..1221..4..",".4...4..4...4."]},
+  i_foe:{p:["#0d0a1c","#e6ecff","#8a86b8"],r:[".11111.","1222221","1212121","1222221","1121211",".12221.",".1.1.1."]},
+  i_box:{p:["#120c14","#a9702c","#d9a441","#6b4116"],r:[".111111.","13222231","12222221","11133111","12232221","12232221",".111111."]},
+  i_spa:{p:["#0b1a2a","#4ba3e8","#8fe9ff"],r:["...11...","..1221..",".122221.","12233221","12222221",".122221.","..1111.."]},
+  i_boss:{p:["#1a1020","#ffd166","#e34a3a"],r:["2.2.2.2","2222222",".22222.",".21112.",".22222.","..222..","...2..."]}
+};
+const SPRC = {};
+function sprURL(key,f){
+  const k = key+"|"+f; if(SPRC[k]) return SPRC[k];
+  const sp = SPR[key]; if(!sp) return "";
+  const W=16,H=16, c=document.createElement("canvas"); c.width=W; c.height=H;
+  const g=c.getContext("2d"); if(!g) return "";
+  const rows=sp.r, center=key.indexOf("i_")===0;
+  const top=(center?Math.floor((H-rows.length)/2):H-rows.length-1)+f;
+  rows.forEach(function(row,y){
+    const pad=Math.floor((W-row.length)/2);
+    for(let x=0;x<row.length;x++){
+      const ch=row[x]; if(ch===".") continue;
+      g.fillStyle=sp.p[+ch-1]||"#f0f"; g.fillRect(pad+x, top+y, 1, 1);
+    }
+  });
+  return SPRC[k]=c.toDataURL();
+}
+function sprHTML(key,size,id){
+  return '<span class="spr" '+(id?'id="'+id+'"':'')+' style="width:'+size+'px;height:'+size+'px">'+
+    '<img src="'+sprURL(key,0)+'" alt=""><img src="'+sprURL(key,1)+'" alt=""></span>';
+}
+function flashFoe(){
+  const el=document.getElementById("foe-spr"), st=document.getElementById("stage");
+  if(el&&el.classList){ el.classList.add("flash"); setTimeout(function(){el.classList.remove("flash");},110); }
+  if(st&&st.classList){ st.classList.remove("shake"); void st.offsetWidth; st.classList.add("shake"); }
+}
+function popDamage(d,weak){
+  const host=document.getElementById("stage"); if(!host||!host.appendChild) return;
+  const n=document.createElement("div"); n.className="dmg"+(weak?" weak":"");
+  n.textContent=d; n.style.left=(34+Math.random()*30)+"%";
+  host.appendChild(n); setTimeout(function(){ if(n.remove) n.remove(); },900);
+}
+function bar(cur,max,cls){
+  return '<div class="bar '+(cls||"")+'"><i style="width:'+Math.max(0,cur)/max*100+'%"></i></div>';
+}
+
+const G = {
+  chapter:0, node:0, hp:70, maxhp:70, retry:0, hard:false, endless:false, depth:0, bestN:0, bestH:0,
+  inv:{},          // 漢字 -> 枚数
+  crafted:[],      // 錬成ずみ熟語 id
+  deckKanji:[],    // デッキに入れた漢字（重複あり）
+  deckIdiom:[],    // デッキに入れた熟語 id
+  cleared:false
+};
+const MAX_KANJI_DECK = 16, MAX_IDIOM_DECK = 8;
+function retryLimit(){ return G.hard ? 1 : 3; }
+const HARD = {hp:1.5, atk:1.35, power:3, drop:-1, spring:0.35};
+const STORY_LEN = 8;
+
+const SAVE_KEY = "yojijirensei-save";
+let SAVED = null, MEM_SAVE = null;
+function saveText(){
+  return JSON.stringify({v:1,ch:G.chapter,nd:G.node,hp:G.hp,mx:G.maxhp,rt:G.retry,hd:G.hard?1:0,ed:G.endless?1:0,dp:G.depth,bn:G.bestN,bh:G.bestH,
+    inv:G.inv,cr:G.crafted,dk:G.deckKanji,di:G.deckIdiom});
+}
+function saveGame(silent){
+  const txt = saveText(); MEM_SAVE = txt; SAVED = txt; let ok = false;
+  try{ if(window.storage && window.storage.set){ window.storage.set(SAVE_KEY, txt); ok = true; } }catch(e){}
+  if(!ok){ try{ localStorage.setItem(SAVE_KEY, txt); ok = true; }catch(e){} }
+  if(!silent){
+    if(ok) modal("記録した","ここまでの歩みを書き残した。<br>このまま冒険を続けるか、表紙にもどるか選ぼう。",
+      [{label:"このまま続ける"},{label:"表紙にもどる",act:"goHome();"}]);
+    else toast("この画面では記録を残せない");
+  }
+  return ok;
+}
+function probeSave(){
+  return Promise.resolve().then(function(){
+    if(window.storage && window.storage.get) return window.storage.get(SAVE_KEY);
+    return null;
+  }).then(function(r){
+    if(r && r.value) return r.value;
+    try{ return localStorage.getItem(SAVE_KEY); }catch(e){ return null; }
+  }).catch(function(){
+    try{ return localStorage.getItem(SAVE_KEY); }catch(e){ return null; }
+  });
+}
+function applySave(txt){
+  try{
+    const d = JSON.parse(txt); if(!d) return false;
+    G.chapter=Math.min(d.ch||0, CHAPTERS.length-1); G.node=d.nd||0; G.hp=d.hp||70; G.maxhp=d.mx||70; G.retry=d.rt||0;
+    G.hard=!!d.hd; G.endless=!!d.ed; G.depth=d.dp||0; G.bestN=d.bn||0; G.bestH=d.bh||0; G.cleared=false; ensureLayers();
+    G.inv=d.inv||{}; G.crafted=d.cr||[]; G.deckKanji=d.dk||[]; G.deckIdiom=d.di||[];
+    return true;
+  }catch(e){ return false; }
+}
+function continueGame(){
+  const txt = SAVED || MEM_SAVE;
+  if(!txt || !applySave(txt)) return toast("記録が見つからない");
+  actx(); playBGM("field"); sfx("get"); renderMap();
+}
+function showContinue(){
+  const b = document.getElementById("contbtn");
+  if(b && (SAVED||MEM_SAVE)) b.classList.remove("hidden");
+}
+function idiomOf(id){ return IDIOMS.find(function(o){ return o.w===id; }); }
+function invCount(){ return Object.values(G.inv).reduce((a,b)=>a+b,0); }
+function addKanji(c,n){
+  n = n||1; G.inv[c] = (G.inv[c]||0)+n; refillDeck();
+}
+function refillDeck(){
+  for(const c in G.inv){
+    while(deckKanjiCount(c) < G.inv[c] && G.deckKanji.length < MAX_KANJI_DECK) G.deckKanji.push(c);
+  }
+}
+function removeFromDeckKanji(c){
+  const i = G.deckKanji.indexOf(c); if(i>=0) G.deckKanji.splice(i,1);
+}
+function deckKanjiCount(c){ return G.deckKanji.filter(x=>x===c).length; }
+
+/* 未錬成の熟語のうち、あと少しで完成するものの不足漢字を優先して配る */
+function missingOf(idiom){
+  const need = {}; idiom.w.split("").forEach(c=>need[c]=(need[c]||0)+1);
+  const miss = [];
+  for(const c in need){ const lack = need[c]-(G.inv[c]||0); for(let i=0;i<lack;i++) miss.push(c); }
+  return miss;
+}
+function rollKanji(){
+  const pool = IDIOMS.filter(o=>!G.crafted.includes(o.w)).map(o=>({o,m:missingOf(o)})).filter(x=>x.m.length>0);
+  if(pool.length && Math.random()<0.7){
+    const min = Math.min(...pool.map(x=>x.m.length));
+    const near = pool.filter(x=>x.m.length<=min+1);
+    const pick = near[Math.floor(Math.random()*near.length)];
+    return pick.m[Math.floor(Math.random()*pick.m.length)];
+  }
+  return KANJI_LIST[Math.floor(Math.random()*KANJI_LIST.length)];
+}
+
+/* =========================================================
+   画面切り替え
+   ========================================================= */
+const SCREENS = ["title","map","battle","craft","dex","deck","result"];
+function go(name){
+  SCREENS.forEach(s=>document.getElementById("s-"+s).classList.toggle("hidden", s!==name));
+  window.scrollTo(0,0);
+}
+let toastTimer=null;
+function modal(title,msg,btns){
+  const host = document.getElementById("modal");
+  if(!host) return;
+  let html = '<div class="px panel box"><div class="label">'+esc(title)+'</div>'+
+    '<p class="muted" style="margin:8px 0 12px">'+msg+'</p>';
+  btns.forEach(function(b,i){
+    html += '<button class="btn '+(i===0?"primary":"")+'" style="margin-top:'+(i?7:0)+'px" '+
+      'onclick="closeModal();'+(b.act||"")+'">'+esc(b.label)+'</button>';
+  });
+  host.innerHTML = html+'</div>';
+  host.classList.remove("hidden");
+}
+function closeModal(){
+  const host = document.getElementById("modal");
+  if(host){ host.classList.add("hidden"); host.innerHTML=""; }
+}
+function goHome(){
+  paintTitle(); showContinue(); playBGM("field"); go("title");
+}
+function toast(msg){
+  const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),1800);
+}
+function esc(s){ return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+function topbar(title, back){
+  return '<div class="hud"><div class="t">'+esc(title)+'</div><div class="spacer"></div>'+
+    '<button class="btn ghost snd" id="sndbtn" onclick="toggleSound()">'+(AU.on?"音 ON":"音 OFF")+'</button>'+
+    (back?'<button class="btn ghost snd" onclick="'+back+'">もどる</button>':'')+'</div>';
+}
+
+const STARTER = ["一","石","石","二","鳥","電","光","火","以","心","心","伝","大","器","晩","成","髪","刀","直","入","載","遇","面","楚"];
+function paintTitle(){
+  const el = document.getElementById("title-parade");
+  if(el) el.innerHTML = ["mushi","onibi","kemono","kumo"].map(function(k){return sprHTML(k,44);}).join("");
+}
+function startGame(){
+  actx(); playBGM("field");
+  if(invCount()===0) STARTER.forEach(c=>addKanji(c));
+  renderMap();
+}
+
+/* =========================================================
+   マップ画面
+   ========================================================= */
+const NODE_CAP = {"敵":"敵","宝":"宝","泉":"泉","主":"主"};
+function genLayer(i){
+  const d = i - STORY_LEN + 1;
+  const pool = [];
+  CHAPTERS.slice(0,STORY_LEN).forEach(function(c){
+    c.foes.forEach(function(f){ pool.push(f); });
+    pool.push(c.boss);
+  });
+  const els = ["剛","柔","智"];
+  const pick = function(){ return pool[Math.floor(Math.random()*pool.length)]; };
+  const mk = function(f,boss){
+    const hpS = 1 + (d-1)*0.30, atS = 1 + (d-1)*0.14;
+    return {n:(boss?"深奥の":"")+f.n, g:f.g,
+      hp:Math.round((boss?260:120)*hpS), atk:Math.round((boss?28:23)*atS),
+      weak:els[Math.floor(Math.random()*3)], pat:f.pat};
+  };
+  return {name:"無限回廊 第"+d+"層", endless:true, nodes:["敵","宝","敵","泉","敵","主"],
+    foes:[mk(pick()),mk(pick()),mk(pick())], boss:mk(pick(),true)};
+}
+function ensureLayers(){
+  while(G.endless && CHAPTERS.length <= G.chapter) CHAPTERS.push(genLayer(CHAPTERS.length));
+}
+function startEndless(){
+  G.endless = true; report();
+  G.endless = true; G.hard = true; G.cleared = false;
+  G.chapter = STORY_LEN; G.node = 0; G.retry = 0; G.hp = G.maxhp;
+  ensureLayers(); saveGame(true);
+  toast("無限回廊がひらいた");
+  renderMap();
+}
+function foeAt(ci,ni){
+  const ch = CHAPTERS[ci], t = ch.nodes[ni];
+  if(t==="主") return ch.boss;
+  if(t!=="敵") return null;
+  const idx = [0,0,1,0,2][ni] || 0;
+  return ch.foes[Math.min(idx, ch.foes.length-1)];
+}
+const PAT_TEXT = {atk:"攻撃",big:"渾身の一撃",buff:"力をためる",guard:"身を固める",drain:"気力を吸う"};
+function renderMap(){
+  ensureLayers();
+  if(G.chapter >= CHAPTERS.length){ G.cleared = true; return renderEnding(); }
+  const ch = CHAPTERS[G.chapter];
+  document.body.className = "ch"+G.chapter;
+  playBGM("field");
+  const icon = {"敵":"i_foe","宝":"i_box","泉":"i_spa","主":"i_boss"};
+  let tiles = "";
+  ch.nodes.forEach(function(t,i){
+    const cls = i<G.node?"done":(i===G.node?"now":"");
+    tiles += '<div class="tile '+cls+'">'+
+      '<div class="you">'+(i===G.node?sprHTML("hero",28):"")+'</div>'+
+      '<div class="box">'+sprHTML(icon[t],24)+'</div><div class="n">'+(i+1)+'</div></div>';
+  });
+  const t = ch.nodes[G.node];
+  const label = {"敵":"すすむ ▶ たたかう","宝":"すすむ ▶ 宝をあける","泉":"すすむ ▶ 泉で休む","主":"すすむ ▶ 主に挑む"}[t];
+  const foe = foeAt(G.chapter, G.node);
+
+  let preview;
+  if(foe){
+    const pat = foe.pat.map(function(x){return PAT_TEXT[x];})
+      .filter(function(v,i,a){return a.indexOf(v)===i;}).join("・");
+    preview =
+      '<div class="label">この先にいる敵</div>'+
+      '<div class="foecard">'+sprHTML(foe.g,42)+
+        '<div class="foeinfo">'+
+          '<div class="foename">'+esc(foe.n)+(t==="主"?'　<span class="tag">主</span>':'')+'</div>'+
+          '<div class="statline">弱点 <span class="el-badge el-'+foe.weak+'">'+foe.weak+'</span>'+
+          '<span style="margin-left:8px">たいりょく '+foe.hp+'</span></div>'+
+          '<div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">行動：'+pat+'</div>'+
+        '</div>'+
+      '</div>';
+  }else{
+    preview = '<div class="label">この先にあるもの</div>'+
+      '<div class="foecard">'+sprHTML(icon[t],42)+
+        '<div class="foeinfo"><div class="foename">'+(t==="宝"?"宝箱":"いやしの泉")+'</div>'+
+        '<div class="muted">'+(t==="宝"?"漢字を6枚ひろえる":"たいりょくが半分ほど回復する")+'</div></div>'+
+      '</div>';
+  }
+  const rest = retryLimit() - G.retry;
+
+  document.getElementById("s-map").innerHTML =
+    '<div class="hud"><div class="t">四字錬成</div>'+
+    (G.endless?'<span class="tag hardtag">無限回廊</span>':(G.hard?'<span class="tag hardtag">修羅道</span>':''))+'<div class="spacer"></div>'+
+    '<button class="btn ghost snd" onclick="saveGame()">記録する</button>'+
+    '<button class="btn ghost snd" id="sndbtn" onclick="toggleSound()">'+(AU.on?"音 ON":"音 OFF")+'</button></div>'+
+    '<div class="scr-body">'+
+      '<div class="col-a">'+
+        '<div class="px panel">'+
+          '<div class="chaphead"><span class="num">第'+(G.chapter+1)+'章</span><h2>'+ch.name+'</h2></div>'+
+          '<div class="route">'+tiles+'</div>'+
+        '</div>'+
+        '<div class="px panel dark" style="margin-top:7px">'+
+          '<div class="statline"><span class="label">たいりょく</span>'+
+          '<span style="margin-left:auto">'+G.hp+' / '+G.maxhp+'</span></div>'+
+          bar(G.hp,G.maxhp)+
+          '<div class="statline" style="margin-top:6px"><span class="muted">漢字 '+invCount()+'枚／錬成 '+G.crafted.length+'・'+IDIOMS.length+'</span>'+
+          '<span class="tag" style="margin-left:auto">再挑戦のこり '+rest+'回</span></div>'+'<div class="statline" style="margin-top:4px"><span class="muted">'+(G.endless?'最深到達 第'+Math.max(G.depth,G.chapter-STORY_LEN)+'層　':'')+'得点 '+hubScore()+'</span></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="px panel col-b">'+preview+'</div>'+
+    '</div>'+
+    '<div class="scr-foot">'+
+      '<button class="btn primary" onclick="enterNode()">'+label+'</button>'+
+      '<div class="row">'+
+        '<button class="btn" onclick="renderCraft()">錬成所</button>'+
+        '<button class="btn" onclick="renderDeck()">編成</button>'+
+        '<button class="btn" onclick="renderDex()">図鑑</button></div>'+
+    '</div>';
+  go("map");
+}
+
+function enterNode(){
+  const ch = CHAPTERS[G.chapter], t = ch.nodes[G.node];
+  if(t==="宝"){
+    const got=[]; for(let i=0;i<(G.hard?4:6);i++){ const c=rollKanji(); addKanji(c); got.push(c); }
+    sfx("get");
+    toast("宝箱：" + got.join("・") + " を手に入れた");
+    G.node++; renderMap(); return;
+  }
+  if(t==="泉"){
+    G.hp = Math.min(G.maxhp, G.hp+Math.floor(G.maxhp*(G.hard?HARD.spring:0.5)));
+    sfx("heal");
+    toast("泉で休んだ。体力が回復した");
+    G.node++; renderMap(); return;
+  }
+  const foeIdx = [0,0,1,0,2][G.node] || 0;
+  const base = (t==="主") ? ch.boss : ch.foes[Math.min(foeIdx, ch.foes.length-1)];
+  startBattle(base, t==="主");
+}
+
+/* =========================================================
+   ステップ1・4：バトル
+   ========================================================= */
+let B = null;
+
+function buildDeck(){
+  const d = [];
+  G.deckKanji.forEach(c=>d.push({t:"k", c:c, el:KANJI[c].el}));
+  G.deckIdiom.forEach(id=>d.push({t:"i", id:id}));
+  if(d.length===0) d.push({t:"k", c:"一", el:"剛"});
+  return shuffle(d);
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function startBattle(foe, isBoss){
+  document.body.className = "ch"+G.chapter;
+  playBGM(isBoss?"boss":"battle"); if(isBoss) sfx("gong");
+  B = {
+    en:{n:foe.n,g:foe.g,
+        hp:Math.round(foe.hp*(G.hard?HARD.hp:1)), maxhp:Math.round(foe.hp*(G.hard?HARD.hp:1)),
+        atk:Math.round(foe.atk*(G.hard?HARD.atk:1)),
+        weak:foe.weak,pat:foe.pat,pi:0,buff:0,guard:0},
+    boss:!!isBoss, turn:0, energy:3, maxEnergy:3, penalty:0,
+    draw:buildDeck(), hand:[], discard:[], exhaust:[],
+    atkBuff:G.chapter*(G.hard?HARD.power:4), shield:0, grind:false, counter:null, poison:null,
+    fog:0, surround:0, storyN:0, grindOn:0, sel:[], log:[], over:false, lastDmg:0, taken:0, endure:false, atkDownNext:0
+  };
+  for(let i=0;i<5;i++) drawCard();
+  B.en.intent = B.en.pat[0];
+  startPlayerTurn(true);
+}
+
+function drawCard(){
+  if(B.hand.length>=9) return null;
+  if(B.draw.length===0){
+    if(B.discard.length===0) return null;
+    B.draw = shuffle(B.discard); B.discard = [];
+  }
+  const c = B.draw.pop(); B.hand.push(c); return c;
+}
+function log(s){ B.log.unshift(s); B.log = B.log.slice(0,3); }
+
+function startPlayerTurn(first){
+  B.turn++;
+  if(!first) for(let i=0;i<3;i++) drawCard();
+  B.energy = Math.max(0, B.maxEnergy - B.penalty); B.penalty = 0;
+  if(B.atkDownNext){ B.atkBuff = Math.max(0,B.atkBuff-B.atkDownNext); B.atkDownNext = 0; }
+  if(B.grind){ B.atkBuff += B.grind; log("たゆまぬ鍛錬：攻撃力が上がった（+"+B.atkBuff+"）"); }
+  if(B.poison && B.poison.t>0){
+    B.en.hp -= B.poison.d; B.poison.t--;
+    log("疑心暗鬼：敵は自分の影におびえ <b>"+B.poison.d+"</b> ダメージ");
+    if(B.poison.t<=0) B.poison=null;
+    if(B.en.hp<=0) return victory();
+  }
+  if(B.counter){
+    B.counter.t--;
+    if(B.counter.t<=0){
+      const d = B.counter.stored*2; B.counter=null;
+      if(d>0){ hitEnemy(d,null,true); log("臥薪嘗胆：たえた痛みを <b>"+d+"</b> ダメージで返した"); }
+      else log("臥薪嘗胆：構えを解いた");
+      if(B.en.hp<=0) return victory();
+    }
+  }
+  if(B.fog>0) B.fog--;
+  if(B.surround>0) B.surround--;
+  B.sel = [];
+  renderBattle();
+}
+
+function hitEnemy(base, el, ignoreGuard){
+  let d = base + B.atkBuff;
+  if(el && el===B.en.weak) d = Math.floor(d*1.5);
+  if(B.surround>0) d = Math.floor(d*1.4);
+  if(!ignoreGuard && B.en.guard>0){
+    const a = Math.min(B.en.guard, d); B.en.guard -= a; d -= a;
+  }
+  B.en.hp -= d; B.lastDmg = d;
+  flashFoe(); popDamage(d, !!(el && el===B.en.weak)); sfx("slash");
+  return d;
+}
+function hurtPlayer(raw){
+  let d = raw;
+  if(B.fog>0) d = Math.floor(d*0.6);
+  if(B.counter){ d = Math.floor(d*0.5); B.counter.stored += d; }
+  if(B.shield>0){ const a=Math.min(B.shield,d); B.shield-=a; d-=a; }
+  if(B.endure && G.hp-d<=0){ d = Math.max(0,G.hp-1); B.endure=false; log("不撓不屈：ぎりぎりで持ちこたえた"); }
+  G.hp -= d; B.taken += d; if(d>0) sfx("hurt"); return d;
+}
+
+/* --- カード選択 --- */
+function tapCard(i){
+  sfx("tap");
+  const p = B.sel.indexOf(i);
+  if(p>=0){ B.sel.splice(p,1); }
+  else{
+    const c = B.hand[i];
+    if(c.t==="i"){ B.sel = [i]; }
+    else{ if(B.sel.some(j=>B.hand[j].t==="i")) B.sel=[]; if(B.sel.length<4) B.sel.push(i); }
+  }
+  renderBattle();
+}
+
+function selWord(){ return B.sel.map(i=>B.hand[i]).filter(c=>c.t==="k").map(c=>c.c).join(""); }
+
+function useSelected(){
+  if(B.sel.length!==1) return;
+  const idx = B.sel[0], c = B.hand[idx];
+  if(c.t==="k"){
+    if(B.energy<1) return toast("気力が足りない");
+    B.energy--;
+    const d = hitEnemy(6, c.el);
+    log("「"+c.c+"」の一撃　<b>"+d+"</b> ダメージ");
+    B.discard.push(c); B.hand.splice(idx,1); B.sel=[];
+    afterAction();
+  }else{
+    playIdiom(idiomOf(c.id), idx);
+  }
+}
+
+function craftInBattle(){
+  const w = selWord();
+  if(w.length!==4) return;
+  const found = IDIOMS.find(o=>o.w===w);
+  if(!found){
+    sfx("ng");
+    log("その並びの熟語は伝わっていない…");
+    B.sel=[]; renderBattle(); toast("「"+w+"」という四字熟語はない");
+    return;
+  }
+  if(B.energy<1) return toast("気力が足りない");
+  B.energy--;
+  const idxs = B.sel.slice().sort((a,b)=>b-a);
+  idxs.forEach(i=>{ B.discard.push(B.hand[i]); B.hand.splice(i,1); });
+  B.sel=[];
+  sfx("craft");
+  log("<b>即席錬成</b>　"+found.w+"（"+found.y+"）！");
+  const newly = !G.crafted.includes(found.w);
+  if(newly){
+    G.crafted.push(found.w);
+    if(G.deckIdiom.length<MAX_IDIOM_DECK) G.deckIdiom.push(found.w);
+    toast(found.w+" を図鑑に登録した");
+  }
+  applyEffect(found);
+}
+
+function playIdiom(o, idx){
+  if(B.energy < o.cost) return toast("気力が足りない");
+  B.energy -= o.cost;
+  const card = B.hand[idx];
+  B.hand.splice(idx,1); B.sel=[];
+  if((o.e||{}).sp==="once") B.exhaust.push(card); else B.discard.push(card);
+  log("<b>"+o.w+"</b>（"+o.y+"）");
+  sfx("idiom");
+  applyEffect(o);
+}
+
+/* 熟語の威力は階層に応じて伸びる */
+function P(n){ return Math.max(1, Math.round(n*(1 + G.chapter*0.35))); }
+const SP_DESC = {
+ drop:"漢字を1枚ひろう", grind:"毎ターン攻撃力+2", grind3:"毎ターン攻撃力+3",
+ revenge:"3ターン被害半減。ためた分の2倍を返す", recoil:"次のターンの気力-2", recoil1:"次のターンの気力-1",
+ recall:"捨て札の熟語を1枚手札へ", fog:"3ターン敵の攻撃-40%", poison:"4ターン継続ダメージ",
+ once:"1回の戦闘で一度きり", surround:"3ターン敵の被ダメージ+40%",
+ dispel:"敵の強化とまもりを消す", guardbreak:"敵のまもりを断ち切る", steal:"敵の強化を奪う",
+ random:"錬成ずみからランダムに1つ発動", toss:"1枚すてて2枚ひく", noshield:"自分のまもりは0になる",
+ stun:"敵の次の行動を空ぶらせる", redraw:"手札を5枚ひきなおす", search:"山札から熟語を1枚手札へ",
+ recycle:"捨て札の漢字を3枚山札へ", endure:"一度だけHP1で耐える", makeweak:"弱点属性の漢字を1枚つくる",
+ slowdown:"次のターンは攻撃力-4", drain:"与えたダメージの半分を回復", varied:"ランダムな属性で当たる",
+ allelem:"剛・柔・智それぞれで当たる", crit:"敵が渾身の一撃を狙っていれば2倍",
+ lowhp:"自分のHPが少ないほど強い", enemylow:"敵のHPが減っているほど強い",
+ turnmul:"経過ターンに比例して強い", handcount:"手札の単字の数だけ重ねて当たる",
+ mirror:"敵の攻撃力とおなじダメージ", reflect:"受けたダメージの4割を返す",
+ repeat:"直前に与えたダメージをもう一度", story:"使うたび威力上昇", gamble:"五分五分で大化けする"
+};
+const SP_NOPLAIN = {mirror:1,reflect:1,repeat:1,turnmul:1,handcount:1,lowhp:1,enemylow:1,story:1};
+function fxText(o){
+  const e = o.e||{}, p = [];
+  if(e.d && !SP_NOPLAIN[e.sp]){
+    const v = P(e.d);
+    if(e.sp==="allelem") p.push("剛・柔・智で"+v+"ダメージずつ");
+    else p.push(v+"ダメージ"+((e.h||1)>1?"×"+e.h+"回":"")+(e.pi?"（まもり無視）":""));
+  }else if(e.d){
+    p.push("威力のもと "+P(e.d));
+  }
+  if(e.hp) p.push("HP"+P(e.hp)+"回復");
+  if(e.sh) p.push("まもり+"+P(e.sh));
+  if(e.sd) p.push("自分に"+P(e.sd)+"ダメージ");
+  if(e.at) p.push("攻撃力+"+e.at);
+  if(e.ad) p.push("敵の攻撃力-"+e.ad);
+  if(e.dr) p.push(e.dr+"枚ひく");
+  if(e.en) p.push("気力+"+e.en);
+  if(e.sp && SP_DESC[e.sp]) p.push(SP_DESC[e.sp]);
+  return p.join("。")+"。";
+}
+function applyEffect(o){
+  const e = o.e||{}, sp = e.sp||"";
+  let dmg = e.d ? P(e.d) : 0, hits = e.h||1, d = 0, note = "";
+
+  if(sp==="random"){
+    const pool = G.crafted.filter(function(x){ return x!==o.w; });
+    if(pool.length){
+      const pick = idiomOf(pool[Math.floor(Math.random()*pool.length)]);
+      log("前代未聞 →「"+pick.w+"」！");
+      return applyEffect(pick);
+    }
+    log("前代未聞：何も起こらなかった"); return afterAction();
+  }
+  if(sp==="lowhp")    dmg = P(e.d) + Math.floor((1-G.hp/G.maxhp)*P(e.d)*2.2);
+  if(sp==="enemylow") dmg = P(e.d) + Math.floor((1-Math.max(0,B.en.hp)/B.en.maxhp)*P(e.d)*2.2);
+  if(sp==="turnmul")  dmg = P(e.d)*B.turn;
+  if(sp==="handcount"){ hits = Math.max(1, B.hand.filter(function(c){return c.t==="k";}).length); }
+  if(sp==="mirror")   dmg = B.en.atk + B.en.buff;
+  if(sp==="reflect")  dmg = Math.floor(B.taken*0.4);
+  if(sp==="repeat")   dmg = B.lastDmg || P(e.d||8);
+  if(sp==="story"){ B.storyN = Math.min(4,B.storyN+1); dmg = P(e.d)*B.storyN;
+                    note = "（"+["起","承","転","結"][B.storyN-1]+"）"; }
+  if(sp==="gamble"){ if(Math.random()<0.5){ dmg=Math.round(dmg*1.8); note="（大あたり）"; }
+                     else { dmg=Math.round(dmg*0.4); drawCard(); note="（不発・1枚ドロー）"; } }
+  if(sp==="crit" && B.en.intent==="big"){ dmg = dmg*2; note="（機先を制した）"; }
+  if(sp==="guardbreak") B.en.guard = 0;
+  if(sp==="dispel"){ B.en.guard = 0; B.en.buff = 0; }
+  if(sp==="steal"){ B.atkBuff += B.en.buff; B.en.buff = 0; }
+  if(sp==="fog") B.fog = 3;
+  if(sp==="surround") B.surround = 3;
+  if(sp==="poison") B.poison = {d:P(6), t:4};
+  if(sp==="revenge") B.counter = {t:3, stored:0};
+  if(sp==="grind"){ B.grind = 2; B.atkBuff += 2; }
+  if(sp==="grind3"){ B.grind = 3; B.atkBuff += 3; }
+  if(sp==="endure") B.endure = true;
+  if(sp==="stun") B.en.intent = "none";
+  if(sp==="slowdown") B.atkDownNext = 4;
+  if(sp==="recoil") B.penalty += 2;
+  if(sp==="recoil1") B.penalty += 1;
+  if(sp==="recall"){
+    let at = -1;
+    for(let i=B.discard.length-1;i>=0;i--){ if(B.discard[i].t==="i"){ at=i; break; } }
+    if(at>=0){ const c=B.discard[at]; B.discard.splice(at,1); B.hand.push(c);
+      note += "／"+idiomOf(c.id).w+" をもどした"; }
+  }
+  if(sp==="search"){
+    let at = -1;
+    for(let i=B.draw.length-1;i>=0;i--){ if(B.draw[i].t==="i"){ at=i; break; } }
+    if(at>=0){ const c=B.draw[at]; B.draw.splice(at,1); B.hand.push(c);
+      note += "／"+idiomOf(c.id).w+" をひき当てた"; }
+  }
+  if(sp==="recycle"){
+    let n = 0;
+    for(let i=B.discard.length-1;i>=0 && n<3;i--){
+      if(B.discard[i].t==="k"){ B.draw.push(B.discard[i]); B.discard.splice(i,1); n++; }
+    }
+    shuffle(B.draw); note += "／"+n+"枚もどした";
+  }
+  if(sp==="makeweak"){
+    const pool = KANJI_LIST.filter(function(c){ return KANJI[c].el===B.en.weak; });
+    const c = pool[Math.floor(Math.random()*pool.length)];
+    B.hand.push({t:"k", c:c, el:B.en.weak}); note += "／「"+c+"」を得た";
+  }
+  if(sp==="toss"){
+    if(B.hand.length){ const i=Math.floor(Math.random()*B.hand.length); B.discard.push(B.hand[i]); B.hand.splice(i,1); }
+    drawCard(); drawCard();
+  }
+  if(sp==="redraw"){
+    B.discard = B.discard.concat(B.hand); B.hand = [];
+    for(let i=0;i<5;i++) drawCard();
+  }
+  if(sp==="drop"){ const c = rollKanji(); addKanji(c); note += "／「"+c+"」を拾った"; }
+
+  if(dmg>0){
+    if(sp==="varied"){
+      const es = ["剛","柔","智"];
+      for(let i=0;i<hits;i++) d += hitEnemy(dmg, es[Math.floor(Math.random()*3)], e.pi);
+    }else if(sp==="allelem"){
+      ["剛","柔","智"].forEach(function(x){ d += hitEnemy(dmg, x, e.pi); });
+    }else{
+      for(let i=0;i<hits;i++) d += hitEnemy(dmg, o.el, e.pi);
+    }
+  }
+  if(sp==="drain" && d>0){ G.hp = Math.min(G.maxhp, G.hp+Math.floor(d*0.5)); sfx("heal"); }
+  if(e.sd) G.hp -= P(e.sd);
+  if(e.hp){ G.hp = Math.min(G.maxhp, G.hp+P(e.hp)); sfx("heal"); }
+  if(e.sh) B.shield += P(e.sh);
+  if(sp==="noshield") B.shield = 0;
+  if(e.at) B.atkBuff += e.at;
+  if(e.ad) B.en.atk = Math.max(4, B.en.atk-e.ad);
+  if(e.dr) for(let i=0;i<e.dr;i++) drawCard();
+  if(e.en) B.energy += e.en;
+
+  log("<b>"+o.w+"</b>"+note+(d>0 ? "　<b>"+d+"</b> ダメージ" : ""));
+  afterAction();
+}
+
+function afterAction(){
+  if(B.en.hp<=0){ B.en.hp=0; return victory(); }
+  if(G.hp<=0){ G.hp=0; return defeat(); }
+  renderBattle();
+}
+
+function endTurn(){
+  if(B.over) return;
+  B.sel=[];
+  const it = B.en.intent;
+  if(it==="atk" || it==="big"){
+    const raw = Math.floor(B.en.atk*(it==="big"?1.7:1)) + B.en.buff;
+    const d = hurtPlayer(raw);
+    log(B.en.n+"の"+(it==="big"?"渾身の一撃":"攻撃")+"　<b>"+d+"</b> ダメージ");
+  }else if(it==="buff"){ B.en.buff = Math.min(12, B.en.buff+4); log(B.en.n+"は力をためた（攻撃+4）"); }
+  else if(it==="guard"){ B.en.guard += 14; log(B.en.n+"は身を固めた（守り+14）"); }
+  else if(it==="drain"){ B.penalty += 1; log(B.en.n+"は言葉を吸い取った（次のターン気力-1）"); }
+  else { log(B.en.n+"は ようすを見ている"); }
+
+  if(G.hp<=0){ G.hp=0; return defeat(); }
+  B.en.pi = (B.en.pi+1) % B.en.pat.length;
+  B.en.intent = B.en.pat[B.en.pi];
+  startPlayerTurn(false);
+}
+
+/* --- バトル描画 --- */
+const INTENT_TEXT = {none:"ようすを見ている", atk:"攻撃してくる", big:"渾身の一撃をねらう", buff:"力をためている", guard:"身を固めようとしている", drain:"気力を吸おうとしている"};
+function renderBattle(){
+  const e = B.en;
+  let chips = "";
+  if(B.atkBuff>0) chips += '<span>言葉の力+'+B.atkBuff+'</span>';
+  if(B.shield>0) chips += '<span>まもり '+B.shield+'</span>';
+  if(B.counter) chips += '<span>臥薪嘗胆 '+B.counter.t+'</span>';
+  if(B.fog>0) chips += '<span>五里霧中 '+B.fog+'</span>';
+  if(B.surround>0) chips += '<span>四面楚歌 '+B.surround+'</span>';
+  if(B.poison) chips += '<span>疑心暗鬼 '+B.poison.t+'</span>';
+  if(e.guard>0) chips += '<span class="bad">敵のまもり '+e.guard+'</span>';
+  if(e.buff>0) chips += '<span class="bad">敵の攻撃+'+e.buff+'</span>';
+
+  let hand = "";
+  B.hand.forEach(function(c,i){
+    const sel = B.sel.indexOf(i);
+    if(c.t==="k"){
+      hand += '<button class="seal '+(sel>=0?"sel":"")+'" onclick="tapCard('+i+')">'+
+        '<span class="el dot-'+c.el+'"></span>'+c.c+
+        (sel>=0?'<span class="ord">'+(sel+1)+'</span>':'')+'</button>';
+    }else{
+      const o = idiomOf(c.id);
+      hand += '<button class="card '+(sel>=0?"sel":"")+'" onclick="tapCard('+i+')">'+
+        '<div class="cardtop"><span class="name">'+o.w+'</span><span class="cost-badge">'+o.cost+'</span></div>'+
+        '<div class="fx">'+esc(fxText(o))+'</div>'+
+        '<div><span class="el-badge el-'+o.el+'">'+o.el+'</span></div></button>';
+    }
+  });
+
+  const w = selWord();
+  const canCraft = B.sel.length===4 && w.length===4;
+  const one = B.sel.length===1 ? B.hand[B.sel[0]] : null;
+  let useLabel = "カードをえらぶ";
+  if(one) useLabel = one.t==="k" ? "「"+one.c+"」でこうげき" : idiomOf(one.id).w+" をとなえる";
+  let pips=""; for(let i=0;i<Math.max(3,B.energy);i++) pips += '<span class="pip '+(i<B.energy?"on":"")+'"></span>';
+
+  document.getElementById("s-battle").innerHTML =
+   '<div class="hud"><div class="t">'+esc(e.n)+'</div><div class="spacer"></div>'+
+   '<span class="tag">'+B.turn+'ターン</span><span class="tag">山札 '+B.draw.length+'</span>'+
+   '<button class="btn ghost snd" id="sndbtn" onclick="toggleSound()">'+(AU.on?"音 ON":"音 OFF")+'</button></div>'+
+   '<div class="scr-body">'+
+     '<div class="col-a">'+
+       '<div class="stage" id="stage">'+
+         '<div class="moon"></div><div class="wave"></div><div class="ground"></div><div class="shadow"></div>'+
+         '<div class="foe">'+sprHTML(e.g,128,"foe-spr")+'</div>'+
+         '<div class="bubble">つぎの動き：'+INTENT_TEXT[e.intent]+'</div>'+
+       '</div>'+
+       '<div class="px panel dark" style="padding:7px 10px">'+
+         '<div class="statline"><span class="label">敵</span>'+
+         '<span class="el-badge el-'+e.weak+'">弱点 '+e.weak+'</span>'+
+         '<span style="margin-left:auto">'+Math.max(0,e.hp)+' / '+e.maxhp+'</span></div>'+
+         bar(e.hp,e.maxhp,"foe")+
+       '</div>'+
+     '</div>'+
+     '<div class="px panel col-b">'+
+       '<div class="statline"><span class="label">たいりょく</span><span style="margin-left:auto">'+G.hp+' / '+G.maxhp+'</span></div>'+
+       bar(G.hp,G.maxhp)+
+       '<div class="statline" style="margin-top:7px"><span class="label">きりょく</span><div class="pips">'+pips+'</div></div>'+
+       (chips?'<div class="chips">'+chips+'</div>':'')+
+       '<div class="hr"></div><div class="log">'+B.log.map(function(l){return "・"+l;}).join("<br>")+'</div>'+
+     '</div>'+
+   '</div>'+
+   '<div class="scr-foot">'+
+     '<div class="hand">'+hand+'</div>'+
+     '<div class="actionbar">'+
+       '<button class="btn primary" onclick="useSelected()" '+(B.sel.length===1?"":"disabled")+'>'+esc(useLabel)+'</button>'+
+       (B.sel.length>1 ? '<button class="btn" onclick="craftInBattle()" '+(canCraft?"":"disabled")+'>錬成する</button>':'')+
+     '</div>'+
+     '<button class="btn ghost" onclick="endTurn()">ターンをおえる</button>'+
+   '</div>';
+  go("battle");
+}
+
+function victory(){
+  B.over = true;
+  stopSeq(); AU.cur=null; sfx("win");
+  const drops = []; const n = (B.boss?7:4)+(G.hard?HARD.drop:0);
+  for(let i=0;i<n;i++){ const c=rollKanji(); addKanji(c); drops.push(c); }
+  if(B.boss) G.hp = G.maxhp;
+  const tiles = drops.map(function(c){
+    return '<div class="k" style="width:48px"><span class="el dot-'+KANJI[c].el+'"></span>'+c+'</div>';
+  }).join("");
+  document.getElementById("s-result").innerHTML =
+    topbar("しょうり") +
+    '<div class="scr-body"><div class="px panel grow" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">'+
+      sprHTML(B.en.g,88)+
+      '<div style="font-size:18px;color:var(--kin);margin-top:8px">'+esc(B.en.n)+' をたおした</div>'+
+      '<div class="hr" style="width:80%"></div><div class="label">てにいれた漢字</div>'+
+      '<div style="display:flex;gap:6px;justify-content:center;margin-top:8px">'+tiles+'</div>'+
+    '</div></div>'+
+    '<div class="scr-foot"><button class="btn primary" onclick="nextNode()">さきへ進む</button>'+
+    '<div class="row"><button class="btn" onclick="renderCraft()">錬成所</button>'+
+    '<button class="btn" onclick="renderDex()">図鑑</button></div></div>';
+  go("result");
+}
+
+function defeat(){
+  B.over = true;
+  stopSeq(); AU.cur=null; sfx("lose");
+  const rest = retryLimit() - G.retry;
+  const canRetry = rest > 0;
+  document.getElementById("s-result").innerHTML =
+    topbar("ぜんめつ") +
+    '<div class="scr-body"><div class="px panel grow" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">'+
+      '<div style="font-size:19px">言葉がとどかなかった</div>'+
+      '<div class="hr" style="width:80%"></div>'+
+      (canRetry
+        ? '<p class="muted" style="margin:0">この階層で休めるのは あと <span class="near">'+rest+'回</span>。<br>使い切ると第'+(G.chapter+1)+'章の最初からやり直しになる。</p>'
+        : '<p class="muted" style="margin:0">休む力は尽きた。<br>第'+(G.chapter+1)+'章「'+CHAPTERS[G.chapter].name+'」の最初からやり直そう。</p>')+
+    '</div></div>'+
+    '<div class="scr-foot">'+
+      (canRetry
+        ? '<button class="btn primary" onclick="retryNode()">休んで再挑戦（のこり'+rest+'回）</button>'
+        : '<button class="btn primary" onclick="restartChapter()">第'+(G.chapter+1)+'章の最初から</button>')+
+      '<div class="row"><button class="btn" onclick="renderCraft()">錬成所</button>'+
+      '<button class="btn" onclick="renderDeck()">編成</button></div>'+
+    '</div>';
+  go("result");
+}
+
+function nextNode(){
+  G.node++;
+  if(G.node >= CHAPTERS[G.chapter].nodes.length){
+    G.chapter++; G.node = 0; G.retry = 0; G.maxhp += 15; G.hp = G.maxhp;
+    if(G.endless){
+      ensureLayers();
+      G.depth = Math.max(G.depth, G.chapter - STORY_LEN);
+    }else if(G.hard){
+      G.bestH = Math.max(G.bestH, Math.min(STORY_LEN, G.chapter));
+    }else{
+      G.bestN = Math.max(G.bestN, Math.min(STORY_LEN, G.chapter));
+    }
+    if(!G.endless && G.chapter >= CHAPTERS.length){ G.cleared = true; return renderEnding(); }
+    toast("第"+(G.chapter+1)+"章「"+CHAPTERS[G.chapter].name+"」へ");
+  }
+  report(); saveGame(true);
+  renderMap();
+}
+function retryNode(){ G.retry++; G.hp = G.maxhp; saveGame(true); renderMap(); }
+function restartChapter(){
+  G.retry = 0; G.node = 0; G.hp = G.maxhp;
+  toast("第"+(G.chapter+1)+"章の最初からやり直し");
+  saveGame(true); renderMap();
+}
+
+function resetAll(){
+  G.chapter=0; G.node=0; G.maxhp=70; G.hp=70; G.retry=0; G.hard=false; G.cleared=false;
+  G.endless=false; G.depth=0; G.bestN=0; G.bestH=0; CHAPTERS.length=STORY_LEN;
+  G.inv={}; G.crafted=[]; G.deckKanji=[]; G.deckIdiom=[]; CRAFT=[];
+  MEM_SAVE=null; SAVED=null;
+  try{ if(window.storage && window.storage.delete) window.storage.delete(SAVE_KEY); }catch(e){}
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  const b=document.getElementById("contbtn"); if(b) b.classList.add("hidden");
+  toast("記憶を消した");
+  goHome();
+}
+function startHard(){
+  G.hard=true; G.endless=false; G.cleared=false; G.chapter=0; G.node=0; G.retry=0; G.maxhp=70; G.hp=70;
+  CRAFT=[]; refillDeck(); saveGame(true);
+  toast("修羅道がひらいた");
+  renderMap();
+}
+function renderHardEnding(){
+  report(); playBGM("clear");
+  document.getElementById("s-result").innerHTML =
+    topbar("修羅道 踏破") +
+    '<div class="scr-body"><div class="px panel grow celebox">'+ confetti() +
+      '<div class="celeinner">'+
+        '<div class="shukuseal">祝</div>'+
+        '<div class="logo"><span>四</span><span>字</span><span>錬</span><span>成</span></div>'+
+        '<div class="celetitle">修羅道を踏破した！</div>'+
+        '<div class="muted" style="margin-top:4px">言葉の力が、闇のすべてを照らしきった</div>'+
+        '<div class="hr" style="width:70%"></div>'+
+        '<div class="statline" style="justify-content:center;gap:14px">'+
+          '<span>錬成 <span class="near">'+G.crafted.length+' / '+IDIOMS.length+'</span></span>'+
+          '<span>体力 <span class="near">'+G.maxhp+'</span></span>'+'<span>得点 <span class="near">'+hubScore()+'</span></span>'+
+        '</div>'+
+        '<div class="muted" style="margin-top:8px;max-width:340px">この先に果てはない。<br>無限回廊は潜るほど敵が強くなり、記録だけが残る。</div>'+
+      '</div>'+
+    '</div></div>'+
+    '<div class="scr-foot">'+
+      '<button class="btn primary" onclick="startEndless()">無限回廊へ挑む</button>'+
+      '<button class="btn" onclick="resetAll()">記憶を消して 最初から</button>'+
+      '<button class="btn ghost" onclick="renderDex()">図鑑をみる</button>'+
+    '</div>';
+  go("result");
+}
+function confetti(){
+  const cols = ["#d9a441","#c8452f","#f3ead6","#4a8fa8","#6fa96b"];
+  let h = '<div class="celebrate">';
+  for(let i=0;i<22;i++){
+    h += '<i style="left:'+Math.round(Math.random()*96)+'%;background:'+cols[i%5]+
+         ';animation-duration:'+(1.6+Math.random()*1.8).toFixed(2)+'s;animation-delay:'+
+         (Math.random()*2).toFixed(2)+'s"></i>';
+  }
+  return h+'</div>';
+}
+function renderEnding(){
+  report(); stopSeq(); AU.cur=null; sfx("win");
+  if(G.hard) return renderHardEnding();
+  document.getElementById("s-result").innerHTML =
+    topbar("クリア") +
+    '<div class="scr-body"><div class="px panel grow" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px">'+
+      '<div class="logo"><span>四</span><span>字</span><span>錬</span><span>成</span></div>'+
+      '<div style="font-size:18px;color:var(--kin)">'+(G.hard?"修羅道を踏破した":"言葉が国にもどった")+'</div>'+
+      '<div class="muted">錬成した熟語　'+G.crafted.length+' / '+IDIOMS.length+'</div>'+
+      (G.hard?'':'<p class="muted" style="margin:6px 0 0;max-width:340px">修羅道＝敵は強く・回復は乏しく・休めるのは一度きり。集めた漢字と熟語はそのまま持ち越せる。</p>')+
+    '</div></div>'+
+    '<div class="scr-foot">'+
+      (G.hard
+        ? '<button class="btn primary" onclick="resetAll()">記憶を消して 最初から</button>'
+        : '<button class="btn primary" onclick="startHard()">記憶を継いで 修羅道へ</button>'+
+          '<button class="btn" onclick="resetAll()">記憶を消して 最初から</button>')+
+      '<button class="btn ghost" onclick="renderDex()">図鑑をみる</button>'+
+    '</div>';
+  go("result");
+}
+
+/* =========================================================
+   錬成所
+   ========================================================= */
+let CRAFT = [];
+function renderCraft(){
+  playBGM("field");
+  const w = CRAFT.join("");
+  const hit = w.length===4 ? IDIOMS.find(function(o){return o.w===w;}) : null;
+  let slots = "";
+  for(let i=0;i<4;i++) slots += '<div class="slot '+(CRAFT[i]?"filled":"")+'" onclick="craftPop('+i+')">'+(CRAFT[i]||"")+'</div>';
+  const keys = Object.keys(G.inv).filter(function(c){return G.inv[c]>0;}).sort();
+  let inv = keys.map(function(c){
+    const left = G.inv[c] - CRAFT.filter(function(x){return x===c;}).length;
+    return '<button class="k '+(left<=0?"off":"")+'" onclick="craftPush(\''+c+'\')">'+
+      '<span class="el dot-'+KANJI[c].el+'"></span>'+c+'<span class="n">'+left+'</span></button>';
+  }).join("");
+  if(!inv) inv = '<p class="muted">まだ漢字がない。ダンジョンで拾ってこよう。</p>';
+  const near = IDIOMS.filter(function(o){return !G.crafted.includes(o.w);})
+    .map(function(o){return {o:o,m:missingOf(o).length};})
+    .filter(function(x){return x.m<=1;}).sort(function(a,b){return a.m-b.m;}).slice(0,3);
+  let hint = near.map(function(x){
+    return '<div class="muted">・'+x.o.mean+'　<span class="near">'+(x.m===0?"いま錬成できる":"あと1文字")+'</span></div>';
+  }).join("");
+  if(!hint) hint = '<div class="muted">・手がかりが少ない。漢字を集めよう。</div>';
+  document.getElementById("s-craft").innerHTML =
+    topbar("錬成所", "backFromSub()") +
+    '<div class="scr-body">'+
+      '<div class="px panel col-a">'+
+        '<div class="label">錬成陣　左上から右へ、順に四文字</div>'+
+        '<div class="circle '+(hit?"ok":"")+'">'+slots+'</div>'+
+        (hit?'<p class="muted" style="text-align:center;margin:0">'+esc(hit.mean)+'</p>'
+            :'<div style="margin-top:4px">'+hint+'</div>')+
+      '</div>'+
+      '<div class="px panel dark col-b grow" style="display:flex;flex-direction:column">'+
+        '<div class="label" style="flex:0 0 auto">手持ちの漢字</div>'+
+        '<div class="pane grow" style="margin-top:6px"><div class="inv">'+inv+'</div></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="scr-foot"><button class="btn primary" onclick="doCraft()" '+(CRAFT.length===4?"":"disabled")+'>錬成する</button></div>';
+  go("craft");
+}
+function craftPush(c){
+  if(CRAFT.length>=4) return;
+  const left = G.inv[c] - CRAFT.filter(x=>x===c).length;
+  if(left<=0) return;
+  CRAFT.push(c); renderCraft();
+}
+function craftPop(i){ if(CRAFT[i]!==undefined){ CRAFT.splice(i,1); renderCraft(); } }
+function doCraft(){
+  const w = CRAFT.join("");
+  const found = IDIOMS.find(o=>o.w===w);
+  if(!found){ sfx("ng"); toast("「"+w+"」という四字熟語はない。並びを見直そう"); return; }
+  if(G.crafted.includes(found.w)){ toast("すでに錬成ずみ。別の熟語をねらおう"); return; }
+  CRAFT.forEach(c=>{ G.inv[c]--; if(G.inv[c]<=0) delete G.inv[c]; removeFromDeckKanji(c); });
+  CRAFT = [];
+  G.crafted.push(found.w);
+  if(G.deckIdiom.length<MAX_IDIOM_DECK) G.deckIdiom.push(found.w);
+  refillDeck(); saveGame(true);
+  sfx("craft");
+  toast(found.w+"（"+found.y+"）を錬成した");
+  report();
+  renderCraft();
+}
+function backFromSub(){ if(B && !B.over) renderBattle(); else renderMap(); }
+
+/* =========================================================
+   編成
+   ========================================================= */
+function renderDeck(){
+  playBGM("field");
+  const keys = Object.keys(G.inv).filter(function(c){return G.inv[c]>0;}).sort();
+  let inv = keys.map(function(c){
+    const n = deckKanjiCount(c);
+    return '<button class="k '+(n?"":"off")+'" onclick="toggleKanji(\''+c+'\')">'+
+      '<span class="el dot-'+KANJI[c].el+'"></span>'+c+'<span class="n">'+n+'/'+G.inv[c]+'</span></button>';
+  }).join("") || '<p class="muted">漢字がない。</p>';
+  let idm = G.crafted.map(function(id){
+    const o = idiomOf(id), on = G.deckIdiom.includes(id);
+    return '<button class="card" style="width:100%;margin-bottom:6px;opacity:'+(on?1:.35)+'" onclick="toggleIdiom(\''+id+'\')">'+
+      '<div class="cardtop"><span class="name">'+o.w+'</span><span class="cost-badge">'+o.cost+'</span></div>'+
+      '<div class="fx">'+esc(fxText(o))+'</div></button>';
+  }).join("") || '<p class="muted">まだ熟語カードがない。錬成所へ。</p>';
+  document.getElementById("s-deck").innerHTML =
+    topbar("編成", "backFromSub()") +
+    '<div class="scr-body"><div class="pane grow">'+
+      '<div class="px panel" style="margin-bottom:7px"><div class="label">単字カード　'+G.deckKanji.length+' / '+MAX_KANJI_DECK+'</div>'+
+        '<p class="muted" style="margin:5px 0 8px">戦闘中に4枚そろえば、その場で錬成できる。</p>'+
+        '<div class="inv">'+inv+'</div></div>'+
+      '<div class="px panel dark"><div class="label">熟語カード　'+G.deckIdiom.length+' / '+MAX_IDIOM_DECK+'</div>'+
+        '<div style="margin-top:7px">'+idm+'</div></div>'+
+    '</div></div>'+
+    '<div class="scr-foot"><button class="btn" onclick="backFromSub()">とじる</button></div>';
+  go("deck");
+}
+function toggleKanji(c){
+  const inDeck = deckKanjiCount(c);
+  if(inDeck < G.inv[c] && G.deckKanji.length < MAX_KANJI_DECK) G.deckKanji.push(c);
+  else if(inDeck>0) { while(deckKanjiCount(c)>0) removeFromDeckKanji(c); }
+  else toast("デッキがいっぱい");
+  renderDeck();
+}
+function toggleIdiom(id){
+  const i = G.deckIdiom.indexOf(id);
+  if(i>=0) G.deckIdiom.splice(i,1);
+  else if(G.deckIdiom.length<MAX_IDIOM_DECK) G.deckIdiom.push(id);
+  else toast("熟語カードは"+MAX_IDIOM_DECK+"枚まで");
+  renderDeck();
+}
+
+/* =========================================================
+   図鑑
+   ========================================================= */
+function renderDex(){
+  playBGM("field");
+  const items = IDIOMS.map(function(o){
+    const got = G.crafted.includes(o.w);
+    const miss = missingOf(o).length;
+    const word = got ? o.w : o.w.split("").map(function(c){ return G.inv[c]?c:'<span class="mask">〇</span>'; }).join("");
+    return '<div class="dex-item '+(got?"got":"")+'">'+
+      '<div class="dex-word">'+word+'</div>'+
+      (got?'<div class="dex-yomi">'+o.y+'</div>':'')+
+      '<div class="muted" style="margin-top:3px">'+esc(o.mean)+'</div>'+
+      (got?'<div class="muted" style="color:var(--aijiro)">効果：'+esc(o.fx)+'</div>'
+          :'<div class="near">'+(miss===0?"いま錬成できる":"あと"+miss+"文字")+'</div>')+
+    '</div>';
+  }).join("");
+  document.getElementById("s-dex").innerHTML =
+    topbar("熟語図鑑 "+G.crafted.length+"/"+IDIOMS.length, "backFromSub()") +
+    '<div class="scr-body"><div class="pane grow"><div class="dexgrid">'+items+'</div></div></div>'+
+    '<div class="scr-foot"><button class="btn" onclick="backFromSub()">とじる</button></div>';
+  go("dex");
+}
+
+/* =========================================================
+   まなびの基板への記録送信（あれば）
+   ========================================================= */
+try{ paintTitle(); }catch(e){}
+try{ probeSave().then(function(v){ SAVED = v; showContinue(); }); }catch(e){}
+const HUB_KEY = "yojijirensei";
+const HUB_URL = "https://backtree-create.github.io/ManabiBox/";
+/* 通常クリア5000（8章に等分）／修羅道クリア100000（8章に等分）／無限回廊は1層3000 */
+function hubScore(){
+  return Math.round(5000/STORY_LEN*G.bestN + 100000/STORY_LEN*G.bestH + 3000*G.depth);
+}
+function hubNote(){
+  return "通常 "+G.bestN+"/"+STORY_LEN+"章　修羅道 "+G.bestH+"/"+STORY_LEN+"章"+
+    (G.depth?"　無限回廊 第"+G.depth+"層":"")+"　錬成 "+G.crafted.length+"/"+IDIOMS.length;
+}
+function report(){
+  try{
+    const H = window.LearnHub;
+    if(!H || typeof H.report !== "function") return;
+    const sc = hubScore();
+    const payload = {key:HUB_KEY, done:Math.min(STORY_LEN*2, G.bestN+G.bestH), total:STORY_LEN*2,
+      score:sc, best:sc, points:sc, note:hubNote()};
+    if(H.report.length >= 2) H.report(HUB_KEY, payload); else H.report(payload);
+  }catch(e){}
+}
+function goHub(){
+  report();
+  try{ location.href = HUB_URL; }catch(e){}
+}
+</script>
+</body>
+</html>
