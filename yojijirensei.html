@@ -1190,23 +1190,30 @@ const SP_DESC = {
  random:"錬成ずみからランダムに1つ発動", toss:"1枚すてて2枚ひく", noshield:"自分のまもりは0になる",
  stun:"敵の次の行動を空ぶらせる", redraw:"手札を5枚ひきなおす", search:"山札から熟語を1枚手札へ",
  recycle:"捨て札の漢字を3枚山札へ", endure:"一度だけHP1で耐える", makeweak:"弱点属性の漢字を1枚つくる",
- slowdown:"次のターンは攻撃力-4", drain:"与えたダメージの半分を回復", varied:"ランダムな属性で当たる",
- allelem:"剛・柔・智それぞれで当たる", crit:"敵が渾身の一撃を狙っていれば2倍",
- lowhp:"自分のHPが少ないほど強い", enemylow:"敵のHPが減っているほど強い",
- turnmul:"経過ターンに比例して強い", handcount:"手札の単字の数だけ重ねて当たる",
- mirror:"敵の攻撃力とおなじダメージ", reflect:"受けたダメージの4割を返す",
- repeat:"直前に与えたダメージをもう一度", story:"使うたび威力上昇", gamble:"五分五分で大化けする"
-};
-const SP_NOPLAIN = {mirror:1,reflect:1,repeat:1,turnmul:1,handcount:1,lowhp:1,enemylow:1,story:1};
+ slowdown:"次のターンは攻撃力-4", drain:"与えたダメージの半分を回復", };
+const SP_DMG = {turnmul:1,handcount:1,lowhp:1,enemylow:1,story:1,mirror:1,
+  reflect:1,repeat:1,allelem:1,varied:1,gamble:1,crit:1};
+function dmgText(o){
+  const e = o.e||{}, v = e.d ? P(e.d) : 0, h = e.h||1, sp = e.sp||"";
+  switch(sp){
+    case "turnmul":   return "経過ターン×"+v+"ダメージ";
+    case "handcount": return "手札の単字1枚につき"+v+"ダメージ";
+    case "lowhp":     return v+"〜"+(v+Math.floor(v*2.2))+"ダメージ（自分のHPが少ないほど大きい）";
+    case "enemylow":  return v+"〜"+(v+Math.floor(v*2.2))+"ダメージ（敵のHPが減っているほど大きい）";
+    case "story":     return "唱えるたび "+v+"→"+(v*2)+"→"+(v*3)+"→"+(v*4)+"ダメージ";
+    case "mirror":    return "敵の攻撃力とおなじダメージ";
+    case "reflect":   return "これまで受けたダメージの4割を返す";
+    case "repeat":    return "直前にあたえたダメージをもう一度";
+    case "allelem":   return "剛・柔・智で"+v+"ダメージずつ";
+    case "varied":    return v+"ダメージ×"+h+"回（属性はランダム）";
+    case "gamble":    return "五分五分で "+Math.round(v*1.8)+" か "+Math.round(v*0.4)+"ダメージ（低いほうなら1枚ドロー）";
+    case "crit":      return v+"ダメージ。敵が渾身の一撃を狙っていれば "+(v*2);
+    default:          return v+"ダメージ"+(h>1?"×"+h+"回":"")+(e.pi?"（まもり無視）":"");
+  }
+}
 function fxText(o){
   const e = o.e||{}, p = [];
-  if(e.d && !SP_NOPLAIN[e.sp]){
-    const v = P(e.d);
-    if(e.sp==="allelem") p.push("剛・柔・智で"+v+"ダメージずつ");
-    else p.push(v+"ダメージ"+((e.h||1)>1?"×"+e.h+"回":"")+(e.pi?"（まもり無視）":""));
-  }else if(e.d){
-    p.push("威力のもと "+P(e.d));
-  }
+  if(e.d || SP_DMG[e.sp]) p.push(dmgText(o));
   if(e.hp) p.push("HP"+P(e.hp)+"回復");
   if(e.sh) p.push("まもり+"+P(e.sh));
   if(e.sd) p.push("自分に"+P(e.sd)+"ダメージ");
