@@ -190,6 +190,12 @@ body::before{
 .slot{aspect-ratio:1/1.1;background:#080d15;border:3px dashed #2a5580;cursor:pointer;
   display:flex;align-items:center;justify-content:center;font-size:30px;color:#2a5580}
 .slot.filled{background:#e7dcc0;border:3px solid #6b4f27;color:#1d1a12}
+.k .u{position:absolute;top:5px;left:2px;font-size:10px;font-weight:700;line-height:1}
+.u0{color:#c8452f}.u1{color:#2f6b3a}.u2{color:#8a7f66}.u3{color:#b9b0a0}
+.grouphead{font-size:12px;color:var(--kin);margin:8px 0 4px;border-bottom:1px solid var(--ai2);padding-bottom:2px}
+.grouphead:first-child{margin-top:0}
+.sortrow{display:flex;gap:6px;flex:0 0 auto}
+.sortrow .btn{flex:1;padding:5px 6px;font-size:12px}
 .inv{display:grid;grid-template-columns:repeat(auto-fill,minmax(48px,1fr));gap:6px}
 .k{aspect-ratio:1/1.06;position:relative;cursor:pointer;font-family:inherit;font-size:23px;
   background:#e7dcc0;border:3px solid #6b4f27;color:#1d1a12;
@@ -747,6 +753,7 @@ function bar(cur,max,cls){
 
 const G = {
   chapter:0, node:0, hp:70, maxhp:70, retry:0, hard:false, endless:false, depth:0, bestN:0, bestH:0,
+  plus:{},
   inv:{},          // 漢字 -> 枚数
   crafted:[],      // 錬成ずみ熟語 id
   deckKanji:[],    // デッキに入れた漢字（重複あり）
@@ -754,6 +761,7 @@ const G = {
   cleared:false
 };
 const BASE_KANJI_DECK = 16, BASE_IDIOM_DECK = 8;
+const MAX_PLUS = 5;
 const RANKS = [
   {n:30,  t:"初伝", d:"単字デッキ枠+2"},
   {n:60,  t:"中伝", d:"毎ターンの気力+1"},
@@ -803,7 +811,7 @@ const STORY_LEN = 8;
 const SAVE_KEY = "yojijirensei-save";
 let SAVED = null, MEM_SAVE = null;
 function saveText(){
-  return JSON.stringify({v:1,ch:G.chapter,nd:G.node,hp:G.hp,mx:G.maxhp,rt:G.retry,hd:G.hard?1:0,ed:G.endless?1:0,dp:G.depth,bn:G.bestN,bh:G.bestH,
+  return JSON.stringify({v:1,ch:G.chapter,nd:G.node,hp:G.hp,mx:G.maxhp,rt:G.retry,hd:G.hard?1:0,ed:G.endless?1:0,dp:G.depth,bn:G.bestN,bh:G.bestH,pl:G.plus,
     inv:G.inv,cr:G.crafted,dk:G.deckKanji,di:G.deckIdiom});
 }
 function saveGame(silent){
@@ -828,12 +836,43 @@ function probeSave(){
     try{ return localStorage.getItem(SAVE_KEY); }catch(e){ return null; }
   });
 }
+/* 旧版のセーブ（英字IDで熟語を保存していた頃）を今の表記へ移す */
+const OLD_IDS = {two:"一石二鳥",grind:"切磋琢磨",revenge:"臥薪嘗胆",charge:"猪突猛進",recall:"温故知新",
+ telepathy:"以心伝心",varied:"十人十色",fog:"五里霧中",doubt:"疑心暗鬼",once:"一期一会",surround:"四面楚歌",
+ pinch:"危機一髪",direct:"単刀直入",late:"大器晩成",half:"半信半疑",flash:"電光石火",guardup:"油断大敵",
+ rise:"七転八起",story:"起承転結",chance:"千載一遇",ittou:"一刀両断",juuou:"縦横無尽",touhon:"東奔西走",
+ isshin:"一心不乱",inga:"因果応報",goetsu:"呉越同舟",sensa:"千差万別",akusen:"悪戦苦闘",kishi:"起死回生",
+ saishoku:"才色兼備",tekizai:"適材適所",yuugen:"有言実行",zendai:"前代未聞",shinshou:"針小棒大",
+ nisoku:"二束三文",boujaku:"傍若無人",shinshutsu:"神出鬼没",shinki:"心機一転",shitsujitsu:"質実剛健",
+ tenpen:"天変地異",jakuniku:"弱肉強食",jigou:"自業自得",kanzen:"完全無欠",youi:"用意周到",tanjun:"単純明快",
+ taizen:"泰然自若",ichimou:"一網打尽",iki:"意気消沈",mikka:"三日坊主",saiki:"才気煥発",isshoku:"一触即発",
+ kankotsu:"換骨奪胎",ichimoku:"一目瞭然",gozou:"五臓六腑",yuuyuu:"悠々自適",seishin:"誠心誠意",
+ ryuutou:"竜頭蛇尾",shinra:"森羅万象",futou:"不撓不屈",hyakusen:"百戦錬磨"};
+function toWord(x){ return OLD_IDS[x] || x; }
+/* 壊れた項目を落として、読み込んだ記録を安全な状態にそろえる */
+function sanitizeSave(){
+  G.crafted = (G.crafted||[]).map(toWord).filter(function(w){ return !!idiomOf(w); });
+  G.crafted = G.crafted.filter(function(w,i){ return G.crafted.indexOf(w)===i; });
+  G.deckIdiom = (G.deckIdiom||[]).map(toWord)
+    .filter(function(w){ return idiomOf(w) && G.crafted.indexOf(w)>=0; })
+    .slice(0, maxIdiomDeck());
+  G.deckKanji = (G.deckKanji||[]).filter(function(c){ return !!KANJI[c]; }).slice(0, maxKanjiDeck());
+  const inv = {};
+  for(const c in G.inv){ if(KANJI[c] && G.inv[c]>0) inv[c] = G.inv[c]; }
+  G.inv = inv;
+  const pl = {};
+  for(const k in (G.plus||{})){ const w = toWord(k); if(idiomOf(w)) pl[w] = Math.min(MAX_PLUS, G.plus[k]|0); }
+  G.plus = pl;
+  G.rankShown = rankLv();
+}
 function applySave(txt){
   try{
     const d = JSON.parse(txt); if(!d) return false;
     G.chapter=Math.min(d.ch||0, CHAPTERS.length-1); G.node=d.nd||0; G.hp=d.hp||70; G.maxhp=d.mx||70; G.retry=d.rt||0;
     G.hard=!!d.hd; G.endless=!!d.ed; G.depth=d.dp||0; G.bestN=d.bn||0; G.bestH=d.bh||0; G.cleared=false; ensureLayers();
     G.inv=d.inv||{}; G.crafted=d.cr||[]; G.deckKanji=d.dk||[]; G.deckIdiom=d.di||[];
+    G.plus=d.pl||{};
+    sanitizeSave();
     return true;
   }catch(e){ return false; }
 }
@@ -961,26 +1000,41 @@ function paintTitle(){
   const el = document.getElementById("title-parade");
   if(el) el.innerHTML = ["mushi","onibi","kemono","kumo"].map(function(k){return sprHTML(k,44);}).join("");
 }
-function startGame(hard){
+function resetRun(hard){
+  G.chapter=0; G.node=0; G.retry=0; G.cleared=false; G.endless=false; G.hard=!!hard;
+  G.inv={}; G.crafted=[]; G.deckKanji=[]; G.deckIdiom=[]; G.plus={};
+  G.bestN=0; G.bestH=0; G.depth=0; G.dexDone=false; G.dexPending=false;
+  CRAFT=[]; B=null; CHAPTERS.length=STORY_LEN;
+}
+function startFresh(hard){
   actx(); playBGM("field");
-  if(invCount()===0){
-    const b = legacyBonus();
-    G.hard = !!hard;
-    G.maxhp = 70 + b.hp; G.hp = G.maxhp;
-    STARTER.forEach(function(c){ addKanji(c); });
-    for(let i=0;i<b.kanji;i++) addKanji(rollKanji());
-    G.rankShown = rankLv();
-    if(b.hp || b.kanji || rankLv()){
-      modal("継承の恩恵",
-        "石碑に刻まれた功績が、新たな旅を助ける。<br>"+
-        (b.hp?"最大体力 <span class=\"near\">+"+b.hp+"</span>　":"")+
-        (b.kanji?"はじめの漢字 <span class=\"near\">+"+b.kanji+"枚</span>　":"")+
-        (rankLv()?"言の葉の位 <span class=\"near\">"+rankName()+"</span>":"")+
-        "<br><span class=\"muted\">そのぶん、妖怪たちも手ごわくなっている。</span>",
-        [{label:"旅に出る"}]);
-    }
-  }
+  resetRun(hard);
+  const b = legacyBonus();
+  G.maxhp = 70 + b.hp; G.hp = G.maxhp;
+  STARTER.forEach(function(c){ addKanji(c); });
+  for(let i=0;i<b.kanji;i++) addKanji(rollKanji());
+  G.rankShown = rankLv();
+  saveGame(true);
   renderMap();
+  if(b.hp || b.kanji || rankLv()){
+    modal("継承の恩恵",
+      "石碑に刻まれた功績が、新たな旅を助ける。<br>"+
+      (b.hp?"最大体力 <span class=\"near\">+"+b.hp+"</span>　":"")+
+      (b.kanji?"はじめの漢字 <span class=\"near\">+"+b.kanji+"枚</span>　":"")+
+      (rankLv()?"言の葉の位 <span class=\"near\">"+rankName()+"</span>":"")+
+      "<br><span class=\"muted\">そのぶん、妖怪たちも手ごわくなっている。</span>",
+      [{label:"旅に出る"}]);
+  }
+}
+function startGame(hard){
+  actx();
+  const running = !!(SAVED || MEM_SAVE || invCount()>0);
+  if(!running) return startFresh(hard);
+  modal(hard ? "修羅道ではじめる" : "はじめから遊ぶ",
+    "いまの記録（進行と手持ちの漢字・熟語）は消えて、第1章からやり直しになります。<br>"+
+    "石碑の功績と言の葉の位は残ります。<br><br>本当によろしいですか？",
+    [{label:"はじめる", act: hard ? "startFresh(true);" : "startFresh();"},
+     {label:"やめる"}]);
 }
 
 /* =========================================================
@@ -1128,7 +1182,7 @@ let B = null;
 function buildDeck(){
   const d = [];
   G.deckKanji.forEach(c=>d.push({t:"k", c:c, el:KANJI[c].el}));
-  G.deckIdiom.forEach(id=>d.push({t:"i", id:id}));
+  G.deckIdiom.forEach(function(id){ if(idiomOf(id)) d.push({t:"i", id:id}); });
   if(d.length===0) d.push({t:"k", c:"一", el:"剛"});
   return shuffle(d);
 }
@@ -1263,6 +1317,9 @@ function craftInBattle(){
     if(G.deckIdiom.length<maxIdiomDeck()) G.deckIdiom.push(found.w);
     toast(found.w+" を図鑑に登録した");
     checkRank();
+  }else if(plusOf(found) < MAX_PLUS){
+    G.plus[found.w] = plusOf(found)+1;
+    toast(found.w+" を練り上げた（+"+G.plus[found.w]+"）");
   }
   applyEffect(found);
 }
@@ -1280,6 +1337,11 @@ function playIdiom(o, idx){
 
 /* 熟語の威力は階層に応じて伸びる */
 function P(n){ return Math.max(1, Math.round(n*(1 + G.chapter*0.35))); }
+/* 練り上げ（同じ熟語をもう一度錬成すると強くなる） */
+function plusOf(o){ return (G.plus && G.plus[o.w]) ? G.plus[o.w] : 0; }
+function P2(o,n){ return Math.max(1, Math.round(P(n)*(1 + 0.12*plusOf(o)))); }
+function plusTotal(){ let n=0; for(const k in (G.plus||{})) n += G.plus[k]; return n; }
+function cardName(o){ const pl = plusOf(o); return o.w + (pl? " +"+pl : ""); }
 const SP_DESC = {
  drop:"漢字を1枚ひろう", grind:"毎ターン攻撃力+2", grind3:"毎ターン攻撃力+3",
  revenge:"3ターン被害半減。ためた分の2倍を返す", recoil:"次のターンの気力-2", recoil1:"次のターンの気力-1",
@@ -1293,7 +1355,7 @@ const SP_DESC = {
 const SP_DMG = {turnmul:1,handcount:1,lowhp:1,enemylow:1,story:1,mirror:1,
   reflect:1,repeat:1,allelem:1,varied:1,gamble:1,crit:1};
 function dmgText(o){
-  const e = o.e||{}, v = e.d ? P(e.d) : 0, h = e.h||1, sp = e.sp||"";
+  const e = o.e||{}, v = e.d ? P2(o,e.d) : 0, h = e.h||1, sp = e.sp||"";
   switch(sp){
     case "turnmul":   return "経過ターン×"+v+"ダメージ";
     case "handcount": return "手札の単字1枚につき"+v+"ダメージ";
@@ -1313,9 +1375,9 @@ function dmgText(o){
 function fxText(o){
   const e = o.e||{}, p = [];
   if(e.d || SP_DMG[e.sp]) p.push(dmgText(o));
-  if(e.hp) p.push("HP"+P(e.hp)+"回復");
-  if(e.sh) p.push("まもり+"+P(e.sh));
-  if(e.sd) p.push("自分に"+P(e.sd)+"ダメージ");
+  if(e.hp) p.push("HP"+P2(o,e.hp)+"回復");
+  if(e.sh) p.push("まもり+"+P2(o,e.sh));
+  if(e.sd) p.push("自分に"+P2(o,e.sd)+"ダメージ");
   if(e.at) p.push("攻撃力+"+e.at);
   if(e.ad) p.push("敵の攻撃力-"+e.ad);
   if(e.dr) p.push(e.dr+"枚ひく");
@@ -1325,7 +1387,7 @@ function fxText(o){
 }
 function applyEffect(o){
   const e = o.e||{}, sp = e.sp||"";
-  let dmg = e.d ? P(e.d) : 0, hits = e.h||1, d = 0, note = "";
+  let dmg = e.d ? P2(o,e.d) : 0, hits = e.h||1, d = 0, note = "";
 
   if(sp==="random"){
     const pool = G.crafted.filter(function(x){ return x!==o.w; });
@@ -1336,14 +1398,14 @@ function applyEffect(o){
     }
     log("前代未聞：何も起こらなかった"); return afterAction();
   }
-  if(sp==="lowhp")    dmg = P(e.d) + Math.floor((1-G.hp/G.maxhp)*P(e.d)*2.2);
-  if(sp==="enemylow") dmg = P(e.d) + Math.floor((1-Math.max(0,B.en.hp)/B.en.maxhp)*P(e.d)*2.2);
-  if(sp==="turnmul")  dmg = P(e.d)*B.turn;
+  if(sp==="lowhp")    dmg = P2(o,e.d) + Math.floor((1-G.hp/G.maxhp)*P2(o,e.d)*2.2);
+  if(sp==="enemylow") dmg = P2(o,e.d) + Math.floor((1-Math.max(0,B.en.hp)/B.en.maxhp)*P2(o,e.d)*2.2);
+  if(sp==="turnmul")  dmg = P2(o,e.d)*B.turn;
   if(sp==="handcount"){ hits = Math.max(1, B.hand.filter(function(c){return c.t==="k";}).length); }
   if(sp==="mirror")   dmg = B.en.atk + B.en.buff;
   if(sp==="reflect")  dmg = Math.floor(B.taken*0.4);
-  if(sp==="repeat")   dmg = B.lastDmg || P(e.d||8);
-  if(sp==="story"){ B.storyN = Math.min(4,B.storyN+1); dmg = P(e.d)*B.storyN;
+  if(sp==="repeat")   dmg = B.lastDmg || P2(o,e.d||8);
+  if(sp==="story"){ B.storyN = Math.min(4,B.storyN+1); dmg = P2(o,e.d)*B.storyN;
                     note = "（"+["起","承","転","結"][B.storyN-1]+"）"; }
   if(sp==="gamble"){ if(Math.random()<0.5){ dmg=Math.round(dmg*1.8); note="（大あたり）"; }
                      else { dmg=Math.round(dmg*0.4); drawCard(); note="（不発・1枚ドロー）"; } }
@@ -1353,7 +1415,7 @@ function applyEffect(o){
   if(sp==="steal"){ B.atkBuff += B.en.buff; B.en.buff = 0; }
   if(sp==="fog") B.fog = 3;
   if(sp==="surround") B.surround = 3;
-  if(sp==="poison") B.poison = {d:P(6), t:4};
+  if(sp==="poison") B.poison = {d:P2(o,6), t:4};
   if(sp==="revenge") B.counter = {t:3, stored:0};
   if(sp==="grind"){ B.grind = 2; B.atkBuff += 2; }
   if(sp==="grind3"){ B.grind = 3; B.atkBuff += 3; }
@@ -1407,16 +1469,16 @@ function applyEffect(o){
     }
   }
   if(sp==="drain" && d>0){ G.hp = Math.min(G.maxhp, G.hp+Math.floor(d*0.5)); sfx("heal"); }
-  if(e.sd) G.hp -= P(e.sd);
-  if(e.hp){ G.hp = Math.min(G.maxhp, G.hp+P(e.hp)); sfx("heal"); }
-  if(e.sh) B.shield += P(e.sh);
+  if(e.sd) G.hp -= P2(o,e.sd);
+  if(e.hp){ G.hp = Math.min(G.maxhp, G.hp+P2(o,e.hp)); sfx("heal"); }
+  if(e.sh) B.shield += P2(o,e.sh);
   if(sp==="noshield") B.shield = 0;
   if(e.at) B.atkBuff += e.at;
   if(e.ad) B.en.atk = Math.max(4, B.en.atk-e.ad);
   if(e.dr) for(let i=0;i<e.dr;i++) drawCard();
   if(e.en) B.energy += e.en;
 
-  log("<b>"+o.w+"</b>"+note+(d>0 ? "　<b>"+d+"</b> ダメージ" : ""));
+  log("<b>"+cardName(o)+"</b>"+note+(d>0 ? "　<b>"+d+"</b> ダメージ" : ""));
   afterAction();
 }
 
@@ -1478,7 +1540,7 @@ function renderBattle(){
     }else{
       const o = idiomOf(c.id);
       hand += '<button class="card '+(sel>=0?"sel":"")+'" onclick="tapCard('+i+')">'+
-        '<div class="cardtop"><span class="name">'+o.w+'</span><span class="cost-badge">'+o.cost+'</span></div>'+
+        '<div class="cardtop"><span class="name">'+cardName(o)+'</span><span class="cost-badge">'+o.cost+'</span></div>'+
         '<div class="fx">'+esc(fxText(o))+'</div>'+
         '<div><span class="el-badge el-'+o.el+'">'+o.el+'</span></div></button>';
     }
@@ -1601,9 +1663,8 @@ function restartChapter(){
 }
 
 function resetAll(){
-  G.chapter=0; G.node=0; G.maxhp=70; G.hp=70; G.retry=0; G.hard=false; G.cleared=false;
-  G.endless=false; G.depth=0; G.bestN=0; G.bestH=0; CHAPTERS.length=STORY_LEN;
-  G.inv={}; G.crafted=[]; G.deckKanji=[]; G.deckIdiom=[]; CRAFT=[];
+  resetRun(false);
+  G.maxhp=70; G.hp=70;
   MEM_SAVE=null; SAVED=null;
   try{ if(window.storage && window.storage.delete) window.storage.delete(SAVE_KEY); }catch(e){}
   try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
@@ -1704,41 +1765,116 @@ function renderEnding(){
    錬成所
    ========================================================= */
 let CRAFT = [];
+let SORTM = 0, ONLYUSE = false;
+const SORT_NAMES = ["使える順","五十音順","属性順","枚数順"];
+const USE_MARK = ["◎","○","△","—"];
+const USE_LABEL = ["いま錬成できる","あと1文字","まだ遠い","いま使い道なし"];
+/* 錬成または練り上げの対象になる熟語 */
+function craftTargets(){
+  return IDIOMS.filter(function(o){
+    return G.crafted.indexOf(o.w) < 0 || plusOf(o) < MAX_PLUS;
+  });
+}
+/* 漢字ごとの使いみち 0:即 1:あと1文字 2:まだ遠い 3:不要 */
+function useMap(){
+  const m = {};
+  craftTargets().forEach(function(o){
+    const miss = missingOf(o).length;
+    const r = miss===0 ? 0 : (miss===1 ? 1 : 2);
+    o.w.split("").forEach(function(c){ if(m[c]===undefined || r<m[c]) m[c] = r; });
+  });
+  return m;
+}
+function useOf(m,c){ return m[c]===undefined ? 3 : m[c]; }
+function sortKanji(keys,m){
+  const eo = {"剛":0,"柔":1,"智":2};
+  return keys.slice().sort(function(a,b){
+    if(SORTM===0){ const d = useOf(m,a)-useOf(m,b); if(d) return d; }
+    if(SORTM===2){ const d = eo[KANJI[a].el]-eo[KANJI[b].el]; if(d) return d; }
+    if(SORTM===3){ const d = (G.inv[b]||0)-(G.inv[a]||0); if(d) return d; }
+    return a.localeCompare(b,"ja");
+  });
+}
+function cycleSort(){ SORTM = (SORTM+1)%SORT_NAMES.length; renderCraft(); }
+function toggleOnly(){ ONLYUSE = !ONLYUSE; renderCraft(); }
+function kanjiTile(c,m,onclick,extra){
+  const u = useOf(m,c);
+  const left = extra===undefined ? G.inv[c] : extra;
+  return '<button class="k '+(left<=0?"off":"")+'" onclick="'+onclick+'">'+
+    '<span class="el dot-'+KANJI[c].el+'"></span>'+c+
+    '<span class="u u'+u+'">'+USE_MARK[u]+'</span>'+
+    '<span class="n">'+left+'</span></button>';
+}
 function renderCraft(){
   playBGM("field");
   const w = CRAFT.join("");
   const hit = w.length===4 ? IDIOMS.find(function(o){return o.w===w;}) : null;
+  const has = hit ? G.crafted.indexOf(hit.w)>=0 : false;
+  const pl = hit ? plusOf(hit) : 0;
+  const maxed = has && pl>=MAX_PLUS;
   let slots = "";
   for(let i=0;i<4;i++) slots += '<div class="slot '+(CRAFT[i]?"filled":"")+'" onclick="craftPop('+i+')">'+(CRAFT[i]||"")+'</div>';
-  const keys = Object.keys(G.inv).filter(function(c){return G.inv[c]>0;}).sort();
-  let inv = keys.map(function(c){
-    const left = G.inv[c] - CRAFT.filter(function(x){return x===c;}).length;
-    return '<button class="k '+(left<=0?"off":"")+'" onclick="craftPush(\''+c+'\')">'+
-      '<span class="el dot-'+KANJI[c].el+'"></span>'+c+'<span class="n">'+left+'</span></button>';
-  }).join("");
-  if(!inv) inv = '<p class="muted">まだ漢字がない。ダンジョンで拾ってこよう。</p>';
-  const near = IDIOMS.filter(function(o){return !G.crafted.includes(o.w);})
-    .map(function(o){return {o:o,m:missingOf(o).length};})
-    .filter(function(x){return x.m<=1;}).sort(function(a,b){return a.m-b.m;}).slice(0,3);
+
+  const m = useMap();
+  let keys = Object.keys(G.inv).filter(function(c){ return G.inv[c]>0; });
+  if(ONLYUSE) keys = keys.filter(function(c){ return useOf(m,c)<=1; });
+  keys = sortKanji(keys, m);
+
+  let inv = "";
+  if(!keys.length){
+    inv = '<p class="muted">'+(ONLYUSE?"すぐ使える漢字がない。並びを「すべて」に戻そう。":"まだ漢字がない。ダンジョンで拾ってこよう。")+'</p>';
+  }else if(SORTM===0){
+    let cur = -1;
+    [0,1,2,3].forEach(function(g){
+      const grp = keys.filter(function(c){ return useOf(m,c)===g; });
+      if(!grp.length) return;
+      inv += '<div class="grouphead"><span class="u u'+g+'">'+USE_MARK[g]+'</span> '+USE_LABEL[g]+'　<span class="muted">'+grp.length+'種</span></div>'+
+        '<div class="inv">'+grp.map(function(c){
+          const left = G.inv[c] - CRAFT.filter(function(x){return x===c;}).length;
+          return kanjiTile(c,m,"craftPush('"+c+"')",left);
+        }).join("")+'</div>';
+    });
+  }else{
+    inv = '<div class="inv">'+keys.map(function(c){
+      const left = G.inv[c] - CRAFT.filter(function(x){return x===c;}).length;
+      return kanjiTile(c,m,"craftPush('"+c+"')",left);
+    }).join("")+'</div>';
+  }
+
+  const near = craftTargets().map(function(o){ return {o:o, m:missingOf(o).length, up:G.crafted.indexOf(o.w)>=0}; })
+    .filter(function(x){ return x.m<=1; })
+    .sort(function(a,b){ return (a.m-b.m) || (a.up?1:0)-(b.up?1:0); }).slice(0,3);
   let hint = near.map(function(x){
-    return '<div class="muted">・'+x.o.mean+'　<span class="near">'+(x.m===0?"いま錬成できる":"あと1文字")+'</span></div>';
+    return '<div class="muted">・'+esc(x.up ? x.o.w+" を練り上げ" : x.o.mean)+
+      '　<span class="near">'+(x.m===0?"いまできる":"あと1文字")+'</span></div>';
   }).join("");
   if(!hint) hint = '<div class="muted">・手がかりが少ない。漢字を集めよう。</div>';
+
+  let label = "錬成する";
+  if(hit && maxed) label = hit.w+" は錬成しきった";
+  else if(hit && has) label = "練り上げる（+"+pl+" → +"+(pl+1)+"）";
+  else if(hit) label = hit.w+" を錬成する";
+
   document.getElementById("s-craft").innerHTML =
     topbar("錬成所", "backFromSub()") +
     '<div class="scr-body">'+
       '<div class="px panel col-a">'+
         '<div class="label">錬成陣　左上から右へ、順に四文字</div>'+
-        '<div class="circle '+(hit?"ok":"")+'">'+slots+'</div>'+
-        (hit?'<p class="muted" style="text-align:center;margin:0">'+esc(hit.mean)+'</p>'
-            :'<div style="margin-top:4px">'+hint+'</div>')+
+        '<div class="circle '+(hit&&!maxed?"ok":"")+'">'+slots+'</div>'+
+        (hit ? '<p class="muted" style="text-align:center;margin:0">'+
+                 esc(has ? hit.w+"（"+hit.y+"）／練り上げると威力が12%ずつ上がる" : hit.mean)+'</p>'
+             : '<div style="margin-top:4px">'+hint+'</div>')+
       '</div>'+
       '<div class="px panel dark col-b grow" style="display:flex;flex-direction:column">'+
-        '<div class="label" style="flex:0 0 auto">手持ちの漢字</div>'+
-        '<div class="pane grow" style="margin-top:6px"><div class="inv">'+inv+'</div></div>'+
+        '<div class="sortrow">'+
+          '<button class="btn ghost" onclick="cycleSort()">並び：'+SORT_NAMES[SORTM]+'</button>'+
+          '<button class="btn ghost" onclick="toggleOnly()">'+(ONLYUSE?"◎○だけ":"すべて表示")+'</button>'+
+        '</div>'+
+        '<div class="pane grow" style="margin-top:6px">'+inv+'</div>'+
       '</div>'+
     '</div>'+
-    '<div class="scr-foot"><button class="btn primary" onclick="doCraft()" '+(CRAFT.length===4?"":"disabled")+'>錬成する</button></div>';
+    '<div class="scr-foot"><button class="btn primary" onclick="doCraft()" '+
+      (CRAFT.length===4 && hit && !maxed ?"":"disabled")+'>'+esc(label)+'</button></div>';
   go("craft");
 }
 function craftPush(c){
@@ -1752,15 +1888,22 @@ function doCraft(){
   const w = CRAFT.join("");
   const found = IDIOMS.find(o=>o.w===w);
   if(!found){ sfx("ng"); toast("「"+w+"」という四字熟語はない。並びを見直そう"); return; }
-  if(G.crafted.includes(found.w)){ toast("すでに錬成ずみ。別の熟語をねらおう"); return; }
+  const has = G.crafted.includes(found.w);
+  const pl = plusOf(found);
+  if(has && pl >= MAX_PLUS){ toast(found.w+" はこれ以上 練り上げられない"); return; }
   CRAFT.forEach(c=>{ G.inv[c]--; if(G.inv[c]<=0) delete G.inv[c]; removeFromDeckKanji(c); });
   CRAFT = [];
-  G.crafted.push(found.w);
-  if(G.deckIdiom.length<maxIdiomDeck()) G.deckIdiom.push(found.w);
+  if(has){
+    G.plus[found.w] = pl+1;
+  }else{
+    G.crafted.push(found.w);
+    if(G.deckIdiom.length<maxIdiomDeck()) G.deckIdiom.push(found.w);
+  }
   refillDeck(); saveGame(true);
   sfx("craft");
   checkRank();
-  toast(found.w+"（"+found.y+"）を錬成した");
+  toast(has ? found.w+" を練り上げた（+"+(pl+1)+"）　威力+"+Math.round(12*(pl+1))+"%"
+            : found.w+"（"+found.y+"）を錬成した");
   report();
   renderCraft();
 }
@@ -1780,7 +1923,7 @@ function renderDeck(){
   let idm = G.crafted.map(function(id){
     const o = idiomOf(id), on = G.deckIdiom.includes(id);
     return '<button class="card" style="width:100%;margin-bottom:6px;opacity:'+(on?1:.35)+'" onclick="toggleIdiom(\''+id+'\')">'+
-      '<div class="cardtop"><span class="name">'+o.w+'</span><span class="cost-badge">'+o.cost+'</span></div>'+
+      '<div class="cardtop"><span class="name">'+cardName(o)+'</span><span class="cost-badge">'+o.cost+'</span></div>'+
       '<div class="fx">'+esc(fxText(o))+'</div></button>';
   }).join("") || '<p class="muted">まだ熟語カードがない。錬成所へ。</p>';
   document.getElementById("s-deck").innerHTML =
@@ -1820,7 +1963,7 @@ function renderDex(){
     const miss = missingOf(o).length;
     const word = got ? o.w : o.w.split("").map(function(c){ return G.inv[c]?c:'<span class="mask">〇</span>'; }).join("");
     return '<div class="dex-item '+(got?"got":"")+'">'+
-      '<div class="dex-word">'+word+'</div>'+
+      '<div class="dex-word">'+word+(got&&plusOf(o)?' <span class="near">+'+plusOf(o)+'</span>':'')+'</div>'+
       (got?'<div class="dex-yomi">'+o.y+'</div>':'')+
       '<div class="muted" style="margin-top:3px">'+esc(o.mean)+'</div>'+
       (got?'<div class="muted" style="color:var(--aijiro)">効果：'+esc(o.fx)+'</div>'
@@ -1845,12 +1988,12 @@ const HUB_KEY = "yojijirensei";
 const HUB_URL = "https://backtree-create.github.io/ManabiBox/";
 /* 通常クリア5000（8章に等分）／修羅道クリア100000（8章に等分）／無限回廊は1層3000 */
 function hubScore(){
-  const dex = 2000*rankLv() + (dexCount()>=IDIOMS.length ? 20000 : 0);
+  const dex = 2000*rankLv() + (dexCount()>=IDIOMS.length ? 20000 : 0) + 200*Math.min(100, plusTotal());
   return Math.round(5000/STORY_LEN*G.bestN + 100000/STORY_LEN*G.bestH + 3000*G.depth + dex);
 }
 function hubNote(){
   return "通常"+G.bestN+"章 修羅道"+G.bestH+"章"+
-    (G.depth?" 無限"+G.depth+"層":"")+" 錬成"+dexCount()+"語"+(rankLv()?"("+rankName()+")":"");
+    (G.depth?" 無限"+G.depth+"層":"")+" 錬成"+dexCount()+"語"+(plusTotal()?"+"+plusTotal():"")+(rankLv()?"("+rankName()+")":"");
 }
 function report(){
   try{ legSave(); }catch(e){}
