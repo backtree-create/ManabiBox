@@ -439,8 +439,15 @@ function tryCode(){
 $('gateBtn').addEventListener('click', tryCode);
 $('gateInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryCode(); });
 
-if (LearnHub.gateOK()){ closeGate(); LearnHub.gateRecheck(); }
-else { openGate(); }
+/* hub-progress.js が古いままでも画面が止まらないようにしておく */
+if (typeof LearnHub.gateOK !== 'function'){
+  console.warn('hub-progress.js が古いようです。差し替えてください。');
+  closeGate();
+} else if (LearnHub.gateOK()){
+  closeGate(); LearnHub.gateRecheck();
+} else {
+  openGate();
+}
 
 paintWho(); render(); buildTabs(); loadRanking();
 
