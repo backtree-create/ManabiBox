@@ -7,8 +7,7 @@
    使い方はフォルダ内の「セットアップ.md」を参照。
    ============================================================ */
 
-var WRITE_TOKEN = 'chiri-write-2026';   // index.html の GAME_CONFIG.token と同じにする
-var ADMIN_TOKEN = 'chiri-admin-2026';   // 先生専用（マップのリセットに使う）
+var WRITE_TOKEN = 'world-write-2026';   // index.html の GAME_CONFIG.token と同じにする
 var PROTECT_MS = 45 * 1000;             // 占領直後の保護時間（ゲーム側と合わせる）
 var CACHE_SEC = 21600;                  // 状態キャッシュの保持時間（6時間）
 
