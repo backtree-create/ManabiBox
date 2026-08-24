@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>まなびの基板</title>
 <meta name="theme-color" content="#0B0F1A">
@@ -28,6 +29,32 @@
 .hero-next .lbl{font-size:13px;color:var(--muted);}
 .hero-next .ttl{font-weight:700;font-size:16px;}
 .hero-next .btn{margin-left:auto;}
+
+/* ── クラスコードの入口 ─────────────────── */
+.gate{position:fixed;inset:0;z-index:900;display:grid;place-items:center;
+  padding:24px;background:rgba(8,11,20,.97);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+.gatebox{width:100%;max-width:420px;background:#131c2e;
+  border:1px solid var(--edge);border-radius:var(--r);padding:30px 26px;}
+.gatebox h2{margin:0 0 10px;font-family:"Dela Gothic One",sans-serif;font-weight:400;
+  font-size:20px;color:#fff;line-height:1.5;}
+.gatebox p{margin:0 0 18px;font-size:13.5px;line-height:1.9;color:var(--muted);}
+.gatebox .msg{margin:14px 0 0;min-height:20px;}
+.gatebox .msg.ng{color:#FF9180;font-weight:700;}
+
+/* ── ニックネーム未登録のロック ───────────── */
+body.namelock .card,
+body.namelock .hero-next .btn{
+  opacity:.42;filter:saturate(.35);cursor:not-allowed;
+}
+body.namelock .card:hover{transform:none;border-color:var(--edge);}
+body.namelock .card .cta{color:var(--muted);}
+.namecard.pulse{animation:namepulse .9s ease-out 2;}
+@keyframes namepulse{
+  0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--c-teal) 55%, transparent);}
+  100%{box-shadow:0 0 0 14px transparent;}
+}
+.namecard .lockmsg{margin:12px 0 0;font-size:13px;color:var(--c-teal);font-weight:700;}
 
 /* ── ゲーム一覧 ─────────────────────────── */
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
@@ -95,6 +122,18 @@
 </style>
 </head>
 <body>
+<div class="gate hidden" id="gate">
+  <div class="gatebox">
+    <h2>クラスコードを入れてください</h2>
+    <p>先生から聞いた合言葉を入れると、まなびの基板がひらきます。</p>
+    <div class="namerow">
+      <input id="gateInput" type="text" maxlength="24" autocomplete="off" placeholder="合言葉">
+      <button class="btn" id="gateBtn" type="button">すすむ</button>
+    </div>
+    <p class="msg" id="gateMsg"></p>
+  </div>
+</div>
+
 <div class="wrap">
 
   <div class="eyebrow">
@@ -109,6 +148,7 @@
   <section class="sheet namecard hidden" id="nameCard">
     <h2>ニックネームを決めよう</h2>
     <p>ランキングにこの名前が出ます。本名は入れないでください。</p>
+      <p class="lockmsg">ニックネームを決めると、ゲームがひらけます。</p>
     <div class="namerow">
       <input id="nameInput" type="text" maxlength="10" placeholder="10文字まで" autocomplete="off">
       <button class="btn" id="saveName" type="button">きめる</button>
@@ -204,11 +244,32 @@ function paintWho(){
   const me = LearnHub.player();
   $('whoName').textContent = me.nickname || '名前なし';
   $('nameCard').classList.toggle('hidden', !!me.nickname);
+  document.body.classList.toggle('namelock', !me.nickname);
 }
+const isLocked = () => !LearnHub.player().nickname;
+
+/* ニックネームが無いうちは、ゲームを開かせない */
+function askName(){
+  const card = $('nameCard');
+  card.classList.remove('hidden');
+  card.classList.remove('pulse');
+  void card.offsetWidth;
+  card.classList.add('pulse');
+  card.scrollIntoView({ behavior:'smooth', block:'center' });
+  setTimeout(() => $('nameInput').focus(), 320);
+}
+document.addEventListener('click', e => {
+  if (!isLocked()) return;
+  const hit = e.target.closest('a.card, .hero-next .btn');
+  if (!hit) return;
+  e.preventDefault();
+  e.stopPropagation();
+  askName();
+}, true);
 $('saveName').addEventListener('click', () => {
   const v = $('nameInput').value.trim();
   if (!v){ $('nameInput').focus(); return; }
-  LearnHub.setNickname(v); paintWho();
+  LearnHub.setNickname(v); paintWho(); render();
 });
 $('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('saveName').click(); });
 $('editName').addEventListener('click', () => {
@@ -244,7 +305,7 @@ function render(){
         <span>${done} / ${app.total} ${esc(app.unit)}</span>
         <span>${rec.best ? '最高 ' + rec.best : 'まだ記録なし'}</span>
       </div>
-      <span class="cta">${label(done, app.total)}${ARROW}</span>
+      <span class="cta">${isLocked() ? 'ニックネームが必要' : label(done, app.total)}${ARROW}</span>
     </a>`;
   }).join('');
 
@@ -275,7 +336,7 @@ function renderNext(saved){
     <span class="lbl">${inProgress ? 'とちゅうまで進んでいます' : 'まだ手をつけていません'}</span>
     <span class="ttl">${esc(pick.app.name)}</span>
     <a class="btn" style="--accent:${esc(pick.app.color)}" href="${esc(pick.app.file)}">
-      ${label(pick.done, pick.app.total)}</a>`;
+      ${isLocked() ? 'ニックネームが必要' : label(pick.done, pick.app.total)}</a>`;
 }
 
 function renderLog(saved){
@@ -347,6 +408,39 @@ $('resetBtn').addEventListener('click', () => {
     LearnHub.reset(); render();
   }
 });
+
+/* ---- クラスコードの入口 ----------------------------------- */
+function openGate(){
+  $('gate').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => $('gateInput').focus(), 150);
+}
+function closeGate(){
+  $('gate').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function tryCode(){
+  const v = $('gateInput').value.trim();
+  const msg = $('gateMsg');
+  if (!v){ $('gateInput').focus(); return; }
+  msg.className = 'msg';
+  msg.textContent = 'たしかめています...';
+  $('gateBtn').disabled = true;
+  LearnHub.checkCode(v).then(d => {
+    $('gateBtn').disabled = false;
+    if (d && d.ok){ msg.textContent = ''; $('gateInput').value = ''; closeGate(); return; }
+    msg.className = 'msg ng';
+    msg.textContent = d && d.error === 'offline'
+      ? 'つながりませんでした。通信を確かめてください。'
+      : '合言葉がちがいます。';
+    $('gateInput').select();
+  });
+}
+$('gateBtn').addEventListener('click', tryCode);
+$('gateInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryCode(); });
+
+if (LearnHub.gateOK()){ closeGate(); LearnHub.gateRecheck(); }
+else { openGate(); }
 
 paintWho(); render(); buildTabs(); loadRanking();
 

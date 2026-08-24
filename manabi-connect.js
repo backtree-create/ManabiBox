@@ -84,13 +84,33 @@
 
   /* ---- 3. ハブへもどるボタン -------------------------------- */
   var cfg = global.MANABI_CONFIG || {};
-  var HUB = cfg.hubUrl || 'https://backtree-create.github.io/ManabiBox/';
+
+  /* ハブの場所は、このファイル自身の置き場所から割り出します。
+     こうしておくとリポジトリ名を変えてもURLを直す必要がありません。 */
+  function hubFromScript() {
+    var el = document.currentScript;
+    if (!el) {
+      var list = document.getElementsByTagName('script');
+      for (var i = list.length - 1; i >= 0; i--) {
+        if ((list[i].src || '').indexOf('manabi-connect.js') >= 0) { el = list[i]; break; }
+      }
+    }
+    if (!el || !el.src) return '';
+    return el.src.replace(/[^\/]*$/, '');
+  }
+  var HUB = cfg.hubUrl || hubFromScript() || 'https://backtree-create.github.io/ManabiBox/';
+
+  function bare(u) { return String(u).split('#')[0].split('?')[0]; }
+  function isHubPage() {
+    var here = bare(global.location.href);
+    return here === bare(HUB) || here === bare(HUB) + 'index.html';
+  }
 
   function addBackButton() {
     if (cfg.backLink === false) return;
     if (document.getElementById('manabi-back')) return;
     /* ハブ自身には出さない */
-    if (global.location.href.indexOf(HUB) === 0) return;
+    if (isHubPage()) return;
 
     var css = document.createElement('style');
     css.textContent =
@@ -124,6 +144,81 @@
   } else {
     addBackButton();
   }
+
+  /* ---- 3.5 ニックネームが無いうちは遊ばせない ---------------- */
+  function hasNickname() {
+    try {
+      if (global.LearnHub && LearnHub.player) return !!LearnHub.player().nickname;
+      var raw = global.localStorage.getItem('manabi-board:player:v1');
+      return !!(raw && JSON.parse(raw).nickname);
+    } catch (e) { return false; }
+  }
+
+  function gatePassed() {
+    try {
+      if (global.LearnHub && LearnHub.gateOK) return LearnHub.gateOK();
+      return true;   /* 古い hub-progress.js のときは素通り */
+    } catch (e) { return true; }
+  }
+
+  function addNameGate() {
+    if (isHubPage()) return;   /* ハブ自身には出さない */
+    var old = document.getElementById('manabi-gate');
+    var needCode = !gatePassed();
+    var needName = !hasNickname();
+    if (!needCode && !needName) {
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+      return;
+    }
+    if (old) return;
+
+    var css = document.createElement('style');
+    css.textContent =
+      '#manabi-gate{position:fixed;inset:0;z-index:2147483600;display:flex;' +
+      'align-items:center;justify-content:center;padding:24px;' +
+      'background:rgba(6,9,17,.94);backdrop-filter:blur(4px);' +
+      '-webkit-backdrop-filter:blur(4px);' +
+      'font-family:"Zen Kaku Gothic New","Hiragino Sans","Meiryo",sans-serif;}' +
+      '#manabi-gate .box{max-width:420px;width:100%;text-align:center;' +
+      'background:#121a2c;border:1px solid rgba(190,205,235,.28);' +
+      'border-radius:18px;padding:30px 26px;}' +
+      '#manabi-gate h2{margin:0 0 12px;font-size:21px;font-weight:700;color:#fff;line-height:1.5;}' +
+      '#manabi-gate p{margin:0 0 22px;font-size:14px;line-height:1.9;color:#AFC0D6;}' +
+      '#manabi-gate a{display:inline-block;text-decoration:none;font-weight:700;font-size:15px;' +
+      'color:#06121A;background:#4FD1C5;border-radius:999px;padding:13px 26px;}';
+    document.head.appendChild(css);
+
+    var title = needCode
+      ? 'まなびの基板から<br>入ってください'
+      : 'ニックネームを決めてから<br>あそんでください';
+    var body = needCode
+      ? 'クラスコードを入れると、<br>ここから遊べるようになります。'
+      : 'まなびの基板でニックネームを登録すると、<br>ここから遊べるようになります。';
+
+    var box = document.createElement('div');
+    box.id = 'manabi-gate';
+    box.innerHTML =
+      '<div class="box"><h2>' + title + '</h2><p>' + body + '</p>' +
+      '<a href="' + HUB + '">まなびの基板をひらく</a></div>';
+    document.body.appendChild(box);
+
+    /* ハブで済ませて戻ってきたら、自動で外す */
+    var timer = setInterval(function () {
+      if (!gatePassed() || !hasNickname()) return;
+      clearInterval(timer);
+      if (box.parentNode) box.parentNode.removeChild(box);
+    }, 1500);
+
+    log(needCode ? 'クラスコード未入力のためロックしました'
+                 : 'ニックネーム未登録のためロックしました');
+  }
+
+  if (document.readyState === 'loading') {
+    global.addEventListener('DOMContentLoaded', addNameGate);
+  } else {
+    addNameGate();
+  }
+  global.addEventListener('pageshow', addNameGate);
 
   /* ---- 4. localStorage を見張る（外部ライブラリで保存するゲーム用） ---- */
   var polls = [];
