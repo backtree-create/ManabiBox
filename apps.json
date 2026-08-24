@@ -207,5 +207,16 @@
   "total": 16,
   "color": "#C8452F",
   "icon": "pen"
-}
+},
+  {
+    "key": "world-conquest",
+    "name": "世界陣取り合戦",
+    "subject": "社会",
+    "file": "https://backtree-create.github.io/Resque_Japn/",
+    "desc": "世界各国のクイズに答えて自分の領地を取り合おう。",
+    "unit": "か国",
+    "total": 160,
+    "color": "#4ADE80",
+    "icon": "map"
+  }
 ]
