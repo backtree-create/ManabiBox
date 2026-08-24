@@ -125,6 +125,21 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; }
 .bonus-chip.wide { grid-column: 1 / -1; }
 .bonus-chip .bi { font-size: 16px; flex: none; }
 
+/* ============ まなびの基盤にもどる ============ */
+#manabi-back {
+  position: fixed; z-index: 2147483000;
+  top: calc(8px + env(safe-area-inset-top)); left: calc(8px + env(safe-area-inset-left));
+  display: flex; align-items: center; gap: 6px;
+  font-family: inherit; font-size: 12px; font-weight: 800; line-height: 1;
+  text-decoration: none; color: var(--tx);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+  padding: 8px 14px 8px 11px; opacity: .62; transition: opacity .2s, border-color .2s;
+  backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+  box-shadow: 0 4px 14px rgba(0,0,0,.35);
+}
+#manabi-back:hover, #manabi-back:focus-visible { opacity: 1; border-color: var(--line-hi); }
+#manabi-back svg { width: 13px; height: 13px; flex: none; }
+
 /* ============ HUD ============ */
 #hud {
   position: fixed; z-index: 30; display: none; align-items: stretch; gap: 0;

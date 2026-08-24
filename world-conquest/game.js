@@ -886,6 +886,26 @@
     });
   }
 
+  /* ---------- まなびの基盤にもどるボタン ----------
+     ふだんはハブの manabi-connect.js が付けてくれる。
+     ただしこのゲームをハブと同じフォルダの中（ManabiBox/world-conquest/）に置くと、
+     向こうの「ハブ自身には出さない」判定が前方一致のため誤作動して付かない。
+     そこで、まだ無いときだけ自前で用意する。idを合わせてあるので二重には出ない。 */
+  function addBackButton() {
+    if (document.getElementById('manabi-back')) return;
+    var cfg = window.MANABI_CONFIG || {};
+    if (cfg.backLink === false) return;
+    var a = document.createElement('a');
+    a.id = 'manabi-back';
+    a.href = cfg.hubUrl || '../';
+    a.setAttribute('aria-label', 'まなびの基盤にもどる');
+    a.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M19 12H6M11.5 5.5 5 12l6.5 6.5"/></svg>まなびの基盤';
+    document.body.appendChild(a);
+  }
+
   /* ---------- 読み込み ---------- */
   function loadMap(i) {
     i = i || 0;
@@ -914,6 +934,7 @@
     initThree();
     initControls();
     initUI();
+    addBackButton();
     loadMap(0);
     setInterval(updateHud, 1000);
   });
@@ -929,7 +950,8 @@
       tap: tapAt, quiz: startQuiz, claims: function () { return claims; },
       correctIndex: function () { return quizQ ? quizQ.correct : -1; },
       question: function () { return quizQ; },
-      three: function () { return { scene: scene, camera: camera, raycaster: raycaster, mapGroup: mapGroup, meshes: meshes }; }
+      three: function () { return { scene: scene, camera: camera, raycaster: raycaster, mapGroup: mapGroup, meshes: meshes }; },
+      addBackButton: addBackButton
     };
   }
 })();
