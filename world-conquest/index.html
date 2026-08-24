@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>世界陣取りクエスト</title>
+
+<!-- ▼ 共有マップサーバーの設定（セットアップ.md 手順2のURLを入れる） -->
+<script>
+window.GAME_CONFIG = {
+  endpoint: 'https://script.google.com/macros/s/AKfycbyo4SNyNTyhMUBMbg1gAH23i2DLjcwRn8etDiMS63pP6ZaFlfkbaK8t2hslc-VqMtb5/exec',                       /* Apps Script のURL（.../exec） 空なら練習モードのみ */
+  token:    'chiri-write-2026',       /* code.gs の WRITE_TOKEN と同じ文字列 */
+  pollMs:   6000                      /* 共有マップの更新間隔（ミリ秒） */
+};
+</script>
+
+<!-- ▼ まなびの基盤（ManabiBox）との連携。ローカルで開くときは読み込めなくてもOK -->
+<script src="https://backtree-create.github.io/ManabiBox/config.js"></script>
+<script src="https://backtree-create.github.io/ManabiBox/hub-progress.js"></script>
+<script src="https://backtree-create.github.io/ManabiBox/manabi-connect.js"></script>
+
+<!-- ▼ ライブラリ（three.js / TopoJSON） -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+
+<style>
+:root {
+  --bg: #0a1626; --panel: rgba(13, 26, 44, .92); --line: rgba(150, 180, 220, .25);
+  --tx: #eaf1fb; --sub: #9db2cc; --acc: #4da3ff; --ok: #48d17a; --ng: #ff6464;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  background: var(--bg); color: var(--tx);
+  font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  user-select: none; -webkit-user-select: none;
+}
+#map { position: fixed; inset: 0; }
+#map canvas { display: block; }
+button { font-family: inherit; cursor: pointer; }
+
+/* ---------- 読み込み ---------- */
+#loading {
+  position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px; background: var(--bg);
+}
+.spin { width: 44px; height: 44px; border-radius: 50%; border: 4px solid var(--line);
+  border-top-color: var(--acc); animation: sp 1s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+#load-msg { color: var(--sub); font-size: 14px; padding: 0 24px; text-align: center; }
+
+/* ---------- スタート画面 ---------- */
+#start {
+  position: fixed; inset: 0; z-index: 50; display: none; overflow: auto;
+  background: radial-gradient(ellipse at 50% 30%, rgba(35,80,140,.45), var(--bg) 70%);
+  padding: max(24px, env(safe-area-inset-top)) 16px 32px;
+}
+#start.show { display: block; }
+.st-box { max-width: 460px; margin: 0 auto; }
+.st-title { text-align: center; margin: 20px 0 4px; font-size: clamp(26px, 7vw, 40px); letter-spacing: .04em; }
+.st-sub { text-align: center; color: var(--sub); font-size: 13px; margin-bottom: 26px; }
+.st-label { font-size: 12px; color: var(--sub); margin: 14px 0 5px; }
+.st-input {
+  width: 100%; padding: 13px 14px; font-size: 16px; color: var(--tx);
+  background: rgba(255,255,255,.07); border: 1px solid var(--line); border-radius: 12px; outline: none;
+}
+.st-input:focus { border-color: var(--acc); }
+.btn {
+  display: block; width: 100%; padding: 15px; margin-top: 12px; font-size: 16px; font-weight: 700;
+  color: #fff; background: linear-gradient(135deg, #2f7fe0, #4da3ff); border: none; border-radius: 14px;
+}
+.btn:disabled { opacity: .45; }
+.btn-sub { background: rgba(255,255,255,.1); border: 1px solid var(--line); }
+.st-rule {
+  margin-top: 26px; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 14px; padding: 16px; font-size: 13px; line-height: 1.9; color: var(--sub);
+}
+.st-rule b { color: var(--tx); }
+
+/* ---------- HUD ---------- */
+#hud {
+  position: fixed; z-index: 30; display: none; align-items: center; gap: 8px;
+  top: calc(8px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+  padding: 7px 16px; font-size: 13px; white-space: nowrap;
+}
+.hud-item b { font-size: 16px; color: #ffd93d; margin-left: 3px; }
+.hud-sep { color: var(--line); }
+#mode-label { color: var(--sub); font-size: 11px; }
+
+/* ---------- 右側ランキング ---------- */
+#side {
+  position: fixed; z-index: 30; display: none;
+  top: calc(56px + env(safe-area-inset-top)); right: 8px; width: 210px; max-height: 55vh;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  padding: 10px; overflow: auto; font-size: 12px;
+}
+#me-chip { display: flex; align-items: center; gap: 6px; font-weight: 700; margin-bottom: 8px; }
+.rk-row { display: flex; align-items: center; gap: 6px; padding: 4px 2px; border-top: 1px solid rgba(150,180,220,.12); }
+.rk-me { background: rgba(77,163,255,.15); border-radius: 6px; }
+.rk-pos { width: 16px; color: var(--sub); }
+.rk-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+.rk-nick { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk-cnt { color: var(--sub); }
+.rk-score { font-weight: 700; color: #ffd93d; min-width: 34px; text-align: right; }
+
+/* ---------- 右下ボタン群 ---------- */
+#fabs {
+  position: fixed; z-index: 30; right: 10px; bottom: calc(12px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 8px;
+}
+.fab {
+  width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--panel); color: var(--tx); font-size: 19px;
+}
+
+/* ---------- 国情報カード ---------- */
+#info {
+  position: fixed; z-index: 35; left: 50%; transform: translate(-50%, 20px);
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  width: min(400px, calc(100vw - 90px));
+  background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+  padding: 14px; opacity: 0; pointer-events: none; transition: .22s;
+}
+#info.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.i-head { display: flex; gap: 12px; align-items: center; }
+.i-flag { width: 58px; border-radius: 5px; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+.i-name { font-size: 19px; font-weight: 800; }
+.i-sub { color: var(--sub); font-size: 12px; margin-top: 5px; line-height: 1.6; }
+.i-status { margin-top: 9px; }
+.tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #08121f; background: #9db2cc; }
+.tag-mine { background: #48d17a; }
+.tag-free { background: #ffd93d; }
+.btn-go { margin-top: 12px; padding: 13px; font-size: 15px; }
+
+/* ---------- クイズ ---------- */
+#quiz {
+  position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center;
+  background: rgba(4, 10, 20, .72); backdrop-filter: blur(3px); padding: 16px;
+}
+#quiz.show { display: flex; }
+.q-box {
+  width: min(480px, 100%); background: #101f35; border: 1px solid var(--line);
+  border-radius: 18px; padding: 18px; max-height: 92vh; overflow: auto;
+}
+.q-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+#q-country { font-weight: 800; color: var(--acc); font-size: 14px; }
+#q-close { background: none; border: none; color: var(--sub); font-size: 20px; padding: 4px 8px; }
+.q-barwrap { height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; margin-bottom: 12px; }
+#q-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #48d17a, #ffd93d); transition: width .1s linear; }
+#q-text { font-size: clamp(15px, 4.2vw, 18px); font-weight: 700; line-height: 1.6; margin-bottom: 12px; }
+#q-img { display: none; width: min(220px, 60%); margin: 0 auto 14px; border-radius: 6px; box-shadow: 0 3px 14px rgba(0,0,0,.5); }
+#q-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.choice {
+  padding: 13px 10px; font-size: 14px; font-weight: 700; color: var(--tx); line-height: 1.5;
+  background: rgba(255,255,255,.07); border: 1.5px solid var(--line); border-radius: 12px;
+  min-height: 52px;
+}
+.choice img { width: 100%; max-width: 130px; border-radius: 4px; display: block; margin: 0 auto; }
+.choice.right { background: rgba(72,209,122,.25); border-color: var(--ok); }
+.choice.wrongC { background: rgba(255,100,100,.25); border-color: var(--ng); }
+@media (max-width: 380px) { #q-choices { grid-template-columns: 1fr; } }
+
+/* ---------- 通知 ---------- */
+#toasts {
+  position: fixed; z-index: 45; left: 10px; top: calc(56px + env(safe-area-inset-top));
+  display: flex; flex-direction: column; gap: 8px; width: min(280px, 70vw); pointer-events: none;
+}
+.toast {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px 12px; font-size: 12px; line-height: 1.6; animation: tin .25s;
+}
+.toast.out { opacity: 0; transition: .5s; }
+@keyframes tin { from { transform: translateX(-16px); opacity: 0; } }
+.rt-head { font-weight: 800; font-size: 13px; margin-bottom: 4px; }
+.rt-ok { color: var(--ok); } .rt-ng { color: var(--ng); }
+.rt-row { display: flex; justify-content: space-between; gap: 8px; color: var(--sub); }
+.rt-row b { color: #ffd93d; }
+.rt-total { margin-top: 4px; text-align: right; font-weight: 800; color: #ffd93d; }
+
+#banner {
+  position: fixed; z-index: 46; top: 30%; left: 50%; transform: translate(-50%, -50%) scale(.8);
+  background: linear-gradient(135deg, #b8860b, #ffd93d); color: #201500;
+  font-size: clamp(17px, 5vw, 26px); font-weight: 900; padding: 16px 30px; border-radius: 16px;
+  opacity: 0; pointer-events: none; transition: .3s; box-shadow: 0 8px 40px rgba(255,217,61,.4);
+  white-space: nowrap;
+}
+#banner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+/* ---------- ヘルプ ---------- */
+#help {
+  position: fixed; inset: 0; z-index: 55; display: none; align-items: center; justify-content: center;
+  background: rgba(4,10,20,.75); padding: 18px;
+}
+#help.show { display: flex; }
+.h-box {
+  width: min(460px, 100%); max-height: 85vh; overflow: auto;
+  background: #101f35; border: 1px solid var(--line); border-radius: 18px; padding: 20px;
+  font-size: 13px; line-height: 2;
+}
+.h-box h2 { font-size: 17px; margin-bottom: 8px; }
+.h-box b { color: #ffd93d; }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- 読み込み -->
+<div id="loading">
+  <div class="spin"></div>
+  <div id="load-msg">世界地図データを読み込んでいます…</div>
+</div>
+
+<!-- スタート画面 -->
+<div id="start">
+  <div class="st-box">
+    <div class="st-title">🌍 世界陣取りクエスト</div>
+    <div class="st-sub">クイズに正解して、世界地図を自分の色にぬりつくせ!</div>
+
+    <div class="st-label">ニックネーム（本名はダメ!）</div>
+    <input id="in-nick" class="st-input" maxlength="10" placeholder="例: ちりマスター">
+
+    <div class="st-label">ルーム名（先生が指定したもの。例: 3-2）</div>
+    <input id="in-room" class="st-input" maxlength="12" placeholder="例: 3-2">
+
+    <button id="btn-online" class="btn">🌐 みんなで対戦</button>
+    <button id="btn-solo" class="btn btn-sub">📴 ひとりで練習</button>
+
+    <div class="st-rule">
+      <b>あそびかた</b><br>
+      ① 地図の国をタップ → クイズに正解するとその国を占領!<br>
+      ② ほかの人の国も、クイズに正解すれば<b>うばえる</b>（占領直後45秒は保護）<br>
+      ③ まちがえるとその国は30秒挑戦できない<br><br>
+      <b>ボーナス</b><br>
+      ⚡ 7秒以内に正解 +30 ／ 🔥 連続正解 最大+100<br>
+      🧩 自分の領地のとなりをぬる +50 ／ ⚔️ うばうと +100<br>
+      🏅 5か国ごと +200 ／ 🌏 同じ州で5か国ごと +300<br>
+      👑 州を完全制覇 <b>+1000</b>
+    </div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <span id="mode-label"></span><span class="hud-sep">|</span>
+  <span class="hud-item">スコア<b id="hud-score">0</b></span>
+  <span class="hud-item">🚩<b id="hud-count">0</b></span>
+  <span class="hud-item">連続<b id="hud-combo">-</b></span>
+</div>
+
+<!-- ランキング -->
+<div id="side">
+  <div id="me-chip"></div>
+  <div id="rank-list"></div>
+</div>
+
+<!-- 右下ボタン -->
+<div id="fabs">
+  <button class="fab" id="btn-rank" title="ランキング">🏆</button>
+  <button class="fab" id="btn-home" title="全体表示">🌍</button>
+  <button class="fab" id="btn-help" title="ルール">❓</button>
+  <button class="fab" id="btn-finish" title="きろくを送信">📤</button>
+</div>
+
+<!-- 国情報カード -->
+<div id="info"></div>
+
+<!-- クイズ -->
+<div id="quiz">
+  <div class="q-box">
+    <div class="q-top"><span id="q-country"></span><button id="q-close">✕</button></div>
+    <div class="q-barwrap"><div id="q-bar"></div></div>
+    <div id="q-text"></div>
+    <img id="q-img" alt="国旗">
+    <div id="q-choices"></div>
+  </div>
+</div>
+
+<!-- 通知 -->
+<div id="toasts"></div>
+<div id="banner"></div>
+
+<!-- ヘルプ -->
+<div id="help">
+  <div class="h-box">
+    <h2>🌍 世界陣取りクエスト</h2>
+    国をタップ → クイズに正解 → 占領!<br>
+    ほかの人の領地もクイズに正解すればうばえます（占領直後45秒は保護）。<br>
+    まちがえた国は30秒間、再挑戦できません。<br><br>
+    <b>ボーナス一覧</b><br>
+    ⚡ スピード回答（7秒以内）+30<br>
+    🔥 連続正解 +20×連続数（最大+100）<br>
+    🧩 つなげ塗り（自分の領地のとなり）+50<br>
+    ⚔️ 領地をうばう +100<br>
+    🏅 合計5か国ごと +200<br>
+    🌏 同じ州で5・10・15か国 +300<br>
+    👑 州を完全制覇 +1000<br><br>
+    📤ボタンで、これまでの記録を「まなびの基盤」に送れます。
+    <button class="btn" id="btn-help-close">とじる</button>
+  </div>
+</div>
+
+<script src="countries.js"></script>
+<script src="trivia.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
