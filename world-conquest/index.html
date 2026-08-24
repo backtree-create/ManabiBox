@@ -345,7 +345,8 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; }
     width: min(320px, calc(100vw - 36px)); max-height: 66vh;
   }
   #toasts { width: min(240px, 62vw); top: calc(70px + env(safe-area-inset-top)); }
-  #hud { padding: 6px 4px; }
+  /* 左上は「まなびの基盤にもどる」ボタンの場所なので、HUDは右に寄せる */
+  #hud { left: auto; right: 8px; transform: none; padding: 6px 4px; }
   .hud-stat { padding: 0 11px; min-width: 54px; }
   .hud-v { font-size: 15.5px; }
   #room-badge { display: none !important; }
