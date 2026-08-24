@@ -139,9 +139,60 @@
       .catch(function () { return { ok: false, error: 'offline', list: [] }; });
   }
 
+  /* ---- クラスコード ----------------------------------------- */
+
+  var KEY_GATE = 'manabi-board:gate:v1';
+  var GATE_DAYS = 90;      /* これだけの日数はもう一度きかない */
+  var RECHECK_DAYS = 7;    /* ときどき裏で確かめ直す */
+
+  function gateState() { return read(KEY_GATE, null) || {}; }
+
+  function gateOK() {
+    var g = gateState();
+    if (!g.ok || !g.at) return false;
+    return (Date.now() - g.at) < GATE_DAYS * 86400000;
+  }
+
+  function gateSave(code) {
+    write(KEY_GATE, { ok: true, at: Date.now(), code: String(code || '') });
+  }
+
+  function gateClear() { write(KEY_GATE, { ok: false, at: 0, code: '' }); }
+
+  /* 合言葉が合っているかサーバーに聞く */
+  function checkCode(code) {
+    var c = String(code || '').trim();
+    if (!c) return Promise.resolve({ ok: false, error: 'empty' });
+    if (!cfg.endpoint) return Promise.resolve({ ok: false, error: 'offline' });
+    return getJSON(cfg.endpoint + '?mode=gate&code=' + encodeURIComponent(c))
+      .then(function (d) {
+        if (d && d.ok) gateSave(c);
+        return d || { ok: false, error: 'bad' };
+      })
+      .catch(function () { return { ok: false, error: 'offline' }; });
+  }
+
+  /* 前に通した合言葉がまだ有効か、裏でそっと確かめる。
+     通信できないときは何もしません（オフラインでも遊べるように） */
+  function gateRecheck() {
+    var g = gateState();
+    if (!g.ok || !g.code || !cfg.endpoint) return;
+    if (Date.now() - (g.at || 0) < RECHECK_DAYS * 86400000) return;
+    getJSON(cfg.endpoint + '?mode=gate&code=' + encodeURIComponent(g.code))
+      .then(function (d) {
+        if (d && d.ok) gateSave(g.code);
+        else gateClear();
+      })
+      .catch(function () {});
+  }
+
   /* ---- 本体 ------------------------------------------------ */
 
   global.LearnHub = {
+    gateOK: gateOK,
+    checkCode: checkCode,
+    gateRecheck: gateRecheck,
+    gateClear: gateClear,
     player: player,
     setNickname: setNickname,
     flush: flush,
