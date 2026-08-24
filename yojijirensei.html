@@ -234,6 +234,11 @@ body::before{
   animation-timing-function:linear;animation-iteration-count:infinite}
 @keyframes fall{0%{transform:translateY(-14px) rotate(0deg);opacity:1}
   100%{transform:translateY(420px) rotate(180deg);opacity:.2}}
+.scrollwrap{position:relative;width:100%;max-width:400px;height:76px;overflow:hidden;
+  border-top:2px solid var(--kin2);border-bottom:2px solid var(--kin2);margin:6px 0}
+.scrollin{position:absolute;left:0;right:0;top:100%;color:var(--kin);font-size:15px;
+  line-height:1.9;text-align:center;animation:scrollup 46s linear infinite}
+@keyframes scrollup{from{transform:translateY(0)}to{transform:translateY(-1400px)}}
 .shukuseal{width:52px;height:52px;background:var(--shu);border:4px solid var(--kin);
   color:#fff4e0;font-size:28px;line-height:44px;margin-bottom:10px;clip-path:var(--notch);
   animation:pulse .9s steps(2,end) infinite}
@@ -307,6 +312,7 @@ body::before{
   <div class="wrap">
     <div class="logo"><span>四</span><span>字</span><span>錬</span><span>成</span></div>
     <div class="parade" id="title-parade"></div>
+    <div class="muted" id="legacy" style="font-size:11.5px;line-height:1.5"></div>
     <div class="muted" id="hubstate" style="font-size:11.5px"></div>
     <div class="px panel" style="max-width:440px;text-align:left">
       <p style="margin:0;font-size:13px;color:var(--aijiro)">
@@ -324,6 +330,7 @@ body::before{
   </div>
   <div class="scr-foot">
     <button class="btn primary" onclick="startGame()"><span class="blink">▶</span> はじめから</button>
+    <button class="btn hidden" id="hardbtn" onclick="startGame(true)">修羅道ではじめる</button>
     <button class="btn hidden" id="contbtn" onclick="continueGame()">つづきから</button>
     <button class="btn ghost" id="hubbtn" onclick="goHub()">まなびの基板にもどる</button>
   </div>
@@ -746,9 +753,51 @@ const G = {
   deckIdiom:[],    // デッキに入れた熟語 id
   cleared:false
 };
-const MAX_KANJI_DECK = 16, MAX_IDIOM_DECK = 8;
+const BASE_KANJI_DECK = 16, BASE_IDIOM_DECK = 8;
+const RANKS = [
+  {n:30,  t:"初伝", d:"単字デッキ枠+2"},
+  {n:60,  t:"中伝", d:"毎ターンの気力+1"},
+  {n:90,  t:"奥伝", d:"熟語デッキ枠+2"},
+  {n:120, t:"皆伝・言祝ぎ", d:"言葉の力+5"}
+];
+/* 図鑑は石碑の記録（過去最高）と現在の多いほうで数える */
+function dexCount(){ return Math.max(G.crafted.length, LEG.dex); }
+function rankLv(){ let n=0; for(let i=0;i<RANKS.length;i++) if(dexCount()>=RANKS[i].n) n=i+1; return n; }
+function rankName(){ return rankLv()? RANKS[rankLv()-1].t : "無位"; }
+function maxKanjiDeck(){ return BASE_KANJI_DECK + (rankLv()>=1?2:0); }
+function maxIdiomDeck(){ return BASE_IDIOM_DECK + (rankLv()>=3?2:0); }
+function baseEnergy(){ return 3 + (rankLv()>=2?1:0); }
+function rankPower(){ return rankLv()>=4 ? 5 : 0; }
+
+/* 石碑：記憶を消しても残る功績 */
+const LEG_KEY = "yojijirensei-legacy";
+let LEG = {bestN:0, bestH:0, depth:0, dex:0};
+function legSave(){
+  LEG.bestN = Math.max(LEG.bestN, G.bestN); LEG.bestH = Math.max(LEG.bestH, G.bestH);
+  LEG.depth = Math.max(LEG.depth, G.depth); LEG.dex = Math.max(LEG.dex, G.crafted.length);
+  const t = JSON.stringify(LEG);
+  try{ if(window.storage && window.storage.set) window.storage.set(LEG_KEY, t); }catch(e){}
+  try{ localStorage.setItem(LEG_KEY, t); }catch(e){}
+}
+function legLoad(){
+  return Promise.resolve().then(function(){
+    if(window.storage && window.storage.get) return window.storage.get(LEG_KEY);
+    return null;
+  }).then(function(r){
+    let t = (r && r.value) ? r.value : null;
+    if(!t){ try{ t = localStorage.getItem(LEG_KEY); }catch(e){} }
+    if(t){ const d = JSON.parse(t); if(d) LEG = {bestN:d.bestN|0, bestH:d.bestH|0, depth:d.depth|0, dex:d.dex|0}; }
+  }).catch(function(){});
+}
+function legacyBonus(){
+  return {
+    hp: Math.min(60, 5*(LEG.bestN+LEG.bestH)) + Math.min(20, 2*LEG.depth),
+    kanji: Math.min(16, 2*LEG.bestN),
+    hard: LEG.bestH >= 8
+  };
+}
 function retryLimit(){ return G.hard ? 1 : 3; }
-const HARD = {hp:1.5, atk:1.35, power:3, drop:-1, spring:0.35};
+const HARD = {hp:1.32, atk:1.2, power:3, drop:-1, spring:0.35};
 const STORY_LEN = 8;
 
 const SAVE_KEY = "yojijirensei-save";
@@ -803,6 +852,18 @@ function hubStatus(){
   el.textContent = "まなびの基板：接続ずみ" + (on ? "" : "（記録は端末に保存）") +
     (q ? "／送信待ち " + q + "件" : "") + "　得点 " + hubScore();
 }
+function paintLegacy(){
+  const el = document.getElementById("legacy");
+  if(!el) return;
+  const b = legacyBonus();
+  if(!LEG.dex && !LEG.bestN && !LEG.bestH){ el.innerHTML = ""; return; }
+  el.innerHTML = '<span class="label">石碑の記録</span>　'+
+    '通常'+LEG.bestN+'章／修羅道'+LEG.bestH+'章'+(LEG.depth?'／無限'+LEG.depth+'層':'')+
+    '　図鑑'+LEG.dex+'語'+(rankLv()?'（'+rankName()+'）':'')+
+    (b.hp||b.kanji ? '<br>継承の恩恵：体力+'+b.hp+(b.kanji?'／はじめの漢字+'+b.kanji+'枚':'') : '');
+  const hb = document.getElementById("hardbtn");
+  if(hb) hb.classList.toggle("hidden", !b.hard);
+}
 function showContinue(){
   const b = document.getElementById("contbtn");
   if(b && (SAVED||MEM_SAVE)) b.classList.remove("hidden");
@@ -812,9 +873,24 @@ function invCount(){ return Object.values(G.inv).reduce((a,b)=>a+b,0); }
 function addKanji(c,n){
   n = n||1; G.inv[c] = (G.inv[c]||0)+n; refillDeck();
 }
+function checkRank(){
+  const lv = rankLv();
+  if(lv > (G.rankShown||0)){
+    G.rankShown = lv;
+    const r = RANKS[lv-1];
+    sfx("craft");
+    modal("言の葉の位「"+esc(r.t)+"」",
+      "図鑑 "+dexCount()+" 語。<br>この位のあいだ <span class=\"near\">"+esc(r.d)+"</span>。",
+      [{label:"うけとる"}]);
+  }
+  if(G.crafted.length >= IDIOMS.length && !G.dexDone){
+    G.dexDone = true; G.dexPending = true;
+  }
+  legSave();
+}
 function refillDeck(){
   for(const c in G.inv){
-    while(deckKanjiCount(c) < G.inv[c] && G.deckKanji.length < MAX_KANJI_DECK) G.deckKanji.push(c);
+    while(deckKanjiCount(c) < G.inv[c] && G.deckKanji.length < maxKanjiDeck()) G.deckKanji.push(c);
   }
 }
 function removeFromDeckKanji(c){
@@ -866,7 +942,7 @@ function closeModal(){
   if(host){ host.classList.add("hidden"); host.innerHTML=""; }
 }
 function goHome(){
-  paintTitle(); showContinue(); report(); hubStatus(); playBGM("field"); go("title");
+  paintTitle(); showContinue(); report(); hubStatus(); paintLegacy(); playBGM("field"); go("title");
 }
 function toast(msg){
   const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
@@ -885,9 +961,25 @@ function paintTitle(){
   const el = document.getElementById("title-parade");
   if(el) el.innerHTML = ["mushi","onibi","kemono","kumo"].map(function(k){return sprHTML(k,44);}).join("");
 }
-function startGame(){
+function startGame(hard){
   actx(); playBGM("field");
-  if(invCount()===0) STARTER.forEach(c=>addKanji(c));
+  if(invCount()===0){
+    const b = legacyBonus();
+    G.hard = !!hard;
+    G.maxhp = 70 + b.hp; G.hp = G.maxhp;
+    STARTER.forEach(function(c){ addKanji(c); });
+    for(let i=0;i<b.kanji;i++) addKanji(rollKanji());
+    G.rankShown = rankLv();
+    if(b.hp || b.kanji || rankLv()){
+      modal("継承の恩恵",
+        "石碑に刻まれた功績が、新たな旅を助ける。<br>"+
+        (b.hp?"最大体力 <span class=\"near\">+"+b.hp+"</span>　":"")+
+        (b.kanji?"はじめの漢字 <span class=\"near\">+"+b.kanji+"枚</span>　":"")+
+        (rankLv()?"言の葉の位 <span class=\"near\">"+rankName()+"</span>":"")+
+        "<br><span class=\"muted\">そのぶん、妖怪たちも手ごわくなっている。</span>",
+        [{label:"旅に出る"}]);
+    }
+  }
   renderMap();
 }
 
@@ -895,6 +987,10 @@ function startGame(){
    マップ画面
    ========================================================= */
 const NODE_CAP = {"敵":"敵","宝":"宝","泉":"泉","主":"主"};
+function foeScale(){
+  const r = rankLv(), leg = Math.min(16, LEG.bestN+LEG.bestH);
+  return {hp: 1 + r*0.05 + leg*0.012, atk: 1 + r*0.02 + leg*0.008};
+}
 function genLayer(i){
   const d = i - STORY_LEN + 1;
   const pool = [];
@@ -933,6 +1029,7 @@ function foeAt(ci,ni){
 }
 const PAT_TEXT = {atk:"攻撃",big:"渾身の一撃",buff:"力をためる",guard:"身を固める",drain:"気力を吸う"};
 function renderMap(){
+  if(G.dexPending) return renderDexClear();
   ensureLayers();
   if(G.chapter >= CHAPTERS.length){ G.cleared = true; return renderEnding(); }
   const ch = CHAPTERS[G.chapter];
@@ -988,8 +1085,8 @@ function renderMap(){
           '<div class="statline"><span class="label">たいりょく</span>'+
           '<span style="margin-left:auto">'+G.hp+' / '+G.maxhp+'</span></div>'+
           bar(G.hp,G.maxhp)+
-          '<div class="statline" style="margin-top:6px"><span class="muted">漢字 '+invCount()+'枚／錬成 '+G.crafted.length+'・'+IDIOMS.length+'</span>'+
-          '<span class="tag" style="margin-left:auto">再挑戦のこり '+rest+'回</span></div>'+'<div class="statline" style="margin-top:4px"><span class="muted">'+(G.endless?'最深到達 第'+Math.max(G.depth,G.chapter-STORY_LEN)+'層　':'')+'得点 '+hubScore()+'</span></div>'+
+          '<div class="statline" style="margin-top:6px"><span class="muted">漢字 '+invCount()+'枚／錬成 '+dexCount()+'・'+IDIOMS.length+'</span>'+
+          '<span class="tag" style="margin-left:auto">再挑戦のこり '+rest+'回</span></div>'+'<div class="statline" style="margin-top:4px"><span class="muted">'+(G.endless?'最深到達 第'+Math.max(G.depth,G.chapter-STORY_LEN)+'層　':'')+'位 '+rankName()+'　得点 '+hubScore()+'</span></div>'+
         '</div>'+
       '</div>'+
       '<div class="px panel col-b">'+preview+'</div>'+
@@ -1042,13 +1139,14 @@ function startBattle(foe, isBoss){
   playBGM(isBoss?"boss":"battle"); if(isBoss) sfx("gong");
   B = {
     en:{n:foe.n,g:foe.g,
-        hp:Math.round(foe.hp*(G.hard?HARD.hp:1)), maxhp:Math.round(foe.hp*(G.hard?HARD.hp:1)),
-        atk:Math.round(foe.atk*(G.hard?HARD.atk:1)),
+        hp:Math.round(foe.hp*(G.hard?HARD.hp:1)*foeScale().hp),
+        maxhp:Math.round(foe.hp*(G.hard?HARD.hp:1)*foeScale().hp),
+        atk:Math.round(foe.atk*(G.hard?HARD.atk:1)*foeScale().atk),
         weak:foe.weak,pat:foe.pat,pi:0,buff:0,guard:0},
-    boss:!!isBoss, turn:0, energy:3, maxEnergy:3, penalty:0,
+    boss:!!isBoss, turn:0, energy:baseEnergy(), maxEnergy:baseEnergy(), penalty:0,
     draw:buildDeck(), hand:[], discard:[], exhaust:[],
-    atkBuff:G.chapter*(G.hard?HARD.power:4), shield:0, grind:false, counter:null, poison:null,
-    fog:0, surround:0, storyN:0, grindOn:0, sel:[], log:[], over:false, lastDmg:0, taken:0, endure:false, atkDownNext:0
+    atkBuff:G.chapter*(G.hard?HARD.power:4)+rankPower(), shield:0, grind:false, counter:null, poison:null,
+    fog:0, surround:0, storyN:0, grindOn:0, sel:[], log:[], over:false, rage:false, lastDmg:0, taken:0, endure:false, atkDownNext:0
   };
   for(let i=0;i<5;i++) drawCard();
   B.en.intent = B.en.pat[0];
@@ -1162,8 +1260,9 @@ function craftInBattle(){
   const newly = !G.crafted.includes(found.w);
   if(newly){
     G.crafted.push(found.w);
-    if(G.deckIdiom.length<MAX_IDIOM_DECK) G.deckIdiom.push(found.w);
+    if(G.deckIdiom.length<maxIdiomDeck()) G.deckIdiom.push(found.w);
     toast(found.w+" を図鑑に登録した");
+    checkRank();
   }
   applyEffect(found);
 }
@@ -1323,6 +1422,14 @@ function applyEffect(o){
 
 function afterAction(){
   if(B.en.hp<=0){ B.en.hp=0; return victory(); }
+  if(B.boss && !B.rage && B.en.hp <= B.en.maxhp*0.3){
+    B.rage = true;
+    B.en.buff += Math.round(B.en.atk*0.12);
+    B.en.intent = "big";
+    B.energy += 1;
+    log("<b>"+B.en.n+"</b> は死力をふりしぼった！　こちらも気を引きしめた（気力+1）");
+    sfx("gong");
+  }
   if(G.hp<=0){ G.hp=0; return defeat(); }
   renderBattle();
 }
@@ -1359,6 +1466,7 @@ function renderBattle(){
   if(B.poison) chips += '<span>疑心暗鬼 '+B.poison.t+'</span>';
   if(e.guard>0) chips += '<span class="bad">敵のまもり '+e.guard+'</span>';
   if(e.buff>0) chips += '<span class="bad">敵の攻撃+'+e.buff+'</span>';
+  if(B.rage) chips += '<span class="bad">死力</span>';
 
   let hand = "";
   B.hand.forEach(function(c,i){
@@ -1500,14 +1608,41 @@ function resetAll(){
   try{ if(window.storage && window.storage.delete) window.storage.delete(SAVE_KEY); }catch(e){}
   try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
   const b=document.getElementById("contbtn"); if(b) b.classList.add("hidden");
-  toast("記憶を消した");
+  legSave();
+  toast("記憶を消した。石碑の功績は残る");
   goHome();
 }
 function startHard(){
-  G.hard=true; G.endless=false; G.cleared=false; G.chapter=0; G.node=0; G.retry=0; G.maxhp=70; G.hp=70;
+  G.hard=true; G.endless=false; G.cleared=false; G.chapter=0;
+  G.maxhp = Math.max(G.maxhp, 70 + legacyBonus().hp); G.node=0; G.retry=0; G.maxhp=70; G.hp=70;
   CRAFT=[]; refillDeck(); saveGame(true);
   toast("修羅道がひらいた");
   renderMap();
+}
+function renderDexClear(){
+  G.dexPending = false;
+  stopSeq(); AU.cur = null; sfx("win"); playBGM("clear"); report();
+  const scroll = IDIOMS.map(function(o){ return o.w; }).join("　");
+  document.getElementById("s-result").innerHTML =
+    topbar("図鑑 制覇") +
+    '<div class="scr-body"><div class="px panel grow celebox">'+ confetti() +
+      '<div class="celeinner" style="width:100%">'+
+        '<div class="shukuseal">言</div>'+
+        '<div class="celetitle">言祝ぎ</div>'+
+        '<div class="muted">'+IDIOMS.length+'語すべてを錬成した</div>'+
+        '<div class="hr" style="width:70%"></div>'+
+        '<div class="scrollwrap"><div class="scrollin">'+esc(scroll)+'</div></div>'+
+        '<div class="statline" style="justify-content:center;gap:14px;margin-top:6px">'+
+          '<span>位 <span class="near">'+rankName()+'</span></span>'+
+          '<span>得点 <span class="near">'+hubScore()+'</span></span>'+
+        '</div>'+
+      '</div>'+
+    '</div></div>'+
+    '<div class="scr-foot">'+
+      '<button class="btn primary" onclick="renderMap()">旅にもどる</button>'+
+      '<button class="btn ghost" onclick="renderDex()">図鑑をみる</button>'+
+    '</div>';
+  go("result");
 }
 function renderHardEnding(){
   report(); playBGM("clear");
@@ -1621,9 +1756,10 @@ function doCraft(){
   CRAFT.forEach(c=>{ G.inv[c]--; if(G.inv[c]<=0) delete G.inv[c]; removeFromDeckKanji(c); });
   CRAFT = [];
   G.crafted.push(found.w);
-  if(G.deckIdiom.length<MAX_IDIOM_DECK) G.deckIdiom.push(found.w);
+  if(G.deckIdiom.length<maxIdiomDeck()) G.deckIdiom.push(found.w);
   refillDeck(); saveGame(true);
   sfx("craft");
+  checkRank();
   toast(found.w+"（"+found.y+"）を錬成した");
   report();
   renderCraft();
@@ -1650,10 +1786,10 @@ function renderDeck(){
   document.getElementById("s-deck").innerHTML =
     topbar("編成", "backFromSub()") +
     '<div class="scr-body"><div class="pane grow">'+
-      '<div class="px panel" style="margin-bottom:7px"><div class="label">単字カード　'+G.deckKanji.length+' / '+MAX_KANJI_DECK+'</div>'+
+      '<div class="px panel" style="margin-bottom:7px"><div class="label">単字カード　'+G.deckKanji.length+' / '+maxKanjiDeck()+'</div>'+
         '<p class="muted" style="margin:5px 0 8px">戦闘中に4枚そろえば、その場で錬成できる。</p>'+
         '<div class="inv">'+inv+'</div></div>'+
-      '<div class="px panel dark"><div class="label">熟語カード　'+G.deckIdiom.length+' / '+MAX_IDIOM_DECK+'</div>'+
+      '<div class="px panel dark"><div class="label">熟語カード　'+G.deckIdiom.length+' / '+maxIdiomDeck()+'</div>'+
         '<div style="margin-top:7px">'+idm+'</div></div>'+
     '</div></div>'+
     '<div class="scr-foot"><button class="btn" onclick="backFromSub()">とじる</button></div>';
@@ -1661,7 +1797,7 @@ function renderDeck(){
 }
 function toggleKanji(c){
   const inDeck = deckKanjiCount(c);
-  if(inDeck < G.inv[c] && G.deckKanji.length < MAX_KANJI_DECK) G.deckKanji.push(c);
+  if(inDeck < G.inv[c] && G.deckKanji.length < maxKanjiDeck()) G.deckKanji.push(c);
   else if(inDeck>0) { while(deckKanjiCount(c)>0) removeFromDeckKanji(c); }
   else toast("デッキがいっぱい");
   renderDeck();
@@ -1669,8 +1805,8 @@ function toggleKanji(c){
 function toggleIdiom(id){
   const i = G.deckIdiom.indexOf(id);
   if(i>=0) G.deckIdiom.splice(i,1);
-  else if(G.deckIdiom.length<MAX_IDIOM_DECK) G.deckIdiom.push(id);
-  else toast("熟語カードは"+MAX_IDIOM_DECK+"枚まで");
+  else if(G.deckIdiom.length<maxIdiomDeck()) G.deckIdiom.push(id);
+  else toast("熟語カードは"+maxIdiomDeck()+"枚まで");
   renderDeck();
 }
 
@@ -1704,17 +1840,20 @@ function renderDex(){
 try{ paintTitle(); }catch(e){}
 try{ probeSave().then(function(v){ SAVED = v; showContinue(); }); }catch(e){}
 try{ hubStatus(); window.addEventListener("load", hubStatus); }catch(e){}
+try{ legLoad().then(function(){ paintLegacy(); hubStatus(); }); }catch(e){}
 const HUB_KEY = "yojijirensei";
 const HUB_URL = "https://backtree-create.github.io/ManabiBox/";
 /* 通常クリア5000（8章に等分）／修羅道クリア100000（8章に等分）／無限回廊は1層3000 */
 function hubScore(){
-  return Math.round(5000/STORY_LEN*G.bestN + 100000/STORY_LEN*G.bestH + 3000*G.depth);
+  const dex = 2000*rankLv() + (dexCount()>=IDIOMS.length ? 20000 : 0);
+  return Math.round(5000/STORY_LEN*G.bestN + 100000/STORY_LEN*G.bestH + 3000*G.depth + dex);
 }
 function hubNote(){
   return "通常"+G.bestN+"章 修羅道"+G.bestH+"章"+
-    (G.depth?" 無限"+G.depth+"層":"")+" 錬成"+G.crafted.length+"語";
+    (G.depth?" 無限"+G.depth+"層":"")+" 錬成"+dexCount()+"語"+(rankLv()?"("+rankName()+")":"");
 }
 function report(){
+  try{ legSave(); }catch(e){}
   try{
     const H = window.LearnHub;
     if(!H || typeof H.report !== "function") return;
