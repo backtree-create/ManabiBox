@@ -307,6 +307,7 @@ body::before{
   <div class="wrap">
     <div class="logo"><span>四</span><span>字</span><span>錬</span><span>成</span></div>
     <div class="parade" id="title-parade"></div>
+    <div class="muted" id="hubstate" style="font-size:11.5px"></div>
     <div class="px panel" style="max-width:440px;text-align:left">
       <p style="margin:0;font-size:13px;color:var(--aijiro)">
         言葉の意味が失われ、国じゅうの熟語がバラバラの漢字に散った。<br>
@@ -792,6 +793,16 @@ function continueGame(){
   if(!txt || !applySave(txt)) return toast("記録が見つからない");
   actx(); playBGM("field"); sfx("get"); renderMap();
 }
+function hubStatus(){
+  const el = document.getElementById("hubstate");
+  if(!el) return;
+  const H = window.LearnHub;
+  if(!H || typeof H.report !== "function"){ el.textContent = "まなびの基板：未接続（単体で遊べます）"; return; }
+  const on = (typeof H.online === "function") ? H.online() : false;
+  const q  = (typeof H.queued === "function") ? H.queued() : 0;
+  el.textContent = "まなびの基板：接続ずみ" + (on ? "" : "（記録は端末に保存）") +
+    (q ? "／送信待ち " + q + "件" : "") + "　得点 " + hubScore();
+}
 function showContinue(){
   const b = document.getElementById("contbtn");
   if(b && (SAVED||MEM_SAVE)) b.classList.remove("hidden");
@@ -855,7 +866,7 @@ function closeModal(){
   if(host){ host.classList.add("hidden"); host.innerHTML=""; }
 }
 function goHome(){
-  paintTitle(); showContinue(); playBGM("field"); go("title");
+  paintTitle(); showContinue(); report(); hubStatus(); playBGM("field"); go("title");
 }
 function toast(msg){
   const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
@@ -1685,6 +1696,7 @@ function renderDex(){
    ========================================================= */
 try{ paintTitle(); }catch(e){}
 try{ probeSave().then(function(v){ SAVED = v; showContinue(); }); }catch(e){}
+try{ hubStatus(); window.addEventListener("load", hubStatus); }catch(e){}
 const HUB_KEY = "yojijirensei";
 const HUB_URL = "https://backtree-create.github.io/ManabiBox/";
 /* 通常クリア5000（8章に等分）／修羅道クリア100000（8章に等分）／無限回廊は1層3000 */
@@ -1692,17 +1704,22 @@ function hubScore(){
   return Math.round(5000/STORY_LEN*G.bestN + 100000/STORY_LEN*G.bestH + 3000*G.depth);
 }
 function hubNote(){
-  return "通常 "+G.bestN+"/"+STORY_LEN+"章　修羅道 "+G.bestH+"/"+STORY_LEN+"章"+
-    (G.depth?"　無限回廊 第"+G.depth+"層":"")+"　錬成 "+G.crafted.length+"/"+IDIOMS.length;
+  return "通常"+G.bestN+"章 修羅道"+G.bestH+"章"+
+    (G.depth?" 無限"+G.depth+"層":"")+" 錬成"+G.crafted.length+"語";
 }
 function report(){
   try{
     const H = window.LearnHub;
     if(!H || typeof H.report !== "function") return;
     const sc = hubScore();
-    const payload = {key:HUB_KEY, done:Math.min(STORY_LEN*2, G.bestN+G.bestH), total:STORY_LEN*2,
-      score:sc, best:sc, points:sc, note:hubNote()};
-    if(H.report.length >= 2) H.report(HUB_KEY, payload); else H.report(payload);
+    /* まなびの基板の仕様： {app, done, total, best, note} 。noteは40字まで */
+    H.report({
+      app: HUB_KEY,
+      done: Math.min(STORY_LEN*2, G.bestN + G.bestH),
+      total: STORY_LEN*2,
+      best: sc,
+      note: hubNote()
+    });
   }catch(e){}
 }
 function goHub(){
