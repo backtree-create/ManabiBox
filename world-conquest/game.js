@@ -88,6 +88,13 @@
   var quizTimer = null, quizDeadline = 0, quizStart = 0;
   var pollHandle = null, netBusy = false;
 
+  /* ---------- 遊べる時間の制限 ---------- */
+  var SESSION_MS = Math.max(0, Number(CFG.playMinutes === undefined ? 15 : CFG.playMinutes) || 0) * 60000;
+  var DAILY_MS = Math.max(0, Number(CFG.dailyMinutes) || 0) * 60000;
+  var playLimitMs = 0;         // 今回の制限（1日の残りと短いほうを使う）
+  var playedMs = 0;            // 今回どれだけ遊んだか（画面を見ている間だけ数える）
+  var timeUp = false, clockHandle = null, warned = {};
+
   /* ---------- three.js ---------- */
   var scene, camera, renderer, raycaster, mapGroup;
   var meshes = {};             // cid -> Mesh
@@ -474,6 +481,8 @@
 
     if (mine) {
       html += '<div class="i-sub">' + (d[1] ? '首都: ' + esc(d[1]) + '　' : '') + 'この国はあなたの色。守りぬこう!</div>';
+    } else if (timeUp) {
+      html += '<div class="i-sub">⏰ 時間が終わりました。おつかれさま!</div>';
     } else if (protLeft > 0) {
       html += '<div class="i-sub">🛡 占領直後のため保護中（あと' + Math.ceil(protLeft / 1000) + '秒）</div>';
     } else if (lockLeft > 0) {
@@ -539,6 +548,7 @@
   var quizCid = null, quizSteal = false, quizQ = null, answered = false;
 
   function startQuiz(cid, isSteal) {
+    if (timeUp) return;
     hideInfo();
     quizCid = cid; quizSteal = isSteal; answered = false;
     quizQ = makeQuestion(cid, isSteal);
@@ -619,6 +629,7 @@
 
     // 占領を反映（楽観的更新 → サーバー確認）
     claims[cid] = [me.pid, me.color, Date.now()];
+    pending[cid] = Date.now();          // サーバーの返事が来るまでは、この表示を守る
     sessionCaptures++;
     var total = mine.length + 1;
 
@@ -669,18 +680,43 @@
       .then(function (r) { return r.json(); });
   }
 
-  function applyState(st) {
+  /* サーバー（Apps Script）は返事に1〜3秒かかる。そのため
+       ① 自分の占領が届く前に、古い状態の返事が返ってくる
+       ② 返事どうしが追いこして、古い状態があとから届く
+     ということが起きる。そのまま画面に映すと、取り合っていないのに
+     「うばわれた!」と出てしまうので、次の2つで防ぐ。
+       ・通信ごとに通し番号をつけ、古い返事は捨てる
+       ・返事待ちの自分の占領（pending）は、返事が来るまで画面上で保つ */
+  var reqSeq = 0, appliedSeq = 0;
+  var pending = {};            // cid -> 送った時刻（サーバーの返事待ち）
+
+  function applyState(st, seq, skipCid) {
     if (!st) return;
-    var before = {};
-    myCids().forEach(function (id) { before[id] = 1; });
-    claims = st.c || {};
+    if (seq !== undefined) {
+      if (seq < appliedSeq) return;                 // 追いこされた古い返事は捨てる
+      appliedSeq = seq;
+    }
+    var lost = {};
+    myCids().forEach(function (id) { lost[id] = 1; });
+
+    /* 受け取ったデータは書きかえずに、写しを作って使う */
+    var next = {}, src = st.c || {};
+    Object.keys(src).forEach(function (k) { next[k] = src[k]; });
+    /* まだ返事が来ていない自分の占領は、こちらの表示のままにしておく */
+    Object.keys(pending).forEach(function (cid) {
+      if (!next[cid] || next[cid][0] !== me.pid) next[cid] = [me.pid, me.color, pending[cid]];
+    });
+    claims = next;
     players = st.p || {};
+
     // 自分の情報は常に最新に
     if (!players[me.pid]) players[me.pid] = [me.nick, score, me.color, Date.now()];
     else { players[me.pid][0] = me.nick; players[me.pid][1] = score; players[me.pid][2] = me.color; }
-    // うばわれ通知
-    myCids().forEach(function (id) { delete before[id]; });
-    Object.keys(before).forEach(function (id) {
+
+    // うばわれ通知（返事待ちのものと、いま結果が分かったものは除く）
+    myCids().forEach(function (id) { delete lost[id]; });
+    Object.keys(lost).forEach(function (id) {
+      if (pending[id] || id === skipCid) return;
       var o = ownerName(id);
       if (o && o.pid !== me.pid) {
         SND.steal();
@@ -691,23 +727,36 @@
   }
 
   function sendClaim(cid) {
-    if (!online) { paintAll(); return; }
+    if (!online) { delete pending[cid]; paintAll(); return; }
+    var seq = ++reqSeq;
     api(null, { m: 'claim', cid: cid, pid: me.pid, nick: me.nick, color: me.color, score: score })
       .then(function (r) {
-        if (r.ok) { applyState(r.state); }
+        delete pending[cid];                        // 返事が来たので待ちを解除
+        if (r.ok) applyState(r.state, seq);
         else if (r.err === 'protected') {
           toast('🛡 一歩おそかった! この国は保護中です（あと' + (r.wait || '?') + '秒）', 'ng');
-          applyState(r.state);
+          applyState(r.state, seq, cid);            // ここでは「うばわれた」を出さない
+        } else {
+          toast('⚠ この占領は記録できませんでした', 'ng');
         }
       })
-      .catch(function () { toast('⚠ 通信エラー: 記録できませんでした', 'ng'); });
+      .catch(function () {
+        delete pending[cid];
+        toast('⚠ 通信エラー: この占領は記録できませんでした', 'ng');
+      });
   }
 
   function poll() {
     if (!online || netBusy || document.hidden) return;
+    // 返事が返ってこないまま残った待ちは、時間で片づける
+    var now = Date.now();
+    Object.keys(pending).forEach(function (cid) {
+      if (now - pending[cid] > 30000) delete pending[cid];
+    });
     netBusy = true;
+    var seq = ++reqSeq;
     api({ mode: 'state', room: room })
-      .then(function (r) { if (r.ok) applyState(r.state); })
+      .then(function (r) { if (r.ok) applyState(r.state, seq); })
       .catch(function () { })
       .then(function () { netBusy = false; });
   }
@@ -727,24 +776,67 @@
   }
 
   var MEDAL = ['🥇', '🥈', '🥉'];
-  function renderRanking() {
-    if (players[me.pid]) players[me.pid][1] = score;   // 自分のスコアは常に最新を表示
-    var list = Object.keys(players).map(function (pid) {
-      var p = players[pid];
-      var cnt = mapIds.filter(function (id) { return claims[id] && claims[id][0] === pid; }).length;
-      return { pid: pid, nick: p[0], score: p[1] || 0, color: p[2], cnt: cnt };
-    }).sort(function (a, b) { return b.score - a.score; });
+  var RANK_SHOW = 12;
 
-    var html = list.slice(0, 15).map(function (p, i) {
-      var meCls = p.pid === me.pid ? ' rk-me' : '';
-      return '<div class="rk-row' + meCls + '">' +
-        '<span class="rk-pos">' + (MEDAL[i] || (i + 1)) + '</span>' +
-        '<span class="rk-dot" style="background:' + p.color + ';color:' + p.color + '"></span>' +
-        '<span class="rk-nick">' + esc(p.nick) + '</span>' +
-        '<span class="rk-cnt">' + p.cnt + '国</span>' +
-        '<span class="rk-score">' + p.score + '</span></div>';
-    }).join('');
+  /* 順位表を作る。
+     ・地図を持っているのに players に載っていない人も数に入れる（地図と食いちがわないように）
+     ・同じ点数の人は同じ順位にする
+     ・並びが毎回入れかわらないよう、点数→国数→名前→IDの順で決める */
+  function rankList() {
+    var by = {};
+    Object.keys(players).forEach(function (pid) {
+      var p = players[pid];
+      by[pid] = { pid: pid, nick: p[0] || '???', score: Number(p[1]) || 0, color: p[2] || '#888', cnt: 0 };
+    });
+    mapIds.forEach(function (id) {
+      var c = claims[id];
+      if (!c) return;
+      if (!by[c[0]]) by[c[0]] = { pid: c[0], nick: '???', score: 0, color: c[1] || '#888', cnt: 0 };
+      by[c[0]].cnt++;
+    });
+    if (!by[me.pid]) by[me.pid] = { pid: me.pid, nick: me.nick, score: 0, color: me.color, cnt: 0 };
+    /* 自分の行だけは、送信前でも手元の最新の値を出す */
+    by[me.pid].score = score;
+    by[me.pid].nick = me.nick;
+    by[me.pid].color = me.color;
+
+    var list = Object.keys(by).map(function (k) { return by[k]; });
+    list.sort(function (a, b) {
+      return (b.score - a.score) || (b.cnt - a.cnt) ||
+        (a.nick < b.nick ? -1 : a.nick > b.nick ? 1 : 0) ||
+        (a.pid < b.pid ? -1 : a.pid > b.pid ? 1 : 0);
+    });
+    var rank = 0, prevScore = null;
+    list.forEach(function (p, i) {
+      if (prevScore === null || p.score !== prevScore) rank = i + 1;
+      p.rank = rank; prevScore = p.score;
+    });
+    return list;
+  }
+
+  function rankRow(p) {
+    var pos = p.rank <= 3 ? MEDAL[p.rank - 1] : p.rank;
+    return '<div class="rk-row' + (p.pid === me.pid ? ' rk-me' : '') + '">' +
+      '<span class="rk-pos">' + pos + '</span>' +
+      '<span class="rk-dot" style="background:' + p.color + ';color:' + p.color + '"></span>' +
+      '<span class="rk-nick">' + esc(p.nick) + '</span>' +
+      '<span class="rk-cnt">' + p.cnt + '国</span>' +
+      '<span class="rk-score">' + p.score + '</span></div>';
+  }
+
+  function renderRanking() {
+    var list = rankList();
+    var top = list.slice(0, RANK_SHOW);
+    var inTop = top.some(function (p) { return p.pid === me.pid; });
+    var html = top.map(rankRow).join('');
+    /* 自分が下のほうでも、自分の行だけは必ず見えるようにする */
+    if (!inTop) {
+      var mine = null;
+      list.forEach(function (p) { if (p.pid === me.pid) mine = p; });
+      if (mine) html += '<div class="rk-gap">…</div>' + rankRow(mine);
+    }
     $('rank-list').innerHTML = html || '<div class="rk-row">まだ誰もいません</div>';
+    $('rank-count').textContent = list.length >= 2 ? '(' + list.length + '人)' : '';
   }
 
   function toast(html, kind) {
@@ -850,9 +942,13 @@
     camera.position.z = Math.min(camMaxZ, camFitZ * 1.14);
     zoomTo(camFitZ, 900);
 
+    startClock();
+    if (playLimitMs) toast('⏰ 今回は <b>' + fmt(playLimitMs) + '</b> です。がんばって!');
+
     if (online) {
+      var joinSeq = ++reqSeq;
       api(null, { m: 'join', pid: me.pid, nick: me.nick, color: me.color, score: 0 })
-        .then(function (r) { if (r.ok) applyState(r.state); })
+        .then(function (r) { if (r.ok) applyState(r.state, joinSeq); })
         .catch(function () { toast('⚠ サーバーに接続できません。練習モードとして続けます', 'ng'); online = false; });
       startPolling();
     }
@@ -871,6 +967,13 @@
       $('btn-online').disabled = true;
       $('btn-online').textContent = '🌐 みんなで対戦（先生の設定待ち）';
     }
+    /* 1日の上限に達していたら、今日はもう始められない */
+    if (DAILY_MS && dailyLeftMs() <= 0) {
+      $('btn-online').disabled = true;
+      $('btn-solo').disabled = true;
+      $('btn-solo').textContent = '⏰ 今日はここまで（また明日!）';
+    }
+    $('r-close').addEventListener('click', function () { $('result').classList.remove('show'); });
     $('btn-online').addEventListener('click', function () { begin(true); });
     $('btn-solo').addEventListener('click', function () { begin(false); });
     $('btn-help').addEventListener('click', function () { $('help').classList.add('show'); });
@@ -884,6 +987,90 @@
     $('q-close').addEventListener('click', function () {
       if (!answered) { answered = true; closeQuiz(); combo = 0; }
     });
+  }
+
+  /* ---------- 時間の管理 ----------
+     画面を見ていない間は数えないので、「実際に遊んだ時間」で切れます。 */
+  function todayKey() {
+    var d = new Date();
+    return 'played' + d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
+  }
+  function dailyPlayedMs() { return Number(store(todayKey())) || 0; }
+  function dailyLeftMs() { return DAILY_MS ? Math.max(0, DAILY_MS - dailyPlayedMs()) : -1; }
+  function fmt(ms) {
+    var s = Math.max(0, Math.ceil(ms / 1000));
+    return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+  }
+
+  function startClock() {
+    /* 1日の上限があるときは、残りと今回の制限の短いほうを使う */
+    playLimitMs = SESSION_MS;
+    var left = dailyLeftMs();
+    if (left >= 0) playLimitMs = playLimitMs ? Math.min(playLimitMs, left) : left;
+
+    var last = Date.now();
+    if (clockHandle) clearInterval(clockHandle);
+    clockHandle = setInterval(function () {
+      var now = Date.now(), dt = now - last; last = now;
+      if (timeUp || document.hidden) return;      // 見ていない間は数えない
+      if (dt > 5000) dt = 1000;                   // スリープ復帰などの飛びをならす
+      playedMs += dt;
+      if (DAILY_MS) { try { store(todayKey(), String(dailyPlayedMs() + dt)); } catch (e) { } }
+      updateClock();
+    }, 1000);
+    updateClock();
+  }
+
+  function updateClock() {
+    var el = $('hud-time');
+    if (!playLimitMs) { el.textContent = '∞'; el.className = 'hud-v'; return; }
+    var leftMs = Math.max(0, playLimitMs - playedMs), s = Math.ceil(leftMs / 1000);
+    el.textContent = fmt(leftMs);
+    el.className = 'hud-v' + (s <= 60 ? ' danger' : (s <= 300 ? ' warn' : ''));
+    [300, 60, 30].forEach(function (w) {
+      if (w * 1000 >= playLimitMs) return;        // 短い設定のときに開始直後から鳴らさない
+      if (s <= w && !warned[w]) {
+        warned[w] = 1;
+        SND.steal();
+        toast('⏰ のこり' + (w >= 60 ? (w / 60) + '分' : w + '秒') + 'です', 'ng');
+      }
+    });
+    if (leftMs <= 0) finishGame();
+  }
+
+  function finishGame() {
+    if (timeUp) return;
+    timeUp = true;
+    closeQuiz();
+    hideInfo();
+    if (pollHandle) { clearInterval(pollHandle); pollHandle = null; }
+    maybeReport(true);
+    showResult();
+  }
+
+  function showResult() {
+    var mine = myCids();
+    var acc = (correct + wrong) ? Math.round(correct / (correct + wrong) * 100) : 0;
+    var rank = null, total = 0;
+    if (online) {
+      var list = rankList();
+      total = list.length;
+      list.forEach(function (p) { if (p.pid === me.pid) rank = p.rank; });
+    }
+    $('r-sub').innerHTML = esc(me.nick) + ' の記録を「まなびの基盤」に送りました。' +
+      (rank ? '<br>' + total + '人中 <b>' + rank + '位</b>' : '');
+    $('r-grid').innerHTML =
+      '<div class="r-cell"><b>' + score + '</b><span>スコア</span></div>' +
+      '<div class="r-cell"><b>' + mine.length + '</b><span>りょうち</span></div>' +
+      '<div class="r-cell"><b>' + acc + '%</b><span>せいとうりつ</span></div>';
+    /* 州ごとの内訳（地理の復習になるように） */
+    $('r-conts').innerHTML = CONTINENTS.map(function (c) {
+      var got = mine.filter(function (id) { return COUNTRIES[id][2] === c; }).length;
+      var all = mapIds.filter(function (id) { return COUNTRIES[id][2] === c; }).length;
+      return got ? '<span class="r-chip">' + esc(c) + ' <b>' + got + '</b>/' + all + '</span>' : '';
+    }).join('');
+    $('r-hub').href = (window.MANABI_CONFIG || {}).hubUrl || '../';
+    $('result').classList.add('show');
   }
 
   /* ---------- まなびの基盤にもどるボタン ----------
@@ -951,7 +1138,11 @@
       correctIndex: function () { return quizQ ? quizQ.correct : -1; },
       question: function () { return quizQ; },
       three: function () { return { scene: scene, camera: camera, raycaster: raycaster, mapGroup: mapGroup, meshes: meshes }; },
-      addBackButton: addBackButton
+      addBackButton: addBackButton,
+      applyState: applyState, pending: function () { return pending; },
+      rankList: rankList, finish: finishGame,
+      clock: function () { return { limit: playLimitMs, played: playedMs, timeUp: timeUp }; },
+      setPlayed: function (ms) { playedMs = ms; updateClock(); }
     };
   }
 })();
