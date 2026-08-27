@@ -69,7 +69,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .hidden{display:none !important}
 
 /* ---------- オーバーレイ共通 ---------- */
-#ovl{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center}
+#ovl{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;
+  pointer-events:none}   /* 空のときにタッチを吸わない（スマホ・タブレット対応） */
+#ovl>*{pointer-events:auto}
 .panel{background:linear-gradient(180deg,rgba(13,18,35,.96),rgba(9,13,26,.96));
   border:2px solid var(--board-line);border-radius:14px;padding:3.5% 4.5%;
   width:min(92%,760px);max-height:92%;overflow-y:auto;text-align:center;
@@ -340,10 +342,19 @@ addEventListener('keydown', e=>{
 });
 addEventListener('keyup', e=>{ if(e.code==='Space') actionUp(); });
 function bindBtn(el, down, up){
-  el.addEventListener('pointerdown', e=>{ e.preventDefault(); ac(); down(); });
-  if(up) el.addEventListener('pointerup', e=>{ e.preventDefault(); up(); });
-  if(up) el.addEventListener('pointercancel', ()=>up());
-  if(up) el.addEventListener('pointerleave', ()=>up());
+  if(window.PointerEvent){
+    el.addEventListener('pointerdown', e=>{ e.preventDefault(); ac(); down(); });
+    if(up) el.addEventListener('pointerup', e=>{ e.preventDefault(); up(); });
+    if(up) el.addEventListener('pointercancel', ()=>up());
+    if(up) el.addEventListener('pointerleave', ()=>up());
+  }else{
+    /* 古いiPad等 Pointer Events 非対応ブラウザ用 */
+    el.addEventListener('touchstart', e=>{ e.preventDefault(); ac(); down(); }, {passive:false});
+    if(up) el.addEventListener('touchend', e=>{ e.preventDefault(); up(); }, {passive:false});
+    if(up) el.addEventListener('touchcancel', ()=>up());
+    el.addEventListener('mousedown', e=>{ e.preventDefault(); ac(); down(); });
+    if(up) el.addEventListener('mouseup', e=>{ e.preventDefault(); up(); });
+  }
 }
 bindBtn($('#btnL'), ()=>runTap(0));
 bindBtn($('#btnR'), ()=>runTap(1));
