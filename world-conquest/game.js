@@ -919,7 +919,7 @@
       app: 'world-conquest',
       done: cum.length,
       total: mapIds.length || Object.keys(COUNTRIES).length,
-      best: acc,
+      best: acc * 10,   /* 他ゲームに合わせて1000点満点に換算 */
       note: '今回' + sessionCaptures + 'か国・' + score + 'pt（正答率' + acc + '%）'
     };
     try {
