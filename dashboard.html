@@ -14,7 +14,6 @@
 :root{--wrap:1060px;}
 .setup .row{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;align-items:end;}
 @media (max-width:720px){.setup .row{grid-template-columns:1fr;}}
-
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin:26px 0 0;}
 .kpi{border:1px solid var(--edge);border-radius:var(--r);padding:16px 18px;
   background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.015));position:relative;overflow:hidden;}
@@ -23,7 +22,6 @@
   letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
 .kpi b{font-family:"Dela Gothic One",sans-serif;font-weight:400;font-size:30px;color:#fff;
   font-variant-numeric:tabular-nums;line-height:1.3;}
-
 .panel{border:1px solid var(--edge);border-radius:var(--r);padding:20px 22px 14px;margin-bottom:18px;
   background:linear-gradient(160deg,rgba(255,255,255,.045),rgba(255,255,255,.012));}
 .panel h3{font-family:"Outfit",sans-serif;font-weight:600;font-size:12px;letter-spacing:.2em;
@@ -35,16 +33,22 @@ canvas{width:100%;display:block;}
 th{cursor:pointer;}
 th:hover{color:var(--paper);}
 td{white-space:nowrap;}
+details.panel summary{cursor:pointer;font-family:"Outfit",sans-serif;font-weight:600;font-size:12px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--muted);list-style:none;user-select:none;}
+details.panel summary::-webkit-details-marker{display:none;}
+details.panel summary::before{content:"▸ ";}
+details.panel[open] summary::before{content:"▾ ";}
+.basein{width:110px;text-align:right;}
+.mode{display:flex;gap:10px;margin:0 0 14px;}
+.mode .btn{opacity:.45;}
+.mode .btn.on{opacity:1;}
 </style>
 </head>
 <body>
 <div class="wrap">
-
   <div class="eyebrow"><span>Manabi Board / Class</span><a class="linkbtn" href="index.html">ハブにもどる</a></div>
-
   <h1>クラスの<span class="hl">記録</span></h1>
   <p class="lede">スプレッドシートに集まった記録を読み出します。この画面は先生用です。</p>
-
   <section class="sheet setup">
     <div class="row">
       <div>
@@ -59,55 +63,69 @@ td{white-space:nowrap;}
     </div>
     <p class="msg" id="msg">URLと合言葉はこの端末にだけ保存されます。</p>
   </section>
-
   <div id="view" class="hidden">
     <div class="kpis" id="kpis"></div>
-
     <div class="rule"><h2>ゲームごと</h2></div>
+    <details class="panel" id="basebox">
+      <summary>達成率の基準スコア（満点）を設定</summary>
+      <p class="msg" style="margin:12px 0 10px;">達成率は「素点 ÷ 基準スコア × 100」（上限100）で計算します。
+        基準はこの端末にだけ保存され、スプレッドシートの素点やランキングは変わりません。
+        空にすると自動の値（クラス最高のきりのよい切り上げ・最低1000）にもどります。</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th style="cursor:default">ゲーム</th>
+            <th style="text-align:right;cursor:default">クラス最高（素点）</th>
+            <th style="text-align:right;cursor:default">基準スコア</th></tr></thead>
+          <tbody id="bases"></tbody>
+        </table>
+      </div>
+      <p style="margin:14px 0 6px;"><button class="btn ghost small" id="baseReset" type="button">すべて自動の値にもどす</button></p>
+    </details>
     <div class="grid2">
-      <div class="panel"><h3>平均スコア</h3><canvas id="cAvg" height="300"></canvas></div>
+      <div class="panel"><h3>平均 達成率（%）</h3><canvas id="cAvg" height="300"></canvas></div>
       <div class="panel"><h3>クリアした人の割合（%）</h3><canvas id="cClear" height="300"></canvas></div>
     </div>
-
     <div class="rule"><h2>日ごとのプレイ回数</h2></div>
     <div class="panel"><canvas id="cDaily" height="260"></canvas></div>
-
     <div class="rule"><h2>生徒ごと</h2></div>
     <div class="panel">
+      <div class="mode" id="modes">
+        <button class="btn ghost small on" data-m="rate" type="button">達成率（%）で見る</button>
+        <button class="btn ghost small" data-m="raw" type="button">素点で見る</button>
+      </div>
       <div class="scroll" id="table"></div>
       <p style="margin:18px 0 6px;"><button class="btn ghost small" id="csv" type="button">CSVで書き出す</button></p>
     </div>
   </div>
-
   <footer>Manabi Board</footer>
 </div>
-
 <script>
 const $ = id => document.getElementById(id);
 const COLORS = ['#35E0D2','#8B7CFF','#FFA24C','#4ADE80','#FF6B9D','#7FB4FF','#F5D76E','#FF8A6B'];
 const SAVE = 'manabi-console:v1';
-let DATA = null, sortKey = 'total', sortAsc = false;
+const BASE_SAVE = 'manabi-console:bases:v1';
+let DATA = null, sortKey = 'total', sortAsc = false, tableMode = 'rate';
+let BASES = {};
+try {
+  const b = JSON.parse(localStorage.getItem(BASE_SAVE) || '{}');
+  if (b && typeof b === 'object') BASES = b;
+} catch (e) {}
 const jp = k => (DATA && DATA.names && DATA.names[k]) || k;
-
 try {
   const s = JSON.parse(localStorage.getItem(SAVE) || '{}');
   $('ep').value = s.ep || ''; $('tk').value = s.tk || '';
 } catch (e) {}
-
 $('load').addEventListener('click', load);
 if ($('ep').value && $('tk').value) load();
-
 function say(text, warn){
   $('msg').textContent = text;
   $('msg').className = 'msg' + (warn ? ' warn' : '');
 }
-
 function load(){
   const ep = $('ep').value.trim(), tk = $('tk').value.trim();
   if (!ep || !tk){ say('URLと合言葉の両方を入れてください。', true); return; }
   localStorage.setItem(SAVE, JSON.stringify({ ep, tk }));
   say('よみこんでいます。');
-
   fetch(ep + '?mode=dashboard&token=' + encodeURIComponent(tk), { redirect:'follow' })
     .then(r => r.json())
     .then(d => {
@@ -122,12 +140,74 @@ function load(){
     })
     .catch(() => say('つながりませんでした。URLと、ウェブアプリの公開設定を確かめてください。', true));
 }
-
+/* ===== 達成率換算 ===== */
+function classMax(app){
+  let m = 0;
+  (DATA.students || []).forEach(s => {
+    const v = Number(s.perApp && s.perApp[app]);
+    if (isFinite(v) && v > m) m = v;
+  });
+  return m;
+}
+function niceCeil(v){
+  if (!(v > 0)) return 1000;
+  const e = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 2, 5, 10]) if (m * e >= v) return m * e;
+  return 10 * e;
+}
+function autoBase(app){
+  return Math.max(1000, niceCeil(classMax(app)));
+}
+function baseOf(app){
+  const saved = Number(BASES[app]);
+  return (isFinite(saved) && saved >= 1) ? saved : autoBase(app);
+}
+function rateOf(app, score){
+  return Math.min(100, Math.round((Number(score) || 0) / baseOf(app) * 100));
+}
+function avgRate(app){
+  const list = [];
+  (DATA.students || []).forEach(s => {
+    if (s.perApp && s.perApp[app] != null) list.push(rateOf(app, s.perApp[app]));
+  });
+  return list.length ? Math.round(list.reduce((a, b) => a + b, 0) / list.length) : 0;
+}
+function stuAvgRate(s){
+  const ks = Object.keys(s.perApp || {});
+  return ks.length
+    ? Math.round(ks.reduce((sum, k) => sum + rateOf(k, s.perApp[k]), 0) / ks.length) : 0;
+}
+function saveBases(){
+  try { localStorage.setItem(BASE_SAVE, JSON.stringify(BASES)); } catch (e) {}
+}
+function basePanel(){
+  const apps = DATA.apps || [];
+  $('bases').innerHTML = apps.map(a => `<tr>
+      <td class="head">${jp(a.app)}</td>
+      <td class="num">${classMax(a.app)}</td>
+      <td class="num"><input class="basein" type="number" min="1" step="1" inputmode="numeric"
+        data-app="${a.app}" value="${baseOf(a.app)}"></td>
+    </tr>`).join('');
+  $('bases').onchange = ev => {
+    const el = ev.target, app = el.dataset.app;
+    if (!app) return;
+    const n = Math.round(Number(el.value));
+    if (isFinite(n) && n >= 1) BASES[app] = n; else delete BASES[app];
+    el.value = baseOf(app);
+    saveBases(); redrawRates();
+  };
+  $('baseReset').onclick = () => { BASES = {}; saveBases(); basePanel(); redrawRates(); };
+}
+function redrawRates(){
+  const apps = DATA.apps || [];
+  bars($('cAvg'), apps.map(a => ({ label: jp(a.app), value: avgRate(a.app) })), 100);
+  table();
+}
+/* ===== 描画 ===== */
 function draw(){
   const apps = DATA.apps || [], students = DATA.students || [];
   const avgAll = students.length
     ? Math.round(students.reduce((a, s) => a + s.total, 0) / students.length) : 0;
-
   $('kpis').innerHTML = [
     ['生徒の数', students.length, COLORS[0]],
     ['プレイ回数', DATA.records, COLORS[1]],
@@ -135,13 +215,11 @@ function draw(){
     ['うごいたゲーム', apps.length, COLORS[3]]
   ].map(([k, v, c]) =>
     `<div class="kpi" style="--accent:${c}"><span>${k}</span><b>${v}</b></div>`).join('');
-
-  bars($('cAvg'),   apps.map(a => ({ label: jp(a.app), value: a.avg })), 100);
+  basePanel();
+  redrawRates();
   bars($('cClear'), apps.map(a => ({ label: jp(a.app), value: a.clearRate })), 100);
   line($('cDaily'), DATA.daily || []);
-  table();
 }
-
 function prep(cv){
   const dpr = window.devicePixelRatio || 1;
   const w = cv.clientWidth || 600, h = Number(cv.getAttribute('height'));
@@ -152,7 +230,6 @@ function prep(cv){
   g.font = '11px Outfit, sans-serif';
   return { g, w, h };
 }
-
 function axis(g, w, h, padL, padT, ch, top, padR){
   g.strokeStyle = 'rgba(190,205,235,.09)';
   g.fillStyle = '#8B95AE'; g.textAlign = 'right';
@@ -162,7 +239,6 @@ function axis(g, w, h, padL, padT, ch, top, padR){
     g.fillText(Math.round(top * i / 4), padL - 8, y + 4);
   }
 }
-
 function bars(cv, rows, max){
   const { g, w, h } = prep(cv);
   if (!rows.length){ g.fillStyle = '#8B95AE'; g.fillText('まだ記録がありません', 12, 26); return; }
@@ -170,10 +246,9 @@ function bars(cv, rows, max){
   const cw = w - padL - padR, ch = h - padT - padB;
   const top = max || Math.max(...rows.map(r => r.value), 1);
   axis(g, w, h, padL, padT, ch, top, padR);
-
   const bw = cw / rows.length;
   rows.forEach((r, i) => {
-    const bh = Math.max(2, ch * (r.value / top));
+    const bh = Math.max(2, Math.min(ch, ch * (r.value / top)));
     const x = padL + bw * i + bw * .22, width = bw * .56;
     const c = COLORS[i % COLORS.length];
     const grad = g.createLinearGradient(0, padT + ch - bh, 0, padT + ch);
@@ -183,10 +258,8 @@ function bars(cv, rows, max){
     if (g.roundRect) g.roundRect(x, padT + ch - bh, width, bh, [5, 5, 0, 0]);
     else g.rect(x, padT + ch - bh, width, bh);
     g.fill();
-
     g.fillStyle = '#EDF1FB'; g.textAlign = 'center'; g.font = '600 12px Outfit, sans-serif';
     g.fillText(r.value, x + width / 2, padT + ch - bh - 7);
-
     g.save();
     g.translate(x + width / 2, padT + ch + 14);
     g.rotate(-Math.PI / 5.5);
@@ -197,7 +270,6 @@ function bars(cv, rows, max){
     g.font = '11px Outfit, sans-serif';
   });
 }
-
 function line(cv, rows){
   const { g, w, h } = prep(cv);
   if (!rows.length){ g.fillStyle = '#8B95AE'; g.fillText('まだ記録がありません', 12, 26); return; }
@@ -205,56 +277,50 @@ function line(cv, rows){
   const cw = w - padL - padR, ch = h - padT - padB;
   const top = Math.max(...rows.map(r => r.plays), 1);
   axis(g, w, h, padL, padT, ch, top, padR);
-
   const step = rows.length > 1 ? cw / (rows.length - 1) : 0;
   const pt = i => [padL + step * i, padT + ch - ch * (rows[i].plays / top)];
-
   g.beginPath();
   rows.forEach((r, i) => { const [x, y] = pt(i); i ? g.lineTo(x, y) : g.moveTo(x, y); });
   g.lineTo(padL + step * (rows.length - 1), padT + ch); g.lineTo(padL, padT + ch); g.closePath();
   const fill = g.createLinearGradient(0, padT, 0, padT + ch);
   fill.addColorStop(0, 'rgba(53,224,210,.28)'); fill.addColorStop(1, 'rgba(53,224,210,0)');
   g.fillStyle = fill; g.fill();
-
   g.beginPath();
   rows.forEach((r, i) => { const [x, y] = pt(i); i ? g.lineTo(x, y) : g.moveTo(x, y); });
   g.strokeStyle = '#35E0D2'; g.lineWidth = 2.4; g.lineJoin = 'round'; g.stroke();
-
   g.fillStyle = '#35E0D2';
   rows.forEach((r, i) => { const [x, y] = pt(i); g.beginPath(); g.arc(x, y, 3, 0, 7); g.fill(); });
-
   g.fillStyle = '#8B95AE'; g.textAlign = 'center';
   const every = Math.ceil(rows.length / 10);
   rows.forEach((r, i) => { if (i % every === 0) g.fillText(r.date, pt(i)[0], h - 12); });
 }
-
 function table(){
   const apps = (DATA.apps || []).map(a => a.app);
+  const rate = tableMode === 'rate';
   const val = (s, k) => k === 'nickname' ? s.nickname
-    : k === 'total' ? s.total : k === 'plays' ? s.plays : (s.perApp[k] || 0);
-
+    : k === 'total' ? (rate ? stuAvgRate(s) : s.total)
+    : k === 'plays' ? s.plays
+    : (s.perApp[k] != null ? (rate ? rateOf(k, s.perApp[k]) : s.perApp[k]) : 0);
   const rows = (DATA.students || []).slice().sort((a, b) => {
     const va = val(a, sortKey), vb = val(b, sortKey);
     const d = typeof va === 'string' ? String(va).localeCompare(vb, 'ja') : va - vb;
     return sortAsc ? d : -d;
   });
-
   if (!rows.length){ $('table').innerHTML = '<p class="msg">まだ記録がありません。</p>'; return; }
-
+  const cell = (a, s) => s.perApp[a] != null
+    ? (rate ? rateOf(a, s.perApp[a]) + '%' : s.perApp[a]) : '—';
   const head = ['<th data-k="nickname">ニックネーム</th>',
-                '<th data-k="total" style="text-align:right">総合</th>']
+                `<th data-k="total" style="text-align:right">${rate ? '平均達成率' : '総合'}</th>`]
     .concat(apps.map(a => `<th data-k="${a}" style="text-align:right">${jp(a)}</th>`))
     .concat(['<th data-k="plays" style="text-align:right">回数</th>',
              '<th style="text-align:right">最終</th>']).join('');
-
   const body = rows.map(s => `<tr>
       <td class="head">${s.nickname}</td>
-      <td class="num" style="color:#35E0D2">${s.total}</td>
-      ${apps.map(a => `<td class="num">${s.perApp[a] != null ? s.perApp[a] : '—'}</td>`).join('')}
+      <td class="num" style="color:#35E0D2">${rate ? stuAvgRate(s) + '%' : s.total}</td>
+      ${apps.map(a => `<td class="num">${cell(a, s)}</td>`).join('')}
       <td class="num">${s.plays}</td>
       <td class="num">${s.last ? new Date(s.last).toLocaleDateString('ja-JP') : '—'}</td>
     </tr>`).join('');
-
   $('table').innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
   $('table').querySelectorAll('th[data-k]').forEach(th => {
     th.addEventListener('click', () => {
@@ -263,22 +329,27 @@ function table(){
     });
   });
 }
-
+document.querySelectorAll('#modes .btn').forEach(b => b.addEventListener('click', () => {
+  tableMode = b.dataset.m;
+  document.querySelectorAll('#modes .btn').forEach(x => x.classList.toggle('on', x === b));
+  if (DATA) table();
+}));
 $('csv').addEventListener('click', () => {
   const apps = (DATA.apps || []).map(a => a.app);
-  const head = ['ニックネーム', '総合'].concat(apps.map(jp)).concat(['回数', '最終プレイ']);
+  const rate = tableMode === 'rate';
+  const head = ['ニックネーム', rate ? '平均達成率(%)' : '総合']
+    .concat(apps.map(a => rate ? jp(a) + '(%)' : jp(a)))
+    .concat(['回数', '最終プレイ']);
   const lines = [head.join(',')].concat((DATA.students || []).map(s =>
-    ['"' + String(s.nickname).replace(/"/g, '""') + '"', s.total]
-      .concat(apps.map(a => s.perApp[a] != null ? s.perApp[a] : ''))
+    ['"' + String(s.nickname).replace(/"/g, '""') + '"', rate ? stuAvgRate(s) : s.total]
+      .concat(apps.map(a => s.perApp[a] != null ? (rate ? rateOf(a, s.perApp[a]) : s.perApp[a]) : ''))
       .concat([s.plays, s.last ? new Date(s.last).toLocaleDateString('ja-JP') : '']).join(',')));
-
   const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'まなびの基板_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.download = 'まなびの基板_' + (rate ? '達成率_' : '素点_') + new Date().toISOString().slice(0, 10) + '.csv';
   a.click(); URL.revokeObjectURL(a.href);
 });
-
 let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(() => DATA && draw(), 200); });
 </script>
 </body>
