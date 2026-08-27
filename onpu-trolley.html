@@ -43,7 +43,7 @@
   @keyframes manabiBackIn{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:none;}}
 </style>
 <!-- ManabiBox 接続 -->
-<script>window.MANABI_CONFIG = window.MANABI_CONFIG || {};</script>
+<script src="https://backtree-create.github.io/ManabiBox/config.js"></script>
 <script src="https://backtree-create.github.io/ManabiBox/hub-progress.js"></script>
 <script src="https://backtree-create.github.io/ManabiBox/manabi-connect.js"></script>
 </head>
@@ -753,16 +753,14 @@ function finishStage(cleared){
 function sendReport(cleared,acc){
   try{
     if(typeof manabiReport!=='function') return;
-    if(G.endless){
-      manabiReport({app:APP_KEY+'-endless', done:0, total:0, best:G.score,
-        note:('はてなき坑道 '+G.correct+'問 スコア'+G.score).slice(0,40)});
-    }else{
-      const recs=['treble','bass','mixed'].map(k=>save.stages[k]);
-      const clearedCount=recs.filter(r=>r.cleared).length;
-      const avgPts=Math.round(recs.reduce((s,r)=>s+(r.acc||0),0)/3*10);
-      manabiReport({app:APP_KEY, done:clearedCount, total:3, best:avgPts,
-        note:(G.stage.name+(cleared?' クリア':' 挑戦')+' 正答'+acc+'%').slice(0,40)});
-    }
+    const recs=['treble','bass','mixed'].map(k=>save.stages[k]);
+    const clearedCount=recs.filter(r=>r.cleared).length;
+    const avgPts=Math.round(recs.reduce((s,r)=>s+(r.acc||0),0)/3*10);
+    const note = G.endless
+      ? ('はてなき坑道 '+G.correct+'問 スコア'+G.score)
+      : (G.stage.name+(cleared?' クリア':' 挑戦')+' 正答'+acc+'%');
+    manabiReport({app:APP_KEY, done:clearedCount, total:3, best:avgPts,
+      note:note.slice(0,40)});
   }catch(e){}
 }
 
