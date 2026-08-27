@@ -12,12 +12,12 @@ window.GAME_CONFIG = {
   token:    'chiri-write-2026',       /* code.gs の WRITE_TOKEN と同じ文字列 */
   pollMs:   6000,                     /* 共有マップの更新間隔（ミリ秒） */
 
-  /* ▼ 遊べる時間の制限 --------------------------------------
-     playMinutes : 1回のプレイ時間（分）。0 にすると制限なし
-     dailyMinutes: 1日の合計プレイ時間の上限（分）。0 にすると制限なし
-     どちらも、画面を見ていない間は数えません。 */
-  playMinutes:  15,
-  dailyMinutes: 0
+  /* ▼ 使えない時間帯 ----------------------------------------
+     この時刻から この時刻まで は使えなくなります（24時間表記）。
+     日をまたぐ指定（例 17:00 → 翌8:30）もできます。
+     両方を空 '' にすると、いつでも使えます。 */
+  blockFrom: '17:00',
+  blockTo:   '08:30'
 };
 </script>
 
@@ -121,6 +121,14 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; }
 .btn:active { transform: scale(.97); }
 .btn:disabled { opacity: .4; box-shadow: none; }
 .btn-sub { background: rgba(255,255,255,.08); border: 1px solid var(--line); box-shadow: none; color: var(--sub); }
+.gate-msg { margin-top: 16px; font-size: 12px; line-height: 1.8; color: var(--faint); text-align: center; }
+.gate-msg:empty { display: none; }
+.gate-msg b { color: var(--sub); }
+.gate-msg.blocked {
+  color: var(--tx); background: rgba(255,95,107,.12);
+  border: 1px solid rgba(255,95,107,.4); border-radius: var(--r-md); padding: 12px;
+}
+.gate-msg.blocked b { color: var(--ng); }
 .st-bonus { margin-top: 22px; }
 .st-bonus h3 { font-size: 12px; color: var(--faint); letter-spacing: .12em; text-align: center; margin-bottom: 10px; }
 .bonus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
@@ -437,6 +445,7 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; }
       <div class="st-label"><span>ルーム名（先生が指定。例: 3-2）</span></div>
       <input id="in-room" class="st-input" maxlength="12" placeholder="例: 3-2">
 
+      <div id="gate-msg" class="gate-msg"></div>
       <button id="btn-online" class="btn">🌐 みんなで対戦</button>
       <button id="btn-solo" class="btn btn-sub">📴 ひとりで練習</button>
     </div>
@@ -461,7 +470,7 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; }
   <div class="hud-stat"><span class="hud-k">SCORE</span><span class="hud-v" id="hud-score">0</span></div>
   <div class="hud-stat"><span class="hud-k">りょうち</span><span class="hud-v" id="hud-count">0</span></div>
   <div class="hud-stat"><span class="hud-k">コンボ</span><span class="hud-v" id="hud-combo">-</span></div>
-  <div class="hud-stat" id="hud-time-wrap"><span class="hud-k">のこり</span><span class="hud-v" id="hud-time">--:--</span></div>
+  <div class="hud-stat" id="hud-time-wrap"><span class="hud-k" id="hud-time-k">つかえる</span><span class="hud-v" id="hud-time">--:--</span></div>
 </div>
 <div id="room-badge"></div>
 

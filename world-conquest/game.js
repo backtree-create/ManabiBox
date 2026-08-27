@@ -88,12 +88,40 @@
   var quizTimer = null, quizDeadline = 0, quizStart = 0;
   var pollHandle = null, netBusy = false;
 
-  /* ---------- 遊べる時間の制限 ---------- */
-  var SESSION_MS = Math.max(0, Number(CFG.playMinutes === undefined ? 15 : CFG.playMinutes) || 0) * 60000;
-  var DAILY_MS = Math.max(0, Number(CFG.dailyMinutes) || 0) * 60000;
-  var playLimitMs = 0;         // 今回の制限（1日の残りと短いほうを使う）
-  var playedMs = 0;            // 今回どれだけ遊んだか（画面を見ている間だけ数える）
-  var timeUp = false, clockHandle = null, warned = {};
+  /* ---------- 使えない時間帯 ----------
+     '17:00' のような文字を、0時からの分数に直して比べる。
+     先生が確認したいときは、URLのうしろに ?free=1 を付けると外れる。 */
+  function toMin(s) {
+    var m = /^\s*(\d{1,2})\s*(?::\s*(\d{1,2}))?\s*$/.exec(String(s == null ? '' : s));
+    if (!m) return -1;
+    var h = Number(m[1]), mi = Number(m[2] || 0);
+    return (h > 23 || mi > 59) ? -1 : h * 60 + mi;
+  }
+  function fmtHM(min) {
+    min = ((Math.round(min) % 1440) + 1440) % 1440;
+    return Math.floor(min / 60) + ':' + ('0' + (min % 60)).slice(-2);
+  }
+  var BLOCK_FROM = toMin(CFG.blockFrom), BLOCK_TO = toMin(CFG.blockTo);
+  var BLOCK_ON = BLOCK_FROM >= 0 && BLOCK_TO >= 0 && BLOCK_FROM !== BLOCK_TO &&
+    !/[?&]free=1/.test(location.search);
+  var timeUp = false, started = false, clockHandle = null, warned = {};
+
+  function nowMin() {
+    var d = new Date();
+    return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+  }
+  function isBlocked() {
+    if (!BLOCK_ON) return false;
+    var t = nowMin();
+    return (BLOCK_FROM < BLOCK_TO) ? (t >= BLOCK_FROM && t < BLOCK_TO)   // 同じ日の中
+                                   : (t >= BLOCK_FROM || t < BLOCK_TO);  // 日をまたぐ
+  }
+  /* 使えなくなるまであと何分か */
+  function minsLeft() {
+    if (!BLOCK_ON) return -1;
+    var d = BLOCK_FROM - nowMin();
+    return d < 0 ? d + 1440 : d;
+  }
 
   /* ---------- three.js ---------- */
   var scene, camera, renderer, raycaster, mapGroup;
@@ -913,6 +941,10 @@
   }
 
   function begin(isOnline) {
+    if (isBlocked()) {          // 時間ちょうどに押されたときの用心
+      toast('⏰ いまは ' + fmtHM(BLOCK_FROM) + '〜' + fmtHM(BLOCK_TO) + ' で使えません', 'ng');
+      return;
+    }
     var nick = $('in-nick').value.trim().slice(0, 10);
     if (!nick) { $('in-nick').focus(); toast('ニックネームを入れてください（本名はダメ!）', 'ng'); return; }
     me.nick = nick;
@@ -921,6 +953,7 @@
     me.color = myColor(nick);
     online = isOnline;
 
+    started = true;
     $('start').classList.remove('show');
     $('hud').style.display = 'flex';
     var whoHtml =
@@ -943,7 +976,7 @@
     zoomTo(camFitZ, 900);
 
     startClock();
-    if (playLimitMs) toast('⏰ 今回は <b>' + fmt(playLimitMs) + '</b> です。がんばって!');
+    if (BLOCK_ON) toast('⏰ <b>' + fmtHM(BLOCK_FROM) + '</b> まで あそべます');
 
     if (online) {
       var joinSeq = ++reqSeq;
@@ -963,17 +996,28 @@
     $('in-nick').addEventListener('input', updPreview);
     updPreview();
 
-    if (!ENDPOINT) {
-      $('btn-online').disabled = true;
-      $('btn-online').textContent = '🌐 みんなで対戦（先生の設定待ち）';
-    }
-    /* 1日の上限に達していたら、今日はもう始められない */
-    if (DAILY_MS && dailyLeftMs() <= 0) {
-      $('btn-online').disabled = true;
-      $('btn-solo').disabled = true;
-      $('btn-solo').textContent = '⏰ 今日はここまで（また明日!）';
-    }
     $('r-close').addEventListener('click', function () { $('result').classList.remove('show'); });
+
+    /* 使えない時間帯なら、スタート画面で止める。
+       時間をまたいだときに自動で切りかわるよう、ときどき見なおす */
+    function refreshGate() {
+      var blocked = isBlocked();
+      $('btn-solo').disabled = blocked;
+      $('btn-online').disabled = blocked || !ENDPOINT;
+      $('btn-solo').textContent = blocked ? '⏰ いまは おやすみ時間' : '📴 ひとりで練習';
+      if (!blocked && !ENDPOINT) $('btn-online').textContent = '🌐 みんなで対戦（先生の設定待ち）';
+      else if (!blocked) $('btn-online').textContent = '🌐 みんなで対戦';
+      $('gate-msg').innerHTML = blocked
+        ? '⏰ <b>' + fmtHM(BLOCK_FROM) + '〜' + fmtHM(BLOCK_TO) + '</b> は使えません。<br>' +
+          fmtHM(BLOCK_TO) + ' になったら、また来てね!'
+        : (BLOCK_ON ? '⏰ ' + fmtHM(BLOCK_FROM) + ' まで あそべます' : '');
+      $('gate-msg').className = blocked ? 'gate-msg blocked' : 'gate-msg';
+    }
+    refreshGate();
+    if (BLOCK_ON) {
+      setInterval(refreshGate, 20000);
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) refreshGate(); });
+    }
     $('btn-online').addEventListener('click', function () { begin(true); });
     $('btn-solo').addEventListener('click', function () { begin(false); });
     $('btn-help').addEventListener('click', function () { $('help').classList.add('show'); });
@@ -990,56 +1034,39 @@
   }
 
   /* ---------- 時間の管理 ----------
-     画面を見ていない間は数えないので、「実際に遊んだ時間」で切れます。 */
-  function todayKey() {
-    var d = new Date();
-    return 'played' + d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2);
-  }
-  function dailyPlayedMs() { return Number(store(todayKey())) || 0; }
-  function dailyLeftMs() { return DAILY_MS ? Math.max(0, DAILY_MS - dailyPlayedMs()) : -1; }
-  function fmt(ms) {
-    var s = Math.max(0, Math.ceil(ms / 1000));
-    return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
-  }
-
+     決めた時刻になったら、そこで終わりにする。 */
   function startClock() {
-    /* 1日の上限があるときは、残りと今回の制限の短いほうを使う */
-    playLimitMs = SESSION_MS;
-    var left = dailyLeftMs();
-    if (left >= 0) playLimitMs = playLimitMs ? Math.min(playLimitMs, left) : left;
-
-    var last = Date.now();
     if (clockHandle) clearInterval(clockHandle);
-    clockHandle = setInterval(function () {
-      var now = Date.now(), dt = now - last; last = now;
-      if (timeUp || document.hidden) return;      // 見ていない間は数えない
-      if (dt > 5000) dt = 1000;                   // スリープ復帰などの飛びをならす
-      playedMs += dt;
-      if (DAILY_MS) { try { store(todayKey(), String(dailyPlayedMs() + dt)); } catch (e) { } }
-      updateClock();
-    }, 1000);
+    clockHandle = setInterval(updateClock, 1000);
     updateClock();
   }
 
   function updateClock() {
-    var el = $('hud-time');
-    if (!playLimitMs) { el.textContent = '∞'; el.className = 'hud-v'; return; }
-    var leftMs = Math.max(0, playLimitMs - playedMs), s = Math.ceil(leftMs / 1000);
-    el.textContent = fmt(leftMs);
-    el.className = 'hud-v' + (s <= 60 ? ' danger' : (s <= 300 ? ' warn' : ''));
-    [300, 60, 30].forEach(function (w) {
-      if (w * 1000 >= playLimitMs) return;        // 短い設定のときに開始直後から鳴らさない
+    var el = $('hud-time'), lab = $('hud-time-k');
+    if (!BLOCK_ON) { lab.textContent = 'じかん'; el.textContent = '∞'; el.className = 'hud-v'; return; }
+    if (isBlocked()) { finishGame(); return; }
+
+    var left = minsLeft(), s = Math.ceil(left * 60);
+    if (left > 10) {                       // まだ先のときは、終わる時刻だけ出す
+      lab.textContent = 'つかえる';
+      el.textContent = '〜' + fmtHM(BLOCK_FROM);
+      el.className = 'hud-v';
+      return;
+    }
+    lab.textContent = 'のこり';
+    el.textContent = Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+    el.className = 'hud-v' + (s <= 60 ? ' danger' : ' warn');
+    [600, 300, 60].forEach(function (w) {
       if (s <= w && !warned[w]) {
         warned[w] = 1;
         SND.steal();
-        toast('⏰ のこり' + (w >= 60 ? (w / 60) + '分' : w + '秒') + 'です', 'ng');
+        toast('⏰ あと' + (w / 60) + '分で ' + fmtHM(BLOCK_FROM) + ' です', 'ng');
       }
     });
-    if (leftMs <= 0) finishGame();
   }
 
   function finishGame() {
-    if (timeUp) return;
+    if (timeUp || !started) return;   // 始まる前は、スタート画面で止めるだけにする
     timeUp = true;
     closeQuiz();
     hideInfo();
@@ -1057,7 +1084,9 @@
       total = list.length;
       list.forEach(function (p) { if (p.pid === me.pid) rank = p.rank; });
     }
-    $('r-sub').innerHTML = esc(me.nick) + ' の記録を「まなびの基盤」に送りました。' +
+    $('r-sub').innerHTML =
+      (BLOCK_ON ? fmtHM(BLOCK_FROM) + ' になりました。つづきは ' + fmtHM(BLOCK_TO) + ' から!<br>' : '') +
+      esc(me.nick) + ' の記録を「まなびの基盤」に送りました。' +
       (rank ? '<br>' + total + '人中 <b>' + rank + '位</b>' : '');
     $('r-grid').innerHTML =
       '<div class="r-cell"><b>' + score + '</b><span>スコア</span></div>' +
@@ -1140,9 +1169,21 @@
       three: function () { return { scene: scene, camera: camera, raycaster: raycaster, mapGroup: mapGroup, meshes: meshes }; },
       addBackButton: addBackButton,
       applyState: applyState, pending: function () { return pending; },
-      rankList: rankList, finish: finishGame,
-      clock: function () { return { limit: playLimitMs, played: playedMs, timeUp: timeUp }; },
-      setPlayed: function (ms) { playedMs = ms; updateClock(); }
+      rankList: rankList, finish: finishGame, updateClock: updateClock,
+      clock: function () {
+        return { on: BLOCK_ON, from: BLOCK_FROM, to: BLOCK_TO,
+          now: nowMin(), blocked: isBlocked(), minsLeft: minsLeft(), timeUp: timeUp };
+      },
+      /* 検証用: 時計をずらして、時間帯の判定を試す */
+      setNow: function (hhmm) {
+        var real = function () {
+          var d = new Date();
+          return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+        };
+        var off = toMin(hhmm) - real();          // ずれは必ず本物の時計から測る
+        nowMin = function () { return ((real() + off) % 1440 + 1440) % 1440; };
+        updateClock();
+      }
     };
   }
 })();
