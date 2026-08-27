@@ -52,8 +52,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #stFill.low{background:var(--red)}
 
 /* ---------- 操作ボタン ---------- */
-#controls{position:absolute;inset:0;pointer-events:none;z-index:6;display:none}
-.padBtn{position:absolute;bottom:4%;pointer-events:auto;
+/* 競技中は#controls全体がタッチを受け、左半分=L・右半分=R として扱う */
+#controls{position:absolute;inset:0;z-index:6;display:none;touch-action:none}
+.padBtn{position:absolute;bottom:4%;pointer-events:none;
   width:clamp(64px,15vmin,120px);height:clamp(64px,15vmin,120px);border-radius:50%;
   border:3px solid rgba(242,233,220,.75);background:rgba(30,18,10,.55);
   color:var(--white);font-family:'Anton',sans-serif;font-size:clamp(20px,4.5vmin,38px);
@@ -62,7 +63,17 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #btnL{left:3%}
 #btnR{right:3%}
 #btnA{left:50%;transform:translateX(-50%);border-color:var(--amber);color:var(--amber);
-  font-size:clamp(13px,2.6vmin,22px);font-family:'Zen Kaku Gothic New';font-weight:900}
+  font-size:clamp(13px,2.6vmin,22px);font-family:'Zen Kaku Gothic New';font-weight:900;
+  pointer-events:auto}
+/* タップゾーンのフィードバック */
+.padBtn.hit{background:rgba(255,197,61,.35);border-color:var(--amber);transform:scale(.94)}
+#zoneHint{position:absolute;left:50%;top:0;bottom:0;width:0;
+  border-left:2px dashed rgba(242,233,220,.14)}
+.ripple{position:absolute;width:clamp(48px,10vmin,84px);height:clamp(48px,10vmin,84px);
+  border-radius:50%;border:3px solid rgba(255,197,61,.85);opacity:0;pointer-events:none;
+  transform:translate(-50%,-50%) scale(.3);animation:rip .32s ease-out}
+@keyframes rip{0%{transform:translate(-50%,-50%) scale(.3);opacity:.85}
+  100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
 #btnA:active{transform:translateX(-50%) scale(.94)}
 #btnA.pulse{animation:pulse .7s infinite alternate}
 @keyframes pulse{from{box-shadow:0 0 0 0 rgba(255,197,61,.5)}to{box-shadow:0 0 0 14px rgba(255,197,61,0)}}
@@ -162,6 +173,7 @@ table.res tr.total td{border-top:2px solid var(--amber-dim);border-bottom:none;
     </div>
 
     <div id="controls">
+      <div id="zoneHint"></div>
       <button class="padBtn" id="btnL">L</button>
       <button class="padBtn hidden" id="btnA">JUMP</button>
       <button class="padBtn" id="btnR">R</button>
@@ -290,19 +302,19 @@ function hubReport(doneEvents, totalPt, note){
 const EVENTS = [
  {id:'sprint', no:'EVENT 1', name:'100m走', lbl:'TIME',
   desc:'スタートの合図で全力ダッシュ。ゴールまでのタイムを競う。',
-  ctrl:'<b>L / R を交互に</b>連打して加速（PC：<b>FキーとJキー</b>）。同じ側を連打しても速くならない。スタミナが切れると失速するぞ。',
+  ctrl:'<b>画面の左はんぶん・右はんぶんを交互に</b>連打して加速（画面のどこを叩いてもOK。PC：<b>FキーとJキー</b>）。同じ側を連打しても速くならない。スタミナが切れると失速するぞ。',
   trivia:'<b>保体メモ：</b>短距離走は主に「無酸素運動」。酸素を使わずに筋肉のエネルギーを爆発的に使うため、長くは続かない。'},
  {id:'hurdle', no:'EVENT 2', name:'110mハードル', lbl:'TIME',
   desc:'10台のハードルを跳び越えてゴールを目指せ。ぶつかると大きく減速。',
-  ctrl:'<b>L / R 交互連打</b>で加速し、ハードルの直前で<b>JUMP</b>（PC：<b>スペースキー</b>）。空中では加速できないので、跳びすぎにも注意。',
+  ctrl:'<b>画面の左・右を交互に</b>連打して加速し、ハードルの直前で<b>まん中のJUMPボタン</b>（PC：<b>スペースキー</b>）。空中では加速できないので、跳びすぎにも注意。',
   trivia:'<b>保体メモ：</b>ハードルは「跳ぶ」より「またぎ越す」。上に高く跳ぶほど滞空時間で減速する。リズムが命。'},
  {id:'longjump', no:'EVENT 3', name:'走り幅跳び', lbl:'DIST',
   desc:'助走のスピードを踏み切りで跳躍距離に変えろ。試技は2回、良い方の記録が残る。',
-  ctrl:'<b>L / R 交互連打</b>で助走し、黄色い踏切ゾーンで<b>JUMP</b>（PC：スペース）。時間が止まったら、動く角度メーターが緑のゾーンに来た瞬間に<b>もう一度JUMP</b>！ 板を越えるとファウル。',
+  ctrl:'<b>画面の左・右を交互に</b>連打して助走し、黄色い踏切ゾーンで<b>JUMPボタン</b>（PC：スペース）。時間が止まったら、動く角度メーターが緑のゾーンに来た瞬間に<b>もう一度JUMP</b>！ 板を越えるとファウル。',
   trivia:'<b>保体メモ：</b>実際の走り幅跳びの踏切角度は20度前後。このゲームでは40度前後がベストに調整してある。'},
  {id:'shot', no:'EVENT 4', name:'砲丸投げ', lbl:'DIST',
   desc:'パワーをためて、最高の角度で砲丸を突き出せ。試技は2回。',
-  ctrl:'<b>L / R 連打</b>で3秒間パワーをチャージ。その後、動く角度メーターを<b>JUMPボタンで止める</b>。40度前後を狙え。',
+  ctrl:'<b>画面の左・右を</b>連打して3秒間パワーをチャージ。その後、動く角度メーターを<b>JUMPボタンで止める</b>。40度前後を狙え。',
   trivia:'<b>保体メモ：</b>砲丸は「投げる」のではなく肩口から「突き出す」競技。腕だけでなく全身の力を伝えるのがコツ。'},
 ];
 
@@ -343,22 +355,47 @@ addEventListener('keydown', e=>{
 addEventListener('keyup', e=>{ if(e.code==='Space') actionUp(); });
 function bindBtn(el, down, up){
   if(window.PointerEvent){
-    el.addEventListener('pointerdown', e=>{ e.preventDefault(); ac(); down(); });
-    if(up) el.addEventListener('pointerup', e=>{ e.preventDefault(); up(); });
+    el.addEventListener('pointerdown', e=>{ e.preventDefault(); e.stopPropagation(); ac(); down(); });
+    if(up) el.addEventListener('pointerup', e=>{ e.preventDefault(); e.stopPropagation(); up(); });
     if(up) el.addEventListener('pointercancel', ()=>up());
     if(up) el.addEventListener('pointerleave', ()=>up());
   }else{
     /* 古いiPad等 Pointer Events 非対応ブラウザ用 */
-    el.addEventListener('touchstart', e=>{ e.preventDefault(); ac(); down(); }, {passive:false});
-    if(up) el.addEventListener('touchend', e=>{ e.preventDefault(); up(); }, {passive:false});
+    el.addEventListener('touchstart', e=>{ e.preventDefault(); e.stopPropagation(); ac(); down(); }, {passive:false});
+    if(up) el.addEventListener('touchend', e=>{ e.preventDefault(); e.stopPropagation(); up(); }, {passive:false});
     if(up) el.addEventListener('touchcancel', ()=>up());
-    el.addEventListener('mousedown', e=>{ e.preventDefault(); ac(); down(); });
-    if(up) el.addEventListener('mouseup', e=>{ e.preventDefault(); up(); });
+    el.addEventListener('mousedown', e=>{ e.preventDefault(); e.stopPropagation(); ac(); down(); });
+    if(up) el.addEventListener('mouseup', e=>{ e.preventDefault(); e.stopPropagation(); up(); });
   }
 }
-bindBtn($('#btnL'), ()=>runTap(0));
-bindBtn($('#btnR'), ()=>runTap(1));
 bindBtn($('#btnA'), actionDown, actionUp);
+
+/* 競技中は画面の左半分/右半分どこを叩いてもL/R扱い（連打が格段に楽になる） */
+const controlsEl = $('#controls');
+function zoneFx(side, x, y){
+  const b = side === 0 ? $('#btnL') : $('#btnR');
+  b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit');
+  setTimeout(()=>b.classList.remove('hit'), 150);
+  const rp = document.createElement('div');
+  rp.className = 'ripple'; rp.style.left = x+'px'; rp.style.top = y+'px';
+  controlsEl.appendChild(rp);
+  setTimeout(()=>rp.remove(), 340);
+}
+function zoneTap(clientX, clientY){
+  const r = controlsEl.getBoundingClientRect();
+  const side = (clientX - r.left) < r.width/2 ? 0 : 1;
+  runTap(side);
+  zoneFx(side, clientX - r.left, clientY - r.top);
+}
+if(window.PointerEvent){
+  controlsEl.addEventListener('pointerdown', e=>{ e.preventDefault(); ac(); zoneTap(e.clientX, e.clientY); });
+}else{
+  controlsEl.addEventListener('touchstart', e=>{
+    e.preventDefault(); ac();
+    for(const t of e.changedTouches) zoneTap(t.clientX, t.clientY);
+  }, {passive:false});
+  controlsEl.addEventListener('mousedown', e=>{ e.preventDefault(); ac(); zoneTap(e.clientX, e.clientY); });
+}
 
 /* ---------------- 背景（観客・スタジアム） ---------------- */
 const crowd = [];
