@@ -14,13 +14,13 @@
 :root{--wrap:1060px;}
 .setup .row{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;align-items:end;}
 @media (max-width:720px){.setup .row{grid-template-columns:1fr;}}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin:26px 0 0;}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:26px 0 0;}
 .kpi{border:1px solid var(--edge);border-radius:var(--r);padding:16px 18px;
   background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.015));position:relative;overflow:hidden;}
 .kpi::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:var(--accent);opacity:.8;}
 .kpi span{display:block;font-family:"Outfit",sans-serif;font-size:11px;font-weight:500;
   letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
-.kpi b{font-family:"Dela Gothic One",sans-serif;font-weight:400;font-size:30px;color:#fff;
+.kpi b{font-family:"Dela Gothic One",sans-serif;font-weight:400;font-size:28px;color:#fff;
   font-variant-numeric:tabular-nums;line-height:1.3;}
 .panel{border:1px solid var(--edge);border-radius:var(--r);padding:20px 22px 14px;margin-bottom:18px;
   background:linear-gradient(160deg,rgba(255,255,255,.045),rgba(255,255,255,.012));}
@@ -39,9 +39,56 @@ details.panel summary::-webkit-details-marker{display:none;}
 details.panel summary::before{content:"▸ ";}
 details.panel[open] summary::before{content:"▾ ";}
 .basein{width:110px;text-align:right;}
-.mode{display:flex;gap:10px;margin:0 0 14px;}
 .mode .btn{opacity:.45;}
 .mode .btn.on{opacity:1;}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px;}
+.ctrl .mode{display:flex;gap:10px;}
+.ctrl input{flex:1;min-width:180px;}
+/* ふわっと出てくる */
+.rv{opacity:0;transform:translateY(16px);transition:opacity .55s ease,transform .55s ease;}
+.rv.in{opacity:1;transform:none;}
+@media (prefers-reduced-motion: reduce){.rv{transition:none;opacity:1;transform:none;}}
+/* ツールチップ */
+#tip{position:fixed;z-index:60;pointer-events:none;background:#0E1424;border:1px solid var(--edge);
+  border-radius:10px;padding:9px 12px;font-size:12px;line-height:1.7;color:#EDF1FB;opacity:0;
+  transition:opacity .12s ease;max-width:280px;box-shadow:0 10px 30px rgba(0,0,0,.45);}
+#tip.on{opacity:1;}
+#tip b{font-family:"Outfit",sans-serif;font-weight:600;}
+/* ヒートマップ・表の固定 */
+.freeze{max-height:480px;overflow:auto;}
+.freeze thead th{position:sticky;top:0;background:#0E1424;z-index:3;}
+.freeze .stick{position:sticky;left:0;background:#0E1424;z-index:2;}
+.freeze thead th.stick{z-index:4;}
+.hm td,.hm th{padding:7px 10px;font-size:12px;}
+.hm td.c{text-align:center;min-width:60px;border-radius:6px;font-variant-numeric:tabular-nums;cursor:default;}
+@keyframes cellin{from{opacity:0;transform:scale(.55);}to{opacity:1;transform:scale(1);}}
+.hm td.c.an{animation:cellin .35s ease backwards;}
+@media (prefers-reduced-motion: reduce){.hm td.c.an{animation:none;}}
+tr[data-id]{cursor:pointer;}
+tr[data-id]:hover td{background:rgba(255,255,255,.035);}
+/* 未プレイ一覧 */
+.unp{margin:0;padding:0;list-style:none;max-height:320px;overflow:auto;}
+.unp li{padding:9px 2px;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;line-height:1.7;}
+.unp li:last-child{border-bottom:0;}
+.unp b{color:#FFA24C;font-family:"Outfit",sans-serif;}
+.unp .ok{color:#4ADE80;}
+.unp .who{color:var(--muted);}
+/* 生徒くわしくモーダル */
+.ovl{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(5,8,16,.66);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .25s ease;}
+.ovl.on{opacity:1;pointer-events:auto;}
+.ovl .card{width:min(640px,100%);max-height:84vh;overflow:auto;border:1px solid var(--edge);
+  border-radius:var(--r);background:#0E1424;padding:24px 26px;
+  transform:translateY(16px) scale(.98);transition:transform .25s ease;}
+.ovl.on .card{transform:none;}
+@media (prefers-reduced-motion: reduce){.ovl,.ovl .card,.track i{transition:none;}}
+.ovl h3{font-family:"Dela Gothic One",sans-serif;font-weight:400;font-size:20px;color:#fff;margin:0 0 6px;}
+.dRow{display:grid;grid-template-columns:minmax(110px,1fr) 2fr auto;gap:12px;align-items:center;margin:11px 0;}
+.dRow span{font-size:13px;}
+.track{height:10px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;}
+.track i{display:block;height:100%;border-radius:99px;width:0;transition:width .7s cubic-bezier(.2,.7,.2,1);}
+.dRow b{font-family:"Outfit",sans-serif;font-weight:600;font-size:13px;min-width:96px;text-align:right;
+  color:#EDF1FB;font-variant-numeric:tabular-nums;}
 </style>
 </head>
 <body>
@@ -64,9 +111,9 @@ details.panel[open] summary::before{content:"▾ ";}
     <p class="msg" id="msg">URLと合言葉はこの端末にだけ保存されます。</p>
   </section>
   <div id="view" class="hidden">
-    <div class="kpis" id="kpis"></div>
+    <div class="kpis rv" id="kpis"></div>
     <div class="rule"><h2>ゲームごと</h2></div>
-    <details class="panel" id="basebox">
+    <details class="panel rv" id="basebox">
       <summary>達成率の基準スコア（満点）を設定</summary>
       <p class="msg" style="margin:12px 0 10px;">達成率は「素点 ÷ 基準スコア × 100」（上限100）で計算します。
         基準はこの端末にだけ保存され、スプレッドシートの素点やランキングは変わりません。
@@ -82,29 +129,54 @@ details.panel[open] summary::before{content:"▾ ";}
       <p style="margin:14px 0 6px;"><button class="btn ghost small" id="baseReset" type="button">すべて自動の値にもどす</button></p>
     </details>
     <div class="grid2">
-      <div class="panel"><h3>平均 達成率（%）</h3><canvas id="cAvg" height="300"></canvas></div>
-      <div class="panel"><h3>クリアした人の割合（%）</h3><canvas id="cClear" height="300"></canvas></div>
+      <div class="panel rv"><h3>平均 達成率（%）</h3><canvas id="cAvg" height="300"></canvas></div>
+      <div class="panel rv"><h3>クリアした人の割合（%）</h3><canvas id="cClear" height="300"></canvas></div>
+    </div>
+    <div class="rule"><h2>教科ごと・とりこぼし</h2></div>
+    <div class="grid2">
+      <div class="panel rv"><h3>教科ごとの平均達成率（%）</h3><canvas id="cSub" height="300"></canvas></div>
+      <div class="panel rv"><h3>まだ遊んでいない子</h3><ul class="unp" id="unp"></ul>
+        <p class="msg" style="margin:12px 0 6px;">一度も記録を送っていない子は、この画面の一覧そのものに出てきません。</p></div>
+    </div>
+    <div class="rule"><h2>生徒 × ゲームの達成マップ</h2></div>
+    <div class="panel rv">
+      <div class="scroll freeze" id="heat"></div>
+      <p class="msg" style="margin:12px 0 6px;">色がこいほど達成率が高い子です。マスにカーソルをのせると素点が見えます。</p>
     </div>
     <div class="rule"><h2>日ごとのプレイ回数</h2></div>
-    <div class="panel"><canvas id="cDaily" height="260"></canvas></div>
+    <div class="panel rv"><canvas id="cDaily" height="260"></canvas></div>
     <div class="rule"><h2>生徒ごと</h2></div>
-    <div class="panel">
-      <div class="mode" id="modes">
-        <button class="btn ghost small on" data-m="rate" type="button">達成率（%）で見る</button>
-        <button class="btn ghost small" data-m="raw" type="button">素点で見る</button>
+    <div class="panel rv">
+      <div class="ctrl">
+        <div class="mode" id="modes">
+          <button class="btn ghost small on" data-m="rate" type="button">達成率（%）で見る</button>
+          <button class="btn ghost small" data-m="raw" type="button">素点で見る</button>
+        </div>
+        <input id="q" type="search" placeholder="ニックネームでしぼりこむ">
       </div>
-      <div class="scroll" id="table"></div>
-      <p style="margin:18px 0 6px;"><button class="btn ghost small" id="csv" type="button">CSVで書き出す</button></p>
+      <div class="scroll freeze" id="table"></div>
+      <p class="msg" style="margin:12px 0 4px;">行をクリックすると、その子のくわしい記録が開きます。</p>
+      <p style="margin:10px 0 6px;"><button class="btn ghost small" id="csv" type="button">CSVで書き出す</button></p>
     </div>
   </div>
   <footer>Manabi Board</footer>
 </div>
+<div class="ovl" id="ovl" role="dialog" aria-modal="true">
+  <div class="card">
+    <h3 id="dName"></h3>
+    <p class="msg" id="dMeta" style="margin:0 0 16px;"></p>
+    <div id="dBars"></div>
+    <p style="margin:18px 0 2px;"><button class="btn ghost small" id="ovlClose" type="button">とじる</button></p>
+  </div>
+</div>
+<div id="tip"></div>
 <script>
 const $ = id => document.getElementById(id);
 const COLORS = ['#35E0D2','#8B7CFF','#FFA24C','#4ADE80','#FF6B9D','#7FB4FF','#F5D76E','#FF8A6B'];
 const SAVE = 'manabi-console:v1';
 const BASE_SAVE = 'manabi-console:bases:v1';
-let DATA = null, sortKey = 'total', sortAsc = false, tableMode = 'rate';
+const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+let DATA = null, META = {}, sortKey = 'total', sortAsc = false, tableMode = 'rate', SEARCH = '';
 let BASES = {};
 try {
   const b = JSON.parse(localStorage.getItem(BASE_SAVE) || '{}');
@@ -126,6 +198,8 @@ function load(){
   if (!ep || !tk){ say('URLと合言葉の両方を入れてください。', true); return; }
   localStorage.setItem(SAVE, JSON.stringify({ ep, tk }));
   say('よみこんでいます。');
+  const metaP = fetch(ep + '?mode=apps', { redirect:'follow' })
+    .then(r => r.json()).catch(() => null);
   fetch(ep + '?mode=dashboard&token=' + encodeURIComponent(tk), { redirect:'follow' })
     .then(r => r.json())
     .then(d => {
@@ -133,10 +207,14 @@ function load(){
         say(d.error === 'bad-token' ? '合言葉がちがいます。' : 'よみこめませんでした（' + d.error + '）', true);
         return;
       }
-      DATA = d;
-      say('最終よみこみ ' + new Date(d.at).toLocaleString('ja-JP'));
-      $('view').classList.remove('hidden');
-      draw();
+      metaP.then(m => {
+        META = {};
+        if (m && m.ok) (m.list || []).forEach(a => { META[a.key] = a; });
+        DATA = d;
+        say('最終よみこみ ' + new Date(d.at).toLocaleString('ja-JP'));
+        $('view').classList.remove('hidden');
+        draw();
+      });
     })
     .catch(() => say('つながりませんでした。URLと、ウェブアプリの公開設定を確かめてください。', true));
 }
@@ -155,9 +233,7 @@ function niceCeil(v){
   for (const m of [1, 2, 5, 10]) if (m * e >= v) return m * e;
   return 10 * e;
 }
-function autoBase(app){
-  return Math.max(1000, niceCeil(classMax(app)));
-}
+function autoBase(app){ return Math.max(1000, niceCeil(classMax(app))); }
 function baseOf(app){
   const saved = Number(BASES[app]);
   return (isFinite(saved) && saved >= 1) ? saved : autoBase(app);
@@ -180,11 +256,47 @@ function stuAvgRate(s){
 function saveBases(){
   try { localStorage.setItem(BASE_SAVE, JSON.stringify(BASES)); } catch (e) {}
 }
+function colorOf(app){
+  const c = META[app] && META[app].color;
+  if (c && /^#[0-9A-Fa-f]{6}$/.test(String(c).trim())) return String(c).trim();
+  const i = (DATA.apps || []).findIndex(a => a.app === app);
+  return COLORS[(i < 0 ? 0 : i) % COLORS.length];
+}
+function subjectOf(app){
+  return (META[app] && META[app].subject) || 'その他';
+}
+function hexToRgba(hex, a){
+  const m = /^#([0-9A-Fa-f]{6})$/.exec(String(hex || '').trim());
+  const n = parseInt(m ? m[1] : '35E0D2', 16);
+  return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+const fmt = v => Number(v || 0).toLocaleString('ja-JP');
+/* ===== アニメーション・ツールチップ ===== */
+function anim(paint){
+  if (RM){ paint(1); return; }
+  const t0 = performance.now(), D = 700;
+  requestAnimationFrame(function f(t){
+    const p = Math.min(1, (t - t0) / D);
+    paint(1 - Math.pow(1 - p, 3));
+    if (p < 1) requestAnimationFrame(f);
+  });
+}
+function tipShow(html, x, y){
+  const el = $('tip');
+  el.innerHTML = html; el.classList.add('on');
+  const r = el.getBoundingClientRect();
+  let L = x + 14, T = y + 14;
+  if (L + r.width > innerWidth - 8) L = x - r.width - 14;
+  if (T + r.height > innerHeight - 8) T = y - r.height - 12;
+  el.style.left = Math.max(4, L) + 'px'; el.style.top = Math.max(4, T) + 'px';
+}
+function tipHide(){ $('tip').classList.remove('on'); }
+/* ===== 基準スコア設定 ===== */
 function basePanel(){
   const apps = DATA.apps || [];
   $('bases').innerHTML = apps.map(a => `<tr>
       <td class="head">${jp(a.app)}</td>
-      <td class="num">${classMax(a.app)}</td>
+      <td class="num">${fmt(classMax(a.app))}</td>
       <td class="num"><input class="basein" type="number" min="1" step="1" inputmode="numeric"
         data-app="${a.app}" value="${baseOf(a.app)}"></td>
     </tr>`).join('');
@@ -199,27 +311,35 @@ function basePanel(){
   $('baseReset').onclick = () => { BASES = {}; saveBases(); basePanel(); redrawRates(); };
 }
 function redrawRates(){
-  const apps = DATA.apps || [];
-  bars($('cAvg'), apps.map(a => ({ label: jp(a.app), value: avgRate(a.app) })), 100);
-  table();
+  chartAvg(); chartSub(); heat(); table();
 }
-/* ===== 描画 ===== */
+/* ===== 全体描画 ===== */
 function draw(){
   const apps = DATA.apps || [], students = DATA.students || [];
   const avgAll = students.length
     ? Math.round(students.reduce((a, s) => a + s.total, 0) / students.length) : 0;
+  const rateAll = students.length
+    ? Math.round(students.reduce((a, s) => a + stuAvgRate(s), 0) / students.length) : 0;
   $('kpis').innerHTML = [
     ['生徒の数', students.length, COLORS[0]],
     ['プレイ回数', DATA.records, COLORS[1]],
+    ['クラス平均 達成率', rateAll, COLORS[3], '%'],
     ['平均 総合ポイント', avgAll, COLORS[2]],
-    ['うごいたゲーム', apps.length, COLORS[3]]
-  ].map(([k, v, c]) =>
-    `<div class="kpi" style="--accent:${c}"><span>${k}</span><b>${v}</b></div>`).join('');
+    ['うごいたゲーム', apps.length, COLORS[5]]
+  ].map(([k, v, c, suf]) =>
+    `<div class="kpi" style="--accent:${c}"><span>${k}</span><b data-v="${v}" data-suf="${suf || ''}">0</b></div>`).join('');
+  $('kpis').querySelectorAll('b[data-v]').forEach(b => {
+    const v = Number(b.dataset.v) || 0, suf = b.dataset.suf;
+    anim(p => { b.textContent = fmt(Math.round(v * p)) + suf; });
+  });
   basePanel();
   redrawRates();
-  bars($('cClear'), apps.map(a => ({ label: jp(a.app), value: a.clearRate })), 100);
-  line($('cDaily'), DATA.daily || []);
+  chartClear();
+  unplayed();
+  lineChart($('cDaily'), DATA.daily || []);
+  reveal();
 }
+/* ===== 棒グラフ（アニメ＋ホバー） ===== */
 function prep(cv){
   const dpr = window.devicePixelRatio || 1;
   const w = cv.clientWidth || 600, h = Number(cv.getAttribute('height'));
@@ -230,70 +350,173 @@ function prep(cv){
   g.font = '11px Outfit, sans-serif';
   return { g, w, h };
 }
-function axis(g, w, h, padL, padT, ch, top, padR){
+function axis(g, w, padL, padT, ch, top, padR){
   g.strokeStyle = 'rgba(190,205,235,.09)';
-  g.fillStyle = '#8B95AE'; g.textAlign = 'right';
+  g.fillStyle = '#8B95AE'; g.textAlign = 'right'; g.font = '11px Outfit, sans-serif';
   for (let i = 0; i <= 4; i++){
     const y = padT + ch - ch * i / 4;
     g.beginPath(); g.moveTo(padL, y); g.lineTo(w - padR, y); g.stroke();
     g.fillText(Math.round(top * i / 4), padL - 8, y + 4);
   }
 }
-function bars(cv, rows, max){
+function barChart(cv, rows, opt){
   const { g, w, h } = prep(cv);
   if (!rows.length){ g.fillStyle = '#8B95AE'; g.fillText('まだ記録がありません', 12, 26); return; }
   const padL = 38, padR = 10, padT = 14, padB = 80;
   const cw = w - padL - padR, ch = h - padT - padB;
-  const top = max || Math.max(...rows.map(r => r.value), 1);
-  axis(g, w, h, padL, padT, ch, top, padR);
+  const top = opt.max || Math.max(...rows.map(r => r.value), 1);
   const bw = cw / rows.length;
-  rows.forEach((r, i) => {
+  const rects = rows.map((r, i) => {
     const bh = Math.max(2, Math.min(ch, ch * (r.value / top)));
-    const x = padL + bw * i + bw * .22, width = bw * .56;
-    const c = COLORS[i % COLORS.length];
-    const grad = g.createLinearGradient(0, padT + ch - bh, 0, padT + ch);
-    grad.addColorStop(0, c); grad.addColorStop(1, c + '55');
-    g.fillStyle = grad;
-    g.beginPath();
-    if (g.roundRect) g.roundRect(x, padT + ch - bh, width, bh, [5, 5, 0, 0]);
-    else g.rect(x, padT + ch - bh, width, bh);
-    g.fill();
-    g.fillStyle = '#EDF1FB'; g.textAlign = 'center'; g.font = '600 12px Outfit, sans-serif';
-    g.fillText(r.value, x + width / 2, padT + ch - bh - 7);
-    g.save();
-    g.translate(x + width / 2, padT + ch + 14);
-    g.rotate(-Math.PI / 5.5);
-    g.fillStyle = '#8B95AE'; g.textAlign = 'right';
-    g.font = '12px "Zen Kaku Gothic New", sans-serif';
-    g.fillText(r.label, 0, 0);
-    g.restore();
-    g.font = '11px Outfit, sans-serif';
+    return { x: padL + bw * i + bw * .22, w: bw * .56, bh, r };
   });
+  function paint(p){
+    g.clearRect(0, 0, w, h);
+    axis(g, w, padL, padT, ch, top, padR);
+    rects.forEach((q, i) => {
+      const bh = Math.max(2, q.bh * p);
+      const c = q.r.color || COLORS[i % COLORS.length];
+      const grad = g.createLinearGradient(0, padT + ch - bh, 0, padT + ch);
+      grad.addColorStop(0, c); grad.addColorStop(1, c + '55');
+      g.fillStyle = grad;
+      g.beginPath();
+      if (g.roundRect) g.roundRect(q.x, padT + ch - bh, q.w, bh, [5, 5, 0, 0]);
+      else g.rect(q.x, padT + ch - bh, q.w, bh);
+      g.fill();
+      g.fillStyle = '#EDF1FB'; g.textAlign = 'center'; g.font = '600 12px Outfit, sans-serif';
+      g.fillText(Math.round(q.r.value * p), q.x + q.w / 2, padT + ch - bh - 7);
+      g.save();
+      g.translate(q.x + q.w / 2, padT + ch + 14);
+      g.rotate(-Math.PI / 5.5);
+      g.fillStyle = '#8B95AE'; g.textAlign = 'right';
+      g.font = '12px "Zen Kaku Gothic New", sans-serif';
+      g.fillText(q.r.label, 0, 0);
+      g.restore();
+    });
+  }
+  anim(paint);
+  cv.onmousemove = ev => {
+    const b = cv.getBoundingClientRect();
+    const mx = ev.clientX - b.left, my = ev.clientY - b.top;
+    const hit = rects.find(q => mx >= q.x - 4 && mx <= q.x + q.w + 4 &&
+      my >= padT + ch - q.bh - 18 && my <= padT + ch);
+    if (hit && opt.tip){ cv.style.cursor = 'pointer'; tipShow(opt.tip(hit.r), ev.clientX, ev.clientY); }
+    else { cv.style.cursor = 'default'; tipHide(); }
+  };
+  cv.onmouseleave = tipHide;
 }
-function line(cv, rows){
+function chartAvg(){
+  const apps = DATA.apps || [];
+  barChart($('cAvg'), apps.map(a => ({
+    label: jp(a.app), value: avgRate(a.app), color: colorOf(a.app), a
+  })), { max: 100, tip: r => `<b>${jp(r.a.app)}</b><br>平均 達成率 <b>${r.value}%</b><br>` +
+    `クラス最高 ${fmt(classMax(r.a.app))}点 / 基準 ${fmt(baseOf(r.a.app))}点<br>` +
+    `あそんだ人 ${r.a.players}人 ・ ${fmt(r.a.plays)}回` });
+}
+function chartClear(){
+  const apps = DATA.apps || [];
+  barChart($('cClear'), apps.map(a => ({
+    label: jp(a.app), value: a.clearRate, color: colorOf(a.app), a
+  })), { max: 100, tip: r => `<b>${jp(r.a.app)}</b><br>クリアした人の割合 <b>${r.value}%</b><br>` +
+    `あそんだ人 ${r.a.players}人` });
+}
+function chartSub(){
+  const g = {};
+  (DATA.apps || []).forEach(a => {
+    const s = subjectOf(a.app);
+    if (!g[s]) g[s] = { sum: 0, n: 0, games: [], color: colorOf(a.app), plays: 0 };
+    g[s].sum += avgRate(a.app); g[s].n++;
+    g[s].games.push(jp(a.app)); g[s].plays += a.plays;
+  });
+  const rows = Object.keys(g).map(s => ({
+    label: s, value: Math.round(g[s].sum / g[s].n), color: g[s].color,
+    games: g[s].games, plays: g[s].plays
+  })).sort((a, b) => b.value - a.value);
+  barChart($('cSub'), rows, { max: 100, tip: r => `<b>${r.label}</b><br>平均 達成率 <b>${r.value}%</b><br>` +
+    `ゲーム: ${r.games.join('、')}<br>のべ ${fmt(r.plays)}回` });
+}
+/* ===== 折れ線（アニメ＋ホバー） ===== */
+function lineChart(cv, rows){
   const { g, w, h } = prep(cv);
   if (!rows.length){ g.fillStyle = '#8B95AE'; g.fillText('まだ記録がありません', 12, 26); return; }
   const padL = 38, padR = 14, padT = 16, padB = 38;
   const cw = w - padL - padR, ch = h - padT - padB;
   const top = Math.max(...rows.map(r => r.plays), 1);
-  axis(g, w, h, padL, padT, ch, top, padR);
   const step = rows.length > 1 ? cw / (rows.length - 1) : 0;
-  const pt = i => [padL + step * i, padT + ch - ch * (rows[i].plays / top)];
-  g.beginPath();
-  rows.forEach((r, i) => { const [x, y] = pt(i); i ? g.lineTo(x, y) : g.moveTo(x, y); });
-  g.lineTo(padL + step * (rows.length - 1), padT + ch); g.lineTo(padL, padT + ch); g.closePath();
-  const fill = g.createLinearGradient(0, padT, 0, padT + ch);
-  fill.addColorStop(0, 'rgba(53,224,210,.28)'); fill.addColorStop(1, 'rgba(53,224,210,0)');
-  g.fillStyle = fill; g.fill();
-  g.beginPath();
-  rows.forEach((r, i) => { const [x, y] = pt(i); i ? g.lineTo(x, y) : g.moveTo(x, y); });
-  g.strokeStyle = '#35E0D2'; g.lineWidth = 2.4; g.lineJoin = 'round'; g.stroke();
-  g.fillStyle = '#35E0D2';
-  rows.forEach((r, i) => { const [x, y] = pt(i); g.beginPath(); g.arc(x, y, 3, 0, 7); g.fill(); });
-  g.fillStyle = '#8B95AE'; g.textAlign = 'center';
-  const every = Math.ceil(rows.length / 10);
-  rows.forEach((r, i) => { if (i % every === 0) g.fillText(r.date, pt(i)[0], h - 12); });
+  const pts = rows.map((r, i) => ({ x: padL + step * i, y: padT + ch - ch * (r.plays / top), r }));
+  function paint(p){
+    g.clearRect(0, 0, w, h);
+    axis(g, w, padL, padT, ch, top, padR);
+    g.save();
+    g.beginPath(); g.rect(padL - 4, 0, (cw + 8) * p, h); g.clip();
+    g.beginPath();
+    pts.forEach((q, i) => i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y));
+    g.lineTo(pts[pts.length - 1].x, padT + ch); g.lineTo(padL, padT + ch); g.closePath();
+    const fill = g.createLinearGradient(0, padT, 0, padT + ch);
+    fill.addColorStop(0, 'rgba(53,224,210,.28)'); fill.addColorStop(1, 'rgba(53,224,210,0)');
+    g.fillStyle = fill; g.fill();
+    g.beginPath();
+    pts.forEach((q, i) => i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y));
+    g.strokeStyle = '#35E0D2'; g.lineWidth = 2.4; g.lineJoin = 'round'; g.stroke();
+    g.fillStyle = '#35E0D2';
+    pts.forEach(q => { g.beginPath(); g.arc(q.x, q.y, 3, 0, 7); g.fill(); });
+    g.restore();
+    g.fillStyle = '#8B95AE'; g.textAlign = 'center'; g.font = '11px Outfit, sans-serif';
+    const every = Math.ceil(rows.length / 10);
+    rows.forEach((r, i) => { if (i % every === 0) g.fillText(r.date, pts[i].x, h - 12); });
+  }
+  anim(paint);
+  cv.onmousemove = ev => {
+    const b = cv.getBoundingClientRect();
+    const mx = ev.clientX - b.left;
+    let best = null, bd = 26;
+    pts.forEach(q => { const d = Math.abs(q.x - mx); if (d < bd){ bd = d; best = q; } });
+    if (best) tipShow(`<b>${best.r.date}</b><br>プレイ ${fmt(best.r.plays)}回`, ev.clientX, ev.clientY);
+    else tipHide();
+  };
+  cv.onmouseleave = tipHide;
 }
+/* ===== 達成マップ ===== */
+function heat(){
+  const apps = DATA.apps || [];
+  const studs = (DATA.students || []).slice().sort((a, b) => stuAvgRate(b) - stuAvgRate(a));
+  if (!studs.length){ $('heat').innerHTML = '<p class="msg">まだ記録がありません。</p>'; return; }
+  let n = 0;
+  const head = '<th class="stick" style="cursor:default">ニックネーム</th>' +
+    apps.map(a => `<th style="cursor:default">${jp(a.app)}</th>`).join('') +
+    '<th style="text-align:right;cursor:default">平均</th>';
+  const body = studs.map(s => {
+    const cells = apps.map(a => {
+      const raw = s.perApp && s.perApp[a.app];
+      if (raw == null) return '<td class="c" style="color:#5A6478">—</td>';
+      const r = rateOf(a.app, raw);
+      const d = Math.min(400, (n++) * 9);
+      return `<td class="c an" style="background:${hexToRgba(colorOf(a.app), .08 + .58 * r / 100)};animation-delay:${d}ms"
+        data-tip="<b>${s.nickname}</b> × ${jp(a.app)}<br>達成率 <b>${r}%</b> ・ 素点 ${fmt(raw)}点<br>基準 ${fmt(baseOf(a.app))}点">${r}</td>`;
+    }).join('');
+    return `<tr><td class="head stick">${s.nickname}</td>${cells}
+      <td class="num" style="color:#35E0D2">${stuAvgRate(s)}%</td></tr>`;
+  }).join('');
+  $('heat').innerHTML = `<table class="hm"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+  $('heat').onmouseover = ev => {
+    const td = ev.target.closest('td[data-tip]');
+    if (td) tipShow(td.dataset.tip, ev.clientX, ev.clientY);
+  };
+  $('heat').onmouseout = ev => { if (ev.target.closest('td[data-tip]')) tipHide(); };
+}
+/* ===== まだ遊んでいない子 ===== */
+function unplayed(){
+  const apps = DATA.apps || [], studs = DATA.students || [];
+  if (!studs.length){ $('unp').innerHTML = '<li>まだ記録がありません。</li>'; return; }
+  const rows = apps.map(a => {
+    const miss = studs.filter(s => !s.perApp || s.perApp[a.app] == null).map(s => s.nickname);
+    return { a, miss };
+  }).sort((x, y) => y.miss.length - x.miss.length);
+  $('unp').innerHTML = rows.map(({ a, miss }) => miss.length
+    ? `<li>${jp(a.app)} — <b>${miss.length}人</b><br><span class="who">${miss.join('、')}</span></li>`
+    : `<li>${jp(a.app)} — <span class="ok">全員プレイずみ</span></li>`).join('');
+}
+/* ===== 生徒ごとの表 ===== */
 function table(){
   const apps = (DATA.apps || []).map(a => a.app);
   const rate = tableMode === 'rate';
@@ -301,22 +524,27 @@ function table(){
     : k === 'total' ? (rate ? stuAvgRate(s) : s.total)
     : k === 'plays' ? s.plays
     : (s.perApp[k] != null ? (rate ? rateOf(k, s.perApp[k]) : s.perApp[k]) : 0);
-  const rows = (DATA.students || []).slice().sort((a, b) => {
+  let rows = (DATA.students || []).slice();
+  if (SEARCH) rows = rows.filter(s => String(s.nickname).toLowerCase().includes(SEARCH));
+  rows.sort((a, b) => {
     const va = val(a, sortKey), vb = val(b, sortKey);
     const d = typeof va === 'string' ? String(va).localeCompare(vb, 'ja') : va - vb;
     return sortAsc ? d : -d;
   });
-  if (!rows.length){ $('table').innerHTML = '<p class="msg">まだ記録がありません。</p>'; return; }
+  if (!rows.length){
+    $('table').innerHTML = '<p class="msg">' + (SEARCH ? 'この名前の子は見つかりません。' : 'まだ記録がありません。') + '</p>';
+    return;
+  }
   const cell = (a, s) => s.perApp[a] != null
-    ? (rate ? rateOf(a, s.perApp[a]) + '%' : s.perApp[a]) : '—';
-  const head = ['<th data-k="nickname">ニックネーム</th>',
+    ? (rate ? rateOf(a, s.perApp[a]) + '%' : fmt(s.perApp[a])) : '—';
+  const head = ['<th data-k="nickname" class="stick">ニックネーム</th>',
                 `<th data-k="total" style="text-align:right">${rate ? '平均達成率' : '総合'}</th>`]
     .concat(apps.map(a => `<th data-k="${a}" style="text-align:right">${jp(a)}</th>`))
     .concat(['<th data-k="plays" style="text-align:right">回数</th>',
-             '<th style="text-align:right">最終</th>']).join('');
-  const body = rows.map(s => `<tr>
-      <td class="head">${s.nickname}</td>
-      <td class="num" style="color:#35E0D2">${rate ? stuAvgRate(s) + '%' : s.total}</td>
+             '<th style="text-align:right;cursor:default">最終</th>']).join('');
+  const body = rows.map(s => `<tr data-id="${s.id}">
+      <td class="head stick">${s.nickname}</td>
+      <td class="num" style="color:#35E0D2">${rate ? stuAvgRate(s) + '%' : fmt(s.total)}</td>
       ${apps.map(a => `<td class="num">${cell(a, s)}</td>`).join('')}
       <td class="num">${s.plays}</td>
       <td class="num">${s.last ? new Date(s.last).toLocaleDateString('ja-JP') : '—'}</td>
@@ -328,12 +556,57 @@ function table(){
       sortKey = th.dataset.k; table();
     });
   });
+  $('table').querySelectorAll('tr[data-id]').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const s = (DATA.students || []).find(x => String(x.id) === tr.dataset.id);
+      if (s) detail(s);
+    });
+  });
 }
+/* ===== 生徒のくわしい記録 ===== */
+function detail(s){
+  $('dName').textContent = s.nickname;
+  $('dMeta').textContent = '平均達成率 ' + stuAvgRate(s) + '% ・ 総合 ' + fmt(s.total) + '点 ・ '
+    + fmt(s.plays) + '回 ・ 最終 ' + (s.last ? new Date(s.last).toLocaleDateString('ja-JP') : '—');
+  const apps = DATA.apps || [];
+  $('dBars').innerHTML = apps.map(a => {
+    const raw = s.perApp && s.perApp[a.app];
+    const r = raw == null ? 0 : rateOf(a.app, raw);
+    const label = raw == null ? '未プレイ' : r + '%（' + fmt(raw) + '点）';
+    return `<div class="dRow"><span style="color:${raw == null ? '#5A6478' : '#C6CFE2'}">${jp(a.app)}</span>
+      <div class="track"><i data-w="${r}" style="background:linear-gradient(90deg,${colorOf(a.app)},${colorOf(a.app)}88)"></i></div>
+      <b style="color:${raw == null ? '#5A6478' : '#EDF1FB'}">${label}</b></div>`;
+  }).join('');
+  $('ovl').classList.add('on');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    $('dBars').querySelectorAll('i[data-w]').forEach(i => { i.style.width = i.dataset.w + '%'; });
+  }));
+}
+function closeDetail(){ $('ovl').classList.remove('on'); }
+$('ovlClose').addEventListener('click', closeDetail);
+$('ovl').addEventListener('click', ev => { if (ev.target === $('ovl')) closeDetail(); });
+window.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeDetail(); });
+/* ===== ふわっと表示 ===== */
+const io = ('IntersectionObserver' in window && !RM)
+  ? new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    }), { threshold: .06 })
+  : null;
+function reveal(){
+  document.querySelectorAll('#view .rv:not(.in)').forEach(el => {
+    if (io) io.observe(el); else el.classList.add('in');
+  });
+}
+/* ===== 操作 ===== */
 document.querySelectorAll('#modes .btn').forEach(b => b.addEventListener('click', () => {
   tableMode = b.dataset.m;
   document.querySelectorAll('#modes .btn').forEach(x => x.classList.toggle('on', x === b));
   if (DATA) table();
 }));
+$('q').addEventListener('input', () => {
+  SEARCH = $('q').value.trim().toLowerCase();
+  if (DATA) table();
+});
 $('csv').addEventListener('click', () => {
   const apps = (DATA.apps || []).map(a => a.app);
   const rate = tableMode === 'rate';
