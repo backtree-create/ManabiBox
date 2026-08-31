@@ -52,7 +52,7 @@ function doPost(e) {
     var now = Date.now();
 
     if (b.m === 'claim') {
-      var cid = String(b.cid || '').slice(0, 4);
+      var cid = pad3(String(b.cid || '').slice(0, 4));
       var cur = st.c[cid];
       if (cur && cur[0] !== pid && (now - cur[2]) < PROTECT_MS) {
         return out({
@@ -62,16 +62,21 @@ function doPost(e) {
         });
       }
       st.c[cid] = [pid, color, now];
-      st.p[pid] = [nick, scoreV, color, now];
+      var kept = keepScore(st, pid, scoreV);
+      st.p[pid] = [nick, kept, color, now];
       putState(room, st);
-      logRow([now, room, 'claim', cid, pid, nick, color, scoreV]);
+      logRow([now, room, 'claim', cid, pid, nick, color, kept]);
       return out({ ok: true, state: st });
     }
 
     if (b.m === 'join' || b.m === 'sync') {
-      st.p[pid] = [nick, scoreV, color, now];
+      /* 参加のときは score 0 が送られてくる。そのまま書きこむと、
+         前にためた点が消えて「たくさん持っているのに0点」になるので、
+         高いほうを残す。 */
+      var keptJ = keepScore(st, pid, scoreV);
+      st.p[pid] = [nick, keptJ, color, now];
       putState(room, st);
-      if (b.m === 'join') logRow([now, room, 'join', '', pid, nick, color, scoreV]);
+      if (b.m === 'join') logRow([now, room, 'join', '', pid, nick, color, keptJ]);
       return out({ ok: true, state: st });
     }
 
@@ -79,6 +84,23 @@ function doPost(e) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/* 国コードは3けたにそろえる。
+   スプレッドシートは "004" を数値の 4 として覚えてしまうので、
+   シートから読みなおしたときに "4" になってしまう。
+   そのままだと100番より小さい国の領地が消えるため、ここで直す。 */
+function pad3(id) {
+  var s = String(id == null ? '' : id).trim();
+  return /^\d+$/.test(s) ? ('000' + s).slice(-3) : s;
+}
+
+/* 点は下げない。入り直しや通信の行きちがいで古い（小さい）値が届いても、
+   ためた点を消さないようにする。ルームをリセットすれば 0 から始まる。 */
+function keepScore(st, pid, incoming) {
+  var old = st.p[pid];
+  var prev = old ? (Number(old[1]) || 0) : 0;
+  return Math.max(prev, Number(incoming) || 0);
 }
 
 /* ---------- 状態の保存（キャッシュ＋シートで復元可能に） ---------- */
@@ -122,10 +144,12 @@ function rebuildFromSheet(room) {
       if (String(r[1]) !== room) return;
       var type = String(r[2]);
       if (type === 'reset') { st = { c: {}, p: {} }; return; }
-      var ts = Number(r[0]) || 0, cid = String(r[3]), pid = String(r[4]);
+      /* cid はシートに数値として入っていることがあるので3けたに戻す */
+      var ts = Number(r[0]) || 0, cid = pad3(r[3]), pid = String(r[4]);
       if (type === 'claim' && cid) st.c[cid] = [pid, String(r[6]), ts];
       if ((type === 'claim' || type === 'join') && pid) {
-        st.p[pid] = [String(r[5]), Number(r[7]) || 0, String(r[6]), ts];
+        var prev = st.p[pid] ? (Number(st.p[pid][1]) || 0) : 0;
+        st.p[pid] = [String(r[5]), Math.max(prev, Number(r[7]) || 0), String(r[6]), ts];
       }
     });
   } catch (e) { }

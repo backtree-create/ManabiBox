@@ -82,7 +82,13 @@
   var online = false;
   var claims = {};             // cid -> [pid, color, ts]
   var players = {};            // pid -> [nick, score, color, ts]
-  var score = 0, combo = 0, correct = 0, wrong = 0, sessionCaptures = 0;
+  /* score はいつも baseScore + earnedScore。
+     baseScore はサーバーに残っている自分の点（入り直したときに引きつぐ）、
+     earnedScore は今回の画面で自分がかせいだ点。
+     こう分けておかないと、リロードのたびに 0 に戻って
+     「155か国持っているのに 0点」になってしまう。 */
+  var score = 0, baseScore = 0, earnedScore = 0;
+  var combo = 0, correct = 0, wrong = 0, sessionCaptures = 0;
   var locks = {};              // cid -> 解除時刻（自分の誤答ロック）
   var earned = {};             // 一度きりボーナスの記録
   var quizTimer = null, quizDeadline = 0, quizStart = 0;
@@ -676,7 +682,8 @@
       banner('👑 ' + cont + '州 完全制覇! +1000');
     }
 
-    score += pts;
+    earnedScore += pts;
+    score = baseScore + earnedScore;
     (pts >= 300 ? SND.big : SND.ok)();
     resultToast(d, lines, pts, true);
     paintAll();
@@ -727,15 +734,32 @@
     var lost = {};
     myCids().forEach(function (id) { lost[id] = 1; });
 
-    /* 受け取ったデータは書きかえずに、写しを作って使う */
+    /* 受け取ったデータは書きかえずに、写しを作って使う。
+       このとき国コードを3けたにそろえる。
+       スプレッドシートは "004" を数値の 4 として覚えてしまうため、
+       キャッシュが切れて復元されたあとは "4" で返ってくることがあり、
+       そのままだと100番より小さい国（オーストラリア・ブラジルなど）の
+       領地が消えてしまう。 */
     var next = {}, src = st.c || {};
-    Object.keys(src).forEach(function (k) { next[k] = src[k]; });
+    Object.keys(src).forEach(function (k) {
+      var id = /^\d+$/.test(k) ? pad3(k) : k;
+      var cur = next[id];
+      if (!cur || (Number(src[k][2]) || 0) >= (Number(cur[2]) || 0)) next[id] = src[k];
+    });
     /* まだ返事が来ていない自分の占領は、こちらの表示のままにしておく */
     Object.keys(pending).forEach(function (cid) {
       if (!next[cid] || next[cid][0] !== me.pid) next[cid] = [me.pid, me.color, pending[cid]];
     });
     claims = next;
     players = st.p || {};
+
+    /* 入り直したときは、サーバーに残っている自分の点を引きつぐ。
+       （ここで上書きするより先に読むこと。あとだと 0 で消してしまう） */
+    var onServer = players[me.pid];
+    if (onServer) {
+      var sv = Number(onServer[1]) || 0;
+      if (sv > baseScore) { baseScore = sv; score = baseScore + earnedScore; }
+    }
 
     // 自分の情報は常に最新に
     if (!players[me.pid]) players[me.pid] = [me.nick, score, me.color, Date.now()];
@@ -919,8 +943,8 @@
       app: 'world-conquest',
       done: cum.length,
       total: mapIds.length || Object.keys(COUNTRIES).length,
-      best: acc * 10,   /* 他ゲームに合わせて1000点満点に換算 */
-      note: '今回' + sessionCaptures + 'か国・' + score + 'pt（正答率' + acc + '%）'
+      best: acc,
+      note: '今回' + sessionCaptures + 'か国・合計' + score + 'pt（正答率' + acc + '%）'
     };
     try {
       if (typeof window.manabiReport === 'function') window.manabiReport(payload);
@@ -1161,6 +1185,7 @@
       state: function () {
         return { mapIds: mapIds.length, meshes: Object.keys(meshes).length,
           claims: claims, players: players, score: score, combo: combo,
+          baseScore: baseScore, earnedScore: earnedScore,
           neighborsSample: neighborsOf['392'] };
       },
       tap: tapAt, quiz: startQuiz, claims: function () { return claims; },
