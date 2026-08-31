@@ -15,7 +15,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--parchment);font-family:var(--sans)}
-#c3d{position:fixed;inset:0;display:block;touch-action:none;width:100vw;height:100dvh;
+#c3d{position:fixed;inset:0;display:block;touch-action:none;width:100vw;height:100vh;height:100dvh;
   image-rendering:pixelated;image-rendering:crisp-edges}
 #vignette{position:fixed;inset:0;pointer-events:none;z-index:6;
   background:radial-gradient(ellipse 120% 90% at 50% 42%, transparent 52%, rgba(5,3,2,.62) 100%)}
@@ -63,8 +63,8 @@ button{font-family:inherit}
 @media(max-height:720px){
   .card,.dossier{padding:14px 16px;font-size:.85rem;line-height:1.8}
   .mini-frame{width:min(38vw,150px)}
-  #popup .pframe{max-height:44dvh}
-  #popup img{max-height:calc(44dvh - 40px)}
+  #popup .pframe{max-height:44vh;max-height:44dvh}
+  #popup img{max-height:calc(44vh - 40px);max-height:calc(44dvh - 40px)}
   .big-title{font-size:clamp(1.9rem,7vw,3rem)}
   .rules,.ctrl-note{line-height:1.7}
 }
@@ -126,7 +126,7 @@ button{font-family:inherit}
   border:5px solid transparent;
   border-image:linear-gradient(135deg,#8a6d15,#f2dc9b 28%,#a8842a 55%,#f0d98f 80%,#8a6d15) 1;
   box-shadow:0 12px 30px rgba(0,0,0,.6)}
-.mini-frame img{display:block;width:100%;max-height:32dvh;object-fit:contain}
+.mini-frame img{display:block;width:100%;max-height:32vh;max-height:32dvh;object-fit:contain}
 .trivia{margin-top:14px;padding-top:14px;border-top:1px dashed rgba(242,232,213,.3);font-size:.86rem}
 .rank{font-family:var(--serif);font-size:clamp(1.6rem,7vw,2.3rem);font-weight:800}
 .go-title{font-family:var(--serif);font-size:clamp(2rem,9vw,3rem);font-weight:800;color:var(--danger);
@@ -136,11 +136,11 @@ button{font-family:inherit}
 #popup{z-index:40}
 #pLot{font-family:var(--serif);letter-spacing:.3em;font-size:.72rem;color:var(--gold);margin-bottom:4px}
 #pLabel{font-family:var(--serif);font-size:1.5rem;font-weight:800;letter-spacing:.15em;margin-bottom:12px}
-#popup .pframe{width:min(80vw,380px);max-height:54dvh;background:#0a0705;padding:14px;
+#popup .pframe{width:min(80vw,380px);max-height:54vh;max-height:54dvh;background:#0a0705;padding:14px;
   border:7px solid transparent;
   border-image:linear-gradient(135deg,#8a6d15,#f2dc9b 28%,#a8842a 55%,#f0d98f 80%,#8a6d15) 1;
   box-shadow:0 18px 50px rgba(0,0,0,.75),inset 0 0 0 1px rgba(242,232,213,.15)}
-#popup img{display:block;width:100%;max-height:calc(54dvh - 40px);object-fit:contain}
+#popup img{display:block;width:100%;max-height:calc(54vh - 40px);max-height:calc(54dvh - 40px);object-fit:contain}
 .p-nav{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:16px;flex-wrap:wrap}
 .p-arrow{background:#1a100d;border:3px solid var(--gold);color:var(--gold-light);
   border-radius:0;width:46px;height:46px;font-size:1.2rem;cursor:pointer;box-shadow:0 3px 0 #0c0806}
@@ -173,6 +173,15 @@ button{font-family:inherit}
 .stamp.fake{color:var(--danger);border-color:var(--danger);background:rgba(20,10,9,.85)}
 .stamp.real{color:var(--gold-light);border-color:var(--gold-light);background:rgba(15,12,7,.85)}
 #fadeVeil{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .7s ease;z-index:28}
+
+/* ---------- スマホ配置の調整(既存ルールより後ろに置くこと) ---------- */
+@media(max-width:560px){
+  #hud .bar{margin-top:52px;font-size:.72rem;gap:2px 14px;padding:6px 12px;
+    flex-wrap:wrap;justify-content:center;max-width:94vw}
+  #hudStage{flex-basis:100%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #hintBtn{top:auto;bottom:178px;bottom:calc(178px + env(safe-area-inset-bottom));right:12px}
+  #hintToast{top:auto;bottom:236px;bottom:calc(236px + env(safe-area-inset-bottom))}
+}
 </style>
 </head>
 <body>
@@ -206,7 +215,11 @@ button{font-family:inherit}
       スマホ:<b>床をタップ</b>するとその場所へ歩きます(左のパッドでも移動可)。作品タップで検分</div>
   </div>
   <div class="warn" id="imgWarn">⚠ 名画の画像を読み込めませんでした。通信環境をご確認ください。Claudeのプレビュー内では外部画像がブロックされるため、<b>ダウンロードしてブラウザで開くか、GitHub Pagesで公開</b>してください。</div>
-  <div style="margin-top:22px"><button class="btn" id="startBtn">鑑定を始める</button></div>
+  <div style="margin-top:22px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+    <button class="btn" id="startBtn">鑑定を始める</button>
+    <button class="btn ghost" id="expertBtn">エキスパート</button>
+  </div>
+  <div style="margin-top:10px;font-size:.72rem;opacity:.78">エキスパートは、色調の違いだけで見分ける従来ルールの上級モード</div>
 </div>
 
 <!-- 依頼書 -->
@@ -492,6 +505,24 @@ const MONO_POOLS={
   mid: [{bri:1.25},{bri:.8},{bri:1.16},{bri:.87}],
   hard:[{bri:1.12},{bri:.9},{bri:1.07},{bri:.94}]
 };
+/* 贋作の仕掛け(色以外の手がかり)。通常モードでは贋作に必ず1つ入る */
+const TRICKS={
+  easy:[{t:"flip"},{t:"blur",v:2.4},{t:"flip"},{t:"blur",v:2.0}],
+  mid: [{t:"rotate",v:2.6},{t:"crop",v:.09},{t:"blur",v:1.3},{t:"rotate",v:-2.2},{t:"crop",v:.07}],
+  hard:[{t:"patch"},{t:"stretch",v:.055},{t:"rotate",v:1.6},{t:"crop",v:.05},{t:"patch"},{t:"stretch",v:-.05}]
+};
+const TRICK_HINTS={
+  flip:"構図の左右が逆のものが紛れている",
+  blur:"輪郭がにじみ、筆致の甘いものがある",
+  rotate:"額の中で絵がわずかに傾いているものがある",
+  crop:"本物より画面の端が切れているものがある",
+  patch:"描かれているはずのものが消えている箇所を探せ",
+  stretch:"縦と横の比率がわずかに歪んでいるものがある"
+};
+const TRICK_NAMES={flip:"左右反転の複製",blur:"筆致の甘い複製",rotate:"わずかに傾いた複製",
+  crop:"端の欠けた複製",patch:"一部が描き落とされた複製",stretch:"比率の歪んだ複製"};
+const TRICK_SHOUTS={flip:"構図が左右逆だ!",blur:"筆致が甘い、これは複製だ!",rotate:"絵が傾いているじゃないか!",
+  crop:"端が欠けている!",patch:"描かれているはずのものが無い!",stretch:"縦横の比率がおかしい!"};
 const BIDDERS=["英国の老収集家","匿名の電話入札","スイスの財団","香港の実業家","美術館の代理人","仮面の貴婦人","新興IT富豪","王室関係者"];
 
 /* ==================== ユーティリティ ==================== */
@@ -564,11 +595,49 @@ async function loadArtImage(art){
   artImgCache[art.name]=result;
   return result;
 }
+function blurDraw(ctx,src,w,h,strength){
+  const sc=Math.max(.16,1/(1+(strength||1.5)));
+  const tw=Math.max(8,Math.round(w*sc)),th=Math.max(8,Math.round(h*sc));
+  const t=document.createElement("canvas");t.width=tw;t.height=th;
+  const tc=t.getContext("2d");tc.imageSmoothingEnabled=true;tc.drawImage(src,0,0,tw,th);
+  ctx.imageSmoothingEnabled=true;ctx.drawImage(t,0,0,tw,th,0,0,w,h);
+}
+function patchErase(ctx,w,h){
+  const bs=Math.max(26,Math.round(Math.min(w,h)*.15));
+  let d;try{d=ctx.getImageData(0,0,w,h).data}catch(e){return}
+  let best=null;
+  for(let y=Math.round(h*.14);y+bs<h*.86;y+=bs)
+    for(let x=Math.round(w*.14);x+bs<w*.86;x+=bs){
+      let sum=0,sum2=0,n=0;
+      for(let yy=y;yy<y+bs;yy+=4)for(let xx=x;xx<x+bs;xx+=4){
+        const i=(yy*w+xx)*4,lum=.299*d[i]+.587*d[i+1]+.114*d[i+2];
+        sum+=lum;sum2+=lum*lum;n++;
+      }
+      const v=sum2/n-(sum/n)*(sum/n);
+      if(!best||v>best.v)best={x,y,v};
+    }
+  if(!best)return;
+  const sx=best.x+bs*2<w*.97?best.x+bs:best.x-bs;
+  ctx.drawImage(ctx.canvas,sx,best.y,bs,bs,best.x,best.y,bs,bs);
+}
 function adjustCanvas(img,adj){
+  adj=adj||{};
   const MAX=720,sc=Math.min(1,MAX/img.width);
   const w=Math.round(img.width*sc),h=Math.round(img.height*sc);
   const cv=document.createElement("canvas");cv.width=w;cv.height=h;
-  const ctx=cv.getContext("2d");ctx.drawImage(img,0,0,w,h);
+  const ctx=cv.getContext("2d");
+  const tk=adj.trick||null;
+  ctx.save();
+  if(tk&&tk.t==="flip"){ctx.translate(w,0);ctx.scale(-1,1);}
+  else if(tk&&tk.t==="rotate"){const a=tk.v*Math.PI/180;ctx.translate(w/2,h/2);ctx.rotate(a);ctx.scale(1.09,1.09);ctx.translate(-w/2,-h/2);}
+  else if(tk&&tk.t==="crop"){const z=1+Math.abs(tk.v);ctx.translate(w/2,h/2);ctx.scale(z,z);ctx.translate(-w/2,-h/2);}
+  else if(tk&&tk.t==="stretch"){const z=1+Math.abs(tk.v);
+    if(tk.v>=0){ctx.translate(w/2,0);ctx.scale(z,1);ctx.translate(-w/2,0);}
+    else{ctx.translate(0,h/2);ctx.scale(1,z);ctx.translate(0,-h/2);}}
+  if(tk&&tk.t==="blur")blurDraw(ctx,img,w,h,tk.v);
+  else ctx.drawImage(img,0,0,w,h);
+  ctx.restore();
+  if(tk&&tk.t==="patch"){try{patchErase(ctx,w,h)}catch(e){}}
   const hue=(adj.hue||0)*Math.PI/180,sat=adj.sat===undefined?1:adj.sat,bri=adj.bri===undefined?1:adj.bri;
   if(hue===0&&sat===1&&bri===1)return cv;
   try{
@@ -1010,7 +1079,7 @@ let hallAudience=[],hallEaselSlot=null,hallSpot=null,hallDust;
 })();
 
 /* ==================== 状態・入力 ==================== */
-let mode="title";
+let mode="title";let expertMode=false;
 let stage=0,total=0,usedHint=false,startT=0,runList=[],points=0;
 /* ---- ポイント記録(ステージnクリアで n×1000pt、全クリアで計21000pt) ---- */
 const STORE_KEY="manabi-appraiser";
@@ -1105,12 +1174,21 @@ async function prepareStage(){
   const img=await loadArtImage(S);
   if(!img)$("imgWarn").style.display="block";
   const pool=[...(S.mono?MONO_POOLS:POOLS)[D.pool]].sort(()=>Math.random()-.5);
+  const tricks=[...TRICKS[D.pool]].sort(()=>Math.random()-.5);
   cands=[];stageCanvases=[];
   const realIdx=Math.floor(Math.random()*D.candidates);
+  let fi=0;
   for(let i=0;i<D.candidates;i++){
     const real=i===realIdx;
-    cands.push({real});
-    stageCanvases.push(img?adjustCanvas(img,real?{}:pool[i%pool.length]):placeholderCanvas(S.name));
+    let adj={},trick=null;
+    if(!real){
+      const col=pool[fi%pool.length];
+      if(expertMode)adj={...col};
+      else{trick={...tricks[fi%tricks.length]};adj={...col,trick};}
+      fi++;
+    }
+    cands.push({real,trick});
+    stageCanvases.push(img?adjustCanvas(img,adj):placeholderCanvas(S.name));
   }
   exhibits.forEach(e=>gallery.remove(e));exhibits=[];paintGroups=[];
   SLOTS.slice(0,D.candidates).forEach((s,i)=>{
@@ -1127,7 +1205,7 @@ async function prepareStage(){
   player.position.set(0,0,-GAL.d+2.2);player.rotation.y=0;
   player.userData.baseY=0;
   if(carryMesh){carrySlot.remove(carryMesh);carryMesh=null;}
-  $("hudStage").textContent=`STAGE ${stage+1}『${S.name}』`;
+  $("hudStage").textContent=(expertMode?"[EX] ":"")+`STAGE ${stage+1}『${S.name}』`;
   $("hudTotal").textContent=fmtYen(total);
   $("hintToast").style.display="none";
   $("hintBtn").disabled=false;
@@ -1156,9 +1234,14 @@ $("pPick").onclick=()=>{
 $("pNo").onclick=resetConfirm;
 $("pYes").onclick=()=>{closeOv("popup");startCarry(popupIdx);};
 $("interactBtn").onclick=()=>{if(mode==="explore"&&nearIdx>=0)openPopup(nearIdx);};
+function stageHint(){
+  if(expertMode)return runList[stage].hint;
+  const ts=[...new Set(cands.filter(c=>c.trick).map(c=>c.trick.t))];
+  return ts.map(t=>TRICK_HINTS[t]).join("。")+"。色調の違いも補助の手がかりになる。";
+}
 $("hintBtn").onclick=()=>{
   usedHint=true;$("hintBtn").disabled=true;
-  const t=$("hintToast");t.innerHTML=`<b>専門家の所見:</b>${runList[stage].hint}`;t.style.display="block";
+  const t=$("hintToast");t.innerHTML=`<b>専門家の所見:</b>${stageHint()}`;t.style.display="block";
   setTimeout(()=>t.style.display="none",9000);
 };
 
@@ -1227,12 +1310,16 @@ function aucTick(){
     const w=rand(hallAudience);w.userData.stand=true;
     addLog("「……お待ちなさい。その作品、少しおかしくはないか?」",true);
     hallSpot.color.set(0xff6a5a);
+    const shout=(!expertMode&&cands[pickedIdx].trick)?TRICK_SHOUTS[cands[pickedIdx].trick.t]:"色が本物と違う!";
     setTimeout(()=>{
-      addLog("「これは贋作だ!色が本物と違う!」",true);
+      addLog("「これは贋作だ!"+shout+"」",true);
       stampShow("贋作","fake");gavel();
       setTimeout(()=>{
         $("aucUI").classList.remove("on");
-        $("goHint").textContent=a.S.hint;
+        const pk=cands[pickedIdx];
+        $("goHint").textContent=(!expertMode&&pk.trick)
+          ? `出品した No.${pickedIdx+1} は「${TRICK_NAMES[pk.trick.t]}」だった。${TRICK_HINTS[pk.trick.t]}。`
+          : a.S.hint;
         const realNo=cands.findIndex(c=>c.real);
         $("goReal").textContent=`本物は No.${realNo+1} だった——`;
         try{$("goImg").src=stageCanvases[realNo].toDataURL("image/jpeg",.9);}catch(e){}
@@ -1292,10 +1379,12 @@ function showEnding(){
 }
 
 /* ==================== 画面遷移 ==================== */
-$("startBtn").onclick=()=>{closeOv("titleOv");stage=0;total=0;points=0;
+function beginRun(ex){expertMode=ex;closeOv("titleOv");stage=0;total=0;points=0;
   $("hudPts").textContent="0";
   runList=[...ARTWORKS].sort(()=>Math.random()-.5).slice(0,RUN_LENGTH);
-  prepareStage();};
+  prepareStage();}
+$("startBtn").onclick=()=>beginRun(false);
+$("expertBtn").onclick=()=>beginRun(true);
 $("introGo").onclick=()=>{closeOv("introOv");mode="explore";
   $("hud").classList.add("on");$("hintBtn").classList.add("on");startT=Date.now();};
 $("nextBtn").onclick=()=>{closeOv("clearOv");stage++;
