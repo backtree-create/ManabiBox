@@ -7,13 +7,15 @@ window.MANABI_CONFIG = {
   endpoint: 'https://script.google.com/macros/s/AKfycbyKfjthpn93zNaVGmR6_5DNgv1PddrZuXcEFEeDIp7SxL-BO6SDEVPq6UMl4-bFP19u/exec',
 
   /* code.gs の WRITE_TOKEN と同じ文字列 */
-  token: 'manabi-write-2026',
+  token: 'mb-w-lylsofsou5l4kcf7xp',
 
   /* ランキングを何位まで出すか */
   rankLimit: 20,
 
-  /* ハブ（この一覧画面）の場所。ゲーム画面に出る「もどる」ボタンの行き先になります */
-  hubUrl: 'https://backtree-create.github.io/ManabiBox/',
+  /* ハブ（この一覧画面）の場所。
+     空のままにしておくと、読み込んだファイルの位置から自動で判断します。
+     リポジトリ名を変えても直す必要がないので、空を推奨します。 */
+  hubUrl: '',
 
   /* もどるボタンを出さないときは false */
   backLink: true
