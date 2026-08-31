@@ -275,13 +275,13 @@ const QUIZ = [
 ];
 
 /* ---------------- まなびの基板 連携 ---------------- */
-const HUB={key:'athletics', total:4, maxPt:3400, store:'manabi-athletics'};
+const HUB={key:'athletics', total:4, maxPt:10000, store:'manabi-athletics'};
 function hubLoad(){ try{ return JSON.parse(localStorage.getItem(HUB.store)||'{}'); }catch(e){ return {}; } }
 function hubSaveLocal(o){ try{ localStorage.setItem(HUB.store, JSON.stringify(o)); }catch(e){} }
 function hubReport(doneEvents, totalPt, note){
   const rec=hubLoad();
   const done=Math.max(rec.done||0, doneEvents);
-  const score=Math.max(0, Math.min(1000, Math.round(totalPt/HUB.maxPt*1000)));
+  const score=Math.max(0, Math.min(10000, Math.round(totalPt/HUB.maxPt*10000)));
   const best=Math.max(rec.best||0, score);
   hubSaveLocal({done,best});
   if(window.LearnHub && typeof LearnHub.report==='function'){
