@@ -1,0 +1,3184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>化学モデル対戦ゲーム - エレメントマスター3D</title>
+
+  <!-- PWA: ホーム画面に追加してアプリのように起動できるようにする設定 -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0c1220">
+  <link rel="icon" href="favicon-32.png" sizes="32x32">
+  <link rel="icon" href="icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="エレメントマスター3D">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- Three.js CDN (3D粒子モデル描画用) -->
+  <script src="../../lib/three/three.r128.min.js"></script>
+  <!-- PeerJS CDN（別端末同士のオンライン対戦用。アカウント登録不要の無料公開シグナリングサーバーを利用したP2P通信） -->
+  <script src="../../lib/peerjs/peerjs.min.js"></script>
+  <style>
+    :root {
+      --p1-color: #2980b9;
+      --p1-light: #ebf5fb;
+      --p2-color: #d35400;
+      --p2-light: #fdf2e9;
+      --bg-color: #f0f7ff;
+      --main-font: 'Hiragino Maru Gothic ProN', 'M PLUS Rounded 1c', 'Arial Rounded MT Bold', sans-serif;
+      --card-shadow: 0 8px 16px rgba(0,0,0,0.08);
+      --pop-border-radius: 20px;
+      --accent-gold: #f1c40f;
+      --accent-glow: #5adeff;
+      --ease-game: cubic-bezier(0.16, 1, 0.3, 1);
+
+      /* --- ゲーム画面（対戦中）用ダークガラステーマ --- */
+      --game-bg-1: #0c1220;
+      --game-bg-2: #161b30;
+      --game-bg-3: #1b1436;
+      --glass-panel: rgba(255, 255, 255, 0.045);
+      --glass-panel-strong: rgba(255, 255, 255, 0.07);
+      --glass-border: rgba(255, 255, 255, 0.10);
+      --glass-border-strong: rgba(255, 255, 255, 0.18);
+      --text-light: #eef2fa;
+      --text-muted: #8b93ab;
+      --neon-cyan: #5adeff;
+      --neon-amber: #ffab5a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: var(--main-font);
+      user-select: none;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 15% 20%, rgba(90,222,255,0.10) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(255,171,90,0.10) 0%, transparent 45%),
+        var(--bg-color);
+      background-attachment: fixed;
+      color: #2c3e50;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ==================== 共通アニメーション定義 ==================== */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes popIn {
+      0%   { opacity: 0; transform: scale(0.55); }
+      70%  { opacity: 1; transform: scale(1.08); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes chipPop {
+      0%   { opacity: 0; transform: scale(0.3) rotate(-12deg); }
+      60%  { opacity: 1; transform: scale(1.15) rotate(4deg); }
+      100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+    @keyframes floatY {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-6px); }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.45); }
+      50%      { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
+    }
+    @keyframes turnGlowP1 {
+      0%, 100% { box-shadow: 0 8px 20px rgba(0,0,0,0.25), 0 0 0 0 rgba(90, 222, 255, 0.35); }
+      50%      { box-shadow: 0 8px 20px rgba(0,0,0,0.25), 0 0 20px 4px rgba(90, 222, 255, 0.35); }
+    }
+    @keyframes turnGlowP2 {
+      0%, 100% { box-shadow: 0 8px 20px rgba(0,0,0,0.25), 0 0 0 0 rgba(255, 171, 90, 0.35); }
+      50%      { box-shadow: 0 8px 20px rgba(0,0,0,0.25), 0 0 20px 4px rgba(255, 171, 90, 0.35); }
+    }
+    @keyframes badgePulse {
+      0%, 100% { transform: scale(1); }
+      50%      { transform: scale(1.05); }
+    }
+    @keyframes scoreBump {
+      0%   { transform: scale(1); }
+      35%  { transform: scale(1.45); text-shadow: 0 0 12px currentColor; }
+      100% { transform: scale(1); }
+    }
+    @keyframes shimmerText {
+      0%   { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+    @keyframes titleGlowFloat {
+      0%, 100% { transform: translateY(0) rotate(-1deg); }
+      50%      { transform: translateY(-4px) rotate(1deg); }
+    }
+    @keyframes floatUpFade {
+      0%   { opacity: 0; transform: translate(-50%, 6px) scale(0.7); }
+      15%  { opacity: 1; transform: translate(-50%, -4px) scale(1.05); }
+      80%  { opacity: 1; transform: translate(-50%, -46px) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -60px) scale(0.9); }
+    }
+    @keyframes screenFlash {
+      0%   { opacity: 0.55; }
+      100% { opacity: 0; }
+    }
+    @keyframes bannerPop {
+      0%   { opacity: 0; transform: scale(0.4) rotate(-6deg); }
+      55%  { opacity: 1; transform: scale(1.12) rotate(2deg); }
+      100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(140px) rotate(360deg); opacity: 0; }
+    }
+    @keyframes spin3d {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes tabSlideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .anim-fade-up { animation: fadeInUp 0.5s ease both; }
+
+    /* --- ホーム画面スタイル --- */
+    #home-screen {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 20px;
+      width: 95%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .home-header {
+      text-align: center;
+      background: white;
+      padding: 30px 20px;
+      border-radius: var(--pop-border-radius);
+      box-shadow: var(--card-shadow);
+      border: 4px solid #4aa3df;
+      animation: fadeInUp 0.55s ease both;
+      position: relative;
+      overflow: hidden;
+    }
+    .home-header::before {
+      content: '';
+      position: absolute;
+      top: -30px; left: 10px;
+      width: 130px; height: 130px;
+      border-radius: 50%;
+      border: 3px solid rgba(41, 128, 185, 0.12);
+      box-shadow: 0 0 0 22px rgba(41, 128, 185, 0.04);
+      animation: spin3d 18s linear infinite;
+    }
+    .home-header::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; right: 20px;
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(211, 84, 0, 0.12), transparent 70%);
+      animation: floatY 5s ease-in-out infinite;
+    }
+
+    .home-header h1 {
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+      display: inline-block;
+      background: linear-gradient(90deg, #2980b9, #5adeff, #2ecc71, #2980b9);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: shimmerText 6s linear infinite, titleGlowFloat 4s ease-in-out infinite;
+    }
+
+    /* タブスタイル */
+    .tab-nav {
+      display: flex;
+      gap: 10px;
+      padding-bottom: 0;
+    }
+
+    .tab-btn {
+      padding: 14px 24px;
+      font-size: 1.05rem;
+      font-weight: bold;
+      border: none;
+      background: #dbe4ee;
+      color: #4a5568;
+      border-radius: 18px 18px 0 0;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      top: 2px;
+    }
+
+    .tab-btn:hover {
+      background: #cddaea;
+      transform: translateY(-2px);
+    }
+
+    .tab-btn.active {
+      background: white;
+      color: #2980b9;
+      box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+      top: 0;
+    }
+
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 25px;
+      border-radius: 0 var(--pop-border-radius) var(--pop-border-radius) var(--pop-border-radius);
+      box-shadow: var(--card-shadow);
+      border: 3px solid #e2e8f0;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: tabSlideIn 0.35s ease both;
+    }
+
+    /* 難易度選択カード */
+    .difficulty-select-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 20px 0 30px;
+    }
+
+    .difficulty-card {
+      border: 4px solid #cbd5e0;
+      border-radius: 18px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #f8fafc;
+    }
+
+    .difficulty-card:hover {
+      border-color: #3498db;
+      transform: translateY(-3px) scale(1.015);
+      box-shadow: 0 10px 20px rgba(52, 152, 219, 0.18);
+    }
+
+    .difficulty-card.selected {
+      border-color: #2ecc71;
+      background: #e8f8f0;
+      box-shadow: 0 6px 16px rgba(46, 204, 113, 0.25);
+      animation: pulseGlow 1.8s ease-in-out infinite;
+    }
+
+    .difficulty-card.selected h3::after {
+      content: '';
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      margin-left: 8px;
+      vertical-align: middle;
+      background-color: #27ae60;
+      -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");
+      mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      animation: popIn 0.3s ease both;
+    }
+
+    .difficulty-card h3 {
+      font-size: 1.4rem;
+      margin-bottom: 8px;
+      color: #2c3e50;
+    }
+
+    .difficulty-card p {
+      font-size: 0.95rem;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    /* オンライン対戦タブ: 選択カード（部屋を作る／参加する）と接続状態表示 */
+    .online-choice-card {
+      border: 4px solid #cbd5e0;
+      border-radius: 18px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #f8fafc;
+    }
+    .online-choice-card:hover {
+      border-color: #3498db;
+      transform: translateY(-3px) scale(1.015);
+      box-shadow: 0 10px 20px rgba(52, 152, 219, 0.18);
+    }
+    .online-choice-card.selected {
+      border-color: #16a085;
+      background: #e8f8f4;
+      box-shadow: 0 6px 16px rgba(22, 160, 133, 0.25);
+    }
+    .online-choice-card h3 {
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+      color: #2c3e50;
+    }
+    .online-choice-card p {
+      font-size: 0.88rem;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    @keyframes onlineDotPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .online-conn-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 14px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    .online-conn-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .online-conn-badge.connected { background: rgba(46, 204, 113, 0.18); color: #2ecc71; }
+    .online-conn-badge.waiting { background: rgba(241, 196, 15, 0.18); color: #f1c40f; }
+    .online-conn-badge.waiting .dot { animation: onlineDotPulse 1s ease-in-out infinite; }
+    .online-conn-badge.disconnected { background: rgba(231, 76, 60, 0.18); color: #ff6b6b; }
+
+    /* 組み合わせ一覧（レシピ）スタイル */
+    .recipe-filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .recipe-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 15px;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+
+    .recipe-card {
+      border: 3px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px;
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      animation: fadeInUp 0.3s ease both;
+    }
+    .recipe-card:hover {
+      transform: translateY(-3px);
+      border-color: #3498db;
+      box-shadow: 0 8px 16px rgba(52, 152, 219, 0.15);
+    }
+
+    .recipe-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .recipe-name {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .recipe-score {
+      background: #27ae60;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+
+    .recipe-reqs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 5px;
+    }
+
+    .req-badge {
+      font-size: 0.8rem;
+      padding: 3px 8px;
+      border-radius: 8px;
+      color: white;
+      font-weight: bold;
+    }
+
+    /* --- ゲーム画面スタイル --- */
+    #game-screen {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      position: relative;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(90, 222, 255, 0.10) 0%, transparent 40%),
+        radial-gradient(circle at 90% 88%, rgba(255, 171, 90, 0.09) 0%, transparent 42%),
+        linear-gradient(160deg, var(--game-bg-1) 0%, var(--game-bg-2) 55%, var(--game-bg-3) 100%);
+      color: var(--text-light);
+    }
+    #game-screen::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 42px 42px;
+      animation: gridPan 28s linear infinite;
+      mask-image: radial-gradient(circle at 50% 30%, black 0%, transparent 75%);
+    }
+    #game-screen > header,
+    #game-screen > main { position: relative; z-index: 1; }
+
+    @keyframes gridPan {
+      from { background-position: 0 0, 0 0; }
+      to   { background-position: 84px 84px, 84px 84px; }
+    }
+
+    /* --- 常時表示のホーム復帰ボタン（モーダル表示中でも必ず押せるようbodyの最前面に配置） --- */
+    #global-home-btn {
+      position: fixed;
+      top: 16px;
+      right: 18px;
+      z-index: 4000;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border: 1px solid var(--glass-border-strong);
+      border-radius: 30px;
+      background: rgba(20, 24, 40, 0.72);
+      backdrop-filter: blur(10px);
+      color: var(--text-light);
+      font-weight: bold;
+      font-size: 0.9rem;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+      transition: transform 0.18s var(--ease-game), background 0.18s, box-shadow 0.18s;
+    }
+    #global-home-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(30, 36, 58, 0.88);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.45), 0 0 0 1px var(--neon-cyan) inset;
+    }
+    #global-home-btn:active { transform: translateY(0) scale(0.97); }
+    #global-home-btn.show { display: inline-flex; animation: fadeInUp 0.3s ease both; }
+
+    header {
+      background: rgba(10, 14, 26, 0.65);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: white;
+      padding: 14px 22px;
+      padding-right: 200px; /* 常時表示のホームボタン(position:fixed)と重ならないよう余白を確保 */
+      display: flex;
+      flex-wrap: wrap;
+      row-gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+      position: relative;
+      z-index: 10;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; bottom: -1px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-amber), transparent);
+      opacity: 0.7;
+    }
+
+    .game-info {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      row-gap: 8px;
+      gap: 15px;
+    }
+
+    .round-badge {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      white-space: nowrap;
+      animation: badgePulse 2.4s ease-in-out infinite;
+      box-shadow: 0 2px 8px rgba(231, 76, 60, 0.5);
+    }
+
+    .mode-badge {
+      background: linear-gradient(135deg, #9b59b6, #8e44ad);
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .scoreboard {
+      display: flex;
+      gap: 30px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      align-items: center;
+      flex-wrap: wrap;
+      row-gap: 6px;
+    }
+
+    .score-p1 { color: #5adeff; font-size: 1.4rem; display: inline-block; text-shadow: 0 0 8px rgba(90, 222, 255, 0.6); }
+    .score-p2 { color: #ffab5a; font-size: 1.4rem; display: inline-block; text-shadow: 0 0 8px rgba(255, 171, 90, 0.6); }
+    .score-bump { animation: scoreBump 0.5s ease; }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      gap: 15px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .status-bar {
+      background: var(--glass-panel);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 14px;
+      border-radius: 14px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--text-light);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      border: 1px solid var(--glass-border);
+      border-left: 6px solid #6b7385;
+      transition: all 0.3s var(--ease-game);
+    }
+    .status-bar.p1-turn { border-left-color: var(--neon-cyan); box-shadow: 0 8px 20px rgba(0,0,0,0.25), 0 0 18px rgba(90, 222, 255, 0.15); animation: turnGlowP1 2s ease-in-out infinite; }
+    .status-bar.p2-turn { border-left-color: var(--neon-amber); box-shadow: 0 8px 20px rgba(0,0,0,0.25), 0 0 18px rgba(255, 171, 90, 0.15); animation: turnGlowP2 2s ease-in-out infinite; }
+
+    .used-recipes-bar {
+      background: var(--glass-panel);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 10px 15px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      overflow-x: auto;
+      border: 1px solid var(--glass-border);
+    }
+    .used-tag {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      font-weight: bold;
+      animation: fadeInUp 0.25s ease both;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      flex: 1;
+    }
+
+    .game-board.single-player {
+      grid-template-columns: 1fr;
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .player-panel {
+      background: var(--glass-panel);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 20px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      border: 1px solid var(--glass-border);
+      transition: border-color 0.3s var(--ease-game), box-shadow 0.3s var(--ease-game);
+    }
+    .player-panel.p1 { border-color: rgba(90, 222, 255, 0.35); }
+    .player-panel.p2 { border-color: rgba(255, 171, 90, 0.35); }
+    .player-panel.active { border-color: #2ecc71; box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 18px rgba(46, 204, 113, 0.35); animation: pulseGlow 2.2s ease-in-out infinite; }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 8px;
+      color: var(--text-light);
+    }
+
+    .section-title {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    .model-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      min-height: 75px;
+      background: rgba(0, 0, 0, 0.18);
+      padding: 10px;
+      border-radius: 14px;
+      border: 2px dashed var(--glass-border-strong);
+      align-items: center;
+      transition: border-color 0.2s;
+    }
+
+    .craft-area {
+      background: rgba(90, 222, 255, 0.04);
+      min-height: 95px;
+      border-style: solid;
+      border-color: var(--glass-border);
+    }
+
+    /* --- 単色塗りつぶし 3D球体スタイル --- */
+    .model-chip {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+      background-image: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.5) 100%);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.35), inset -2px -2px 6px rgba(0,0,0,0.5), inset 2px 2px 6px rgba(255,255,255,0.8);
+      transition: transform 0.15s, box-shadow 0.15s;
+      outline: none;
+      animation: chipPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    .model-chip:hover, .model-chip:focus {
+      transform: scale(1.12) translateY(-2px);
+      box-shadow: 0 10px 18px rgba(0,0,0,0.45), inset -2px -2px 6px rgba(0,0,0,0.5), inset 2px 2px 8px rgba(255,255,255,0.9);
+      z-index: 1000; /* ホバー時に他のチップより前面に出す */
+    }
+    .model-chip:active {
+      transform: scale(0.94);
+    }
+
+    /* むずかしい・スコアアタックモードでの球内表示設定 */
+    .model-chip.hide-name .sub-info {
+      display: none;
+    }
+
+    /* ツールチップ効果 (ポップアップを最前面にするようz-indexを1001に変更) */
+    .model-chip.hide-name::after {
+      content: attr(data-name);
+      position: absolute;
+      bottom: 110%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 1001;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      font-weight: bold;
+    }
+
+    .model-chip.hide-name:hover::after,
+    .model-chip.hide-name:focus::after {
+      opacity: 1;
+    }
+
+    /* 球内テキストコンテナ (白抜き背景を除去) */
+    .billiard-badge {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1;
+    }
+
+    /* 黒文字 + 白枠の指定 */
+    .billiard-badge .symbol {
+      font-size: 1.15rem;
+      font-weight: 900;
+      line-height: 1;
+      color: #000000;
+      text-shadow:
+        2px 0 0 #ffffff,
+       -2px 0 0 #ffffff,
+        0 2px 0 #ffffff,
+        0 -2px 0 #ffffff,
+        1px 1px 0 #ffffff,
+       -1px -1px 0 #ffffff,
+        1px -1px 0 #ffffff,
+       -1px 1px 0 #ffffff;
+    }
+    .billiard-badge .sub-info {
+      font-size: 0.6rem;
+      font-weight: bold;
+      line-height: 1;
+      margin-top: 1px;
+      color: #000000;
+      text-shadow:
+        1px 0 0 #ffffff,
+       -1px 0 0 #ffffff,
+        0 1px 0 #ffffff,
+        0 -1px 0 #ffffff,
+        1px 1px 0 #ffffff,
+       -1px -1px 0 #ffffff;
+    }
+
+    .chip-atom { outline: none; }
+    .chip-ion { outline: 3px solid #f1c40f; outline-offset: -2px; }
+    .chip-poly { outline: 3px dashed #ffffff; outline-offset: -2px; }
+
+    .created-list {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.18);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 8px;
+      max-height: 140px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .created-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--glass-panel-strong);
+      color: var(--text-light);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      animation: fadeInUp 0.3s ease both;
+      border: 1px solid var(--glass-border);
+    }
+    .created-item .pts { font-weight: bold; color: #4ade80; margin-left: 6px; text-shadow: 0 0 8px rgba(74, 222, 128, 0.5); }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.15s var(--ease-game);
+      box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+      position: relative;
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 6px 14px rgba(0,0,0,0.25); }
+    .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.15); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.3); }
+    .btn-primary { background: linear-gradient(135deg, #4aa8e8, #2980b9); color: white; }
+    .btn-success { background: linear-gradient(135deg, #40e08a, #27ae60); color: white; }
+    .btn-warning { background: linear-gradient(135deg, #f9d423, #f1c40f); color: #3a2e00; }
+    .btn-info { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
+    .btn-secondary { background: linear-gradient(135deg, #aab3bd, #8b95a3); color: white; }
+    .btn-3d { background: linear-gradient(135deg, #a569c8, #8e44ad); color: white; padding: 4px 10px; font-size: 0.8rem; border-radius: 6px; box-shadow: none; }
+
+    .btn-battle {
+      background: linear-gradient(135deg, #ff9d4d, #d35400);
+      color: white;
+      font-size: 1.1rem;
+      padding: 10px 24px;
+      border-radius: 20px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.15), 0 0 16px rgba(230, 126, 34, 0.35);
+    }
+    .btn-battle:not(:disabled) {
+      animation: badgePulse 1.6s ease-in-out infinite;
+    }
+    .btn-battle.ready {
+      background: linear-gradient(135deg, #aab3bd, #8b95a3);
+      animation: none;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+    }
+
+    /* モーダルオーバーレイ共通 */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(4, 6, 14, 0.6);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.22s var(--ease-game), visibility 0.22s var(--ease-game);
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+    .modal-overlay .box-window,
+    .modal-overlay .viewer-window,
+    .modal-overlay .result-card {
+      transform: scale(0.9) translateY(14px);
+      transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .modal-overlay.open .box-window,
+    .modal-overlay.open .viewer-window,
+    .modal-overlay.open .result-card {
+      transform: scale(1) translateY(0);
+    }
+
+    /* ホーム復帰確認モーダル（常時表示のホームボタンより前面に出す） */
+    #confirm-modal { z-index: 4500; }
+    .modal-overlay .confirm-card {
+      transform: scale(0.9) translateY(14px);
+      transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .modal-overlay.open .confirm-card {
+      transform: scale(1) translateY(0);
+    }
+    .confirm-card {
+      background: linear-gradient(165deg, rgba(22, 27, 48, 0.96), rgba(14, 18, 34, 0.98));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--glass-border-strong);
+      border-radius: 20px;
+      padding: 28px;
+      width: 90%;
+      max-width: 380px;
+      text-align: center;
+      color: var(--text-light);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .confirm-card p {
+      font-size: 1rem;
+      line-height: 1.7;
+      margin-bottom: 22px;
+    }
+    .confirm-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    .confirm-actions .btn { flex: 1; }
+    .btn-danger { background: linear-gradient(135deg, #ff7b7b, #e74c3c); color: white; }
+
+    .box-window {
+      background: linear-gradient(165deg, rgba(22, 27, 48, 0.92), rgba(14, 18, 34, 0.96));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      width: 92%;
+      max-width: 900px;
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      border: 1px solid var(--glass-border-strong);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-height: 90vh;
+      color: var(--text-light);
+    }
+
+    .box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .box-header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    /* ポップアップ表示用に上下余白（padding: 50px 18px 40px）をさらに拡大設定 */
+    .box-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+      gap: 14px;
+      padding: 50px 18px 40px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 16px;
+      max-height: 45vh;
+      overflow-y: auto;
+      border: 1px solid var(--glass-border);
+      justify-items: center;
+    }
+
+    /* ドラフト手札確認エリア */
+    .draft-hand-panel {
+      background: rgba(0, 0, 0, 0.22);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      gap: 15px;
+      max-height: 160px;
+      overflow-y: auto;
+      border: 1px dashed var(--glass-border-strong);
+    }
+    .draft-hand-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .draft-hand-box h4 {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* 3D分子ビューアー モーダル */
+    .viewer-window {
+      background: linear-gradient(165deg, rgba(22, 27, 48, 0.92), rgba(14, 18, 34, 0.96));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      width: 90%;
+      max-width: 600px;
+      border-radius: 22px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+      border: 1px solid var(--glass-border-strong);
+      color: var(--text-light);
+    }
+    #canvas-container-3d {
+      width: 100%;
+      height: 320px;
+      background: radial-gradient(circle at 50% 40%, #263340, #1e272e 75%);
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+    }
+    .three-error {
+      color: #ecf0f1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      padding: 20px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* ラウンド結果 (Winner/Loser) モーダル */
+    .result-card {
+      background: linear-gradient(165deg, rgba(22, 27, 48, 0.94), rgba(14, 18, 34, 0.97));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      width: 90%;
+      max-width: 580px;
+      border-radius: 26px;
+      padding: 28px;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.55);
+      border: 1px solid var(--glass-border-strong);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      color: var(--text-light);
+    }
+
+    .result-banner {
+      font-size: 2.2rem;
+      font-weight: 900;
+      padding: 12px;
+      border-radius: 16px;
+      color: white;
+      letter-spacing: 1px;
+      animation: bannerPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    .banner-p1 { background: linear-gradient(135deg, #4aa8e8, #2980b9); box-shadow: 0 0 24px rgba(90, 222, 255, 0.35); }
+    .banner-p2 { background: linear-gradient(135deg, #ff9d4d, #d35400); box-shadow: 0 0 24px rgba(255, 171, 90, 0.35); }
+    .banner-draw { background: linear-gradient(135deg, #95a5a6, #7f8c8d); }
+    .banner-score { background: linear-gradient(135deg, #f9d423, #f39c12); box-shadow: 0 0 24px rgba(241, 196, 15, 0.35); }
+
+    .score-pop-text {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      font-weight: 900;
+      font-size: 1.3rem;
+      color: #4ade80;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.25), 0 0 10px rgba(74, 222, 128, 0.6);
+      animation: floatUpFade 1.1s ease both;
+    }
+    .screen-flash-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle, rgba(255,255,255,0.9), rgba(255,255,255,0) 70%);
+      pointer-events: none;
+      z-index: 9998;
+      animation: screenFlash 0.5s ease both;
+    }
+
+    .result-scores {
+      display: flex;
+      justify-content: space-around;
+      background: rgba(0, 0, 0, 0.22);
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid var(--glass-border);
+    }
+    .player-res-box { font-weight: bold; flex: 1; }
+    .player-res-box .p-title { font-size: 1rem; color: var(--text-muted); }
+    .player-res-box .p-score { font-size: 1.8rem; margin-top: 4px; color: var(--text-light); }
+    .player-res-box .p-total { font-size: 1.1rem; color: #4ade80; margin-top: 2px; }
+    .player-res-box .p-status { font-size: 1.2rem; margin-top: 6px; }
+    .status-win { color: #4ade80; font-weight: bold; text-shadow: 0 0 10px rgba(74, 222, 128, 0.5); }
+    .status-lose { color: #ff6b6b; font-weight: bold; }
+
+    .flying-chip {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    /* ==================== スマートフォン向けレイアウト ==================== */
+    @media (max-width: 760px) {
+      body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      /* ホーム画面 */
+      #home-screen { margin: 10px auto; padding: 12px; gap: 12px; }
+      .home-header { padding: 20px 14px; }
+      .home-header h1 { font-size: 1.5rem; }
+      .home-header p { font-size: 0.85rem; }
+      .tab-nav { gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .tab-btn { padding: 10px 12px; font-size: 0.85rem; white-space: nowrap; }
+      .tab-content { padding: 14px; }
+      .difficulty-select-container { grid-template-columns: 1fr; gap: 12px; }
+      .recipe-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important; }
+
+      /* ゲーム画面ヘッダー・HUD */
+      header {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 14px;
+        padding-top: calc(10px + env(safe-area-inset-top));
+      }
+      header h2 { font-size: 0.95rem; }
+      .game-info { gap: 8px; flex-wrap: wrap; }
+      .round-badge { padding: 4px 12px; font-size: 0.85rem; }
+      .mode-badge { padding: 4px 10px; font-size: 0.75rem; }
+      .scoreboard { gap: 14px; font-size: 1rem; }
+      .score-p1, .score-p2 { font-size: 1.1rem; }
+
+      #global-home-btn {
+        top: calc(8px + env(safe-area-inset-top));
+        right: 10px;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+      }
+      #global-home-btn span { display: none; } /* アイコンのみ表示して省スペース化 */
+
+      main { padding: 10px; gap: 10px; }
+      .status-bar { font-size: 1rem; padding: 10px; }
+      .used-recipes-bar { font-size: 0.8rem; padding: 8px 10px; }
+
+      /* プレイヤーパネルを縦積みに */
+      .game-board { grid-template-columns: 1fr !important; gap: 10px; }
+      .player-panel { padding: 14px; gap: 10px; }
+      .panel-header h3 { font-size: 1rem; }
+      .btn-battle { padding: 8px 16px; font-size: 0.95rem; }
+      .section-title { font-size: 0.8rem; }
+      .model-container { min-height: 64px; padding: 8px; gap: 8px; }
+      .craft-area { min-height: 80px; }
+      .created-list { max-height: 110px; }
+
+      /* モデルチップを一回り小さく（タップしやすいサイズは維持） */
+      .model-chip { width: 50px; height: 50px; }
+      .billiard-badge .symbol { font-size: 0.85rem; }
+      .billiard-badge .sub-info { font-size: 0.55rem; }
+
+      /* モーダル類を画面幅いっぱいに */
+      .box-window, .viewer-window, .result-card { width: 95%; padding: 16px; max-height: 92vh; }
+      .box-header { flex-direction: column; align-items: stretch; }
+      .box-header-actions { flex-wrap: wrap; justify-content: space-between; }
+      .box-header-actions #draft-hand-btn { flex: 1; min-width: 0; font-size: 0.85rem; padding: 10px 8px; }
+      #draft-turn-badge { flex-shrink: 0; font-size: 0.85rem; padding: 8px 12px !important; }
+      .box-grid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 10px; padding: 40px 10px 24px; max-height: 42vh; }
+      .draft-hand-panel { flex-direction: column; max-height: 200px; }
+      #canvas-container-3d { height: 240px; }
+      .result-banner { font-size: 1.5rem; padding: 10px; }
+      .result-scores { flex-direction: column; gap: 14px; padding: 14px; }
+      #res-divider { display: none; }
+      .confirm-card { padding: 20px; }
+      .confirm-actions { flex-direction: column; }
+
+      /* ボタン類のタップ領域を確保 */
+      .btn { padding: 12px 16px; font-size: 0.95rem; }
+    }
+
+    @media (max-width: 400px) {
+      .model-chip { width: 44px; height: 44px; }
+      .home-header h1 { font-size: 1.3rem; }
+      .scoreboard { font-size: 0.9rem; gap: 10px; }
+    }
+  </style>
+  <script src="../../config.js"></script>
+　<script src="../../hub-progress.js"></script>
+　<script src="../../manabi-connect.js"></script>
+</head>
+<body>
+
+  <!-- どの画面・モーダル表示中でも必ず押せる、常時最前面のホーム復帰ボタン -->
+  <button id="global-home-btn" onclick="confirmReturnToHome()" title="ホームへ戻る">
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+  <span>ホームへ戻る</span>
+  </button>
+
+  <!-- ホーム復帰の確認モーダル（window.confirm() は埋め込み環境でブロックされることがあるため自前で実装） -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="confirm-card">
+      <p>ホーム画面に戻りますか？<br>現在のゲーム進行状況はリセットされます。</p>
+      <div class="confirm-actions">
+        <button class="btn btn-secondary" onclick="closeModal('confirm-modal')">キャンセル</button>
+        <button class="btn btn-danger" onclick="closeModal('confirm-modal'); returnToHome();">ホームに戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 1. ホーム画面 ==================== -->
+  <div id="home-screen">
+    <div class="home-header">
+      <h1>化学モデル対戦 エレメントマスター3D</h1>
+      <p>原子やイオンを集めて分子や塩を合成し、高得点を目指す化学対戦ゲーム</p>
+    </div>
+
+    <!-- ホーム画面のタブ切り替え -->
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchHomeTab('online-tab')">オンライン対戦</button>
+      <button class="tab-btn" onclick="switchHomeTab('score-tab')">スコアアタック</button>
+      <button class="tab-btn" onclick="switchHomeTab('recipes-tab')">組み合わせ一覧</button>
+    </div>
+
+    <!-- タブ1: オンライン対戦（別端末同士でのP2P対戦） -->
+    <div id="online-tab" class="tab-content active">
+      <h2 style="margin-bottom: 10px; font-size: 1.3rem;">オンライン対戦（別端末同士）</h2>
+      <p style="margin-bottom: 15px; color: #555; line-height: 1.6;">
+        アカウント登録不要で、2台の端末を直接つないで対戦します（P2P通信）。<br>
+        片方が「部屋を作る」で表示されるコードを、もう片方に伝えて「合言葉で参加」してください。<br>
+        <span style="color:#e67e22; font-weight:bold;">※通信環境によっては接続できない場合があります（学校や会社のWi-Fiなど）。</span>
+      </p>
+
+      <div id="online-setup-area">
+        <div class="difficulty-select-container" style="margin-bottom: 15px;">
+          <div class="online-choice-card" id="online-choice-create" onclick="selectOnlineChoice('create')">
+            <h3>部屋を作る</h3>
+            <p>コードが発行されます。相手にそのコードを伝えてください（あなたが Player 1 になります）。</p>
+          </div>
+          <div class="online-choice-card" id="online-choice-join" onclick="selectOnlineChoice('join')">
+            <h3>合言葉で参加する</h3>
+            <p>相手から伝えられたコードを入力して参加します（あなたが Player 2 になります）。</p>
+          </div>
+        </div>
+
+        <div id="online-join-input-area" style="display:none; text-align:center; margin-bottom:15px;">
+          <input type="text" id="online-room-code-input" maxlength="5" placeholder="コードを入力 (例: A3F9K)"
+            style="font-size:1.3rem; letter-spacing:3px; text-align:center; text-transform:uppercase; padding:12px 16px; border-radius:12px; border:2px solid #cbd5e0; width:220px; max-width:80%;">
+        </div>
+
+        <div style="text-align: center;">
+          <button class="btn btn-info" id="online-action-btn" style="font-size: 1.2rem; padding: 14px 40px; border-radius: 30px;" onclick="onlineActionButtonClick()" disabled>作成 / 参加 の方法を選んでください</button>
+        </div>
+      </div>
+
+      <div id="online-status-area" style="display:none; text-align:center; margin-top:20px;">
+        <div id="online-status-code" style="font-size:2.2rem; font-weight:900; letter-spacing:6px; color:#2980b9; margin-bottom:8px;"></div>
+        <div id="online-status-text" style="font-size:1.05rem; color:#555; font-weight:bold;"></div>
+        <div style="margin-top:15px;">
+          <button class="btn btn-secondary" onclick="cancelOnlineConnection()">やめる</button>
+        </div>
+      </div>
+
+      <div id="online-ready-area" style="display:none;">
+        <h2 style="margin: 20px 0 15px; font-size: 1.3rem; text-align:center;">対戦難易度を選択してください（ホストのみ設定できます）</h2>
+        <div class="difficulty-select-container">
+          <div class="difficulty-card selected" id="online-card-easy" onclick="selectOnlineDifficulty('easy')">
+            <h3>[かんたん]</h3>
+            <p><strong>原子・単体モデルのみ</strong>が登場します。</p>
+          </div>
+          <div class="difficulty-card" id="online-card-hard" onclick="selectOnlineDifficulty('hard')">
+            <h3>[むずかしい]</h3>
+            <p><strong>イオン・多原子イオンのみ</strong>が登場します！</p>
+          </div>
+        </div>
+        <div style="text-align: center;">
+          <button class="btn btn-success" id="online-start-btn" style="font-size: 1.5rem; padding: 16px 50px; border-radius: 35px;" onclick="startOnlineGame()">対戦スタート</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- タブ2: スコアアタックモード -->
+    <div id="score-tab" class="tab-content">
+      <h2 style="margin-bottom: 15px; font-size: 1.3rem;">1人用 スコアアタックモード (全10ステージ)</h2>
+      <p style="margin-bottom: 15px; color: #555; line-height: 1.6;">
+        各ステージごとにサプライから12個のイオンを選択し、イオン化合物を合成して<strong>各ステージの下限ボーダー（クリア目標点）</strong>突破を目指すサバイバルモードです。<br>
+        ボーダーを超え続ける限り全10ステージに挑戦できます！過去最高累計スコアは自動保存されます。
+      </p>
+
+      <div style="background: #fff8e7; border: 3px dashed #f1c40f; padding: 20px; border-radius: 18px; text-align: center; margin: 20px 0;">
+        <div style="font-size: 1.1rem; color: #7f8c8d; font-weight: bold;">過去最高記録 (High Score)</div>
+        <div id="high-score-display" style="font-size: 2.8rem; font-weight: bold; color: #d35400; margin-top: 5px;">0 pt</div>
+      </div>
+
+      <div style="text-align: center;">
+        <button class="btn btn-warning" style="font-size: 1.5rem; padding: 16px 50px; border-radius: 35px;" onclick="startGame('scoreAttack')">スコアアタック開始</button>
+      </div>
+    </div>
+
+    <!-- タブ3: 組み合わせ一覧（レシピ） -->
+    <div id="recipes-tab" class="tab-content">
+      <div class="recipe-filter-bar">
+        <button class="btn btn-primary" onclick="filterRecipeList('all')">すべて表示</button>
+        <button class="btn btn-success" onclick="filterRecipeList('easy')">かんたん（原子のみ）</button>
+        <button class="btn btn-warning" onclick="filterRecipeList('hard')">むずかしい（イオンのみ）</button>
+      </div>
+      <div class="recipe-grid" id="recipe-list-container"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 2. ゲームプレイ画面 ==================== -->
+  <div id="game-screen" style="display: none;">
+    <header>
+      <div class="game-info">
+        <h2>粒子・イオンマスター 3D</h2>
+        <div class="round-badge" id="round-display">ROUND 1 / 3</div>
+        <div class="mode-badge" id="mode-display">モード: かんたん</div>
+        <div class="online-conn-badge connected" id="online-conn-badge" style="display:none;">
+          <span class="dot"></span><span id="online-conn-badge-text">接続中</span>
+        </div>
+      </div>
+      <div class="scoreboard">
+        <div id="score-p1-box">P1: <span class="score-p1" id="score-p1">0</span> pt</div>
+        <div id="score-p2-box">P2: <span class="score-p2" id="score-p2">0</span> pt</div>
+      </div>
+    </header>
+
+    <main>
+      <div class="status-bar p1-turn" id="status-bar">
+        Player 1 の番です：モデルを選択してください
+      </div>
+
+      <div class="used-recipes-bar">
+        <strong>[注意] 使用済み（作成不可）:</strong>
+        <div id="used-recipes-list" style="display:flex; gap:5px;">なし</div>
+      </div>
+
+      <div class="game-board" id="game-board">
+        <!-- Player 1 -->
+        <div class="player-panel p1 active" id="panel-p1">
+          <div class="panel-header">
+            <h3 id="panel-p1-title">Player 1</h3>
+            <button class="btn btn-battle" id="ready-p1-btn" onclick="toggleReady(1)" disabled>Battle</button>
+          </div>
+
+          <div class="section-title">手持ちモデル (<span id="count-p1">0</span>/12)</div>
+          <div class="model-container" id="hand-p1"></div>
+
+          <div class="section-title">合成作業エリア</div>
+          <div class="model-container craft-area" id="craft-p1"></div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span id="craft-preview-p1" style="font-weight:bold; font-size:0.9rem; color:#2980b9;">-</span>
+            <button class="btn btn-primary" id="craft-p1-btn" onclick="craftChemical(1)" disabled>合成する</button>
+          </div>
+
+          <div class="section-title">作成物一覧</div>
+          <div class="created-list" id="created-p1"></div>
+        </div>
+
+        <!-- Player 2 -->
+        <div class="player-panel p2" id="panel-p2">
+          <div class="panel-header">
+            <h3 id="panel-p2-title">Player 2</h3>
+            <button class="btn btn-battle" id="ready-p2-btn" onclick="toggleReady(2)" disabled>Battle</button>
+          </div>
+
+          <div class="section-title">手持ちモデル (<span id="count-p2">0</span>/12)</div>
+          <div class="model-container" id="hand-p2"></div>
+
+          <div class="section-title">合成作業エリア</div>
+          <div class="model-container craft-area" id="craft-p2"></div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span id="craft-preview-p2" style="font-weight:bold; font-size:0.9rem; color:#d35400;">-</span>
+            <button class="btn btn-primary" id="craft-p2-btn" onclick="craftChemical(2)" disabled>合成する</button>
+          </div>
+
+          <div class="section-title">作成物一覧</div>
+          <div class="created-list" id="created-p2"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- サプライ箱 モーダル -->
+    <div class="modal-overlay" id="box-modal">
+      <div class="box-window">
+        <div class="box-header">
+          <div>
+            <h3>モデルのサプライ箱</h3>
+            <p style="font-size:0.9rem; color:var(--text-muted);" id="draft-subtext">選択して手元に集めましょう</p>
+          </div>
+          <div class="box-header-actions">
+            <button class="btn btn-info" id="draft-hand-btn" onclick="toggleDraftHandPanel()">獲得済みモデルを確認</button>
+            <div id="draft-turn-badge" style="padding:8px 18px; border-radius:20px; font-weight:bold; color:white; background:var(--p1-color);">
+              Player 1 のターン
+            </div>
+          </div>
+        </div>
+
+        <!-- 取得済みモデル表示エリア（トグル） -->
+        <div class="draft-hand-panel" id="draft-hand-panel" style="display:none;">
+          <div class="draft-hand-box" id="draft-box-p1">
+            <h4 id="draft-title-p1">Player 1 獲得済み (<span id="draft-count-p1">0</span>)</h4>
+            <div class="model-container" id="draft-hand-p1" style="min-height:45px; background:rgba(0,0,0,0.22);"></div>
+          </div>
+          <div class="draft-hand-box" id="draft-box-p2">
+            <h4>Player 2 獲得済み (<span id="draft-count-p2">0</span>)</h4>
+            <div class="model-container" id="draft-hand-p2" style="min-height:45px; background:rgba(0,0,0,0.22);"></div>
+          </div>
+        </div>
+
+        <div class="box-grid" id="box-grid"></div>
+      </div>
+    </div>
+
+    <!-- 3D粒子モデルプレビュー モーダル -->
+    <div class="modal-overlay" id="modal-3d">
+      <div class="viewer-window">
+        <h3 id="title-3d">3D粒子モデル構造</h3>
+        <div id="canvas-container-3d"></div>
+        <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+          <span id="desc-3d" style="font-size:0.95rem; color:var(--text-muted); font-weight:bold;">-</span>
+          <button class="btn btn-primary" onclick="close3DModal()">閉じる</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ラウンド結果 / スコアアタック結果 モーダル -->
+    <div class="modal-overlay" id="result-modal">
+      <div class="result-card">
+        <div class="result-banner banner-p1" id="result-banner">ROUND WINNER!</div>
+        <p id="round-result-sub" style="font-size:1.15rem; color:var(--text-muted); font-weight:bold;">ラウンド結果</p>
+        
+        <div class="result-scores" id="result-scores-container">
+          <div class="player-res-box" id="res-box-p1">
+            <div class="p-title" id="res-title-p1">Player 1</div>
+            <div class="p-score" id="res-score-p1">+0 pt</div>
+            <div class="p-total" id="res-total-p1">総得点: 0 pt</div>
+            <div class="p-status" id="res-status-p1">WINNER</div>
+          </div>
+          <div style="border-right: 1px solid var(--glass-border-strong);" id="res-divider"></div>
+          <div class="player-res-box" id="res-box-p2">
+            <div class="p-title">Player 2</div>
+            <div class="p-score" id="res-score-p2">+0 pt</div>
+            <div class="p-total" id="res-total-p2">総得点: 0 pt</div>
+            <div class="p-status" id="res-status-p2">LOSER</div>
+          </div>
+        </div>
+
+        <button class="btn btn-success" id="next-round-btn" style="padding:14px; font-size:1.2rem;" onclick="proceedNextRound()">次へ進む</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 各ステージの下限ボーダー（クリア必要スコア）定義（全10ステージ）
+    const STAGE_BORDERS = [40, 50, 60, 70, 80, 90, 100, 120, 140, 160];
+
+    // --- 1. 元素・イオンの粒子定義 ---
+    const MODEL_DEFINITIONS = [
+      // 原子・単体
+      { key: 'H',    type: 'atom', symbol: 'H',    name: '水素原子', atomicNum: 1,  color: '#e74c3c', radius: 0.35 },
+      { key: 'He',   type: 'atom', symbol: 'He',   name: 'ヘリウム原子', atomicNum: 2,  color: '#fd79a8', radius: 0.38 },
+      { key: 'Li',   type: 'atom', symbol: 'Li',   name: 'リチウム原子', atomicNum: 3,  color: '#e84393', radius: 0.50 },
+      { key: 'C',    type: 'atom', symbol: 'C',    name: '炭素原子', atomicNum: 6,  color: '#34495e', radius: 0.50 },
+      { key: 'N',    type: 'atom', symbol: 'N',    name: '窒素原子', atomicNum: 7,  color: '#2980b9', radius: 0.48 },
+      { key: 'O',    type: 'atom', symbol: 'O',    name: '酸素原子', atomicNum: 8,  color: '#e67e22', radius: 0.45 },
+      { key: 'F',    type: 'atom', symbol: 'F',    name: 'フッ素原子', atomicNum: 9,  color: '#1abc9c', radius: 0.42 },
+      { key: 'Ne',   type: 'atom', symbol: 'Ne',   name: 'ネオン原子', atomicNum: 10, color: '#ff7675', radius: 0.40 },
+      { key: 'Na',   type: 'atom', symbol: 'Na',   name: 'ナトリウム原子', atomicNum: 11, color: '#f1c40f', radius: 0.60 },
+      { key: 'Mg',   type: 'atom', symbol: 'Mg',   name: 'マグネシウム原子', atomicNum: 12, color: '#d35400', radius: 0.55 },
+      { key: 'Al',   type: 'atom', symbol: 'Al',   name: 'アルミニウム原子', atomicNum: 13, color: '#b2bec3', radius: 0.58 },
+      { key: 'P',    type: 'atom', symbol: 'P',    name: 'リン原子', atomicNum: 15, color: '#e67e22', radius: 0.52 },
+      { key: 'S',    type: 'atom', symbol: 'S',    name: '硫黄原子', atomicNum: 16, color: '#f1c40f', radius: 0.54 },
+      { key: 'Cl',   type: 'atom', symbol: 'Cl',   name: '塩素原子', atomicNum: 17, color: '#2ecc71', radius: 0.55 },
+      { key: 'Ar',   type: 'atom', symbol: 'Ar',   name: 'アルゴン原子', atomicNum: 18, color: '#74b9ff', radius: 0.50 },
+      { key: 'K',    type: 'atom', symbol: 'K',    name: 'カリウム原子', atomicNum: 19, color: '#9b59b6', radius: 0.68 },
+      { key: 'Ca',   type: 'atom', symbol: 'Ca',   name: 'カルシウム原子', atomicNum: 20, color: '#1abc9c', radius: 0.62 },
+      { key: 'Fe',   type: 'atom', symbol: 'Fe',   name: '鉄原子', atomicNum: 26, color: '#7f8c8d', radius: 0.58 },
+      { key: 'Cu',   type: 'atom', symbol: 'Cu',   name: '銅原子', atomicNum: 29, color: '#d35400', radius: 0.58 },
+      { key: 'Zn',   type: 'atom', symbol: 'Zn',   name: '亜鉛原子', atomicNum: 30, color: '#95a5a6', radius: 0.56 },
+      { key: 'Br',   type: 'atom', symbol: 'Br',   name: '臭素原子', atomicNum: 35, color: '#a0522d', radius: 0.60 },
+      { key: 'Ag',   type: 'atom', symbol: 'Ag',   name: '銀原子', atomicNum: 47, color: '#bdc3c7', radius: 0.62 },
+      { key: 'I',    type: 'atom', symbol: 'I',    name: 'ヨウ素原子', atomicNum: 53, color: '#8e44ad', radius: 0.65 },
+      { key: 'Ba',   type: 'atom', symbol: 'Ba',   name: 'バリウム原子', atomicNum: 56, color: '#1abc9c', radius: 0.70 },
+      { key: 'Au',   type: 'atom', symbol: 'Au',   name: '金原子', atomicNum: 79, color: '#f1c40f', radius: 0.64 },
+      { key: 'Pb',   type: 'atom', symbol: 'Pb',   name: '鉛原子', atomicNum: 82, color: '#636e72', radius: 0.66 },
+
+      // 単原子イオン
+      { key: 'H+',   type: 'ion', symbol: 'H⁺',    name: '水素イオン', atomicNum: 1,  color: '#ff6b6b', radius: 0.32 },
+      { key: 'O2-',  type: 'ion', symbol: 'O²⁻',   name: '酸素イオン', atomicNum: 8,  color: '#e67e22', radius: 0.50 },
+      { key: 'Li+',  type: 'ion', symbol: 'Li⁺',   name: 'リチウムイオン', atomicNum: 3,  color: '#e84393', radius: 0.45 },
+      { key: 'Na+',  type: 'ion', symbol: 'Na⁺',   name: 'ナトリウムイオン', atomicNum: 11, color: '#f1c40f', radius: 0.55 },
+      { key: 'K+',   type: 'ion', symbol: 'K⁺',    name: 'カリウムイオン', atomicNum: 19, color: '#9b59b6', radius: 0.65 },
+      { key: 'Mg2+', type: 'ion', symbol: 'Mg²⁺',  name: 'マグネシウムイオン', atomicNum: 12, color: '#d35400', radius: 0.50 },
+      { key: 'Ca2+', type: 'ion', symbol: 'Ca²⁺',  name: 'カルシウムイオン', atomicNum: 20, color: '#1abc9c', radius: 0.60 },
+      { key: 'Cu2+', type: 'ion', symbol: 'Cu²⁺',  name: '銅(II)イオン', atomicNum: 29, color: '#d35400', radius: 0.58 },
+      { key: 'Fe2+', type: 'ion', symbol: 'Fe²⁺',  name: '鉄(II)イオン', atomicNum: 26, color: '#7f8c8d', radius: 0.56 },
+      { key: 'Fe3+', type: 'ion', symbol: 'Fe³⁺',  name: '鉄(III)イオン', atomicNum: 26, color: '#b2bec3', radius: 0.54 },
+      { key: 'Zn2+', type: 'ion', symbol: 'Zn²⁺',  name: '亜鉛イオン', atomicNum: 30, color: '#95a5a6', radius: 0.55 },
+      { key: 'Ag+',  type: 'ion', symbol: 'Ag⁺',   name: '銀イオン', atomicNum: 47, color: '#bdc3c7', radius: 0.62 },
+      { key: 'Ba2+', type: 'ion', symbol: 'Ba²⁺',  name: 'バリウムイオン', atomicNum: 56, color: '#1abc9c', radius: 0.70 },
+      { key: 'Al3+', type: 'ion', symbol: 'Al³⁺',  name: 'アルミニウムイオン', atomicNum: 13, color: '#00cec9', radius: 0.52 },
+      { key: 'Pb2+', type: 'ion', symbol: 'Pb²⁺',  name: '鉛(II)イオン', atomicNum: 82, color: '#636e72', radius: 0.66 },
+      { key: 'S2-',  type: 'ion', symbol: 'S²⁻',   name: '硫化物イオン', atomicNum: 16, color: '#f1c40f', radius: 0.58 },
+      { key: 'F-',   type: 'ion', symbol: 'F⁻',    name: 'フッ化物イオン', atomicNum: 9,  color: '#1abc9c', radius: 0.45 },
+      { key: 'Cl-',  type: 'ion', symbol: 'Cl⁻',   name: '塩化物イオン', atomicNum: 17, color: '#27ae60', radius: 0.58 },
+      { key: 'Br-',  type: 'ion', symbol: 'Br⁻',   name: '臭化物イオン', atomicNum: 35, color: '#a0522d', radius: 0.62 },
+      { key: 'I-',   type: 'ion', symbol: 'I⁻',    name: 'ヨ化物イオン', atomicNum: 53, color: '#8e44ad', radius: 0.68 },
+
+      // 多原子イオン
+      { key: 'OH-',     type: 'poly', symbol: 'OH⁻',     name: '水酸化物イオン', color: '#00cec9', radius: 0.50 },
+      { key: 'SO42-',   type: 'poly', symbol: 'SO₄²⁻',   name: '硫酸イオン', color: '#6c5ce7', radius: 0.70 },
+      { key: 'CO32-',   type: 'poly', symbol: 'CO₃²⁻',   name: '炭酸イオン', color: '#fdcb6e', radius: 0.65 },
+      { key: 'HCO3-',   type: 'poly', symbol: 'HCO₃⁻',   name: '炭酸水素イオン', color: '#e17055', radius: 0.68 },
+      { key: 'NH4+',    type: 'poly', symbol: 'NH₄⁺',    name: 'アンモニウムイオン', color: '#e84393', radius: 0.60 },
+      { key: 'NO3-',    type: 'poly', symbol: 'NO₃⁻',    name: '硝酸イオン', color: '#a29bfe', radius: 0.62 },
+      { key: 'PO43-',   type: 'poly', symbol: 'PO₄³⁻',   name: 'リン酸イオン', color: '#fd79a8', radius: 0.72 },
+      { key: 'CH3COO-', type: 'poly', symbol: 'CH₃COO⁻', name: '酢酸イオン', color: '#e67e22', radius: 0.68 },
+      { key: 'MnO4-',   type: 'poly', symbol: 'MnO₄⁻',   name: '過マンガン酸イオン', color: '#9b59b6', radius: 0.70 },
+      { key: 'CrO42-',  type: 'poly', symbol: 'CrO₄²⁻',  name: 'クロム酸イオン', color: '#f39c12', radius: 0.70 }
+    ];
+
+    // --- 2. 全160種類以上の合成レシピ ---
+    const RECIPES = [
+      // ■ 単一モデル（1粒子）のレシピ（原子のみモード用）
+      { id: 's_He', name: 'ヘリウムガス (単原子分子)', formula: 'He', req: { 'He': 1 }, score: 15 },
+      { id: 's_Ne', name: 'ネオンガス', formula: 'Ne', req: { 'Ne': 1 }, score: 15 },
+      { id: 's_Ar', name: 'アルゴンガス', formula: 'Ar', req: { 'Ar': 1 }, score: 15 },
+      { id: 's_Fe', name: '鉄単体 (金属結晶)', formula: 'Fe', req: { 'Fe': 1 }, score: 20 },
+      { id: 's_Cu', name: '銅単体 (金属結晶)', formula: 'Cu', req: { 'Cu': 1 }, score: 20 },
+      { id: 's_Ag', name: '銀単体 (金属結晶)', formula: 'Ag', req: { 'Ag': 1 }, score: 25 },
+      { id: 's_Au', name: '金単体 (貴金属)', formula: 'Au', req: { 'Au': 1 }, score: 35 },
+      { id: 's_Al', name: 'アルミニウム単体', formula: 'Al', req: { 'Al': 1 }, score: 20 },
+      { id: 's_Zn', name: '亜鉛単体', formula: 'Zn', req: { 'Zn': 1 }, score: 20 },
+      { id: 's_Pb', name: '鉛単体', formula: 'Pb', req: { 'Pb': 1 }, score: 20 },
+      { id: 's_Na', name: 'ナトリウム金属', formula: 'Na', req: { 'Na': 1 }, score: 20 },
+      { id: 's_K',  name: 'カリウム金属', formula: 'K', req: { 'K': 1 }, score: 20 },
+      { id: 's_Mg', name: 'マグネシウムリボン', formula: 'Mg', req: { 'Mg': 1 }, score: 20 },
+      { id: 's_Ca', name: 'カルシウム単体', formula: 'Ca', req: { 'Ca': 1 }, score: 20 },
+      { id: 's_C',  name: '炭素 (グラファイト/黒鉛)', formula: 'C', req: { 'C': 1 }, score: 20 },
+      { id: 's_S',  name: '硫黄単体', formula: 'S', req: { 'S': 1 }, score: 20 },
+      { id: 's_P',  name: 'リン単体', formula: 'P', req: { 'P': 1 }, score: 20 },
+
+      // ■ イオン単一モデル（イオンモード用）
+      { id: 'i_H',   name: '水素イオン (水溶液中)', formula: 'H⁺', req: { 'H+': 1 }, score: 15 },
+      { id: 'i_O',   name: '酸素イオン', formula: 'O²⁻', req: { 'O2-': 1 }, score: 15 },
+      { id: 'i_Na',  name: 'ナトリウムイオン', formula: 'Na⁺', req: { 'Na+': 1 }, score: 15 },
+      { id: 'i_K',   name: 'カリウムイオン', formula: 'K⁺', req: { 'K+': 1 }, score: 15 },
+      { id: 'i_Cl',  name: '塩化物イオン', formula: 'Cl⁻', req: { 'Cl-': 1 }, score: 15 },
+      { id: 'i_Ca',  name: 'カルシウムイオン', formula: 'Ca²⁺', req: { 'Ca2+': 1 }, score: 20 },
+      { id: 'i_Cu',  name: '銅イオン', formula: 'Cu²⁺', req: { 'Cu2+': 1 }, score: 20 },
+      { id: 'i_Fe2', name: '鉄(II)イオン', formula: 'Fe²⁺', req: { 'Fe2+': 1 }, score: 20 },
+      { id: 'i_Fe3', name: '鉄(III)イオン', formula: 'Fe³⁺', req: { 'Fe3+': 1 }, score: 25 },
+      { id: 'i_SO4', name: '硫酸イオン', formula: 'SO₄²⁻', req: { 'SO42-': 1 }, score: 25 },
+
+      // ■ 2粒子（気体単体・2原子分子・単純化合物／原子モード用）
+      { id: 'H2', name: '水素分子', formula: 'H₂', req: { 'H': 2 }, score: 25,
+        layout3d: { atoms: [{elem:'H', pos:[-0.5,0,0]}, {elem:'H', pos:[0.5,0,0]}], bonds:[[0,1]] } },
+      { id: 'O2', name: '酸素分子', formula: 'O₂', req: { 'O': 2 }, score: 30,
+        layout3d: { atoms: [{elem:'O', pos:[-0.6,0,0]}, {elem:'O', pos:[0.6,0,0]}], bonds:[[0,1]] } },
+      { id: 'N2', name: '窒素分子', formula: 'N₂', req: { 'N': 2 }, score: 30,
+        layout3d: { atoms: [{elem:'N', pos:[-0.6,0,0]}, {elem:'N', pos:[0.6,0,0]}], bonds:[[0,1]] } },
+      { id: 'Cl2', name: '塩素分子', formula: 'Cl₂', req: { 'Cl': 2 }, score: 35,
+        layout3d: { atoms: [{elem:'Cl', pos:[-0.7,0,0]}, {elem:'Cl', pos:[0.7,0,0]}], bonds:[[0,1]] } },
+      { id: 'F2', name: 'フッ素分子', formula: 'F₂', req: { 'F': 2 }, score: 35 },
+      { id: 'Br2', name: '臭素分子', formula: 'Br₂', req: { 'Br': 2 }, score: 35 },
+      { id: 'I2', name: 'ヨウ素分子', formula: 'I₂', req: { 'I': 2 }, score: 40 },
+      { id: 'CO', name: '一酸化炭素', formula: 'CO', req: { 'C': 1, 'O': 1 }, score: 35 },
+      { id: 'NO', name: '一酸化窒素', formula: 'NO', req: { 'N': 1, 'O': 1 }, score: 35 },
+      { id: 'HCl_m', name: '塩化水素分子', formula: 'HCl', req: { 'H': 1, 'Cl': 1 }, score: 35 },
+      { id: 'HF', name: 'フッ化水素', formula: 'HF', req: { 'H': 1, 'F': 1 }, score: 35 },
+      { id: 'HBr', name: '臭化水素', formula: 'HBr', req: { 'H': 1, 'Br': 1 }, score: 40 },
+      { id: 'HI', name: 'ヨウ化水素', formula: 'HI', req: { 'H': 1, 'I': 1 }, score: 45 },
+      { id: 'MgO', name: '酸化マグネシウム', formula: 'MgO', req: { 'Mg': 1, 'O': 1 }, score: 45 },
+      { id: 'CaO', name: '生石灰 (酸化カルシウム)', formula: 'CaO', req: { 'Ca': 1, 'O': 1 }, score: 50 },
+      { id: 'CuO', name: '酸化銅(II)', formula: 'CuO', req: { 'Cu': 1, 'O': 1 }, score: 55 },
+      { id: 'FeO', name: '酸化鉄(II)', formula: 'FeO', req: { 'Fe': 1, 'O': 1 }, score: 55 },
+      { id: 'ZnS', name: '硫化亜鉛', formula: 'ZnS', req: { 'Zn': 1, 'S': 1 }, score: 60 },
+
+      // ■ 多原子分子・複雑な化合物（原子モード用）
+      { id: 'H2O', name: '水分子 (折れ線型)', formula: 'H₂O', req: { 'H': 2, 'O': 1 }, score: 40,
+        layout3d: { atoms: [{elem:'O', pos:[0,0.1,0]}, {elem:'H', pos:[-0.8,-0.5,0]}, {elem:'H', pos:[0.8,-0.5,0]}], bonds:[[0,1],[0,2]] } },
+      { id: 'H2O2', name: '過酸化水素', formula: 'H₂O₂', req: { 'H': 2, 'O': 2 }, score: 65 },
+      { id: 'CO2', name: '二酸化炭素 (直線型)', formula: 'CO₂', req: { 'C': 1, 'O': 2 }, score: 45,
+        layout3d: { atoms: [{elem:'C', pos:[0,0,0]}, {elem:'O', pos:[-1.2,0,0]}, {elem:'O', pos:[1.2,0,0]}], bonds:[[0,1],[0,2]] } },
+      { id: 'H2S', name: '硫化水素', formula: 'H₂S', req: { 'H': 2, 'S': 1 }, score: 50 },
+      { id: 'SO2', name: '二酸化硫黄', formula: 'SO₂', req: { 'S': 1, 'O': 2 }, score: 55 },
+      { id: 'SO3', name: '三酸化硫黄', formula: 'SO₃', req: { 'S': 1, 'O': 3 }, score: 75 },
+      { id: 'NH3', name: 'アンモニア (三角錐型)', formula: 'NH₃', req: { 'N': 1, 'H': 3 }, score: 50,
+        layout3d: { atoms: [{elem:'N', pos:[0,0.3,0]}, {elem:'H', pos:[0,-0.4,0.9]}, {elem:'H', pos:[0.78,-0.4,-0.45]}, {elem:'H', pos:[-0.78,-0.4,-0.45]}], bonds:[[0,1],[0,2],[0,3]] } },
+      { id: 'CH4', name: 'メタン (正四面体型)', formula: 'CH₄', req: { 'C': 1, 'H': 4 }, score: 60,
+        layout3d: { atoms: [{elem:'C', pos:[0,0,0]}, {elem:'H', pos:[0,1,0]}, {elem:'H', pos:[0.94,-0.33,0]}, {elem:'H', pos:[-0.47,-0.33,0.82]}, {elem:'H', pos:[-0.47,-0.33,-0.82]}], bonds:[[0,1],[0,2],[0,3],[0,4]] } },
+      { id: 'C2H5OH', name: 'エタノール', formula: 'C₂H₅OH', req: { 'C': 2, 'H': 6, 'O': 1 }, score: 105 },
+      { id: 'C6H6', name: 'ベンゼン環', formula: 'C₆H₆', req: { 'C': 6, 'H': 6 }, score: 180 },
+
+      // ■ イオン結合・化学塩・イオン化合物（イオンモード・むずかしい＆スコアアタック用）
+      { id: 'NaCl', name: '塩化ナトリウム', formula: 'NaCl', req: { 'Na+': 1, 'Cl-': 1 }, score: 45,
+        layout3d: { atoms: [{elem:'Na+', pos:[-0.8,0,0]}, {elem:'Cl-', pos:[0.8,0,0]}], bonds:[[0,1]] } },
+      { id: 'KCl', name: '塩化カリウム', formula: 'KCl', req: { 'K+': 1, 'Cl-': 1 }, score: 50 },
+      { id: 'LiF', name: 'フッ化リチウム', formula: 'LiF', req: { 'Li+': 1, 'F-': 1 }, score: 50 },
+      { id: 'NaF', name: 'フッ化ナトリウム', formula: 'NaF', req: { 'Na+': 1, 'F-': 1 }, score: 45 },
+      { id: 'KBr', name: '臭化カリウム', formula: 'KBr', req: { 'K+': 1, 'Br-': 1 }, score: 55 },
+      { id: 'KI', name: 'ヨウ化カリウム', formula: 'KI', req: { 'K+': 1, 'I-': 1 }, score: 60 },
+      { id: 'AgCl', name: '塩化銀 (白色沈殿)', formula: 'AgCl', req: { 'Ag+': 1, 'Cl-': 1 }, score: 75 },
+      { id: 'AgI', name: 'ヨウ化銀 (黄色沈殿)', formula: 'AgI', req: { 'Ag+': 1, 'I-': 1 }, score: 85 },
+      { id: 'AgBr', name: '臭化銀', formula: 'AgBr', req: { 'Ag+': 1, 'Br-': 1 }, score: 80 },
+      { id: 'MgO_i', name: '酸化マグネシウム (イオン)', formula: 'MgO', req: { 'Mg2+': 1, 'O2-': 1 }, score: 50 },
+      { id: 'CaO_i', name: '酸化カルシウム (イオン)', formula: 'CaO', req: { 'Ca2+': 1, 'O2-': 1 }, score: 50 },
+      { id: 'CuS_i', name: '硫化銅 (黒色沈殿)', formula: 'CuS', req: { 'Cu2+': 1, 'S2-': 1 }, score: 70 },
+      { id: 'NaOH', name: '水酸化ナトリウム', formula: 'NaOH', req: { 'Na+': 1, 'OH-': 1 }, score: 65 },
+      { id: 'KOH', name: '水酸化カリウム', formula: 'KOH', req: { 'K+': 1, 'OH-': 1 }, score: 70 },
+      { id: 'LiOH', name: '水酸化リチウム', formula: 'LiOH', req: { 'Li+': 1, 'OH-': 1 }, score: 70 },
+      { id: 'HNO3', name: '硝酸', formula: 'HNO₃', req: { 'H+': 1, 'NO3-': 1 }, score: 70 },
+      { id: 'NH4Cl', name: '塩化アンモニウム', formula: 'NH₄Cl', req: { 'NH4+': 1, 'Cl-': 1 }, score: 75 },
+      { id: 'AgNO3', name: '硝酸銀', formula: 'AgNO₃', req: { 'Ag+': 1, 'NO3-': 1 }, score: 85 },
+
+      // イオン合成レシピ
+      { id: 'K2SO4', name: '硫酸カリウム', formula: 'K₂SO₄', req: { 'K+': 2, 'SO42-': 1 }, score: 100 },
+      { id: 'MgSO4', name: '硫酸マグネシウム', formula: 'MgSO₄', req: { 'Mg2+': 1, 'SO42-': 1 }, score: 100 },
+      { id: 'Al2SO43', name: '硫酸アルミニウム', formula: 'Al₂(SO₄)₃', req: { 'Al3+': 2, 'SO42-': 3 }, score: 230 },
+      { id: 'ZnSO4', name: '硫酸亜鉛', formula: 'ZnSO₄', req: { 'Zn2+': 1, 'SO42-': 1 }, score: 105 },
+      { id: 'CuNO32', name: '硝酸銅(II)', formula: 'Cu(NO₃)₂', req: { 'Cu2+': 1, 'NO3-': 2 }, score: 110 },
+      { id: 'Ag2SO4', name: '硫酸銀', formula: 'Ag₂SO₄', req: { 'Ag+': 2, 'SO42-': 1 }, score: 130 },
+      { id: 'CaNO32', name: '硝酸カルシウム', formula: 'Ca(NO₃)₂', req: { 'Ca2+': 1, 'NO3-': 2 }, score: 105 },
+      { id: 'MgNO32', name: '硝酸マグネシウム', formula: 'Mg(NO₃)₂', req: { 'Mg2+': 1, 'NO3-': 2 }, score: 105 },
+      { id: 'NH4NO3', name: '硝酸アンモニウム', formula: 'NH₄NO₃', req: { 'NH4+': 1, 'NO3-': 1 }, score: 90 },
+      { id: 'NH42CO3', name: '炭酸アンモニウム', formula: '(NH₄)₂CO₃', req: { 'NH4+': 2, 'CO32-': 1 }, score: 120 },
+      { id: 'K2CO3', name: '炭酸カリウム', formula: 'K₂CO₃', req: { 'K+': 2, 'CO32-': 1 }, score: 100 },
+      { id: 'MgCO3', name: '炭酸マグネシウム', formula: 'MgCO₃', req: { 'Mg2+': 1, 'CO32-': 1 }, score: 85 },
+      { id: 'FeCO3', name: '炭酸鉄(II)', formula: 'FeCO₃', req: { 'Fe2+': 1, 'CO32-': 1 }, score: 90 },
+      { id: 'CuCO3', name: '炭酸銅(II)', formula: 'CuCO₃', req: { 'Cu2+': 1, 'CO32-': 1 }, score: 95 },
+      { id: 'BaCO3', name: '炭酸バリウム (白色沈殿)', formula: 'BaCO₃', req: { 'Ba2+': 1, 'CO32-': 1 }, score: 95 },
+      { id: 'ZnCO3', name: '炭酸亜鉛', formula: 'ZnCO₃', req: { 'Zn2+': 1, 'CO32-': 1 }, score: 95 },
+      { id: 'Fe2SO43', name: '硫酸鉄(III)', formula: 'Fe₂(SO₄)₃', req: { 'Fe3+': 2, 'SO42-': 3 }, score: 240 },
+      { id: 'FeNO32', name: '硝酸鉄(II)', formula: 'Fe(NO₃)₂', req: { 'Fe2+': 1, 'NO3-': 2 }, score: 105 },
+      { id: 'FeNO33', name: '硝酸鉄(III)', formula: 'Fe(NO₃)₃', req: { 'Fe3+': 1, 'NO3-': 3 }, score: 135 },
+      { id: 'AlNO33', name: '硝酸アルミニウム', formula: 'Al(NO₃)₃', req: { 'Al3+': 1, 'NO3-': 3 }, score: 135 },
+      { id: 'AlCl3', name: '塩化アルミニウム', formula: 'AlCl₃', req: { 'Al3+': 1, 'Cl-': 3 }, score: 100 },
+      { id: 'FeCl2', name: '塩化鉄(II)', formula: 'FeCl₂', req: { 'Fe2+': 1, 'Cl-': 2 }, score: 75 },
+      { id: 'FeCl3', name: '塩化鉄(III)', formula: 'FeCl₃', req: { 'Fe3+': 1, 'Cl-': 3 }, score: 105 },
+      { id: 'ZnCl2', name: '塩化亜鉛', formula: 'ZnCl₂', req: { 'Zn2+': 1, 'Cl-': 2 }, score: 75 },
+      { id: 'MgCl2', name: '塩化マグネシウム', formula: 'MgCl₂', req: { 'Mg2+': 1, 'Cl-': 2 }, score: 70 },
+      { id: 'CaCl2', name: '塩化カルシウム', formula: 'CaCl₂', req: { 'Ca2+': 1, 'Cl-': 2 }, score: 70 },
+      { id: 'BaCl2', name: '塩化バリウム', formula: 'BaCl₂', req: { 'Ba2+': 1, 'Cl-': 2 }, score: 80 },
+      { id: 'NaI', name: 'ヨウ化ナトリウム', formula: 'NaI', req: { 'Na+': 1, 'I-': 1 }, score: 55 },
+      { id: 'LiI', name: 'ヨウ化リチウム', formula: 'LiI', req: { 'Li+': 1, 'I-': 1 }, score: 60 },
+      { id: 'CaF2', name: 'フッ化カルシウム (ホタル石)', formula: 'CaF₂', req: { 'Ca2+': 1, 'F-': 2 }, score: 75 },
+      { id: 'MgF2', name: 'フッ化マグネシウム', formula: 'MgF₂', req: { 'Mg2+': 1, 'F-': 2 }, score: 75 },
+      { id: 'BaF2', name: 'フッ化バリウム', formula: 'BaF₂', req: { 'Ba2+': 1, 'F-': 2 }, score: 85 },
+      { id: 'BaNO32', name: '硝酸バリウム', formula: 'Ba(NO₃)₂', req: { 'Ba2+': 1, 'NO3-': 2 }, score: 110 },
+      { id: 'ZnNO32', name: '硝酸亜鉛', formula: 'Zn(NO₃)₂', req: { 'Zn2+': 1, 'NO3-': 2 }, score: 105 },
+      { id: 'PbNO32', name: '硝酸鉛(II)', formula: 'Pb(NO₃)₂', req: { 'Pb2+': 1, 'NO3-': 2 }, score: 115 },
+      { id: 'KNO3', name: '硝酸カリウム (硝石)', formula: 'KNO₃', req: { 'K+': 1, 'NO3-': 1 }, score: 75 },
+      { id: 'NaNO3', name: '硝酸ナトリウム (チリ硝石)', formula: 'NaNO₃', req: { 'Na+': 1, 'NO3-': 1 }, score: 70 },
+      { id: 'LiNO3', name: '硝酸リチウム', formula: 'LiNO₃', req: { 'Li+': 1, 'NO3-': 1 }, score: 75 },
+      { id: 'LiCl', name: '塩化リチウム', formula: 'LiCl', req: { 'Li+': 1, 'Cl-': 1 }, score: 50 },
+      { id: 'Li2SO4', name: '硫酸リチウム', formula: 'Li₂SO₄', req: { 'Li+': 2, 'SO42-': 1 }, score: 95 },
+      { id: 'Li2CO3', name: '炭酸リチウム', formula: 'Li₂CO₃', req: { 'Li+': 2, 'CO32-': 1 }, score: 95 },
+      { id: 'NH4Br', name: '臭化アンモニウム', formula: 'NH₄Br', req: { 'NH4+': 1, 'Br-': 1 }, score: 80 },
+      { id: 'NH4I', name: 'ヨウ化アンモニウム', formula: 'NH₄I', req: { 'NH4+': 1, 'I-': 1 }, score: 85 },
+      { id: 'CuBr2', name: '臭化銅(II)', formula: 'CuBr₂', req: { 'Cu2+': 1, 'Br-': 2 }, score: 85 },
+      { id: 'CuI2', name: 'ヨウ化銅(II)', formula: 'CuI₂', req: { 'Cu2+': 1, 'I-': 2 }, score: 95 },
+      { id: 'ZnBr2', name: '臭化亜鉛', formula: 'ZnBr₂', req: { 'Zn2+': 1, 'Br-': 2 }, score: 85 },
+      { id: 'ZnI2', name: 'ヨウ化亜鉛', formula: 'ZnI₂', req: { 'Zn2+': 1, 'I-': 2 }, score: 95 },
+      { id: 'FeBr2', name: '臭化鉄(II)', formula: 'FeBr₂', req: { 'Fe2+': 1, 'Br-': 2 }, score: 85 },
+      { id: 'FeI2', name: 'ヨウ化鉄(II)', formula: 'FeI₂', req: { 'Fe2+': 1, 'I-': 2 }, score: 95 },
+      { id: 'CaBr2', name: '臭化カルシウム', formula: 'CaBr₂', req: { 'Ca2+': 1, 'Br-': 2 }, score: 80 },
+      { id: 'CaI2', name: 'ヨウ化カルシウム', formula: 'CaI₂', req: { 'Ca2+': 1, 'I-': 2 }, score: 90 },
+      { id: 'MgBr2', name: '臭化マグネシウム', formula: 'MgBr₂', req: { 'Mg2+': 1, 'Br-': 2 }, score: 80 },
+      { id: 'MgI2', name: 'ヨウ化マグネシウム', formula: 'MgI₂', req: { 'Mg2+': 1, 'I-': 2 }, score: 90 },
+      { id: 'BaBr2', name: '臭化バリウム', formula: 'BaBr₂', req: { 'Ba2+': 1, 'Br-': 2 }, score: 90 },
+      { id: 'BaI2', name: 'ヨウ化バリウム', formula: 'BaI₂', req: { 'Ba2+': 1, 'I-': 2 }, score: 100 },
+      { id: 'Na2O_i', name: '酸化ナトリウム', formula: 'Na₂O', req: { 'Na+': 2, 'O2-': 1 }, score: 65 },
+      { id: 'K2O_i', name: '酸化カリウム', formula: 'K₂O', req: { 'K+': 2, 'O2-': 1 }, score: 70 },
+      { id: 'Li2O_i', name: '酸化リチウム', formula: 'Li₂O', req: { 'Li+': 2, 'O2-': 1 }, score: 70 },
+      { id: 'ZnO_i', name: '酸化亜鉛', formula: 'ZnO', req: { 'Zn2+': 1, 'O2-': 1 }, score: 60 },
+      { id: 'Al2O3_i', name: '酸化アルミニウム (アルミナ)', formula: 'Al₂O₃', req: { 'Al3+': 2, 'O2-': 3 }, score: 180 },
+      { id: 'Fe2O3_i', name: '酸化鉄(III) (赤サビ)', formula: 'Fe₂O₃', req: { 'Fe3+': 2, 'O2-': 3 }, score: 180 },
+      { id: 'Ag2O_i', name: '酸化銀', formula: 'Ag₂O', req: { 'Ag+': 2, 'O2-': 1 }, score: 100 },
+      { id: 'Na2S_i', name: '硫化ナトリウム', formula: 'Na₂S', req: { 'Na+': 2, 'S2-': 1 }, score: 70 },
+      { id: 'K2S_i', name: '硫化カリウム', formula: 'K₂S', req: { 'K+': 2, 'S2-': 1 }, score: 75 },
+      { id: 'MgS_i', name: '硫化マグネシウム', formula: 'MgS', req: { 'Mg2+': 1, 'S2-': 1 }, score: 65 },
+      { id: 'CaS_i', name: '硫化カルシウム', formula: 'CaS', req: { 'Ca2+': 1, 'S2-': 1 }, score: 65 },
+      { id: 'FeS_i', name: '硫化鉄(II)', formula: 'FeS', req: { 'Fe2+': 1, 'S2-': 1 }, score: 70 },
+      { id: 'Ag2S_i', name: '硫化銀 (黒色沈殿)', formula: 'Ag₂S', req: { 'Ag+': 2, 'S2-': 1 }, score: 110 },
+      { id: 'ZnS_i', name: '硫化亜鉛', formula: 'ZnS', req: { 'Zn2+': 1, 'S2-': 1 }, score: 70 },
+      { id: 'BaS_i', name: '硫化バリウム', formula: 'BaS', req: { 'Ba2+': 1, 'S2-': 1 }, score: 75 },
+      { id: 'Al2S3_i', name: '硫化アルミニウム', formula: 'Al₂S₃', req: { 'Al3+': 2, 'S2-': 3 }, score: 190 },
+      { id: 'KHCO3', name: '炭酸水素カリウム', formula: 'KHCO₃', req: { 'K+': 1, 'HCO3-': 1 }, score: 105 },
+      { id: 'CaHCO32', name: '炭酸水素カルシウム', formula: 'Ca(HCO₃)₂', req: { 'Ca2+': 1, 'HCO3-': 2 }, score: 150 },
+      { id: 'MgHCO32', name: '炭酸水素マグネシウム', formula: 'Mg(HCO₃)₂', req: { 'Mg2+': 1, 'HCO3-': 2 }, score: 150 },
+      { id: 'NH4HCO3', name: '炭酸水素アンモニウム', formula: 'NH₄HCO₃', req: { 'NH4+': 1, 'HCO3-': 1 }, score: 110 },
+      { id: 'K3PO4', name: 'リン酸カリウム', formula: 'K₃PO₄', req: { 'K+': 3, 'PO43-': 1 }, score: 145 },
+      { id: 'Mg3PO42', name: 'リン酸マグネシウム', formula: 'Mg₃(PO₄)₂', req: { 'Mg2+': 3, 'PO43-': 2 }, score: 220 },
+      { id: 'FePO4', name: 'リン酸鉄(III)', formula: 'FePO₄', req: { 'Fe3+': 1, 'PO43-': 1 }, score: 115 },
+      { id: 'AlPO4', name: 'リン酸アルミニウム', formula: 'AlPO₄', req: { 'Al3+': 1, 'PO43-': 1 }, score: 115 },
+      { id: 'Zn3PO42', name: 'リン酸亜鉛', formula: 'Zn₃(PO₄)₂', req: { 'Zn2+': 3, 'PO43-': 2 }, score: 230 },
+      { id: 'Ag3PO4', name: 'リン酸銀 (黄色沈殿)', formula: 'Ag₃PO₄', req: { 'Ag+': 3, 'PO43-': 1 }, score: 180 },
+      { id: 'Ba3PO42', name: 'リン酸バリウム', formula: 'Ba₃(PO₄)₂', req: { 'Ba2+': 3, 'PO43-': 2 }, score: 240 },
+      { id: 'NH43PO4', name: 'リン酸アンモニウム', formula: '(NH₄)₃PO₄', req: { 'NH4+': 3, 'PO43-': 1 }, score: 160 },
+      { id: 'BaOH2', name: '水酸化バリウム', formula: 'Ba(OH)₂', req: { 'Ba2+': 1, 'OH-': 2 }, score: 95 },
+      { id: 'ZnOH2', name: '水酸化亜鉛', formula: 'Zn(OH)₂', req: { 'Zn2+': 1, 'OH-': 2 }, score: 90 },
+      { id: 'AgOH', name: '水酸化銀', formula: 'AgOH', req: { 'Ag+': 1, 'OH-': 1 }, score: 85 },
+      { id: 'NH4OH', name: '水酸化アンモニウム (アンモニア水)', formula: 'NH₄OH', req: { 'NH4+': 1, 'OH-': 1 }, score: 75 },
+      { id: 'CH3COONa', name: '酢酸ナトリウム', formula: 'CH₃COONa', req: { 'Na+': 1, 'CH3COO-': 1 }, score: 85 },
+      { id: 'CH3COOK', name: '酢酸カリウム', formula: 'CH₃COOK', req: { 'K+': 1, 'CH3COO-': 1 }, score: 90 },
+      { id: 'CH3COO2Ca', name: '酢酸カルシウム', formula: '(CH₃COO)₂Ca', req: { 'Ca2+': 1, 'CH3COO-': 2 }, score: 130 },
+      { id: 'CH3COO2Mg', name: '酢酸マグネシウム', formula: '(CH₃COO)₂Mg', req: { 'Mg2+': 1, 'CH3COO-': 2 }, score: 130 },
+      { id: 'CH3COONH4', name: '酢酸アンモニウム', formula: 'CH₃COONH₄', req: { 'NH4+': 1, 'CH3COO-': 1 }, score: 95 },
+      { id: 'KMnO4', name: '過マンガン酸カリウム', formula: 'KMnO₄', req: { 'K+': 1, 'MnO4-': 1 }, score: 100 },
+      { id: 'NaMnO4', name: '過マンガン酸ナトリウム', formula: 'NaMnO₄', req: { 'Na+': 1, 'MnO4-': 1 }, score: 95 },
+      { id: 'K2CrO4', name: 'クロム酸カリウム', formula: 'K₂CrO₄', req: { 'K+': 2, 'CrO42-': 1 }, score: 120 },
+      { id: 'Na2CrO4', name: 'クロム酸ナトリウム', formula: 'Na₂CrO₄', req: { 'Na+': 2, 'CrO42-': 1 }, score: 115 },
+      { id: 'BaCrO4', name: 'クロム酸バリウム (黄色沈殿)', formula: 'BaCrO₄', req: { 'Ba2+': 1, 'CrO42-': 1 }, score: 125 },
+      { id: 'Ag2CrO4', name: 'クロム酸銀 (赤褐色沈殿)', formula: 'Ag₂CrO₄', req: { 'Ag+': 2, 'CrO42-': 1 }, score: 145 },
+      { id: 'PbCl2', name: '塩化鉛(II) (白色沈殿)', formula: 'PbCl₂', req: { 'Pb2+': 1, 'Cl-': 2 }, score: 85 },
+      { id: 'PbI2', name: 'ヨウ化鉛(II) (黄色沈殿)', formula: 'PbI₂', req: { 'Pb2+': 1, 'I-': 2 }, score: 100 },
+      { id: 'PbSO4', name: '硫酸鉛(II) (白色沈殿)', formula: 'PbSO₄', req: { 'Pb2+': 1, 'SO42-': 1 }, score: 110 },
+      { id: 'PbS', name: '硫化鉛(II) (黒色沈殿)', formula: 'PbS', req: { 'Pb2+': 1, 'S2-': 1 }, score: 80 },
+
+      // 多原子イオン塩・多粒子塩
+      { id: 'CuCl2', name: '塩化銅(II)', formula: 'CuCl₂', req: { 'Cu2+': 1, 'Cl-': 2 }, score: 70 },
+      { id: 'CaOH2', name: '水酸化カルシウム', formula: 'Ca(OH)₂', req: { 'Ca2+': 1, 'OH-': 2 }, score: 85 },
+      { id: 'MgOH2', name: '水酸化マグネシウム', formula: 'Mg(OH)₂', req: { 'Mg2+': 1, 'OH-': 2 }, score: 85 },
+      { id: 'CuOH2', name: '水酸化銅(II)', formula: 'Cu(OH)₂', req: { 'Cu2+': 1, 'OH-': 2 }, score: 90 },
+      { id: 'FeOH2', name: '水酸化鉄(II)', formula: 'Fe(OH)₂', req: { 'Fe2+': 1, 'OH-': 2 }, score: 90 },
+      { id: 'FeOH3', name: '水酸化鉄(III)', formula: 'Fe(OH)₃', req: { 'Fe3+': 1, 'OH-': 3 }, score: 110 },
+      { id: 'AlOH3', name: '水酸化アルミニウム', formula: 'Al(OH)₃', req: { 'Al3+': 1, 'OH-': 3 }, score: 110 },
+      { id: 'CaCO3', name: '炭酸カルシウム (大理石)', formula: 'CaCO₃', req: { 'Ca2+': 1, 'CO32-': 1 }, score: 80 },
+      { id: 'NaHCO3', name: '炭酸水素ナトリウム (重曹)', formula: 'NaHCO₃', req: { 'Na+': 1, 'HCO3-': 1 }, score: 100 },
+      { id: 'Na2CO3', name: '炭酸ナトリウム', formula: 'Na₂CO₃', req: { 'Na+': 2, 'CO32-': 1 }, score: 105 },
+      { id: 'H2SO4', name: '硫酸', formula: 'H₂SO₄', req: { 'H+': 2, 'SO42-': 1 }, score: 95 },
+      { id: 'Na2SO4', name: '硫酸ナトリウム', formula: 'Na₂SO₄', req: { 'Na+': 2, 'SO42-': 1 }, score: 100 },
+      { id: 'CuSO4', name: '硫酸銅(II)', formula: 'CuSO₄', req: { 'Cu2+': 1, 'SO42-': 1 }, score: 105 },
+      { id: 'BaSO4', name: '硫酸バリウム (白色沈殿)', formula: 'BaSO₄', req: { 'Ba2+': 1, 'SO42-': 1 }, score: 110 },
+      { id: 'FeSO4', name: '硫酸鉄(II)', formula: 'FeSO₄', req: { 'Fe2+': 1, 'SO42-': 1 }, score: 100 },
+      { id: 'CaSO4', name: '硫酸カルシウム (ギプス)', formula: 'CaSO₄', req: { 'Ca2+': 1, 'SO42-': 1 }, score: 105 },
+      { id: 'NH42SO4', name: '硫酸アンモニウム', formula: '(NH₄)₂SO₄', req: { 'NH4+': 2, 'SO42-': 1 }, score: 140 },
+      { id: 'H3PO4', name: 'リン酸', formula: 'H₃PO₄', req: { 'H+': 3, 'PO43-': 1 }, score: 130 },
+      { id: 'Na3PO4', name: 'リン酸ナトリウム', formula: 'Na₃PO₄', req: { 'Na+': 3, 'PO43-': 1 }, score: 140 },
+      { id: 'Ca3PO42', name: 'リン酸カルシウム (骨の主成分)', formula: 'Ca₃(PO₄)₂', req: { 'Ca2+': 3, 'PO43-': 2 }, score: 220 }
+    ];
+
+    // --- 3. ゲーム状態管理 ---
+    let state = {
+      gameMode: 'vs', // 'vs' または 'scoreAttack'
+      difficulty: 'easy', // 'easy' または 'hard'
+      round: 1,
+      maxRounds: 3,
+      stage: 1, // スコアアタック用の現在のステージ
+      maxStages: 10,
+      phase: 'DRAFT',
+      turnPlayer: 1,
+      scores: { 1: 0, 2: 0 },
+      hands: { 1: [], 2: [] },
+      crafts: { 1: [], 2: [] },
+      created: { 1: [], 2: [] },
+      ready: { 1: false, 2: false },
+      boxPool: [],
+      usedRecipeIds: new Set(),
+      draftPicksCount: 0,
+      maxDraftPicks: 24
+    };
+
+    // ==================== オンライン対戦（別端末同士のP2P通信） ====================
+    // PeerJSの無料公開シグナリングサーバーを使い、アカウント登録なしで
+    // 2台の端末同士を直接WebRTCで接続する。サーバー側で状態を管理する仕組みは
+    // 持たないため、常に「ホスト（部屋を作った側 = Player 1）」を状態の正とし、
+    // ゲスト（Player 2）の操作は一旦ホストへ送って、ホストが適用した結果を
+    // 全体の状態としてゲストへ送り返す「ホスト権威モデル」を採用する。
+    let peer = null;
+    let netConn = null;
+    let onlineRole = null;       // 'host' | 'guest' | null（通常のホットシート対戦なら null）
+    let myPlayerNum = null;      // オンライン時、自分が担当するプレイヤー番号（1 または 2）
+    let onlineChoice = null;     // ホーム画面での選択中の項目 'create' | 'join'
+    let onlineDifficulty = 'easy';
+    const ONLINE_ID_PREFIX = 'emg3d-'; // 公開シグナリングサーバー上で他アプリのIDと衝突しないための接頭辞
+
+    function selectOnlineChoice(choice) {
+      onlineChoice = choice;
+      document.getElementById('online-choice-create').classList.toggle('selected', choice === 'create');
+      document.getElementById('online-choice-join').classList.toggle('selected', choice === 'join');
+      document.getElementById('online-join-input-area').style.display = (choice === 'join') ? 'block' : 'none';
+      const btn = document.getElementById('online-action-btn');
+      btn.disabled = false;
+      btn.innerText = (choice === 'create') ? '部屋を作る' : '合言葉で参加する';
+    }
+
+    function onlineActionButtonClick() {
+      if (onlineChoice === 'create') createOnlineRoom();
+      else if (onlineChoice === 'join') joinOnlineRoom();
+    }
+
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 見間違えやすい 0/O, 1/I は除外
+      let code = '';
+      for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      return code;
+    }
+
+    function showOnlineStatus(text, codeText) {
+      document.getElementById('online-setup-area').style.display = 'none';
+      document.getElementById('online-status-area').style.display = 'block';
+      document.getElementById('online-ready-area').style.display = 'none';
+      document.getElementById('online-status-text').innerText = text;
+      document.getElementById('online-status-code').innerText = codeText || '';
+    }
+
+    function resetOnlineLobbyUI() {
+      onlineChoice = null;
+      const setupArea = document.getElementById('online-setup-area');
+      const statusArea = document.getElementById('online-status-area');
+      const readyArea = document.getElementById('online-ready-area');
+      const joinInput = document.getElementById('online-join-input-area');
+      const actionBtn = document.getElementById('online-action-btn');
+      const codeInput = document.getElementById('online-room-code-input');
+      if (!setupArea) return; // まだDOM未生成の初回呼び出し対策
+      setupArea.style.display = 'block';
+      statusArea.style.display = 'none';
+      readyArea.style.display = 'none';
+      joinInput.style.display = 'none';
+      actionBtn.disabled = true;
+      actionBtn.innerText = '作成 / 参加 の方法を選んでください';
+      codeInput.value = '';
+      document.getElementById('online-choice-create').classList.remove('selected');
+      document.getElementById('online-choice-join').classList.remove('selected');
+      updateOnlineConnBadge(null);
+    }
+
+    function createOnlineRoom() {
+      if (typeof Peer === 'undefined') {
+        alert('通信ライブラリの読み込みに失敗しました。ネットワーク接続を確認してページを再読み込みしてください。');
+        return;
+      }
+      const code = generateRoomCode();
+      showOnlineStatus('接続準備中…', code);
+
+      onlineRole = 'host';
+      myPlayerNum = 1;
+      peer = new Peer(ONLINE_ID_PREFIX + code);
+
+      peer.on('open', () => {
+        showOnlineStatus('このコードを相手に伝え、「合言葉で参加」から入力してもらってください。相手の接続を待っています…', code);
+      });
+
+      peer.on('connection', (incoming) => {
+        if (netConn) { incoming.close(); return; } // 既に1人と接続済みなら以降の接続は拒否
+        netConn = incoming;
+        setupDataConnection();
+        netConn.on('open', () => {
+          showOnlineStatus('', code);
+          document.getElementById('online-status-area').style.display = 'none';
+          document.getElementById('online-ready-area').style.display = 'block';
+        });
+      });
+
+      peer.on('error', (err) => {
+        console.warn('[online] peer error:', err);
+        const reason = (err && err.type === 'unavailable-id') ? 'コードが競合しました。もう一度お試しください。' : '接続に失敗しました。時間をおいて再度お試しください。';
+        showOnlineStatus(reason, '');
+      });
+    }
+
+    function joinOnlineRoom() {
+      if (typeof Peer === 'undefined') {
+        alert('通信ライブラリの読み込みに失敗しました。ネットワーク接続を確認してページを再読み込みしてください。');
+        return;
+      }
+      const codeInput = document.getElementById('online-room-code-input');
+      const code = (codeInput.value || '').trim().toUpperCase();
+      if (code.length < 4) {
+        alert('コードを正しく入力してください。');
+        return;
+      }
+      showOnlineStatus('接続中…', code);
+
+      onlineRole = 'guest';
+      myPlayerNum = 2;
+      peer = new Peer();
+
+      peer.on('open', () => {
+        netConn = peer.connect(ONLINE_ID_PREFIX + code, { reliable: true });
+        setupDataConnection();
+        netConn.on('open', () => {
+          showOnlineStatus('ホストと接続しました！ホストが難易度を選んで対戦を開始するのをお待ちください…', code);
+        });
+      });
+
+      peer.on('error', (err) => {
+        console.warn('[online] peer error:', err);
+        showOnlineStatus('接続できませんでした。コードを確認してもう一度お試しください。', '');
+      });
+    }
+
+    function setupDataConnection() {
+      netConn.on('data', handleNetMessage);
+      netConn.on('close', () => handleOpponentLeft());
+      netConn.on('error', (err) => console.warn('[online] connection error:', err));
+    }
+
+    function sendNet(msg) {
+      if (netConn && netConn.open) {
+        try { netConn.send(msg); } catch (e) { console.warn('[online] send failed:', e); }
+      }
+    }
+
+    function cancelOnlineConnection() {
+      teardownOnlineConnection();
+      resetOnlineLobbyUI();
+    }
+
+    function teardownOnlineConnection() {
+      if (netConn) { try { netConn.close(); } catch (e) {} netConn = null; }
+      if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+      onlineRole = null;
+      myPlayerNum = null;
+      updateOnlineConnBadge(null);
+    }
+
+    function selectOnlineDifficulty(diff) {
+      if (onlineRole !== 'host') return;
+      onlineDifficulty = diff;
+      document.getElementById('online-card-easy').classList.toggle('selected', diff === 'easy');
+      document.getElementById('online-card-hard').classList.toggle('selected', diff === 'hard');
+    }
+
+    function startOnlineGame() {
+      if (onlineRole !== 'host') return;
+      state.difficulty = onlineDifficulty;
+      sendNet({ type: 'gameStart' });
+      startGame('vs');
+    }
+
+    function updateOnlineConnBadge(status) {
+      const badge = document.getElementById('online-conn-badge');
+      const text = document.getElementById('online-conn-badge-text');
+      if (!badge) return;
+      if (!status) { badge.style.display = 'none'; return; }
+      badge.style.display = 'inline-flex';
+      badge.className = 'online-conn-badge ' + status;
+      text.innerText = status === 'connected' ? 'オンライン対戦中' : (status === 'waiting' ? '接続中…' : '相手が切断しました');
+    }
+
+    function handleOpponentLeft() {
+      if (!onlineRole) return; // 既にホームに戻った後などは無視
+      updateOnlineConnBadge('disconnected');
+      alert('相手との接続が切れました。ホーム画面に戻ります。');
+      returnToHome();
+    }
+
+    // --- ネットワークメッセージの受信処理 ---
+    function handleNetMessage(msg) {
+      if (!msg || !msg.type) return;
+      switch (msg.type) {
+        case 'gameStart':
+          if (onlineRole === 'guest') startGame('vs'); // 直後にホストから届く'state'で実際の内容に更新される
+          break;
+        case 'state':
+          if (onlineRole === 'guest') applyRemoteState(msg.payload);
+          break;
+        case 'show3D': {
+          const r = RECIPES.find(x => x.id === msg.recipeId);
+          if (r) open3DModal(r);
+          break;
+        }
+        case 'intent':
+          if (onlineRole === 'host') applyRemoteIntent(msg);
+          break;
+      }
+    }
+
+    function applyRemoteIntent(msg) {
+      switch (msg.action) {
+        case 'handleBoxSelect': {
+          const model = state.boxPool.find(m => m.instanceId === msg.payload.instanceId);
+          if (!model) return;
+          const elem = document.querySelector(`.model-chip[data-instance-id="${msg.payload.instanceId}"]`);
+          if (elem) handleBoxSelect(model, elem, true);
+          break;
+        }
+        case 'moveToCraft': moveToCraft(msg.player, msg.payload.instanceId, true); break;
+        case 'moveToHand': moveToHand(msg.player, msg.payload.instanceId, true); break;
+        case 'craftChemical': craftChemical(msg.player, true); break;
+        case 'toggleReady': toggleReady(msg.player, true); break;
+        case 'proceedNextRound': proceedNextRound(true); break;
+        case 'proceedNextStage': proceedNextStage(true); break;
+      }
+    }
+
+    // 状態変化を起こすローカル操作の入口で使う共通ガード。
+    // 戻り値が true の場合のみ、呼び出し元はその場でローカルの処理を続行してよい。
+    function requestAction(player, actionName, payload, fromNetwork) {
+      if (!onlineRole) return true; // 通常のホットシート対戦は常に許可
+      if (fromNetwork) return (onlineRole === 'host'); // 受信した意図の適用はホストのみが行う
+      if (player !== myPlayerNum) return false; // 自分の担当ではないプレイヤーパネルの操作は無視
+      if (onlineRole === 'host') return true; // ホストはローカルでそのまま実行
+      sendNet({ type: 'intent', action: actionName, player, payload: payload || {} }); // ゲストはホストへ委譲
+      return false;
+    }
+
+    // ホストの状態をまるごとゲストへ送信する（Setはそのままだと送れないので配列に変換）
+    function broadcastState() {
+      if (onlineRole !== 'host') return;
+      const payload = { ...state, usedRecipeIds: Array.from(state.usedRecipeIds) };
+      sendNet({ type: 'state', payload });
+    }
+
+    // ゲスト側: ホストから届いた状態をそのまま自分の表示に反映する
+    function applyRemoteState(payload) {
+      const remote = { ...payload };
+      const usedIds = remote.usedRecipeIds || [];
+      delete remote.usedRecipeIds;
+      Object.assign(state, remote);
+      state.usedRecipeIds = new Set(usedIds);
+
+      document.getElementById('home-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'flex';
+      document.getElementById('global-home-btn').classList.add('show');
+      updateOnlineConnBadge('connected');
+
+      updateUI();
+      updateDraftHeader();
+      updateDraftHandView();
+
+      if (state.phase === 'DRAFT') {
+        openBoxModal();
+      } else {
+        closeModal('box-modal');
+      }
+
+      if (state.phase === 'SUMMARY') {
+        showRoundResultModal(true);
+      } else {
+        closeModal('result-modal');
+      }
+    }
+
+    // 3D Three.js 変数（レンダラーはページ内で使い回し、WebGLコンテキストの枯渇を防ぐ）
+    let scene3d, camera3d, renderer3d, animFrameId3d, molGroup3d;
+    let prevScores = { 1: 0, 2: 0 };
+
+    // --- モーダル開閉共通ヘルパー（フェード＋ポップインアニメーション制御 ＋ 背面スクロールのロック） ---
+    let openModalCount = 0;
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (!el || el.classList.contains('open')) return;
+      el.classList.add('open');
+      openModalCount++;
+      if (openModalCount === 1) {
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (!el || !el.classList.contains('open')) return;
+      el.classList.remove('open');
+      openModalCount = Math.max(0, openModalCount - 1);
+      if (openModalCount === 0) {
+        document.body.style.overflow = '';
+      }
+    }
+
+    // --- 演出エフェクト: スコア加算のフローティング表示＆画面フラッシュ ---
+    function playScoreFxAt(x, y, text) {
+      const pop = document.createElement('div');
+      pop.className = 'score-pop-text';
+      pop.style.left = x + 'px';
+      pop.style.top = y + 'px';
+      pop.innerText = text;
+      document.body.appendChild(pop);
+      setTimeout(() => pop.remove(), 1150);
+    }
+    function playScreenFlash() {
+      const flash = document.createElement('div');
+      flash.className = 'screen-flash-overlay';
+      document.body.appendChild(flash);
+      setTimeout(() => flash.remove(), 520);
+    }
+
+    window.onload = () => {
+      renderRecipeList('all');
+      updateHighScoreDisplay();
+    };
+
+    // --- 立体球UIエレメント生成関数 ---
+    function createModelChipElem(model) {
+      const chip = document.createElement('div');
+      chip.className = `model-chip chip-${model.type}`;
+      chip.style.backgroundColor = model.color || '#3498db';
+      chip.setAttribute('tabindex', '0'); // フォーカス可能にする
+      if (model.instanceId) chip.dataset.instanceId = model.instanceId;
+
+      // むずかしい または スコアアタック モード時の判定設定
+      const isHideMode = (state.gameMode === 'scoreAttack' || state.difficulty === 'hard');
+      if (isHideMode && (model.type === 'ion' || model.type === 'poly')) {
+        chip.classList.add('hide-name');
+        chip.setAttribute('data-name', `${model.name} (${model.symbol})`);
+      }
+
+      const badge = document.createElement('div');
+      badge.className = 'billiard-badge';
+
+      const symbol = document.createElement('div');
+      symbol.className = 'symbol';
+      symbol.innerText = model.symbol;
+      badge.appendChild(symbol);
+
+      const sub = document.createElement('div');
+      sub.className = 'sub-info';
+      if (model.type === 'atom' && model.atomicNum) {
+        sub.innerText = `${model.atomicNum}`;
+      } else {
+        sub.innerText = model.name ? model.name.slice(0, 4) : '';
+      }
+      badge.appendChild(sub);
+
+      chip.appendChild(badge);
+      return chip;
+    }
+
+    // --- スコア保存（localStorage）関連 ---
+    function getHighScore() {
+      const saved = localStorage.getItem('element_master_highscore');
+      return saved ? parseInt(saved, 10) : 0;
+    }
+
+    function updateHighScoreDisplay() {
+      const hs = getHighScore();
+      const el = document.getElementById('high-score-display');
+      if (el) el.innerText = `${hs} pt`;
+    }
+
+     
+function checkAndSaveHighScore(score) {
+  try {
+    if (window.LearnHub && typeof LearnHub.report === 'function') {
+      LearnHub.report({
+        app: 'elementgame',
+        done: Math.min(10, (state && state.stage) || 0),
+        total: 10,
+        best: score,
+        note: 'スコアアタック STAGE' + ((state && state.stage) || 0)
+      });
+    } else {
+      console.warn('[hub] LearnHub が読み込まれていません');
+    }
+  } catch (e) {
+    console.warn('[hub] 送信に失敗:', e);
+  }
+
+  const hs = getHighScore();
+  if (score > hs) {
+    localStorage.setItem('element_master_highscore', score.toString());
+    updateHighScoreDisplay();
+    return true;
+  }
+  return false;
+}
+
+    // データ完全初期化処理
+    function resetGameData() {
+      state.round = 1;
+      state.stage = 1;
+      state.scores = { 1: 0, 2: 0 };
+      state.hands = { 1: [], 2: [] };
+      state.crafts = { 1: [], 2: [] };
+      state.created = { 1: [], 2: [] };
+      state.ready = { 1: false, 2: false };
+      state.usedRecipeIds.clear();
+      state.boxPool = [];
+      state.draftPicksCount = 0;
+      prevScores = { 1: 0, 2: 0 };
+    }
+
+    // --- ホーム画面操作 ---
+    function switchHomeTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    function startGame(mode = 'vs') {
+      resetGameData();
+      state.gameMode = mode;
+
+      const board = document.getElementById('game-board');
+      const panelP2 = document.getElementById('panel-p2');
+      const scoreP2Box = document.getElementById('score-p2-box');
+
+      if (mode === 'scoreAttack') {
+        state.stage = 1;
+        state.difficulty = 'hard';
+        board.classList.add('single-player');
+        panelP2.style.display = 'none';
+        scoreP2Box.style.display = 'none';
+        document.getElementById('panel-p1-title').innerText = "Player 1 (挑戦者)";
+        document.getElementById('mode-display').innerText = "STAGE 1 / 10 (イオン限定)";
+      } else {
+        state.maxRounds = 3;
+        board.classList.remove('single-player');
+        panelP2.style.display = 'flex';
+        scoreP2Box.style.display = 'block';
+        document.getElementById('panel-p1-title').innerText = onlineRole ? `Player 1${myPlayerNum === 1 ? ' (あなた)' : ''}` : "Player 1";
+        const p2TitleEl = document.getElementById('panel-p2-title');
+        if (p2TitleEl) p2TitleEl.innerText = onlineRole ? `Player 2${myPlayerNum === 2 ? ' (あなた)' : ''}` : "Player 2";
+        document.getElementById('mode-display').innerText = `モード: ${state.difficulty === 'easy' ? 'かんたん (原子のみ)' : 'むずかしい (イオンのみ)'}`;
+      }
+
+      document.getElementById('home-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'flex';
+      document.getElementById('global-home-btn').classList.add('show');
+      if (onlineRole) updateOnlineConnBadge('connected');
+
+      startRound();
+    }
+
+    // ホーム復帰前の確認ダイアログ（常時表示のフローティングボタンから呼ばれる）
+    // window.confirm() は埋め込み・サンドボックス環境でブロック／自動キャンセルされることがあるため、
+    // 独自スタイルの確認モーダルを使用する。
+    function confirmReturnToHome() {
+      openModal('confirm-modal');
+    }
+
+    function returnToHome() {
+      // 開いている可能性のあるモーダル／3Dアニメーションを確実に停止・クローズしてから遷移する
+      closeModal('box-modal');
+      closeModal('result-modal');
+      closeModal('confirm-modal');
+      close3DModal();
+      document.getElementById('draft-hand-panel').style.display = 'none';
+
+      teardownOnlineConnection();
+      resetOnlineLobbyUI();
+
+      resetGameData();
+      document.getElementById('game-screen').style.display = 'none';
+      document.getElementById('home-screen').style.display = 'flex';
+      document.getElementById('global-home-btn').classList.remove('show');
+      updateHighScoreDisplay();
+    }
+
+    // --- レシピ判定関数 ---
+    function isRecipeEasy(recipe) {
+      return Object.keys(recipe.req).every(k => {
+        const def = MODEL_DEFINITIONS.find(m => m.key === k);
+        return def && def.type === 'atom';
+      });
+    }
+
+    function isRecipeIonOnly(recipe) {
+      return Object.keys(recipe.req).every(k => {
+        const def = MODEL_DEFINITIONS.find(m => m.key === k);
+        return def && (def.type === 'ion' || def.type === 'poly');
+      });
+    }
+
+    function renderRecipeList(filter) {
+      const container = document.getElementById('recipe-list-container');
+      container.innerHTML = '';
+
+      const filteredRecipes = RECIPES.filter(r => {
+        if (filter === 'easy') return isRecipeEasy(r);
+        if (filter === 'hard') return isRecipeIonOnly(r);
+        return true;
+      });
+
+      filteredRecipes.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'recipe-card';
+        
+        let reqsHTML = '';
+        Object.keys(r.req).forEach(k => {
+          const count = r.req[k];
+          const def = MODEL_DEFINITIONS.find(m => m.key === k) || { name: k, color: '#7f8c8d' };
+          reqsHTML += `<span class="req-badge" style="background:${def.color}">${def.name} × ${count}</span>`;
+        });
+
+        const isIon = isRecipeIonOnly(r);
+        const tagText = isIon ? '[むずかしい/イオン]' : (isRecipeEasy(r) ? '[かんたん/原子]' : '[複合]');
+
+        card.innerHTML = `
+          <div>
+            <div class="recipe-card-header">
+              <span class="recipe-name">${r.name} (${r.formula})</span>
+              <span class="recipe-score">+${r.score}pt</span>
+            </div>
+            <div style="font-size:0.8rem; color:#7f8c8d; margin-top:3px;">区分: ${tagText}</div>
+          </div>
+          <div class="recipe-reqs">${reqsHTML}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterRecipeList(filter) {
+      renderRecipeList(filter);
+    }
+
+    // 重み付きランダム選出
+    function getRandomWeightedModel(availableModels) {
+      if (!availableModels || availableModels.length === 0) return null;
+      
+      const weights = availableModels.map(m => {
+        if (m.key === 'H+' || m.key === 'O2-' || m.key === 'Cl-' || m.key === 'Na+') return 1.3;
+        return 1.0;
+      });
+
+      const totalWeight = weights.reduce((a, b) => a + b, 0);
+      let rand = Math.random() * totalWeight;
+
+      for (let i = 0; i < availableModels.length; i++) {
+        if (rand < weights[i]) return availableModels[i];
+        rand -= weights[i];
+      }
+      return availableModels[0];
+    }
+
+    // --- ゲーム進行ロジック ---
+    function startRound() {
+      state.phase = 'DRAFT';
+      state.hands = { 1: [], 2: [] };
+      state.crafts = { 1: [], 2: [] };
+      state.created = { 1: [], 2: [] };
+      state.draftPicksCount = 0;
+      state.maxDraftPicks = (state.gameMode === 'scoreAttack') ? 12 : 24;
+      state.turnPlayer = (state.round % 2 === 1) ? 1 : 2;
+
+      resetReadyButtons();
+      // オンライン対戦のゲスト側は箱の中身を自分で生成せず、必ずホストからの同期を待つ
+      // （双方が別々にランダム生成すると内容がずれてしまうため）
+      if (onlineRole !== 'guest') {
+        generateBoxPool();
+      }
+      updateUI();
+      openBoxModal();
+      if (onlineRole === 'host') broadcastState();
+    }
+
+    function resetReadyButtons() {
+      [1, 2].forEach(p => {
+        state.ready[p] = false;
+        const btn = document.getElementById(`ready-p${p}-btn`);
+        if (btn) {
+          btn.innerText = (state.gameMode === 'scoreAttack') ? "スコア確定" : "Battle";
+          btn.className = "btn btn-battle";
+          btn.disabled = true;
+        }
+      });
+    }
+
+    function generateBoxPool() {
+      state.boxPool = [];
+      const pool = [];
+
+      const isIonMode = (state.gameMode === 'scoreAttack' || state.difficulty === 'hard');
+
+      const availableModels = MODEL_DEFINITIONS.filter(m => {
+        if (isIonMode) {
+          return m.type === 'ion' || m.type === 'poly';
+        } else {
+          return m.type === 'atom';
+        }
+      });
+
+      const availableRecipes = RECIPES.filter(r => {
+        if (state.usedRecipeIds.has(r.id)) return false;
+        return isIonMode ? isRecipeIonOnly(r) : isRecipeEasy(r);
+      });
+
+      const shuffledRecipes = [...availableRecipes].sort(() => 0.5 - Math.random());
+      const selectCount = (state.gameMode === 'scoreAttack') ? 6 : 8;
+      const selectedRecipes = shuffledRecipes.slice(0, selectCount);
+
+      selectedRecipes.forEach(r => {
+        Object.keys(r.req).forEach(key => {
+          const count = r.req[key];
+          const def = availableModels.find(m => m.key === key);
+          if (def) {
+            for (let c = 0; c < count; c++) {
+              pool.push({ ...def });
+            }
+          }
+        });
+      });
+
+      const targetPoolSize = (state.gameMode === 'scoreAttack') ? 38 : 52;
+
+      while (pool.length < targetPoolSize && availableModels.length > 0) {
+        const randDef = getRandomWeightedModel(availableModels);
+        if (randDef) pool.push({ ...randDef });
+      }
+
+      state.boxPool = pool.sort(() => 0.5 - Math.random()).map((item, idx) => ({
+        ...item,
+        instanceId: `mod_${idx}_${Math.random().toString(36).substr(2, 7)}`
+      }));
+    }
+
+    function openBoxModal() {
+      const grid = document.getElementById('box-grid');
+      grid.innerHTML = '';
+
+      state.boxPool.forEach(model => {
+        const chip = createModelChipElem(model);
+        chip.onclick = (e) => handleBoxSelect(model, e.currentTarget);
+        grid.appendChild(chip);
+      });
+
+      const subText = document.getElementById('draft-subtext');
+      const btnHand = document.getElementById('draft-hand-btn');
+      const boxP2 = document.getElementById('draft-box-p2');
+
+      if (state.gameMode === 'scoreAttack') {
+        const border = STAGE_BORDERS[state.stage - 1];
+        subText.innerText = `STAGE ${state.stage} / 10：サプライ箱(イオンのみ)から12個選択してください (目標ボーダー: ${border}pt)`;
+        btnHand.style.display = 'none';
+        boxP2.style.display = 'none';
+        document.getElementById('draft-title-p1').innerText = "獲得済みモデル";
+      } else {
+        const modeNotice = state.difficulty === 'hard' ? "（イオンのみ出現中）" : "（原子のみ出現中）";
+        subText.innerText = `交互に1つずつ選択して手元に12個集めましょう ${modeNotice}`;
+        btnHand.style.display = 'block';
+        boxP2.style.display = 'flex';
+        document.getElementById('draft-title-p1').innerText = "Player 1 獲得済み";
+      }
+
+      openModal('box-modal');
+      updateDraftHeader();
+      updateDraftHandView();
+    }
+
+    function toggleDraftHandPanel() {
+      const panel = document.getElementById('draft-hand-panel');
+      panel.style.display = (panel.style.display === 'none') ? 'flex' : 'none';
+      updateDraftHandView();
+    }
+
+    function updateDraftHandView() {
+      [1, 2].forEach(p => {
+        const container = document.getElementById(`draft-hand-p${p}`);
+        const countSpan = document.getElementById(`draft-count-p${p}`);
+        if (countSpan) countSpan.innerText = state.hands[p].length;
+        if (container) {
+          container.innerHTML = '';
+          state.hands[p].forEach(m => {
+            const chip = createModelChipElem(m);
+            chip.style.transform = 'scale(0.85)';
+            container.appendChild(chip);
+          });
+        }
+      });
+    }
+
+    function updateDraftHeader() {
+      const badge = document.getElementById('draft-turn-badge');
+      if (state.gameMode === 'scoreAttack') {
+        badge.innerText = `残り選択可能: ${12 - state.hands[1].length} 個`;
+        badge.style.background = '#f39c12';
+      } else {
+        const p = state.turnPlayer;
+        badge.innerText = `Player ${p} のターン`;
+        badge.style.background = p === 1 ? 'var(--p1-color)' : 'var(--p2-color)';
+      }
+    }
+
+    function handleBoxSelect(model, sourceElem, fromNetwork) {
+      if (state.phase !== 'DRAFT') return;
+
+      const p = (state.gameMode === 'scoreAttack') ? 1 : state.turnPlayer;
+
+      if (onlineRole && !fromNetwork) {
+        if (p !== myPlayerNum) return; // 自分の番でなければ無視
+        if (onlineRole === 'guest') {
+          sendNet({ type: 'intent', action: 'handleBoxSelect', payload: { instanceId: model.instanceId } });
+          return;
+        }
+      }
+
+      if (state.hands[p].length >= 12) {
+        alert(`Player ${p} の手持ちモデルは上限の12個に達しています。`);
+        return;
+      }
+
+      sourceElem.style.pointerEvents = 'none';
+      sourceElem.style.opacity = '0.3';
+
+      const targetContainer = document.getElementById(`hand-p${p}`);
+
+      animateMove(sourceElem, targetContainer, () => {
+        state.boxPool = state.boxPool.filter(m => m.instanceId !== model.instanceId);
+        state.hands[p].push(model);
+        state.draftPicksCount++;
+
+        sourceElem.remove();
+        updatePlayerArea(p);
+        updateDraftHandView();
+
+        if (state.gameMode === 'vs') {
+          state.turnPlayer = state.turnPlayer === 1 ? 2 : 1;
+        }
+
+        updateDraftHeader();
+        updateStatusBar();
+
+        if (state.draftPicksCount >= state.maxDraftPicks || state.boxPool.length === 0) {
+          setTimeout(() => {
+            closeModal('box-modal');
+            document.getElementById('draft-hand-panel').style.display = 'none';
+            state.phase = 'BUILD';
+            updateUI();
+            if (onlineRole === 'host') broadcastState();
+          }, 200);
+        }
+
+        if (onlineRole === 'host') broadcastState();
+      });
+    }
+
+    function animateMove(srcElem, targetElem, onComplete) {
+      const srcRect = srcElem.getBoundingClientRect();
+      const tgtRect = targetElem.getBoundingClientRect();
+
+      const clone = srcElem.cloneNode(true);
+      clone.classList.add('flying-chip');
+      clone.style.left = srcRect.left + 'px';
+      clone.style.top = srcRect.top + 'px';
+      clone.style.width = srcRect.width + 'px';
+      clone.style.height = srcRect.height + 'px';
+      document.body.appendChild(clone);
+
+      clone.getBoundingClientRect();
+
+      clone.style.left = (tgtRect.left + 15) + 'px';
+      clone.style.top = (tgtRect.top + 15) + 'px';
+      clone.style.transform = 'scale(0.8)';
+      clone.style.opacity = '0.8';
+
+      setTimeout(() => {
+        clone.remove();
+        if (onComplete) onComplete();
+      }, 400);
+    }
+
+    function moveToCraft(player, instanceId, fromNetwork) {
+      if (!requestAction(player, 'moveToCraft', { instanceId }, fromNetwork)) return;
+      if (state.phase !== 'BUILD' || state.ready[player]) return;
+      const idx = state.hands[player].findIndex(m => m.instanceId === instanceId);
+      if (idx !== -1) {
+        const [model] = state.hands[player].splice(idx, 1);
+        state.crafts[player].push(model);
+        updatePlayerArea(player);
+      }
+      if (onlineRole === 'host') broadcastState();
+    }
+
+    function moveToHand(player, instanceId, fromNetwork) {
+      if (!requestAction(player, 'moveToHand', { instanceId }, fromNetwork)) return;
+      if (state.phase !== 'BUILD' || state.ready[player]) return;
+      const idx = state.crafts[player].findIndex(m => m.instanceId === instanceId);
+      if (idx !== -1) {
+        const [model] = state.crafts[player].splice(idx, 1);
+        state.hands[player].push(model);
+        updatePlayerArea(player);
+      }
+      if (onlineRole === 'host') broadcastState();
+    }
+
+    function craftChemical(player, fromNetwork) {
+      if (!requestAction(player, 'craftChemical', {}, fromNetwork)) return;
+
+      const recipe = checkRecipeMatch(state.crafts[player]);
+      if (!recipe) return;
+
+      if (state.usedRecipeIds.has(recipe.id)) {
+        alert("[重複制限] この化学種はすでに取り出されているか作成されています！");
+        return;
+      }
+
+      const craftBtn = document.getElementById(`craft-p${player}-btn`);
+      if (craftBtn) {
+        const r = craftBtn.getBoundingClientRect();
+        playScoreFxAt(r.left + r.width / 2, r.top, `+${recipe.score}pt!`);
+      }
+      playScreenFlash();
+
+      state.created[player].push(recipe);
+      state.crafts[player] = [];
+      updatePlayerArea(player);
+
+      open3DModal(recipe);
+      if (onlineRole === 'host') {
+        sendNet({ type: 'show3D', recipeId: recipe.id }); // 相手の画面にも同じ3Dモデルを表示する
+        broadcastState();
+      }
+    }
+
+    function checkRecipeMatch(models) {
+      if (models.length === 0) return null;
+
+      const counts = {};
+      models.forEach(m => {
+        counts[m.key] = (counts[m.key] || 0) + 1;
+      });
+
+      for (const recipe of RECIPES) {
+        const reqKeys = Object.keys(recipe.req);
+        const countKeys = Object.keys(counts);
+
+        if (reqKeys.length === countKeys.length &&
+            reqKeys.every(k => recipe.req[k] === counts[k])) {
+          return recipe;
+        }
+      }
+      return null;
+    }
+
+    function toggleReady(player, fromNetwork) {
+      if (!requestAction(player, 'toggleReady', {}, fromNetwork)) return;
+      if (state.phase !== 'BUILD') return;
+
+      if (state.gameMode === 'scoreAttack') {
+        showRoundResultModal();
+        return;
+      }
+
+      state.ready[player] = !state.ready[player];
+      const btn = document.getElementById(`ready-p${player}-btn`);
+      btn.innerText = state.ready[player] ? "Battle解除" : "Battle";
+      btn.className = state.ready[player] ? "btn btn-battle ready" : "btn btn-battle";
+
+      if (state.ready[1] && state.ready[2]) {
+        showRoundResultModal();
+      } else if (onlineRole === 'host') {
+        broadcastState();
+      }
+    }
+
+    function showRoundResultModal(fromNetwork) {
+      // スコア加算は「初めてこのラウンドを集計するとき」だけ行う。
+      // オンライン対戦のゲスト側は、ホストから届いた状態を表示に反映するためだけに
+      // この関数を呼ぶので、その場合は二重加算しないようスキップする。
+      if (!(onlineRole === 'guest' && fromNetwork)) {
+        state.phase = 'SUMMARY';
+
+        let p1RoundPts = 0, p2RoundPts = 0;
+        state.created[1].forEach(r => { p1RoundPts += r.score; state.usedRecipeIds.add(r.id); });
+        if (state.gameMode === 'vs') {
+          state.created[2].forEach(r => { p2RoundPts += r.score; state.usedRecipeIds.add(r.id); });
+        }
+
+        state.scores[1] += p1RoundPts;
+        state.scores[2] += p2RoundPts;
+        state.lastRoundPts = { 1: p1RoundPts, 2: p2RoundPts };
+      }
+
+      const p1RoundPts = state.lastRoundPts ? state.lastRoundPts[1] : 0;
+      const p2RoundPts = state.lastRoundPts ? state.lastRoundPts[2] : 0;
+
+      updateUI();
+
+      const banner = document.getElementById('result-banner');
+      const subTitle = document.getElementById('round-result-sub');
+      const scoreP1 = document.getElementById('res-score-p1');
+      const scoreP2 = document.getElementById('res-score-p2');
+      const totalP1 = document.getElementById('res-total-p1');
+      const statusP1 = document.getElementById('res-status-p1');
+      const resBoxP2 = document.getElementById('res-box-p2');
+      const resDivider = document.getElementById('res-divider');
+      const nextBtn = document.getElementById('next-round-btn');
+
+      if (state.gameMode === 'scoreAttack') {
+        resBoxP2.style.display = 'none';
+        resDivider.style.display = 'none';
+
+        const border = STAGE_BORDERS[state.stage - 1];
+        const cleared = (p1RoundPts >= border);
+
+        document.getElementById('res-title-p1').innerText = `STAGE ${state.stage} 得点`;
+        scoreP1.innerText = `+${p1RoundPts} pt`;
+        totalP1.innerText = `目標: ${border}pt | 累計: ${state.scores[1]}pt`;
+
+        if (cleared) {
+          if (state.stage < state.maxStages) {
+            banner.innerText = `STAGE ${state.stage} CLEAR!`;
+            banner.className = "result-banner banner-score";
+            subTitle.innerText = `目標ボーダー (${border}pt) をクリア！`;
+            statusP1.innerText = "STAGE CLEAR";
+            statusP1.className = "p-status status-win";
+
+            nextBtn.innerText = `次のステージへ (Stage ${state.stage + 1})`;
+            nextBtn.onclick = () => proceedNextStage();
+          } else {
+            const isNewRecord = checkAndSaveHighScore(state.scores[1]);
+            banner.innerText = "ALL STAGES CLEARED!";
+            banner.className = "result-banner banner-score";
+            subTitle.innerText = "全10ステージ見事完全制覇！";
+            statusP1.innerText = isNewRecord ? "新記録達成！" : "完全クリア";
+            statusP1.className = "p-status status-win";
+
+            nextBtn.innerText = "ホームに戻る";
+            nextBtn.onclick = () => returnToHome();
+          }
+        } else {
+          const isNewRecord = checkAndSaveHighScore(state.scores[1]);
+          banner.innerText = "STAGE FAILED";
+          banner.className = "result-banner banner-draw";
+          subTitle.innerText = `目標ボーダー (${border}pt) に届きませんでした...`;
+          statusP1.innerText = "GAME OVER";
+          statusP1.className = "p-status status-lose";
+
+          nextBtn.innerText = "ホームに戻る";
+          nextBtn.onclick = () => returnToHome();
+        }
+      } else {
+        resBoxP2.style.display = 'block';
+        resDivider.style.display = 'block';
+        document.getElementById('res-title-p1').innerText = "Player 1";
+
+        scoreP1.innerText = `+${p1RoundPts} pt`;
+        scoreP2.innerText = `+${p2RoundPts} pt`;
+        totalP1.innerText = `総得点: ${state.scores[1]} pt`;
+        document.getElementById('res-total-p2').innerText = `総得点: ${state.scores[2]} pt`;
+
+        const isFinal = (state.round >= state.maxRounds);
+        const p1Compare = isFinal ? state.scores[1] : p1RoundPts;
+        const p2Compare = isFinal ? state.scores[2] : p2RoundPts;
+        const statusP2 = document.getElementById('res-status-p2');
+
+        if (p1Compare > p2Compare) {
+          banner.innerText = isFinal ? "FINAL WINNER: PLAYER 1!" : "ROUND WINNER: PLAYER 1!";
+          banner.className = "result-banner banner-p1";
+          statusP1.innerText = "WINNER"; statusP1.className = "p-status status-win";
+          statusP2.innerText = "LOSER"; statusP2.className = "p-status status-lose";
+        } else if (p2Compare > p1Compare) {
+          banner.innerText = isFinal ? "FINAL WINNER: PLAYER 2!" : "ROUND WINNER: PLAYER 2!";
+          banner.className = "result-banner banner-p2";
+          statusP1.innerText = "LOSER"; statusP1.className = "p-status status-lose";
+          statusP2.innerText = "WINNER"; statusP2.className = "p-status status-win";
+        } else {
+          banner.innerText = isFinal ? "FINAL GAME DRAW" : "ROUND DRAW";
+          banner.className = "result-banner banner-draw";
+          statusP1.innerText = "DRAW"; statusP1.className = "p-status";
+          statusP2.innerText = "DRAW"; statusP2.className = "p-status";
+        }
+
+        if (isFinal) {
+          subTitle.innerText = "全3ラウンド終了！【最終結果発表】";
+          nextBtn.innerText = "ホームに戻る";
+          nextBtn.onclick = () => returnToHome();
+        } else {
+          subTitle.innerText = `ラウンド ${state.round} 結果`;
+          nextBtn.innerText = "次へ進む";
+          nextBtn.onclick = () => proceedNextRound();
+        }
+      }
+
+      openModal('result-modal');
+      if (onlineRole === 'host' && !fromNetwork) broadcastState();
+    }
+
+    function proceedNextRound(fromNetwork) {
+      if (onlineRole === 'guest' && !fromNetwork) {
+        sendNet({ type: 'intent', action: 'proceedNextRound', player: myPlayerNum, payload: {} });
+        return;
+      }
+      closeModal('result-modal');
+      state.round++;
+      startRound();
+    }
+
+    function proceedNextStage(fromNetwork) {
+      if (onlineRole === 'guest' && !fromNetwork) {
+        sendNet({ type: 'intent', action: 'proceedNextStage', player: myPlayerNum, payload: {} });
+        return;
+      }
+      closeModal('result-modal');
+      state.stage++;
+      startRound();
+    }
+
+    // --- UI状態更新処理 ---
+    function updatePlayerArea(p) {
+      const handContainer = document.getElementById(`hand-p${p}`);
+      const countSpan = document.getElementById(`count-p${p}`);
+      if (handContainer) {
+        handContainer.innerHTML = '';
+        if (countSpan) countSpan.innerText = state.hands[p].length;
+
+        state.hands[p].forEach(m => {
+          const chip = createModelChipElem(m);
+          chip.onclick = () => moveToCraft(p, m.instanceId);
+          handContainer.appendChild(chip);
+        });
+      }
+
+      const craftContainer = document.getElementById(`craft-p${p}`);
+      const craftPreview = document.getElementById(`craft-preview-p${p}`);
+      const craftBtn = document.getElementById(`craft-p${p}-btn`);
+      if (craftContainer) {
+        craftContainer.innerHTML = '';
+
+        state.crafts[p].forEach(m => {
+          const chip = createModelChipElem(m);
+          chip.onclick = () => moveToHand(p, m.instanceId);
+          craftContainer.appendChild(chip);
+        });
+
+        const recipe = checkRecipeMatch(state.crafts[p]);
+        if (recipe) {
+          const isUsed = state.usedRecipeIds.has(recipe.id);
+          if (isUsed) {
+            craftPreview.innerText = `${recipe.name} (作成済み不可)`;
+            craftPreview.style.color = '#ff6b6b';
+            craftBtn.disabled = true;
+          } else {
+            craftPreview.innerText = `合成可能: ${recipe.name} (+${recipe.score}pt)`;
+            craftPreview.style.color = '#4ade80';
+            craftBtn.disabled = false;
+          }
+        } else {
+          craftPreview.innerText = state.crafts[p].length > 0 ? '該当する合成レシピなし' : '-';
+          craftPreview.style.color = 'var(--text-muted)';
+          craftBtn.disabled = true;
+        }
+      }
+
+      const createdContainer = document.getElementById(`created-p${p}`);
+      if (createdContainer) {
+        createdContainer.innerHTML = '';
+        state.created[p].forEach(r => {
+          const item = document.createElement('div');
+          item.className = 'created-item';
+          item.innerHTML = `
+            <span>${r.name} (${r.formula})</span>
+            <div>
+              <span class="pts">+${r.score}pt</span>
+              <button class="btn btn-3d" style="margin-left:6px;" onclick="open3DModalById('${r.id}')">3D</button>
+            </div>
+          `;
+          createdContainer.appendChild(item);
+        });
+      }
+
+      const readyBtn = document.getElementById(`ready-p${p}-btn`);
+      if (readyBtn && state.phase === 'BUILD') {
+        readyBtn.disabled = false;
+      }
+    }
+
+    function open3DModalById(recipeId) {
+      const recipe = RECIPES.find(r => r.id === recipeId);
+      if (recipe) open3DModal(recipe);
+    }
+
+    function updateUI() {
+      [1, 2].forEach(p => {
+        const el = document.getElementById(`score-p${p}`);
+        if (!el) return;
+        el.innerText = state.scores[p];
+        if (state.scores[p] !== prevScores[p]) {
+          el.classList.remove('score-bump');
+          void el.offsetWidth; // reflow force to restart animation
+          el.classList.add('score-bump');
+          prevScores[p] = state.scores[p];
+        }
+      });
+
+      if (state.gameMode === 'scoreAttack') {
+        const border = STAGE_BORDERS[state.stage - 1];
+        document.getElementById('round-display').innerText = `STAGE ${state.stage} / 10`;
+        document.getElementById('mode-display').innerText = `目標: ${border}pt`;
+      } else {
+        document.getElementById('round-display').innerText = `ROUND ${state.round} / ${state.maxRounds}`;
+        document.getElementById('mode-display').innerText = `モード: ${state.difficulty === 'easy' ? 'かんたん' : 'むずかしい'}`;
+      }
+
+      const usedList = document.getElementById('used-recipes-list');
+      if (usedList) {
+        usedList.innerHTML = '';
+        if (state.usedRecipeIds.size === 0) {
+          usedList.innerText = 'なし';
+        } else {
+          state.usedRecipeIds.forEach(id => {
+            const r = RECIPES.find(item => item.id === id);
+            if (r) {
+              const tag = document.createElement('span');
+              tag.className = 'used-tag';
+              tag.innerText = `${r.name} (${r.formula})`;
+              usedList.appendChild(tag);
+            }
+          });
+        }
+      }
+
+      updatePlayerArea(1);
+      if (state.gameMode === 'vs') updatePlayerArea(2);
+      updateStatusBar();
+    }
+
+    function updateStatusBar() {
+      const bar = document.getElementById('status-bar');
+      if (!bar) return;
+
+      if (state.phase === 'DRAFT') {
+        if (state.gameMode === 'scoreAttack') {
+          bar.className = 'status-bar p1-turn';
+          bar.innerText = `STAGE ${state.stage}: サプライ箱からイオンモデルを12個選んでください`;
+        } else {
+          bar.className = `status-bar p${state.turnPlayer}-turn`;
+          bar.innerText = `Player ${state.turnPlayer} のターン: サプライ箱からモデルを選択してください`;
+        }
+      } else if (state.phase === 'BUILD') {
+        bar.className = 'status-bar';
+        if (state.gameMode === 'scoreAttack') {
+          bar.innerText = '合成フェーズ: 手元のイオンを合成して目標スコア突破を目指そう！';
+        } else {
+          bar.innerText = '合成フェーズ: 手持ちのモデルを組み合わせて合成してください (両者完了で対戦)';
+        }
+      } else if (state.phase === 'SUMMARY') {
+        bar.className = 'status-bar';
+        bar.innerText = 'ラウンド終了結果発表';
+      }
+    }
+
+    // --- 3D描画モーダル制御 ---
+    //
+    // 【バグ修正メモ】旧実装は open3DModal のたびに new THREE.WebGLRenderer(...) を
+    // 生成し、古いレンダラーを一度も dispose() していなかった。ブラウザが同時に
+    // 保持できる WebGL コンテキスト数には上限があるため（多くの環境で十数個程度）、
+    // 1ゲーム中に何度も合成を行う（＝何度も3Dモーダルを開く）とすぐ上限に達し、
+    // それ以降は新しいコンテキストの確保に失敗して3Dモデルが「表示されない」状態に
+    // なっていた。対策として、レンダラー／シーン／カメラはページ内で1つだけ生成して
+    // 使い回し、分子ごとに molGroup3d の中身だけを差し替える方式に変更した。
+    let three3dReady = false;
+
+    function ensure3DRenderer() {
+      if (three3dReady) return true;
+      if (typeof THREE === 'undefined') return false;
+
+      const container = document.getElementById('canvas-container-3d');
+      const width = container.clientWidth || 500;
+      const height = container.clientHeight || 320;
+
+      scene3d = new THREE.Scene();
+      scene3d.background = new THREE.Color(0x1e272e);
+
+      camera3d = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera3d.position.set(0, 0, 6);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene3d.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+      dirLight.position.set(5, 10, 7);
+      scene3d.add(dirLight);
+
+      const rimLight = new THREE.DirectionalLight(0x5adeff, 0.35);
+      rimLight.position.set(-6, -4, -5);
+      scene3d.add(rimLight);
+
+      renderer3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer3d.setSize(width, height);
+      container.innerHTML = '';
+      container.appendChild(renderer3d.domElement);
+
+      molGroup3d = new THREE.Group();
+      scene3d.add(molGroup3d);
+
+      three3dReady = true;
+      return true;
+    }
+
+    // molGroup3d の中身（前回表示した分子のジオメトリ／マテリアル）を破棄してクリア
+    // --- 3D原子ビジュアル（ビリヤードボール風テクスチャ）のキャッシュ ---
+    // 同じ元素・イオンは常に同じジオメトリ／マテリアルを使い回すことで、
+    // モーダルを開閉するたびにテクスチャを再生成しない（負荷軽減）。
+    // ジオメトリ／マテリアルは使い回すため、clearMolGroup3d() では破棄しない。
+    const atomVisualCache = new Map();
+    let bondMaterialCache = null;
+
+    function createBilliardTexture(hexColor, label) {
+      const size = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // 単色の下地（ビリヤードボール本体の色）
+      ctx.fillStyle = hexColor;
+      ctx.fillRect(0, 0, size, size);
+
+      // 光沢ハイライト（球体の照り返しを模したグラデーション）
+      const gloss = ctx.createRadialGradient(size * 0.35, size * 0.32, size * 0.02, size * 0.35, size * 0.32, size * 0.65);
+      gloss.addColorStop(0, 'rgba(255,255,255,0.55)');
+      gloss.addColorStop(0.45, 'rgba(255,255,255,0.10)');
+      gloss.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = gloss;
+      ctx.fillRect(0, 0, size, size);
+
+      // 元素記号を乗せる白丸（ビリヤードボールの番号帯をイメージ）
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size * 0.33, 0, Math.PI * 2);
+      ctx.fillStyle = '#f7f7f5';
+      ctx.fill();
+      ctx.lineWidth = size * 0.008;
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+      ctx.stroke();
+
+      // 元素記号テキスト
+      ctx.fillStyle = '#1a1a1a';
+      const fontSize = Math.floor(size * (label.length > 2 ? 0.19 : 0.24));
+      ctx.font = `900 ${fontSize}px 'Arial', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, size / 2, size / 2 + size * 0.01);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    function getAtomVisual(def) {
+      const cacheKey = def.key || `${def.color}_${def.symbol}`;
+      if (atomVisualCache.has(cacheKey)) return atomVisualCache.get(cacheKey);
+
+      const geometry = new THREE.SphereGeometry((def.radius || 0.5) * 0.85, 32, 32);
+      geometry.__shared = true; // clearMolGroup3d() で破棄しない目印
+      const material = new THREE.MeshPhongMaterial({
+        map: createBilliardTexture(def.color || '#3498db', def.symbol || def.key || '?'),
+        shininess: 140,
+        specular: 0x777777
+      });
+      const visual = { geometry, material };
+      atomVisualCache.set(cacheKey, visual);
+      return visual;
+    }
+
+    function getBondMaterial() {
+      if (!bondMaterialCache) {
+        bondMaterialCache = new THREE.MeshPhongMaterial({ color: 0xcfcfcf, shininess: 80 });
+      }
+      return bondMaterialCache;
+    }
+
+    function clearMolGroup3d() {
+      if (!molGroup3d) return;
+      while (molGroup3d.children.length > 0) {
+        const obj = molGroup3d.children.pop();
+        // 原子の球ジオメトリ・マテリアルはキャッシュを再利用するため、
+        // 結合の円柱ジオメトリ（長さが可変で使い回せない）のみ破棄する。
+        if (obj.geometry && !obj.geometry.__shared) {
+          obj.geometry.dispose();
+        }
+      }
+      molGroup3d.rotation.set(0, 0, 0);
+    }
+
+    function buildMolecule3d(recipe) {
+      if (recipe.layout3d) {
+        recipe.layout3d.atoms.forEach(atomData => {
+          const def = MODEL_DEFINITIONS.find(m => m.key === atomData.elem) || { color: '#ffffff', radius: 0.5, symbol: '?' };
+          const visual = getAtomVisual(def);
+          const mesh = new THREE.Mesh(visual.geometry, visual.material);
+          mesh.position.set(...atomData.pos);
+          molGroup3d.add(mesh);
+        });
+
+        if (recipe.layout3d.bonds) {
+          recipe.layout3d.bonds.forEach(bond => {
+            const p1 = new THREE.Vector3(...recipe.layout3d.atoms[bond[0]].pos);
+            const p2 = new THREE.Vector3(...recipe.layout3d.atoms[bond[1]].pos);
+            const dir = new THREE.Vector3().subVectors(p2, p1);
+            const len = dir.length() || 0.001;
+
+            const cylGeom = new THREE.CylinderGeometry(0.08, 0.08, len, 16);
+            const cyl = new THREE.Mesh(cylGeom, getBondMaterial());
+
+            cyl.position.copy(p1).add(p2).multiplyScalar(0.5);
+            cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+            molGroup3d.add(cyl);
+          });
+        }
+      } else {
+        let i = 0;
+        const total = Object.values(recipe.req).reduce((a, b) => a + b, 0);
+        Object.keys(recipe.req).forEach(key => {
+          const count = recipe.req[key];
+          const def = MODEL_DEFINITIONS.find(m => m.key === key) || { color: '#3498db', radius: 0.5, symbol: key };
+
+          for (let c = 0; c < count; c++) {
+            const visual = getAtomVisual(def);
+            const mesh = new THREE.Mesh(visual.geometry, visual.material);
+
+            const angle = (i / total) * Math.PI * 2;
+            const r = total === 1 ? 0 : 1.2;
+            mesh.position.set(Math.cos(angle) * r, Math.sin(angle) * r, 0);
+            molGroup3d.add(mesh);
+            i++;
+          }
+        });
+      }
+    }
+
+    function animate3d() {
+      animFrameId3d = requestAnimationFrame(animate3d);
+      if (molGroup3d) {
+        molGroup3d.rotation.y += 0.012;
+        molGroup3d.rotation.x += 0.005;
+      }
+      if (renderer3d && scene3d && camera3d) {
+        renderer3d.render(scene3d, camera3d);
+      }
+    }
+
+    function init3DScene(recipe) {
+      const container = document.getElementById('canvas-container-3d');
+
+      if (!ensure3DRenderer()) {
+        // THREE.js の読み込み自体に失敗した場合（CDNブロック等）はエラー表示に留める
+        container.innerHTML = '<div class="three-error">3D描画ライブラリの読み込みに失敗しました。<br>ネットワーク接続を確認してページを再読み込みしてください。</div>';
+        return;
+      }
+
+      // モーダル表示直後でもコンテナサイズを正しく取得し、リサイズにも追従させる
+      const width = container.clientWidth || 500;
+      const height = container.clientHeight || 320;
+      renderer3d.setSize(width, height);
+      camera3d.aspect = width / height;
+      camera3d.updateProjectionMatrix();
+
+      clearMolGroup3d();
+      buildMolecule3d(recipe);
+
+      if (!animFrameId3d) animate3d();
+    }
+
+    function open3DModal(recipe) {
+      document.getElementById('title-3d').innerText = `${recipe.name} (${recipe.formula})`;
+      document.getElementById('desc-3d').innerText = `獲得スコア: +${recipe.score}pt`;
+      openModal('modal-3d');
+
+      init3DScene(recipe);
+    }
+
+    function close3DModal() {
+      closeModal('modal-3d');
+      if (animFrameId3d) {
+        cancelAnimationFrame(animFrameId3d);
+        animFrameId3d = null;
+      }
+    }
+
+    // モーダル表示中にウィンドウサイズが変わった場合もアスペクト比を追従させる
+    window.addEventListener('resize', () => {
+      if (!renderer3d || !camera3d) return;
+      const modal = document.getElementById('modal-3d');
+      if (!modal || !modal.classList.contains('open')) return;
+      const container = document.getElementById('canvas-container-3d');
+      const width = container.clientWidth || 500;
+      const height = container.clientHeight || 320;
+      renderer3d.setSize(width, height);
+      camera3d.aspect = width / height;
+      camera3d.updateProjectionMatrix();
+    });
+
+    // PWA: Service Workerを登録（file://での直接閲覧時やサポート外環境ではスキップ）
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js').catch((err) => {
+          // 登録に失敗してもゲーム自体は通常どおり遊べるが、
+          // 原因調査ができるようコンソールには残しておく
+          console.warn('[PWA] service worker registration failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

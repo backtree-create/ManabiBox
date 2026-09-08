@@ -1,0 +1,3074 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+ <script src="../../config.js"></script>
+ <script src="../../hub-progress.js"></script>
+ <script src="../../manabi-connect.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>サイエンスクエスト ― 観測塔</title>
+<meta name="description" content="中学理科を武器に観測塔の五層を踏破する学習RPG。物理・化学・生物・地学の全1500問、難易度3段階。ブラウザだけで動きます。">
+<meta name="theme-color" content="#080611">
+<meta name="color-scheme" content="dark">
+<link rel="manifest" href="./manifest.webmanifest">
+<!-- アイコンは本体に直接埋め込む。配置場所やパスの解決に左右されず必ず表示される -->
+<link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAwFBMVEX16aXntqPCn4qqjXOUi2+Rc5GTfFSOdU9zb3OAbk9sYHBvXUFhU3VgUDpQTExTRkJRQUdHQD8+N1w+ODJGOS1EOSlBNSc+Myc8MCc5LyY1LzE1KS0yJh8rKyssJSEqIiAiKTQIJS0oHx4jHR0gHR8RHiglFxwhFx0fGRwcGRobFRoWGCkWFBsUEBQUDhUPFjEOEi0OEhsPDBIIDRsHBxcCBhkJBwsGBQsIAxEFAw8CAgsBAQsBAAAAAAgAAAMAAABE0VH5AAACm0lEQVR42mVTa3eiMBBFw/JoDBwxiLAINsEagYCAICqk//9fbbDt2u7Ohzlz5twzj3tnlPenXS5jjjEfx/FbUvkKeIhZz5Mg2CacuhH/CRj42LnRMU6y5TILlkvbvggyfK8wXtK8blZZa1lttsoDhGvxrDB0HqXUPze7YLdYSNe2GEHfr4cPgNJ5OCquSZyVzs4wdk6ZbZO7r0O/Ux6ARMQbGN+TICvL0jCky4LkRnVtLcIHQHSYEbuvmqbclaoqXdNUvc2wVotBAnjn4ts12lbn06ksASjLU3auttH1bsKOS0BsI0wZq+yszRprPrcaGdhVcmQYICInXEPcs6LuUzVoTyoA6qkN1OzcVMcr1LxOEbEZX/1DkffB3LYWv34tLHsetFW137ZbEAlFRDr2cXpI0zPSXibAi4babL/fr7Yr4AvlHcFD+JuQQ1GcpwJTibap9vvX3W6vo3eFQ9S/vb0dDlImYzGTtjAkma+TtdDkylrTsamZAMx12WCmKDPZRJ8D1TCMpal5PwDOB8D5AeAmvD5bzGez+bcWCHI5pJ7+HdKZtnCeQ0JbKMMGTGtK6+WazmLhTGvuP9bUHzwA/4soZFmOY1noi6jEjGUFT4PXiWqmBn2uSpNQNZ+oPmO4lidBEcCMscJmUhJrNrMKGUxiJRjZ8UNuaN6l3HmfMkIAIISlfT7JjdcPuQfBNczsvqhzGsYAxCHN66K3yRF34nFRoZBk0VvsMRoR0yQRZR65xXATi+TzaH2o+zcaUYo3mrbBVIbXIsTe59G+D7XvQ4T7OsQuhC7263oj/8DrhufjiBqjDcOEI8QJ5pynl/HH6xFxkaeJvdjGRxIdI7cb+fDv87qEk3C9IbyjOOT/fffUZxTcddPxcvmW/APyJ49Uyt1jlgAAAABJRU5ErkJggg==">
+<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,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">
+<!-- 以下は補助。assets を配置した場合はこちらも使われる -->
+<link rel="icon" href="./favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-192.png">
+<meta name="msapplication-TileColor" content="#080611">
+<meta name="msapplication-TileImage" content="./icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="サイエンスクエスト">
+<meta name="mobile-web-app-capable" content="yes">
+<meta property="og:type" content="website">
+<meta property="og:title" content="サイエンスクエスト ― 観測塔">
+<meta property="og:description" content="中学理科を武器に観測塔の五層を踏破する学習RPG。全1500問、難易度3段階。">
+<meta property="og:url" content="https://backtree-create.github.io/ManabiBox/games/science-quest/">
+<meta property="og:image" content="https://backtree-create.github.io/ManabiBox/games/science-quest/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://backtree-create.github.io/ManabiBox/games/science-quest/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#080611;
+  --deep:#0e0a1d;
+  --panel:rgba(22,16,42,.66);
+  --hair:rgba(214,178,106,.26);
+  --hair-soft:rgba(214,178,106,.12);
+  --brass:#d6b26a;
+  --brass-lt:#f4e3b6;
+  --text:#ece7f5;
+  --muted:#9a91bb;
+  --c-physics:#5b8cff;
+  --c-chemistry:#2fd3a5;
+  --c-biology:#ffc857;
+  --c-earth:#d08a4e;
+  --c-boss:#b06ef5;
+  --elem:#b06ef5;
+  --good:#5fe0a0;
+  --bad:#ff6f7d;
+  --ease:cubic-bezier(.22,.9,.28,1);
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+html,body{
+  margin:0;padding:0;width:100%;height:100%;
+  background:var(--void);
+  color:var(--text);
+  font-family:'Zen Kaku Gothic New',sans-serif;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;user-select:none;
+  touch-action:manipulation;
+  overscroll-behavior:none;
+}
+button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipulation;}
+/* 画面内でスクロールする領域だけ慣性を許す */
+#quizBox,.review-list,.clear-card{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+#stage{
+  position:relative;width:100vw;height:100vh;height:100dvh;overflow:hidden;
+  background:
+    radial-gradient(ellipse 60% 45% at 22% 8%, rgba(120,110,220,.16), transparent 62%),
+    radial-gradient(ellipse 60% 55% at 82% 96%, rgba(176,110,245,.16), transparent 64%),
+    linear-gradient(178deg,#0d0920 0%,#080611 62%,#05040c 100%);
+  background:
+    radial-gradient(ellipse 70% 50% at 22% 8%, color-mix(in srgb, var(--elem) 22%, transparent), transparent 62%),
+    radial-gradient(ellipse 60% 55% at 82% 96%, rgba(176,110,245,.16), transparent 64%),
+    linear-gradient(178deg,#0d0920 0%,#080611 62%,#05040c 100%);
+  transition:background 1.2s var(--ease);
+}
+#nebula{
+  position:absolute;inset:-6%;width:112%;height:112%;
+  pointer-events:none;z-index:0;opacity:.32;
+  mix-blend-mode:screen;filter:saturate(1.15);
+  animation:nebDrift 90s ease-in-out infinite alternate;
+}
+@keyframes nebDrift{from{transform:translate3d(-1.5%,0,0) scale(1.02);}to{transform:translate3d(1.5%,-1.5%,0) scale(1.09);}}
+#starfield{position:absolute;inset:0;pointer-events:none;z-index:1;}
+.star{
+  position:absolute;border-radius:50%;background:#fff;
+  animation:twinkle 4s ease-in-out infinite;
+}
+@keyframes twinkle{0%,100%{opacity:.15;}50%{opacity:.9;}}
+#vignette{
+  position:absolute;inset:0;pointer-events:none;z-index:40;
+  background:radial-gradient(ellipse 78% 70% at 50% 46%, transparent 40%, rgba(4,3,10,.72) 100%);
+}
+#grain{
+  position:absolute;inset:0;pointer-events:none;z-index:41;opacity:.5;
+  background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.014) 0 1px,transparent 1px 3px);
+}
+
+/* ---------- screens ---------- */
+.screen{
+  position:absolute;inset:0;z-index:5;
+  display:none;flex-direction:column;
+  padding:clamp(14px,2.6vh,26px) clamp(14px,4vw,44px);
+  padding-top:max(clamp(14px,2.6vh,26px),env(safe-area-inset-top));
+  padding-bottom:max(clamp(14px,2.6vh,26px),env(safe-area-inset-bottom));
+}
+.screen.active{display:flex;}
+.center{align-items:center;justify-content:center;text-align:center;}
+
+/* ---------- primitives ---------- */
+.cap{
+  font-family:'Cinzel',serif;font-weight:500;
+  letter-spacing:.26em;text-transform:uppercase;
+  font-size:clamp(8.5px,1.15vh,10.5px);color:var(--muted);
+}
+.mono{font-family:'Roboto Mono',monospace;font-size:clamp(9.5px,1.3vh,11.5px);color:var(--muted);letter-spacing:.06em;}
+.jp-display{font-family:'Shippori Mincho B1',serif;font-weight:800;}
+.panel{
+  position:relative;
+  background:linear-gradient(160deg,rgba(255,255,255,.052),rgba(255,255,255,.012)),var(--panel);
+  border:1px solid var(--hair);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 10px 34px rgba(0,0,0,.5);
+  -webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
+  border-radius:2px;
+}
+.panel.gem::before{
+  content:"";position:absolute;top:-4px;left:50%;width:7px;height:7px;
+  transform:translateX(-50%) rotate(45deg);
+  background:var(--brass);box-shadow:0 0 10px rgba(214,178,106,.6);
+}
+.rule{
+  display:flex;align-items:center;gap:12px;width:100%;justify-content:center;
+}
+.rule::before,.rule::after{
+  content:"";height:1px;flex:1;max-width:120px;
+  background:linear-gradient(90deg,transparent,var(--hair),transparent);
+}
+.btn{
+  position:relative;overflow:hidden;cursor:pointer;
+  font-family:'Shippori Mincho B1',serif;font-weight:600;
+  letter-spacing:.14em;
+  font-size:clamp(12px,1.7vh,15px);
+  color:var(--brass-lt);
+  background:linear-gradient(rgba(214,178,106,.06),rgba(214,178,106,.015));
+  border:1px solid var(--hair);border-radius:1px;
+  padding:clamp(9px,1.4vh,14px) clamp(20px,4vw,34px);
+  transition:color .3s,border-color .3s,box-shadow .4s,transform .18s var(--ease);
+}
+.btn::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(115deg,transparent 32%,rgba(244,227,182,.26) 50%,transparent 68%);
+  transform:translateX(-130%);transition:transform .7s var(--ease);
+}
+.btn:hover,.btn:focus-visible{
+  color:#fff;border-color:var(--brass);outline:none;
+  box-shadow:0 0 26px rgba(214,178,106,.2),inset 0 0 20px rgba(214,178,106,.08);
+}
+.btn:hover::after,.btn:focus-visible::after{transform:translateX(130%);}
+.btn:active{transform:translateY(1px);}
+.btn.primary{
+  border-color:rgba(214,178,106,.6);
+  background:linear-gradient(rgba(214,178,106,.16),rgba(214,178,106,.04));
+}
+.btn.ghost{color:var(--muted);border-color:var(--hair-soft);}
+.btn.ghost:hover{color:var(--text);}
+.sigil{display:inline-block;line-height:0;}
+.sigil svg{display:block;}
+
+/* ---------- entrance animations ---------- */
+@keyframes riseIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.86);}to{opacity:1;transform:scale(1);}}
+@keyframes drawIn{from{stroke-dashoffset:var(--len,400);}to{stroke-dashoffset:0;}}
+@keyframes spinSlow{to{transform:rotate(360deg);}}
+@keyframes spinRev{to{transform:rotate(-360deg);}}
+@keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+@keyframes pulseGlow{0%,100%{opacity:.5;box-shadow:0 0 6px var(--elem);}50%{opacity:1;box-shadow:0 0 16px var(--elem);}}
+@keyframes shimmer{0%{background-position:-180% 0;}100%{background-position:280% 0;}}
+@keyframes shake{10%,90%{transform:translateX(-3px);}20%,80%{transform:translateX(5px);}30%,50%,70%{transform:translateX(-7px);}40%,60%{transform:translateX(7px);}}
+@keyframes popIn{0%{transform:scale(.4);opacity:0;}70%{transform:scale(1.12);opacity:1;}100%{transform:scale(1);}}
+@keyframes flash{from{opacity:.85;}to{opacity:0;}}
+@keyframes mote{0%{transform:translateY(0) scale(1);opacity:0;}12%{opacity:.9;}100%{transform:translateY(-46vh) scale(.4);opacity:0;}}
+@keyframes auroraShift{0%,100%{transform:translate3d(-6%,0,0) scale(1.1);}50%{transform:translate3d(8%,-4%,0) scale(1.25);}}
+@keyframes hueRoll{to{filter:hue-rotate(360deg);}}
+.rise{animation:riseIn .7s var(--ease) both;}
+.d1{animation-delay:.06s;} .d2{animation-delay:.16s;} .d3{animation-delay:.28s;}
+.d4{animation-delay:.4s;} .d5{animation-delay:.54s;} .d6{animation-delay:.68s;}
+
+/* ---------- TITLE ---------- */
+#screen-title{gap:clamp(8px,1.6vh,16px);}
+#titleEyebrow{letter-spacing:.42em;}
+#screen-title h1{
+  margin:0;font-family:'Shippori Mincho B1',serif;font-weight:800;
+  font-size:clamp(30px,6.4vh,60px);letter-spacing:.1em;line-height:1.1;
+  background:linear-gradient(180deg,#fff 6%,var(--brass-lt) 46%,var(--brass) 78%,#8d6f34 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 4px 18px rgba(214,178,106,.28));
+}
+#titleLatin{
+  font-family:'Cinzel',serif;font-weight:500;letter-spacing:.5em;
+  font-size:clamp(9px,1.4vh,12px);color:var(--brass);opacity:.85;padding-left:.5em;
+}
+#titleTag{color:var(--muted);font-size:clamp(11px,1.6vh,13.5px);letter-spacing:.06em;}
+#sigilRow{display:flex;gap:clamp(14px,4vw,30px);align-items:center;}
+#sigilRow .sg{opacity:.5;animation:sigilBeat 5.2s ease-in-out infinite;}
+#sigilRow .sg:nth-child(2){animation-delay:.5s;}
+#sigilRow .sg:nth-child(3){animation-delay:1s;}
+#sigilRow .sg:nth-child(4){animation-delay:1.5s;}
+@keyframes sigilBeat{0%,100%{opacity:.32;transform:translateY(0);}50%{opacity:1;transform:translateY(-4px);}}
+
+#diffRow{
+  display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+  width:min(96vw,720px);
+}
+.diff-card{
+  flex:1 1 200px;min-width:180px;max-width:236px;
+  text-align:left;cursor:pointer;
+  padding:clamp(10px,1.7vh,16px) clamp(12px,2vw,18px);
+  background:linear-gradient(160deg,rgba(255,255,255,.04),rgba(255,255,255,.008));
+  border:1px solid var(--hair-soft);border-radius:2px;
+  color:var(--text);
+  transition:border-color .3s,background .3s,box-shadow .4s,transform .3s var(--ease);
+  position:relative;overflow:hidden;
+}
+.diff-card::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:var(--brass);opacity:0;transition:opacity .3s;
+}
+.diff-card:hover{border-color:var(--hair);transform:translateY(-2px);}
+.diff-card.selected{
+  border-color:var(--brass);
+  background:linear-gradient(160deg,rgba(214,178,106,.16),rgba(214,178,106,.03));
+  box-shadow:0 0 30px rgba(214,178,106,.14);
+}
+.diff-card.selected::before{opacity:1;}
+.diff-card .rank{font-family:'Cinzel',serif;font-size:9px;letter-spacing:.28em;color:var(--muted);}
+.diff-card .name{font-family:'Shippori Mincho B1',serif;font-weight:600;font-size:clamp(13px,1.9vh,16px);margin:3px 0 5px;letter-spacing:.08em;}
+.diff-card .desc{font-size:clamp(10px,1.3vh,11.5px);color:var(--muted);line-height:1.55;}
+.marks{display:flex;gap:4px;margin-top:8px;}
+.marks i{width:6px;height:6px;transform:rotate(45deg);border:1px solid var(--hair);display:block;}
+.marks i.on{background:var(--brass);border-color:var(--brass);box-shadow:0 0 8px rgba(214,178,106,.7);}
+
+/* ---------- LOADING ---------- */
+#screen-loading{gap:clamp(10px,2vh,20px);}
+.load-dial{position:relative;width:min(56vw,290px);aspect-ratio:1;}
+.load-dial svg{width:100%;height:100%;transform:rotate(-90deg);}
+.ld-track{fill:none;stroke:rgba(255,255,255,.06);stroke-width:2;}
+.ld-arc{fill:none;stroke:var(--brass);stroke-width:2.6;stroke-linecap:round;
+  filter:drop-shadow(0 0 7px rgba(214,178,106,.65));transition:stroke-dashoffset .45s var(--ease);}
+.ld-ring{fill:none;stroke:rgba(214,178,106,.2);stroke-width:1;transform-origin:100px 100px;}
+.ld-ring.a{stroke-dasharray:3 11;animation:spinSlow 26s linear infinite;}
+.ld-ring.b{stroke-dasharray:6 18;animation:spinRev 38s linear infinite;}
+.ld-ring.c{stroke:rgba(255,255,255,.07);stroke-dasharray:1 6;animation:spinSlow 60s linear infinite;}
+.ld-core{fill:none;stroke:var(--elem);stroke-width:1.4;opacity:.5;transform-origin:100px 100px;
+  animation:spinRev 12s linear infinite;}
+.ld-pct{position:absolute;inset:0;display:grid;place-items:center;
+  font-family:'Cinzel',serif;font-weight:700;font-size:clamp(21px,4.2vh,36px);
+  color:var(--brass-lt);letter-spacing:.05em;text-shadow:0 0 24px rgba(214,178,106,.35);}
+.ld-pct small{font-size:.44em;margin-left:2px;opacity:.7;}
+#loadName{font-family:'Shippori Mincho B1',serif;font-weight:600;
+  font-size:clamp(13px,2vh,17px);letter-spacing:.14em;min-height:1.5em;color:var(--text);}
+#loadLore{color:var(--muted);font-size:clamp(10.5px,1.45vh,12.5px);
+  max-width:min(88vw,460px);line-height:2;}
+/* ---------- FLOOR INTRO ---------- */
+#screen-floorIntro{gap:clamp(6px,1.4vh,14px);}
+#floorStratum{font-family:'Cinzel',serif;letter-spacing:.4em;font-size:clamp(9px,1.3vh,11px);color:var(--muted);}
+#floorIntroLabel{
+  font-family:'Shippori Mincho B1',serif;font-weight:800;
+  font-size:clamp(19px,3.6vh,34px);letter-spacing:.14em;
+  color:var(--elem);
+  text-shadow:0 0 30px rgba(160,150,230,.5);
+  text-shadow:0 0 30px color-mix(in srgb,var(--elem) 55%,transparent);
+}
+#floorSigil{margin:2px 0;}
+#floorSigil svg path,#floorSigil svg circle,#floorSigil svg line{
+  stroke-dasharray:var(--len,400);animation:drawIn 1.5s var(--ease) both;
+}
+#floorIntroDesc{color:var(--muted);font-size:clamp(11px,1.6vh,13.5px);max-width:min(90vw,540px);line-height:1.9;}
+#floorIntroMonsterWrap{width:min(40vw,190px);height:min(24vh,190px);animation:floatY 5s ease-in-out infinite;}
+#floorIntroMonsterWrap{position:relative;}
+#floorIntroMonsterWrap svg{width:100%;height:100%;}
+
+/* ---------- BATTLE ---------- */
+#screen-battle{gap:clamp(6px,1.2vh,12px);}
+.hud-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-shrink:0;}
+.floor-tag{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:clamp(10px,1.4vh,12px);letter-spacing:.14em;}
+.floor-tag .sigil{filter:drop-shadow(0 0 6px var(--elem));}
+#progressDots{display:flex;gap:6px;}
+.pd{width:7px;height:7px;transform:rotate(45deg);border:1px solid var(--hair-soft);transition:all .4s var(--ease);}
+.pd.done{background:var(--elem);border-color:var(--elem);box-shadow:0 0 9px var(--elem);}
+.pd.now{border-color:var(--brass);animation:pulseGlow 1.8s ease-in-out infinite;}
+
+.stage-area{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(4px,1vh,10px);position:relative;}
+.ring-wrap{position:relative;height:100%;aspect-ratio:1;max-width:100%;display:flex;align-items:center;justify-content:center;}
+.elem-ring{
+  position:absolute;inset:2%;border-radius:50%;
+  background:conic-gradient(from 0deg,transparent 0deg,var(--elem) 90deg,transparent 200deg,rgba(255,255,255,.12) 300deg,transparent 360deg);
+  background:conic-gradient(from 0deg,transparent 0deg,color-mix(in srgb,var(--elem) 70%,transparent) 90deg,transparent 200deg,color-mix(in srgb,var(--elem) 30%,transparent) 300deg,transparent 360deg);
+  -webkit-mask:radial-gradient(closest-side,transparent 79%,#000 80%);
+  mask:radial-gradient(closest-side,transparent 79%,#000 80%);
+  animation:spinSlow 34s linear infinite;opacity:.55;
+}
+.dial{position:absolute;inset:2%;pointer-events:none;opacity:.7;}
+.orbit{
+  position:absolute;inset:9%;border-radius:50%;
+  animation:spinRev 26s linear infinite;
+}
+.orbit i{
+  position:absolute;top:-3px;left:50%;width:5px;height:5px;margin-left:-2.5px;
+  transform:rotate(45deg);background:var(--elem);box-shadow:0 0 10px var(--elem);opacity:.9;
+}
+.orbit i:nth-child(2){top:auto;bottom:-3px;opacity:.5;}
+.hp-ring{position:absolute;inset:2%;transform:rotate(-90deg);}
+.hp-ring .track{fill:none;stroke:rgba(255,255,255,.07);stroke-width:2.5;}
+.hp-ring .arc{fill:none;stroke:var(--elem);stroke-width:2.5;stroke-linecap:round;
+  filter:drop-shadow(0 0 6px var(--elem));transition:stroke-dashoffset .6s var(--ease);}
+#monsterSvgWrap{
+  position:relative;z-index:2;width:70%;height:70%;
+  display:flex;align-items:center;justify-content:center;
+  animation:floatY 5.4s ease-in-out infinite;
+  will-change:transform;
+}
+#monsterSvgWrap svg{width:100%;height:100%;}
+.mon-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+  filter:drop-shadow(0 14px 22px rgba(0,0,0,.6));}
+.mon-fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+#monsterSvgWrap.hit{animation:shake .42s;}
+.name-plate{
+  display:flex;align-items:baseline;gap:12px;flex-shrink:0;
+  padding:5px 16px;border-top:1px solid var(--hair-soft);border-bottom:1px solid var(--hair-soft);
+}
+#monsterName{font-family:'Shippori Mincho B1',serif;font-weight:600;font-size:clamp(13px,2vh,17px);letter-spacing:.12em;}
+#monsterHpLabel{font-family:'Roboto Mono',monospace;font-size:clamp(9.5px,1.3vh,11px);color:var(--elem);}
+
+#battleMessage{flex-shrink:0;padding:clamp(8px,1.4vh,13px) clamp(12px,2.4vw,18px);
+  font-size:clamp(11.5px,1.7vh,14px);line-height:1.6;min-height:calc(1.6em + clamp(16px,2.8vh,26px));}
+#battleMessageText{animation:fadeIn .5s;}
+.vitals{flex-shrink:0;display:flex;align-items:center;gap:clamp(8px,2vw,16px);padding:clamp(7px,1.2vh,11px) clamp(12px,2.4vw,18px);}
+.segs{display:flex;gap:5px;flex:1 1 auto;}
+.seg{
+  flex:1 1 auto;max-width:46px;height:8px;
+  background:linear-gradient(180deg,var(--good),#2c8f63);
+  box-shadow:0 0 10px rgba(95,224,160,.4);
+  transform:skewX(-22deg);transition:all .45s var(--ease);
+}
+.seg.lost{background:rgba(255,255,255,.07);box-shadow:none;animation:segBreak .5s var(--ease);}
+@keyframes segBreak{0%{transform:skewX(-22deg) scaleY(1.9);background:var(--bad);}100%{transform:skewX(-22deg) scaleY(1);}}
+.commands{flex-shrink:0;display:flex;gap:clamp(10px,2.5vw,18px);}
+.commands .btn{flex:1 1 auto;justify-content:center;text-align:center;}
+
+/* ---------- 撃破カットイン ---------- */
+.shatter{position:absolute;inset:0;pointer-events:none;z-index:6;}
+.shard{position:absolute;left:15%;top:15%;width:70%;height:70%;
+  will-change:transform,opacity;}
+.shard canvas{width:100%;height:100%;display:block;}
+.burst{position:absolute;left:50%;top:50%;width:34%;aspect-ratio:1;
+  transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle,rgba(255,244,214,.95) 0%,rgba(255,164,74,.6) 34%,rgba(255,140,40,0) 70%);
+  animation:burstOut .62s cubic-bezier(.14,.8,.3,1) forwards;}
+@keyframes burstOut{0%{transform:translate(-50%,-50%) scale(.15);opacity:0;}
+  22%{opacity:1;}100%{transform:translate(-50%,-50%) scale(2.6);opacity:0;}}
+.shockwave{position:absolute;left:50%;top:50%;width:14%;aspect-ratio:1;
+  transform:translate(-50%,-50%);border-radius:50%;
+  border:2px solid var(--brass);opacity:.9;
+  animation:shockOut .8s cubic-bezier(.1,.75,.25,1) forwards;}
+@keyframes shockOut{0%{transform:translate(-50%,-50%) scale(.2);opacity:.95;border-width:3px;}
+  100%{transform:translate(-50%,-50%) scale(3.2);opacity:0;border-width:.5px;}}
+.spark{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;
+  border-radius:50%;background:#ffc06a;box-shadow:0 0 10px #ff9c3c;will-change:transform,opacity;}
+#killBanner{
+  position:absolute;left:0;right:0;top:42%;z-index:20;
+  display:none;flex-direction:column;align-items:center;gap:4px;
+  padding:clamp(8px,1.6vh,16px) 0;
+  background:linear-gradient(90deg,transparent,rgba(8,6,16,.9) 12%,rgba(8,6,16,.9) 88%,transparent);
+  border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
+  pointer-events:none;
+}
+#killBanner.on{display:flex;animation:bandIn .95s cubic-bezier(.2,.9,.25,1) both;}
+@keyframes bandIn{
+  0%{opacity:0;-webkit-clip-path:inset(0 50% 0 50%);clip-path:inset(0 50% 0 50%);}
+  22%{opacity:1;-webkit-clip-path:inset(0 0 0 0);clip-path:inset(0 0 0 0);}
+  76%{opacity:1;-webkit-clip-path:inset(0 0 0 0);clip-path:inset(0 0 0 0);}
+  100%{opacity:0;-webkit-clip-path:inset(0 0 0 0);clip-path:inset(0 0 0 0);transform:translateY(-6px);}
+}
+#killBanner .kb-latin{font-family:'Cinzel',serif;font-size:clamp(9px,1.3vh,11px);
+  letter-spacing:.42em;color:var(--brass);}
+#killBanner .kb-name{font-family:'Shippori Mincho B1',serif;font-weight:800;
+  font-size:clamp(17px,3vh,28px);letter-spacing:.16em;color:#fff;
+  text-shadow:0 0 26px rgba(255,164,74,.6);}
+#killBanner .kb-rule{width:min(62%,340px);height:1px;
+  background:linear-gradient(90deg,transparent,var(--brass),transparent);}
+
+/* ---------- QUIZ ---------- */
+#quizOverlay{
+  position:absolute;inset:0;z-index:30;display:none;
+  align-items:center;justify-content:center;
+  padding:clamp(14px,3vh,34px) clamp(14px,4vw,44px);
+  background:rgba(5,4,12,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+#quizOverlay.active{display:flex;animation:fadeIn .28s;}
+#quizBox{
+  width:min(96vw,660px);max-height:94%;overflow-y:auto;
+  padding:clamp(16px,2.8vh,28px) clamp(16px,3.2vw,32px);
+  display:flex;flex-direction:column;gap:clamp(10px,1.7vh,16px);
+  animation:cardRise .5s var(--ease) both;
+}
+@keyframes cardRise{from{opacity:0;transform:translateY(26px) scale(.97);}to{opacity:1;transform:none;}}
+#quizBox::after{
+  content:"";position:absolute;left:0;right:0;top:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--elem),transparent);
+}
+#quizHead{display:flex;align-items:center;gap:9px;}
+#quizSubject{color:var(--elem);letter-spacing:.24em;}
+#quizQuestion{
+  font-family:'Shippori Mincho B1',serif;font-weight:600;
+  font-size:clamp(13.5px,2.1vh,18px);line-height:1.85;letter-spacing:.02em;
+}
+#quizChoices{display:flex;flex-direction:column;gap:8px;}
+.choice-btn{
+  position:relative;display:flex;align-items:flex-start;gap:11px;text-align:left;cursor:pointer;
+  font-family:'Zen Kaku Gothic New',sans-serif;font-size:clamp(11.5px,1.6vh,14px);line-height:1.65;
+  color:var(--text);
+  background:linear-gradient(100deg,rgba(255,255,255,.05),rgba(255,255,255,.012));
+  border:1px solid var(--hair-soft);border-left:2px solid transparent;border-radius:2px;
+  padding:clamp(9px,1.4vh,13px) clamp(11px,2vw,16px);
+  transition:all .26s var(--ease);
+}
+.choice-btn .key{
+  flex-shrink:0;font-family:'Cinzel',serif;font-size:11px;color:var(--muted);
+  width:19px;height:19px;display:grid;place-items:center;
+  border:1px solid var(--hair-soft);transform:rotate(45deg);transition:all .26s;
+}
+.choice-btn .key span{transform:rotate(-45deg);}
+.choice-btn:hover:not(:disabled),.choice-btn:focus-visible:not(:disabled){
+  border-left-color:var(--elem);background:linear-gradient(100deg,rgba(255,255,255,.1),rgba(255,255,255,.02));
+  transform:translateX(5px);outline:none;
+}
+.choice-btn:hover:not(:disabled) .key{border-color:var(--elem);color:var(--elem);}
+.choice-btn:disabled{cursor:default;opacity:.55;}
+.choice-btn.correct{
+  opacity:1;border-color:var(--good);border-left-color:var(--good);
+  background:linear-gradient(100deg,rgba(95,224,160,.2),rgba(95,224,160,.04));
+  box-shadow:0 0 26px rgba(95,224,160,.22);animation:popIn .4s var(--ease);
+}
+.choice-btn.correct .key{border-color:var(--good);color:var(--good);}
+.choice-btn.wrong{
+  opacity:1;border-color:var(--bad);border-left-color:var(--bad);
+  background:linear-gradient(100deg,rgba(255,111,125,.18),rgba(255,111,125,.03));
+  animation:shake .42s;
+}
+/* 特技:分光 */
+.skill-chip{
+  display:flex;align-items:center;gap:9px;
+  padding:clamp(9px,1.4vh,14px) clamp(14px,2.6vw,22px);
+  border:1px solid var(--hair-soft);border-radius:1px;
+  background:linear-gradient(rgba(214,178,106,.04),transparent);
+}
+.pips{display:flex;gap:5px;}
+.pips i{
+  width:7px;height:7px;transform:rotate(45deg);display:block;
+  border:1px solid var(--hair);transition:all .4s var(--ease);
+}
+.pips i.on{background:var(--brass);border-color:var(--brass);box-shadow:0 0 9px rgba(214,178,106,.65);}
+.hint-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+.hint-btn{
+  position:relative;overflow:hidden;cursor:pointer;
+  display:flex;align-items:center;gap:9px;
+  font-family:'Shippori Mincho B1',serif;font-weight:600;letter-spacing:.12em;
+  font-size:clamp(11px,1.5vh,13px);color:var(--brass-lt);
+  background:linear-gradient(rgba(214,178,106,.1),rgba(214,178,106,.02));
+  border:1px solid var(--hair);border-radius:1px;padding:7px 14px;
+  transition:all .3s var(--ease);
+}
+.hint-btn:hover:not(:disabled){border-color:var(--brass);color:#fff;box-shadow:0 0 22px rgba(214,178,106,.22);}
+.hint-btn:disabled{opacity:.32;cursor:default;}
+.hint-note{font-size:clamp(9.5px,1.25vh,11px);color:var(--muted);letter-spacing:.06em;}
+.choice-btn.eliminated{
+  opacity:.22;pointer-events:none;border-color:transparent;
+  text-decoration:line-through;filter:grayscale(1);
+  animation:dissolve .55s var(--ease) both;
+}
+@keyframes dissolve{
+  0%{opacity:1;transform:translateX(0);filter:none;}
+  35%{opacity:.9;transform:translateX(-6px);box-shadow:0 0 24px rgba(214,178,106,.5);}
+  100%{opacity:.22;transform:translateX(0);filter:grayscale(1);}
+}
+#quizFeedback{display:none;flex-direction:column;gap:11px;animation:riseIn .45s var(--ease);}
+#quizFeedback.active{display:flex;}
+#feedbackHeadline{font-family:'Shippori Mincho B1',serif;font-weight:600;font-size:clamp(13px,2vh,17px);letter-spacing:.1em;display:flex;align-items:center;gap:9px;}
+#feedbackHeadline.good{color:var(--good);}
+#feedbackHeadline.bad{color:var(--bad);}
+#feedbackHeadline .bolt{width:9px;height:9px;transform:rotate(45deg);background:currentColor;box-shadow:0 0 12px currentColor;animation:popIn .5s var(--ease) both;}
+#feedbackExp{
+  font-size:clamp(11.5px,1.6vh,13.5px);line-height:1.95;color:#ded8ef;
+  border-left:2px solid var(--hair);padding-left:14px;
+}
+#feedbackContinue{align-self:flex-end;}
+
+/* ---------- RESULT / CLEAR ---------- */
+.fx-layer{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
+.rays{
+  position:absolute;left:50%;top:42%;width:210vmax;height:210vmax;
+  transform:translate(-50%,-50%);
+  background:repeating-conic-gradient(from 0deg,
+    rgba(244,227,182,.16) 0deg 3deg, transparent 3deg 13deg);
+  -webkit-mask:radial-gradient(closest-side,#000 6%,rgba(0,0,0,.55) 30%,transparent 62%);
+  mask:radial-gradient(closest-side,#000 6%,rgba(0,0,0,.55) 30%,transparent 62%);
+  animation:spinSlow 54s linear infinite;opacity:0;
+  transition:opacity 1s ease;
+}
+.aurora{
+  position:absolute;width:76vw;height:58vh;border-radius:50%;
+  filter:blur(76px);opacity:0;mix-blend-mode:screen;
+  animation:auroraShift 15s ease-in-out infinite;
+}
+.aurora.a1{background:#5b8cff;left:-14%;top:-8%;}
+.aurora.a2{background:#2fd3a5;right:-16%;top:24%;animation-delay:-4s;}
+.aurora.a3{background:#b06ef5;left:18%;bottom:-22%;animation-delay:-8s;}
+.motes{position:absolute;inset:0;}
+.mote{
+  position:absolute;bottom:-14px;width:4px;height:4px;border-radius:50%;
+  background:var(--brass-lt);box-shadow:0 0 10px var(--brass);
+  animation:mote linear infinite;
+}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;}
+.flash.go{animation:flash .9s var(--ease) both;}
+
+.clear-card{
+  position:relative;z-index:2;
+  width:min(94vw,600px);max-height:94%;overflow:hidden;
+  padding:clamp(14px,2.8vh,32px) clamp(18px,4vw,38px);
+  display:flex;flex-direction:column;align-items:center;gap:clamp(7px,1.4vh,15px);
+  text-align:center;
+}
+/* 記章・見出し・数値・バッジ・ボタンは縮まず常に見える */
+.clear-card > .cap,
+.clear-card > .medal-wrap,
+.clear-card > .clear-title,
+.clear-card > .rule,
+.clear-card > .stat-grid,
+.clear-card > .badges,
+.clear-card > .btn,
+.clear-card > .btn-row{flex:0 0 auto;}
+.clear-card::after{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:2px;
+  box-shadow:inset 0 0 60px rgba(214,178,106,.06);
+}
+.medal-wrap{width:clamp(70px,14vh,148px);height:clamp(70px,14vh,148px);animation:medalIn 1s var(--ease) both;}
+@keyframes medalIn{0%{opacity:0;transform:scale(.35) rotate(-24deg);}62%{opacity:1;transform:scale(1.1) rotate(4deg);}100%{transform:scale(1) rotate(0);}}
+.medal-wrap svg,.medal-wrap canvas{width:100%;height:100%;display:block;}
+.clear-title{
+  margin:0;font-family:'Shippori Mincho B1',serif;font-weight:800;
+  font-size:clamp(20px,3.6vh,34px);letter-spacing:.14em;line-height:1.25;
+}
+.stat-grid{display:flex;gap:clamp(10px,3vw,26px);flex-wrap:wrap;justify-content:center;margin-top:2px;}
+.stat{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:78px;}
+.stat .v{font-family:'Cinzel',serif;font-weight:700;font-size:clamp(19px,3.2vh,30px);letter-spacing:.04em;color:var(--brass-lt);}
+.stat .v small{font-size:.5em;letter-spacing:.1em;margin-left:1px;}
+.badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.badge{
+  display:flex;align-items:center;gap:6px;
+  font-size:clamp(10px,1.35vh,12px);letter-spacing:.1em;
+  padding:5px 12px;border:1px solid var(--hair);border-radius:999px;
+  color:var(--brass-lt);background:rgba(214,178,106,.07);
+  animation:popIn .5s var(--ease) both;
+}
+.badge i{width:6px;height:6px;transform:rotate(45deg);background:currentColor;display:block;}
+.badge.hot{border-color:var(--good);color:var(--good);background:rgba(95,224,160,.09);box-shadow:0 0 20px rgba(95,224,160,.22);}
+.review-list{
+  text-align:left;display:flex;flex-direction:column;gap:10px;width:100%;
+  font-size:clamp(10.5px,1.4vh,12.5px);
+  flex:0 1 auto;min-height:0;overflow-y:auto;
+  margin:2px 0;padding:6px 10px 8px 0;
+  border-top:1px solid rgba(255,255,255,.07);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  -webkit-mask:linear-gradient(180deg,transparent 0,#000 10px,#000 calc(100% - 10px),transparent 100%);
+  mask:linear-gradient(180deg,transparent 0,#000 10px,#000 calc(100% - 10px),transparent 100%);
+}
+.review-list:empty{display:none;}
+.review-item{border-top:1px solid rgba(255,255,255,.08);padding-top:8px;line-height:1.75;}
+.review-item .q{color:#fff;margin-bottom:3px;}
+.review-item .a{color:var(--good);}
+.review-item .exp{color:var(--muted);margin-top:2px;}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+
+/* tier: ふつう(銀) */
+#screen-end.tier-normal .rays{opacity:.2;}
+#screen-end.tier-normal .clear-title{
+  background:linear-gradient(180deg,#fff 10%,#d5dcec 52%,#8e97b0 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+/* tier: むずかしい(金) */
+#screen-end.tier-hard .rays{opacity:.55;animation-duration:38s;}
+#screen-end.tier-hard .clear-card{border-color:rgba(214,178,106,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 40px rgba(0,0,0,.55),0 0 60px rgba(214,178,106,.12);}
+#screen-end.tier-hard .clear-title{
+  background:linear-gradient(100deg,#f7e9c4 8%,#fff8e2 26%,var(--brass) 46%,#fff8e2 62%,#c99f4e 88%);
+  background-size:260% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:shimmer 4.5s linear infinite;
+}
+/* tier: エキスパート(虹) */
+#screen-end.tier-expert .rays{opacity:.8;animation-duration:26s;
+  background:repeating-conic-gradient(from 0deg,
+    rgba(91,140,255,.2) 0deg 3deg, transparent 3deg 9deg,
+    rgba(176,110,245,.18) 9deg 12deg, transparent 12deg 20deg);}
+#screen-end.tier-expert .aurora{opacity:.3;}
+#screen-end.tier-expert .clear-card{
+  border-color:transparent;
+  background:linear-gradient(160deg,rgba(28,20,52,.9),rgba(14,10,29,.92));
+}
+#screen-end.tier-expert .clear-card::before{
+  content:"";position:absolute;inset:-1.5px;border-radius:2px;pointer-events:none;
+  background:conic-gradient(from 0deg,#5b8cff,#2fd3a5,#ffc857,#d08a4e,#b06ef5,#5b8cff);
+  padding:1.5px;
+  -webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);
+  mask-composite:exclude;
+  animation:spinSlow 8s linear infinite;
+}
+#screen-end.tier-expert .clear-title{
+  background:linear-gradient(100deg,#9fc0ff,#7ff0cd,#ffe08a,#e2a8ff,#9fc0ff);
+  background-size:300% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:shimmer 6s linear infinite;
+  filter:drop-shadow(0 0 22px rgba(176,110,245,.5));
+}
+#screen-end.tier-expert .medal-wrap{filter:drop-shadow(0 0 26px rgba(176,110,245,.55));}
+#screen-end.tier-expert .stat .v{color:#fff;}
+
+/* orbiting element sigils (expert only) */
+#endOrbit{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:1;pointer-events:none;}
+#screen-end.tier-expert #endOrbit{display:flex;}
+.orbit-ring{position:relative;width:clamp(180px,30vh,300px);height:clamp(180px,30vh,300px);animation:spinSlow 22s linear infinite;}
+.orbit-ring .os{position:absolute;width:26px;height:26px;margin:-13px;display:grid;place-items:center;opacity:.85;}
+.orbit-ring .os:nth-child(1){top:0;left:50%;}
+.orbit-ring .os:nth-child(2){top:50%;left:100%;}
+.orbit-ring .os:nth-child(3){top:100%;left:50%;}
+.orbit-ring .os:nth-child(4){top:50%;left:0;}
+.orbit-ring .os svg{animation:spinRev 22s linear infinite;}
+
+/* floor clear / defeat */
+#screen-floorClear .rays{opacity:.3;
+  background:repeating-conic-gradient(from 0deg,rgba(214,178,106,.18) 0deg 3deg, transparent 3deg 14deg);
+  background:repeating-conic-gradient(from 0deg,
+    color-mix(in srgb,var(--elem) 26%,transparent) 0deg 3deg, transparent 3deg 14deg);}
+#screen-floorClear .clear-title{color:var(--elem);text-shadow:0 0 34px rgba(160,150,230,.5);
+  text-shadow:0 0 34px color-mix(in srgb,var(--elem) 55%,transparent);}
+#screen-defeat .clear-title{color:var(--bad);}
+#screen-defeat .rays{opacity:.16;background:repeating-conic-gradient(from 0deg,rgba(255,111,125,.2) 0deg 3deg,transparent 3deg 16deg);}
+
+#fullscreenBtn{
+  position:absolute;top:10px;right:12px;z-index:45;
+  font-family:'Cinzel',serif;font-size:9.5px;letter-spacing:.2em;
+  background:rgba(14,10,29,.7);color:var(--muted);
+  border:1px solid var(--hair-soft);border-radius:1px;
+  padding:5px 10px;cursor:pointer;transition:all .3s;
+}
+#fullscreenBtn:hover{color:var(--brass-lt);border-color:var(--brass);}
+
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-thumb{background:rgba(214,178,106,.25);border-radius:3px;}
+
+/* タッチ端末では hover の見た目を残さない(指を離した後も白く残る問題を防ぐ) */
+@media (hover:none){
+  .btn:hover,.btn:focus-visible{
+    color:var(--brass-lt);border-color:var(--hair);box-shadow:none;
+    background:linear-gradient(rgba(214,178,106,.06),rgba(214,178,106,.015));}
+  .btn.primary:hover{background:linear-gradient(rgba(214,178,106,.16),rgba(214,178,106,.04));
+    border-color:rgba(214,178,106,.6);}
+  .btn:hover::after,.btn:focus-visible::after{transform:translateX(-130%);}
+  .choice-btn:hover:not(:disabled),.choice-btn:focus-visible:not(:disabled){
+    transform:none;border-left-color:transparent;
+    background:linear-gradient(100deg,rgba(255,255,255,.05),rgba(255,255,255,.012));}
+  .choice-btn:hover:not(:disabled) .key{border-color:var(--hair-soft);color:var(--muted);}
+  .diff-card:hover{transform:none;border-color:var(--hair-soft);}
+  .diff-card.selected:hover{border-color:var(--brass);}
+  .cmd-btn:hover{color:var(--text);}
+  .cmd-btn:hover::before{opacity:0;}
+  .hint-btn:hover:not(:disabled){border-color:var(--hair);color:var(--brass-lt);box-shadow:none;}
+  #fullscreenBtn:hover{color:var(--muted);border-color:var(--hair-soft);}
+}
+/* 押した瞬間の手応えは全環境で返す */
+.btn:active{transform:translateY(1px);filter:brightness(1.25);}
+.choice-btn:active:not(:disabled){filter:brightness(1.35);}
+.diff-card:active{filter:brightness(1.2);}
+.cmd-btn:active{filter:brightness(1.4);}
+.hint-btn:active:not(:disabled){filter:brightness(1.3);}
+/* 細い画面では選択肢と操作列を詰める */
+@media (max-width:420px){
+  .commands{gap:8px;}
+  .choice-btn{padding:8px 10px;}
+  .skill-chip{padding:8px 10px;}
+}
+/* 横長で背の低い画面(スマホ横持ち)では記章と余白を削る */
+@media (max-height:460px){
+  .medal-wrap{width:clamp(56px,12vh,96px);height:clamp(56px,12vh,96px);}
+  .load-dial{width:min(34vh,180px);}
+  .screen{padding-top:8px;padding-bottom:8px;}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+}
+</style>
+</head>
+<body>
+<div id="stage">
+  <svg id="nebula" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <filter id="nebF" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.0055" numOctaves="5" seed="17" result="t"/>
+        <feColorMatrix in="t" type="saturate" values="0" result="g"/>
+        <feComponentTransfer in="g" result="cc">
+          <feFuncR type="gamma" exponent="4.5" amplitude="1.7"/>
+          <feFuncG type="gamma" exponent="4.5" amplitude="1.7"/>
+          <feFuncB type="gamma" exponent="4.5" amplitude="1.7"/>
+        </feComponentTransfer>
+        <feGaussianBlur in="cc" stdDeviation="2.4"/>
+      </filter>
+      <mask id="nebM"><rect width="400" height="300" filter="url(#nebF)" fill="#fff"/></mask>
+      <linearGradient id="nebG" x1="0" y1="0" x2="0.9" y2="1">
+        <stop id="nebStopA" offset="0%" stop-color="#b06ef5"/>
+        <stop id="nebStopB" offset="100%" stop-color="#2b2a72"/>
+      </linearGradient>
+    </defs>
+    <rect width="400" height="300" fill="url(#nebG)" mask="url(#nebM)"/>
+  </svg>
+  <div id="starfield"></div>
+  <div id="vignette"></div>
+  <div id="grain"></div>
+  <button id="fullscreenBtn">FULLSCREEN</button>
+
+  <!-- TITLE -->
+  <div class="screen center active" id="screen-title">
+    <div class="cap rise d1" id="titleEyebrow">Observatorium</div>
+    <h1 class="rise d2">サイエンスクエスト</h1>
+    <div class="rule rise d2"><span id="titleLatin">SCIENCE QUEST</span></div>
+    <div id="titleTag" class="rise d3">理科の理(ことわり)を武器に、観測塔の五層を踏破せよ</div>
+    <div id="sigilRow" class="rise d3"></div>
+    <div id="diffRow" class="rise d4"></div>
+    <button class="btn primary rise d5" id="btnStart">登塔する</button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="screen center" id="screen-loading">
+    <div class="cap" id="loadStatus">Calibrating the lens</div>
+    <div class="load-dial">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <circle class="ld-ring c" cx="100" cy="100" r="94"></circle>
+        <circle class="ld-ring a" cx="100" cy="100" r="72"></circle>
+        <circle class="ld-ring b" cx="100" cy="100" r="58"></circle>
+        <ellipse class="ld-core" cx="100" cy="100" rx="44" ry="16"></ellipse>
+        <ellipse class="ld-core" cx="100" cy="100" rx="44" ry="16" transform="rotate(60 100 100)"></ellipse>
+        <ellipse class="ld-core" cx="100" cy="100" rx="44" ry="16" transform="rotate(120 100 100)"></ellipse>
+        <g id="loadTicks"></g>
+        <circle class="ld-track" cx="100" cy="100" r="84"></circle>
+        <circle class="ld-arc" id="loadArc" cx="100" cy="100" r="84"></circle>
+      </svg>
+      <div class="ld-pct"><span id="loadPct">0</span><small>%</small></div>
+    </div>
+    <div id="loadName"></div>
+    <div id="loadLore"></div>
+  </div>
+
+  <!-- FLOOR INTRO -->
+  <div class="screen center" id="screen-floorIntro">
+    <div id="floorStratum" class="rise d1"></div>
+    <div id="floorSigil" class="rise d1"></div>
+    <div id="floorIntroLabel" class="rise d2"></div>
+    <div id="floorIntroMonsterWrap" class="rise d3"></div>
+    <div id="floorIntroDesc" class="rise d4"></div>
+    <button class="btn rise d5" id="btnFloorEnter">層へ 踏み入る</button>
+  </div>
+
+  <!-- BATTLE -->
+  <div class="screen" id="screen-battle">
+    <div class="hud-top">
+      <div class="floor-tag"><span class="sigil" id="battleSigil"></span><span id="battleFloorLabel"></span></div>
+      <div id="progressDots"></div>
+    </div>
+
+    <div class="stage-area">
+      <div class="ring-wrap">
+        <div class="elem-ring"></div>
+        <svg class="dial" id="dial" viewBox="0 0 200 200" aria-hidden="true"></svg>
+        <div class="orbit"><i></i><i></i></div>
+        <svg class="hp-ring" viewBox="0 0 200 200">
+          <circle class="track" cx="100" cy="100" r="92"></circle>
+          <circle class="arc" id="hpArc" cx="100" cy="100" r="92"></circle>
+        </svg>
+        <div id="monsterSvgWrap"></div>
+      </div>
+      <div class="name-plate">
+        <span id="monsterName"></span>
+        <span id="monsterHpLabel"></span>
+      </div>
+    </div>
+
+    <div id="killBanner">
+      <div class="kb-rule"></div>
+      <div class="kb-latin">Shattered</div>
+      <div class="kb-name" id="killName"></div>
+      <div class="kb-rule"></div>
+    </div>
+
+    <div class="panel" id="battleMessage"><span id="battleMessageText"></span></div>
+
+    <div class="panel vitals">
+      <span class="cap">Resolve · Tower</span>
+      <div class="segs" id="playerSegs"></div>
+      <span class="mono" id="playerHpText"></span>
+    </div>
+
+    <div class="commands">
+      <button class="btn primary" id="btnAttack">こうげき</button>
+      <div class="skill-chip"><span class="cap">Spectrum</span><span class="pips" id="spectrumPips"></span></div>
+    </div>
+
+    <!-- QUIZ -->
+    <div id="quizOverlay">
+      <div id="quizBox" class="panel">
+        <div id="quizAsking">
+          <div id="quizHead"><span class="sigil" id="quizSigil"></span><span class="cap" id="quizSubject"></span></div>
+          <div id="quizQuestion" style="margin:12px 0 14px"></div>
+          <div class="hint-bar">
+            <button class="hint-btn" id="btnSpectrum">分光 <span class="pips" id="spectrumPipsQuiz"></span></button>
+            <span class="hint-note">光を分け、偽りの理を 二つ 退ける</span>
+          </div>
+          <div id="quizChoices"></div>
+        </div>
+        <div id="quizFeedback">
+          <div id="feedbackHeadline"></div>
+          <div id="feedbackExp"></div>
+          <button class="btn" id="feedbackContinue">つづける</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOOR CLEAR -->
+  <div class="screen center" id="screen-floorClear">
+    <div class="fx-layer"><div class="rays"></div></div>
+    <div class="clear-card panel gem">
+      <div class="cap">Stratum Cleared</div>
+      <div class="medal-wrap" id="floorClearMedal"></div>
+      <h2 class="clear-title" id="floorClearTitle"></h2>
+      <div class="stat-grid" id="floorClearStats"></div>
+      <button class="btn primary" id="btnNextFloor">さらに 上へ</button>
+    </div>
+  </div>
+
+  <!-- DEFEAT -->
+  <div class="screen center" id="screen-defeat">
+    <div class="fx-layer"><div class="rays"></div></div>
+    <div class="clear-card panel gem">
+      <div class="cap">Withdrawn</div>
+      <h2 class="clear-title" id="defeatTitle">気力が 尽きた</h2>
+      <div class="stat-grid" id="defeatStats"></div>
+      <div class="review-list" id="defeatReview"></div>
+      <div class="btn-row">
+        <button class="btn primary" id="btnRetryFloor">この層に 再挑戦</button>
+        <button class="btn ghost" id="btnGiveUp">塔を 降りる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div class="screen center" id="screen-end">
+    <div class="fx-layer">
+      <div class="rays"></div>
+      <div class="aurora a1"></div><div class="aurora a2"></div><div class="aurora a3"></div>
+      <div class="motes" id="endMotes"></div>
+      <div class="flash" id="endFlash"></div>
+    </div>
+    <div id="endOrbit"><div class="orbit-ring" id="endOrbitRing"></div></div>
+    <div class="clear-card panel gem">
+      <div class="cap" id="endEyebrow">Summit Reached</div>
+      <div class="medal-wrap" id="endMedal"></div>
+      <h2 class="clear-title" id="endTitle"></h2>
+      <div class="rule"><span class="cap" id="endRankName"></span></div>
+      <div class="stat-grid" id="endStats"></div>
+      <div class="badges" id="endBadges"></div>
+      <div class="review-list" id="endReview"></div>
+      <button class="btn primary" id="btnReplay">再び 登塔する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+const QUESTIONS = {
+physics: [
+ {q:"100Vの電源に20Ωの抵抗をつなぐとき、回路に流れる電流は何Aか。",choices:["5A","2A","20A","0.2A"],a:0,exp:"オームの法則(電流=電圧÷抵抗)より 100÷20=5A。"},
+ {q:"物体にはたらく2つの力がつり合っているとき、物体の運動はどうなるか。",choices:["静止または等速直線運動を続ける","必ず静止する","しだいに加速する","しだいに減速して止まる"],a:0,exp:"力がつり合うと合力は0になり、静止か等速直線運動を続ける(慣性の法則)。"},
+ {q:"凸レンズで、スクリーンに実像ができるのは物体をどこに置いたときか。",choices:["焦点の外側に置いたとき","焦点の内側に置いたとき","焦点上に置いたとき","レンズに接するとき"],a:0,exp:"物体が焦点の外側にあると、光が集まりスクリーンに実像ができる。"},
+ {q:"音の高さを決める要素は何か。",choices:["振動数","振幅","音源の重さ","空気の温度だけ"],a:0,exp:"振動数(Hz)が多いほど音は高くなる。"},
+ {q:"1Wとは、1秒間に何Jの仕事をする仕事率のことか。",choices:["1J","10J","100J","1000J"],a:0,exp:"仕事率1W=1秒間に1Jの仕事をする割合。"},
+ {q:"水中で物体にはたらく浮力の大きさを決めるものは何か。",choices:["物体が押しのけた水の重さ","物体そのものの重さ","水の温度だけ","物体の色"],a:0,exp:"アルキメデスの原理により、浮力は押しのけた液体の重さに等しい。"},
+ {q:"力学的エネルギー保存の法則で、位置エネルギーが減ると増えるものは何か。",choices:["運動エネルギー","熱エネルギー","電気エネルギー","化学エネルギー"],a:0,exp:"摩擦や空気抵抗がなければ、位置エネルギーの減少分は運動エネルギーの増加になる。"},
+ {q:"大気圧が生じる主な原因は何か。",choices:["空気そのものの重さ","気温の変化","地球の自転","太陽の光"],a:0,exp:"大気圧は、上空にある空気の重さによって生じる圧力である。"},
+ {q:"コイルの中の磁界を変化させて電流を発生させる現象を何というか。",choices:["電磁誘導","静電誘導","熱電効果","光電効果"],a:0,exp:"電磁誘導によって生じる電流を誘導電流といい、発電機の原理である。"},
+ {q:"下敷きを髪の毛でこすると、下敷きが紙を引きつけるのはなぜか。",choices:["摩擦によって異なる種類の電気が生じ、引き合うため","同じ種類の電気が引き合うため","摩擦で熱が発生するため","空気が乾燥しているため"],a:0,exp:"摩擦によって物体が帯電し、異なる種類の電気(+と-)が引き合う。"},
+ {q:"凹レンズを通った光はどうなるか。",choices:["光が広がるように屈折する(実像はできない)","光が1点に集まる","光は屈折しない","光は反射する"],a:0,exp:"凹レンズは光を広げるように屈折させ、常に虚像ができる。"},
+ {q:"光の三原色に含まれないものはどれか。",choices:["黄","赤","緑","青"],a:0,exp:"光の三原色は赤・緑・青(RGB)。黄は色の三原色(絵の具)に含まれる。"},
+ {q:"音は真空中を伝わるか。",choices:["伝わらない(空気などの媒質が必要)","伝わる","光より速く伝わる","水中でのみ伝わらない"],a:0,exp:"音は空気や水などの媒質の振動によって伝わるため、真空中では伝わらない。"},
+ {q:"音の大きさを決める要素は何か。",choices:["振幅","振動数","波長","音源からの距離だけ"],a:0,exp:"振幅が大きいほど音は大きくなる。"},
+ {q:"ばねに加える力の大きさとばねの伸びの関係を表す法則を何というか。",choices:["フックの法則","オームの法則","質量保存の法則","作用反作用の法則"],a:0,exp:"ばねの伸びは加えた力に比例する(フックの法則)。"},
+ {q:"質量と重さの違いについて正しいのはどれか。",choices:["質量は場所によって変わらないが、重さ(重力)は場所によって変わる","質量も重さも場所によって変わらない","質量は場所によって変わるが重さは変わらない","質量と重さは全く同じ量である"],a:0,exp:"質量は物質そのものの量、重さは重力の大きさで、月面などでは重さが変化する。"},
+ {q:"圧力の単位として使われるのはどれか。",choices:["Pa(パスカル)","J(ジュール)","W(ワット)","N(ニュートン)"],a:0,exp:"圧力の単位はパスカル(Pa)で、1Pa=1N/m^2。"},
+ {q:"同じ力でも、力がはたらく面積が小さいほど圧力はどうなるか。",choices:["大きくなる","小さくなる","変わらない","0になる"],a:0,exp:"圧力=力÷面積のため、面積が小さいほど圧力は大きくなる。"},
+ {q:"水深が深いほど水圧はどうなるか。",choices:["大きくなる","小さくなる","変わらない","0になる"],a:0,exp:"水圧は水の重さによって生じ、深いほど上にある水の量が増えるため大きくなる。"},
+ {q:"2力の合力を求める作図方法を何というか。",choices:["平行四辺形の法則(力の合成)","フックの法則","作用反作用の法則","慣性の法則"],a:0,exp:"2つの力を2辺とする平行四辺形の対角線が合力を表す。"},
+ {q:"直列回路で電流の大きさについて正しいのはどれか。",choices:["回路のどの点でも電流の大きさは等しい","抵抗が大きい部分ほど電流は大きい","電源に近いほど電流は大きい","電流はどこかで消費されてなくなる"],a:0,exp:"直列回路では電流の大きさはどこでも一定である。"},
+ {q:"並列回路で、各抵抗にかかる電圧について正しいのはどれか。",choices:["電源の電圧と等しい(各抵抗で同じ)","抵抗の大きさに比例して変わる","すべて合計すると電源電圧になる","並列では電圧はかからない"],a:0,exp:"並列回路では、各抵抗に電源と同じ電圧がかかる。"},
+ {q:"同じ大きさの抵抗を2つ直列につなぐと、合成抵抗はもとの何倍になるか。",choices:["2倍","0.5倍","4倍","変わらない"],a:0,exp:"直列の合成抵抗は各抵抗の和になるため2倍になる。"},
+ {q:"同じ大きさの抵抗を2つ並列につなぐと、合成抵抗はもとの何倍になるか。",choices:["0.5倍","2倍","4倍","変わらない"],a:0,exp:"並列につなぐと合成抵抗はもとの抵抗より小さくなり、同じ抵抗2個なら0.5倍になる。"},
+ {q:"電力(消費電力)を求める式はどれか。",choices:["電力=電圧×電流","電力=電圧÷電流","電力=電流÷電圧","電力=電圧+電流"],a:0,exp:"電力(W)=電圧(V)×電流(A)。"},
+ {q:"1時間に100Wの電気器具を使ったときの電力量は何Whか。",choices:["100Wh","1Wh","10000Wh","1000Wh"],a:0,exp:"電力量(Wh)=電力(W)×時間(h)より100×1=100Wh。"},
+ {q:"電流によって熱が発生する現象を利用した器具はどれか。",choices:["電気ストーブ(電熱線)","モーター","発電機","スピーカー"],a:0,exp:"電熱線に電流を流すとジュール熱が発生し、電気ストーブなどに利用される。"},
+ {q:"2種類の異なる物質をこすり合わせたときに生じる電気を何というか。",choices:["静電気","電磁誘導による電気","化学電池の電気","地電流"],a:0,exp:"摩擦によって物体の表面に電気がたまる現象を静電気という。"},
+ {q:"電流のまわりにできる磁界の向きを調べる考え方は何か。",choices:["右ねじの法則","フレミングの左手の法則","レンツの法則","オームの法則"],a:0,exp:"電流の向きに右ねじを進めるときのねじを回す向きが磁界の向きになる。"},
+ {q:"コイルに流れる電流と磁界を利用して回転する力を得る装置はどれか。",choices:["モーター","発電機","変圧器","コンデンサー"],a:0,exp:"モーターは電流が磁界から受ける力を利用して回転運動を得る装置。"},
+ {q:"磁石をコイルに出し入れしてコイルに電流を流す現象を何というか。",choices:["電磁誘導","静電誘導","電気分解","熱電効果"],a:0,exp:"磁界の変化によってコイルに電流が生じる現象を電磁誘導という。"},
+ {q:"電磁誘導によって流れる電流を何というか。",choices:["誘導電流","交流電流のみ","静電流","渦電流のみ"],a:0,exp:"電磁誘導で生じる電流を誘導電流という。"},
+ {q:"家庭のコンセントから供給される電流の種類はどれか。",choices:["交流","直流","静電流のみ","誘導電流のみ"],a:0,exp:"家庭用電源は向きが周期的に変わる交流である。"},
+ {q:"一定の速さで一直線上を進む運動を何というか。",choices:["等速直線運動","等加速度運動","円運動","振動運動"],a:0,exp:"速さも向きも変わらない運動を等速直線運動という。"},
+ {q:"物体に力がはたらいていない、またはつり合っているとき、静止していた物体はどうなるか。",choices:["静止し続ける(慣性の法則)","自然に動き出す","加速する","振動する"],a:0,exp:"慣性の法則により、力がつり合っていれば静止している物体は静止し続ける。"},
+ {q:"ある物体がほかの物体に力を加えると、同時に相手からも力を受ける。この関係を何の法則というか。",choices:["作用・反作用の法則","慣性の法則","フックの法則","エネルギー保存の法則"],a:0,exp:"力を及ぼすと必ず同じ大きさで逆向きの力を受け返す(作用・反作用の法則)。"},
+ {q:"物体を持ち上げる仕事の大きさは何によって決まるか。",choices:["加えた力の大きさと動かした距離","かかった時間だけ","物体の色","物体の温度"],a:0,exp:"仕事(J)=力(N)×移動距離(m)。"},
+ {q:"同じ仕事をより短い時間で行うほど、仕事率はどうなるか。",choices:["大きくなる","小さくなる","変わらない","0になる"],a:0,exp:"仕事率=仕事÷時間のため、時間が短いほど仕事率は大きい。"},
+ {q:"高い位置にある物体がもつエネルギーを何というか。",choices:["位置エネルギー","運動エネルギー","熱エネルギー","化学エネルギー"],a:0,exp:"高さと質量に応じて物体がもつエネルギーを位置エネルギーという。"},
+ {q:"動いている物体がもつエネルギーを何というか。",choices:["運動エネルギー","位置エネルギー","弾性エネルギー","核エネルギー"],a:0,exp:"速さと質量に応じて物体がもつエネルギーを運動エネルギーという。"},
+ {q:"斜面を使って物体を持ち上げるとき、仕事の大きさは直接持ち上げる場合と比べてどうなるか(摩擦を考えない場合)。",choices:["変わらない(仕事の原理)","小さくなる","大きくなる","0になる"],a:0,exp:"道具を使っても、摩擦がなければ仕事の大きさは変わらない(仕事の原理)。"},
+ {q:"自由落下する物体の速さは時間とともにどうなるか。",choices:["一定の割合で増加する","一定である","減少する","変化しない"],a:0,exp:"自由落下では重力によって一定の割合(重力加速度)で速さが増していく。"},
+ {q:"記録タイマーを使って運動を調べるとき、打点の間隔が広いほど物体の速さはどうか。",choices:["速い","遅い","止まっている","わからない"],a:0,exp:"一定時間ごとに打点するため、間隔が広いほど短時間で長い距離を進んでおり速いことがわかる。"},
+ {q:"摩擦力がはたらく運動では、力学的エネルギーはどうなるか。",choices:["熱エネルギーなどに変わり、力学的エネルギーは減少する","常に一定に保たれる","運動エネルギーだけが増加し続ける","位置エネルギーだけが増加し続ける"],a:0,exp:"摩擦があると力学的エネルギーの一部が熱エネルギーに変わり、力学的エネルギーは保存されない。"},
+ {q:"凸レンズを物体と焦点の間に置いたとき(焦点距離より近い)にできる像を何というか。",choices:["虚像(実際より大きく見える)","実像","反射像のみ","像はできない"],a:0,exp:"物体が焦点の内側にあるとき、凸レンズごしに見える大きな虚像ができる。"},
+ {q:"光が異なる物質の境界で折れ曲がって進む現象を何というか。",choices:["屈折","反射","回折","干渉"],a:0,exp:"光が空気中から水中などに進むとき、境界で進む向きが変わる現象を屈折という。"},
+ {q:"入射角と反射角の関係について正しいのはどれか。",choices:["入射角と反射角は等しい(反射の法則)","入射角は反射角より必ず大きい","入射角は反射角より必ず小さい","関係はない"],a:0,exp:"光が反射するとき、入射角と反射角は常に等しい。"},
+ {q:"全反射が起こりやすいのはどのような場合か。",choices:["光が水やガラスから空気へ、ある角度以上で進もうとするとき","光が空気からガラスへ進むとき","光が真空中を進むとき","光が反射せず直進するとき"],a:0,exp:"光が密な媒質から疎な媒質へ大きな角度で進もうとすると、境界ですべて反射する全反射が起こる。"},
+ {q:"電熱線の発熱量は、電流や電圧の大きさとどのような関係にあるか。",choices:["電流や電圧が大きいほど発熱量は大きくなる","電流や電圧が大きいほど発熱量は小さくなる","電流や電圧とは無関係である","電熱線の色だけで決まる"],a:0,exp:"発熱量は電力(電圧×電流)と時間に比例して大きくなる。"},
+ {q:"重力による位置エネルギーは、物体の高さのほかに何に関係するか。",choices:["物体の質量","物体の色","物体の速さ","物体の温度"],a:0,exp:"位置エネルギーは質量と高さの両方に比例して大きくなる。"}
+],
+chemistry:[
+ {q:"氷が水になる状態変化を何というか。",choices:["融解","蒸発","凝固","昇華"],a:0,exp:"固体が液体になる変化を融解という。"},
+ {q:"塩酸に水酸化ナトリウム水溶液を加えて中和させると、水のほかに何ができるか。",choices:["塩(えん)","酸素","二酸化炭素","水素"],a:0,exp:"中和反応では、酸とアルカリが結びついて塩と水ができる。"},
+ {q:"化学変化の前後で、物質全体の質量は変化しないという法則を何というか。",choices:["質量保存の法則","エネルギー保存の法則","慣性の法則","作用・反作用の法則"],a:0,exp:"化学変化の前後で原子の組み合わせは変わるが、原子の数と種類は変わらないため質量は保存される。"},
+ {q:"鉄が空気中でさびる反応は、どのような化学変化か。",choices:["酸化","還元","中和","電気分解"],a:0,exp:"物質が酸素と結びつく変化を酸化という。さびは鉄の酸化によってできる。"},
+ {q:"水を電気分解すると、陰極と陽極ではそれぞれ何が発生するか。",choices:["陰極に水素、陽極に酸素","陰極に酸素、陽極に水素","両極とも酸素","両極とも水素"],a:0,exp:"水の電気分解では、陰極から水素、陽極から酸素が体積比2:1で発生する。"},
+ {q:"原子が電子を失ったり受け取ったりして電気を帯びた粒子を何というか。",choices:["イオン","分子","中性子","同位体"],a:0,exp:"電子を失うと陽イオン、受け取ると陰イオンになる。"},
+ {q:"二酸化炭素を石灰水に通すとどうなるか。",choices:["白くにごる","青色になる","無色透明のまま","赤色になる"],a:0,exp:"二酸化炭素は石灰水中の水酸化カルシウムと反応し、白い炭酸カルシウムの沈殿ができる。"},
+ {q:"溶解度が温度によって変化する性質を利用して、溶質を結晶として取り出す操作を何というか。",choices:["再結晶","蒸留","ろ過","中和"],a:0,exp:"温度による溶解度の差を利用し、結晶として物質を取り出す操作を再結晶という。"},
+ {q:"酸性・アルカリ性の強さを表す数値を何というか。",choices:["pH","密度","質量数","モル濃度"],a:0,exp:"pHは7が中性、7より小さいほど酸性、大きいほどアルカリ性が強い。"},
+ {q:"化学式 H2O が表す物質は何か。",choices:["水","過酸化水素","水素","酸素"],a:0,exp:"H2Oは水素原子2個と酸素原子1個からなる水の化学式。"},
+ {q:"物質が状態変化するとき、粒子の数はどうなるか。",choices:["変化しない(粒子の運動や間隔が変わる)","増える","減る","半分になる"],a:0,exp:"状態変化では粒子の数は変わらず、粒子の運動の激しさや間隔が変化する。"},
+ {q:"純粋な物質が状態変化している間、温度はどうなるか。",choices:["一定に保たれる","上がり続ける","下がり続ける","急激に変化する"],a:0,exp:"融点や沸点では、状態変化が終わるまで温度は一定に保たれる。"},
+ {q:"2種類以上の物質が混ざり合ったものを何というか。",choices:["混合物","純物質","単体","化合物"],a:0,exp:"食塩水や空気のように複数の物質が混ざったものを混合物という。"},
+ {q:"1種類の元素だけからできている物質を何というか。",choices:["単体","化合物","混合物","溶液"],a:0,exp:"酸素や鉄のように1種類の元素からなる物質を単体という。"},
+ {q:"2種類以上の元素が結びついてできた物質を何というか。",choices:["化合物","単体","混合物","元素"],a:0,exp:"水や二酸化炭素のように、2種類以上の元素が結びついた物質を化合物という。"},
+ {q:"酸素を発生させる実験でよく使われる方法はどれか。",choices:["過酸化水素水に二酸化マンガンを加える","炭酸水素ナトリウムを加熱する","石灰石にうすい塩酸を加える","塩化アンモニウムと水酸化カルシウムを混ぜて加熱する"],a:0,exp:"過酸化水素水(オキシドール)に二酸化マンガンを加えると酸素が発生する。"},
+ {q:"二酸化炭素を発生させる実験でよく使われる方法はどれか。",choices:["石灰石にうすい塩酸を加える","亜鉛にうすい塩酸を加える","水を電気分解する","塩化ナトリウムを加熱する"],a:0,exp:"石灰石(炭酸カルシウム)にうすい塩酸を加えると二酸化炭素が発生する。"},
+ {q:"水素を発生させる実験でよく使われる方法はどれか。",choices:["亜鉛にうすい塩酸を加える","石灰石にうすい塩酸を加える","二酸化マンガンに過酸化水素水を加える","食塩水を加熱する"],a:0,exp:"亜鉛や鉄などの金属にうすい塩酸を加えると水素が発生する。"},
+ {q:"水にとけにくい気体を集める方法として適しているのはどれか。",choices:["水上置換法","上方置換法のみ","下方置換法のみ","ろ過"],a:0,exp:"水にとけにくい気体(酸素・水素など)は水上置換法で集めるのが一般的。"},
+ {q:"空気より軽く、水にとけやすい気体(アンモニアなど)を集める方法はどれか。",choices:["上方置換法","下方置換法","水上置換法","蒸留"],a:0,exp:"アンモニアは空気より軽く水にとてもよくとけるため、上方置換法で集める。"},
+ {q:"溶質が溶媒にとけた液全体を何というか。",choices:["溶液","結晶","沈殿","気体"],a:0,exp:"溶質が溶媒にとけて均一に混ざった液体を溶液という。"},
+ {q:"100gの水に20gの砂糖をとかした水溶液の質量パーセント濃度は何%か。",choices:["約16.7%","20%","80%","120%"],a:0,exp:"濃度(%)=溶質の質量÷(溶質+溶媒の質量)×100=20÷120×100≒16.7%。"},
+ {q:"固体が一定量の溶媒にとける限度の量を表す語句はどれか。",choices:["溶解度","密度","質量パーセント濃度","モル濃度"],a:0,exp:"一定量の溶媒にとける物質の最大量を溶解度という。"},
+ {q:"混合物から、液体とその中にとけない固体を分ける操作を何というか。",choices:["ろ過","蒸留","再結晶","中和"],a:0,exp:"ろ紙を使って固体と液体を分ける操作をろ過という。"},
+ {q:"液体を加熱して気体にし、それを冷やして再び液体として取り出す操作を何というか。",choices:["蒸留","ろ過","再結晶","電気分解"],a:0,exp:"沸点の違いを利用して混合物から特定の液体を分離する操作を蒸留という。"},
+ {q:"酸化銀を加熱すると銀と気体に分解する。このとき発生する気体は何か。",choices:["酸素","二酸化炭素","水素","窒素"],a:0,exp:"酸化銀を加熱すると銀と酸素に分解する(熱分解)。"},
+ {q:"炭酸水素ナトリウムを加熱すると、炭酸ナトリウム・水・気体に分解する。この気体は何か。",choices:["二酸化炭素","酸素","水素","アンモニア"],a:0,exp:"炭酸水素ナトリウムの熱分解では二酸化炭素が発生する。"},
+ {q:"酸化物から酸素を取りのぞく化学変化を何というか。",choices:["還元","酸化","中和","電離"],a:0,exp:"酸化物が酸素を失う変化を還元といい、酸化と還元は同時に起こることが多い。"},
+ {q:"酸化銅と炭素を混ぜて加熱すると、銅と気体ができる。このとき起きている反応はどれか。",choices:["酸化銅が還元され、炭素が酸化される","酸化銅が酸化され、炭素が還元される","中和反応が起こる","状態変化のみが起こる"],a:0,exp:"炭素が酸素と結びついて酸化され(二酸化炭素になり)、酸化銅は還元されて銅になる。"},
+ {q:"物質が酸素と結びついて熱や光を出しながら激しく反応することを何というか。",choices:["燃焼","中和","電離","蒸発"],a:0,exp:"激しい酸化反応で熱や光を出すものを燃焼という。"},
+ {q:"化学変化の前後で、反応にかかわった物質全体の質量の関係はどうなるか。",choices:["変化の前後で質量の総和は変わらない","反応後のほうが必ず重くなる","反応後のほうが必ず軽くなる","気体が発生すると必ず軽くなる"],a:0,exp:"密閉容器内では、化学変化の前後で物質全体の質量は変わらない(質量保存の法則)。"},
+ {q:"金属を加熱して酸化物になるとき、質量が増えるのはなぜか。",choices:["結びついた酸素の分だけ質量が増えるため","金属が別の物質に変わり質量保存則は成り立たないため","熱によって質量が生まれるため","計測誤差のため"],a:0,exp:"金属原子に酸素原子が結びつくことで、その分だけ全体の質量が増加する。"},
+ {q:"酸性の水溶液に共通する性質はどれか。",choices:["青色リトマス紙を赤色に変える","赤色リトマス紙を青色に変える","フェノールフタレイン溶液を赤色にする","pHが7より大きい"],a:0,exp:"酸性の水溶液は青色リトマス紙を赤色に変える性質がある。"},
+ {q:"アルカリ性の水溶液に共通する性質はどれか。",choices:["赤色リトマス紙を青色に変える","青色リトマス紙を赤色に変える","pHが7より小さい","BTB溶液を黄色にする"],a:0,exp:"アルカリ性の水溶液は赤色リトマス紙を青色に変え、BTB溶液を青色にする。"},
+ {q:"酸とアルカリが反応して、互いの性質を打ち消し合う反応を何というか。",choices:["中和","電離","還元","蒸発"],a:0,exp:"酸の水素イオンとアルカリの水酸化物イオンが結びついて水ができ、性質が打ち消される反応を中和という。"},
+ {q:"電解質が水にとけて陽イオンと陰イオンに分かれることを何というか。",choices:["電離","中和","還元","昇華"],a:0,exp:"塩化ナトリウムなどの電解質は水にとけると陽イオンと陰イオンに分かれる(電離)。"},
+ {q:"電解質水溶液に電流を流すことができるのはなぜか。",choices:["電解質がとけていてイオンが移動できるため","水がすべて中性だから","混合物であるため","色がついているため"],a:0,exp:"電解質水溶液中ではイオンが移動できるため、電流が流れ電気分解が起こる。"},
+ {q:"塩化銅水溶液を電気分解したとき、陽極付近で確認できる特徴はどれか。",choices:["刺激臭(塩素のにおい)がする","赤色の金属が付着する","気体が発生しない","青色の沈殿ができる"],a:0,exp:"陽極からは塩素が発生し、特有の刺激臭がある。"},
+ {q:"2種類の金属板と電解質水溶液を使って電流を取り出す装置を何というか。",choices:["電池(化学電池)","コンデンサー","変圧器","発電機"],a:0,exp:"金属のイオンへのなりやすさの違いを利用して電流を取り出す装置を電池という。"},
+ {q:"ダニエル電池で、亜鉛板と銅板のうち、電子が流れ出す(-極になる)のはどちらか。",choices:["亜鉛板","銅板","どちらも同じ","どちらも変化しない"],a:0,exp:"亜鉛は銅よりイオンになりやすいため、亜鉛板が-極となり電子を放出する。"},
+ {q:"原子の中心にあり、+の電気を帯びている部分を何というか。",choices:["原子核","電子","中性子だけ","分子"],a:0,exp:"原子核は陽子と中性子からなり、全体として+の電気を帯びる。"},
+ {q:"原子核のまわりを回っている、-の電気を帯びた粒子を何というか。",choices:["電子","陽子","中性子","イオン"],a:0,exp:"電子は-の電気を帯び、原子核のまわりに存在する。"},
+ {q:"同じ元素でも中性子の数が異なる原子どうしを何というか。",choices:["同位体","異性体","化合物","混合物"],a:0,exp:"陽子の数(原子番号)が同じでも中性子の数が異なる原子を同位体という。"},
+ {q:"化学反応式を書くとき、必ず一致させなければならないのは何か。",choices:["矢印の左右で原子の種類と数","矢印の左右で物質の色","矢印の左右で状態(固体・液体・気体)","矢印の左右で質量パーセント濃度"],a:0,exp:"化学反応式は、反応の前後で原子の種類と数が変わらないように書く。"},
+ {q:"食塩(塩化ナトリウム)の化学式はどれか。",choices:["NaCl","NaOH","HCl","CaCO3"],a:0,exp:"塩化ナトリウムはナトリウムイオンと塩化物イオンが1:1で結びついたNaClである。"},
+ {q:"二酸化炭素の化学式はどれか。",choices:["CO2","CO","O2","H2CO3"],a:0,exp:"二酸化炭素は炭素原子1個と酸素原子2個からなるCO2である。"},
+ {q:"水酸化ナトリウムのように、水にとけるとアルカリ性を示す物質に共通するイオンは何か。",choices:["水酸化物イオン(OH-)","水素イオン(H+)","塩化物イオン(Cl-)","ナトリウムイオン(Na+)のみ"],a:0,exp:"アルカリは水にとけると水酸化物イオンを生じる性質をもつ。"},
+ {q:"塩酸のように、水にとけると酸性を示す物質に共通するイオンは何か。",choices:["水素イオン(H+)","水酸化物イオン(OH-)","炭酸イオン","ナトリウムイオン"],a:0,exp:"酸は水にとけると水素イオンを生じる性質をもつ。"},
+ {q:"硫酸バリウムのように水にほとんどとけない物質が、水溶液中の反応でできて出てくることを何というか。",choices:["沈殿","昇華","電離","蒸留"],a:0,exp:"反応によって水にとけない固体ができ、底に沈むことを沈殿という。"},
+ {q:"密閉容器の中で炭酸水素ナトリウムとうすい塩酸を反応させ、発生した気体を外に逃がさず全体の質量をはかると、反応の前後でどうなるか。",choices:["変わらない","反応後のほうが軽くなる","反応後のほうが重くなる","気体の分だけ必ず軽くなる"],a:0,exp:"密閉容器内では気体も含めて質量保存の法則が成り立ち、質量は変わらない。"}
+],
+biology:[
+ {q:"植物が光合成によって二酸化炭素と水から作り出す物質は、酸素のほかに何か。",choices:["デンプン(栄養分)","タンパク質","脂肪","ビタミン"],a:0,exp:"光合成では光エネルギーを使ってデンプンなどの栄養分と酸素がつくられる。"},
+ {q:"植物の細胞に見られ、動物の細胞には見られないつくりはどれか。",choices:["細胞壁と葉緑体","核","細胞膜","ミトコンドリア"],a:0,exp:"細胞壁と葉緑体は植物細胞に特有のつくりである。"},
+ {q:"ヒトの消化液のうち、デンプンを分解する消化酵素を含むのはどれか。",choices:["だ液","胆汁","涙","汗"],a:0,exp:"だ液に含まれるアミラーゼがデンプンを分解する。"},
+ {q:"血液の成分のうち、酸素を運ぶはたらきをするのはどれか。",choices:["赤血球","白血球","血小板","血しょう"],a:0,exp:"赤血球中のヘモグロビンが酸素と結びつき、全身に酸素を運ぶ。"},
+ {q:"有性生殖で受精によって子ができるとき、子の形質はどうなるか。",choices:["両親の形質を受け継ぎ、多様な組み合わせになる","母親の形質だけを受け継ぐ","父親の形質だけを受け継ぐ","必ず親と全く同じ形質になる"],a:0,exp:"有性生殖では両親の遺伝子が組み合わさるため、子は多様な形質を持つ。"},
+ {q:"対立形質のうち、子に現れやすい形質を何というか。",choices:["顕性形質(優性形質)","潜性形質(劣性形質)","中間形質","突然変異形質"],a:0,exp:"メンデルの実験で、子に現れる形質を顕性形質という。"},
+ {q:"生態系で、光合成を行い自ら栄養分をつくる生物を何というか。",choices:["生産者","消費者","分解者","捕食者"],a:0,exp:"植物などの光合成を行う生物は生産者と呼ばれる。"},
+ {q:"呼吸によって細胞が養分から取り出しているものは何か。",choices:["エネルギー","二酸化炭素だけ","水だけ","栄養分そのもの"],a:0,exp:"細胞は酸素を使って養分を分解し、生きるためのエネルギーを取り出している。"},
+ {q:"意識とは無関係に、刺激に対してすばやく起こる反応を何というか。",choices:["反射","随意運動","光合成反応","蒸散反応"],a:0,exp:"熱いものに触れて思わず手を引っこめるなど、脳を経ずに起こる反応を反射という。"},
+ {q:"生物が長い年月をかけて世代を重ねる中で変化していくことを何というか。",choices:["進化","成長","変態","再生"],a:0,exp:"生物が長期間かけて子孫に変化が受け継がれていくことを進化という。"},
+ {q:"被子植物のうち、子葉が1枚の植物のなかまを何というか。",choices:["単子葉類","双子葉類","裸子植物","シダ植物"],a:0,exp:"子葉が1枚の被子植物を単子葉類という(例:イネ、ユリ)。"},
+ {q:"被子植物のうち、子葉が2枚の植物のなかまを何というか。",choices:["双子葉類","単子葉類","コケ植物","藻類"],a:0,exp:"子葉が2枚の被子植物を双子葉類という(例:アサガオ、サクラ)。"},
+ {q:"胚珠が子房の中にある植物を何というか。",choices:["被子植物","裸子植物","シダ植物","コケ植物"],a:0,exp:"胚珠が子房につつまれている植物を被子植物という。"},
+ {q:"胚珠がむき出しになっている植物を何というか。",choices:["裸子植物","被子植物","コケ植物","藻類"],a:0,exp:"マツなどのように胚珠が子房に包まれず、むき出しになっている植物を裸子植物という。"},
+ {q:"根・茎・葉の区別がなく、仮根で体を固定する植物のなかまはどれか。",choices:["コケ植物","シダ植物","裸子植物","被子植物"],a:0,exp:"コケ植物は根・茎・葉の区別がなく、水や養分は体全体から吸収する。"},
+ {q:"根・茎・葉の区別があり、胞子でふえる植物のなかまはどれか。",choices:["シダ植物","コケ植物","裸子植物","被子植物"],a:0,exp:"シダ植物は根・茎・葉の区別があるが、種子ではなく胞子でふえる。"},
+ {q:"根から吸収した水や養分が通る管を何というか。",choices:["道管","師管","気孔","柔毛"],a:0,exp:"道管は根から吸収した水や養分が通る管である。"},
+ {q:"葉でつくられた栄養分が通る管を何というか。",choices:["師管","道管","気孔","維管束のみ"],a:0,exp:"師管は葉でつくられた栄養分が全身に運ばれる際に通る管である。"},
+ {q:"葉の裏側に多く見られる、気体の出入り口を何というか。",choices:["気孔","道管","師管","柔毛"],a:0,exp:"気孔は主に葉の裏側に多く分布し、気体の出入りや蒸散が行われる。"},
+ {q:"植物が体内の水を水蒸気として気孔から放出するはたらきを何というか。",choices:["蒸散","光合成","呼吸","発芽"],a:0,exp:"根からの水の吸収を促す、水を水蒸気として放出するはたらきを蒸散という。"},
+ {q:"脊椎動物のうち、一生えらで呼吸し水中で生活するなかまはどれか。",choices:["魚類","両生類","は虫類","鳥類"],a:0,exp:"魚類は一生えら呼吸で、水中生活に適応している。"},
+ {q:"子はえら呼吸・親は肺呼吸と皮膚呼吸を行う脊椎動物のなかまはどれか。",choices:["両生類","魚類","は虫類","ホニュウ類"],a:0,exp:"両生類は幼生はえら呼吸、成体は肺や皮膚で呼吸する。"},
+ {q:"体表がうろこでおおわれ、陸上に殻のある卵を産む脊椎動物のなかまはどれか。",choices:["は虫類","両生類","鳥類","魚類"],a:0,exp:"は虫類はうろこにおおわれ、陸上に殻のある卵を産む。"},
+ {q:"体表が羽毛でおおわれ、恒温動物である脊椎動物のなかまはどれか。",choices:["鳥類","は虫類","両生類","魚類"],a:0,exp:"鳥類は羽毛でおおわれた恒温動物である。"},
+ {q:"胎生で子をうみ、体表が毛でおおわれる脊椎動物のなかまはどれか。",choices:["ホニュウ類","鳥類","は虫類","魚類"],a:0,exp:"ホニュウ類は胎生で、体表が毛でおおわれた恒温動物である。"},
+ {q:"背骨をもたない動物のなかまを何というか。",choices:["無脊椎動物","脊椎動物","恒温動物","変温動物"],a:0,exp:"昆虫や貝のように背骨をもたない動物を無脊椎動物という。"},
+ {q:"昆虫やエビのように、体の外側がかたい殻でおおわれた動物のなかまを何というか。",choices:["節足動物","軟体動物","刺胞動物","環形動物"],a:0,exp:"節足動物は体が外骨格でおおわれ、体やあしに節がある。"},
+ {q:"貝やイカのように、内臓が外とう膜でおおわれた動物のなかまを何というか。",choices:["軟体動物","節足動物","脊椎動物","刺胞動物"],a:0,exp:"軟体動物は骨格をもたず、内臓が外とう膜でおおわれている。"},
+ {q:"デンプンを分解する消化酵素はだ液のほかにどこから出されるか。",choices:["すい臓(すい液)","じん臓","肝臓のみ","心臓"],a:0,exp:"すい臓から出るすい液にもデンプンを分解する酵素が含まれる。"},
+ {q:"タンパク質を分解する消化酵素を含む消化液はどれか。",choices:["胃液","だ液のみ","涙","汗"],a:0,exp:"胃液に含まれるペプシンはタンパク質を分解する。"},
+ {q:"消化された養分を吸収する、小腸の壁にある小さな突起を何というか。",choices:["柔毛","気孔","肺胞","繊毛"],a:0,exp:"小腸の内側には柔毛という小さな突起が多数あり、表面積を広げて養分を効率よく吸収する。"},
+ {q:"肺の中にある、酸素と二酸化炭素を交換する小さな袋状の構造を何というか。",choices:["肺胞","柔毛","気管支のみ","横隔膜"],a:0,exp:"肺胞は非常に小さな袋状の構造で、まわりの毛細血管とガス交換を行う。"},
+ {q:"心臓から全身に血液を送り出す血管を何というか。",choices:["動脈","静脈","毛細血管のみ","リンパ管"],a:0,exp:"心臓から送り出される血液が流れる血管を動脈という。"},
+ {q:"全身から心臓へ血液がもどる血管を何というか。",choices:["静脈","動脈","毛細血管のみ","気管"],a:0,exp:"心臓へ血液がもどる血管を静脈といい、逆流を防ぐ弁がある。"},
+ {q:"血液の成分のうち、体内に入った細菌などを分解するはたらきをもつのはどれか。",choices:["白血球","赤血球","血小板","血しょう"],a:0,exp:"白血球は体内に侵入した細菌や異物を分解・排除するはたらきをもつ。"},
+ {q:"血液の成分のうち、出血したときに血液を固めるはたらきをもつのはどれか。",choices:["血小板","赤血球","白血球","血しょう"],a:0,exp:"血小板は傷口で血液を固め、出血を止めるはたらきをもつ。"},
+ {q:"血液中の不要な物質をこし出し、尿としてまとめる器官はどれか。",choices:["じん臓","肝臓","心臓","肺"],a:0,exp:"じん臓は血液中の不要な物質をこしとり、尿をつくる器官である。"},
+ {q:"アンモニアなどの有害な物質を、害の少ない尿素につくり変える器官はどれか。",choices:["肝臓","じん臓","すい臓","小腸"],a:0,exp:"肝臓は有害なアンモニアを尿素に変えるはたらきなどをもつ。"},
+ {q:"光や音などの刺激を受け取る器官を何というか。",choices:["感覚器官","運動器官","消化器官","循環器官"],a:0,exp:"目や耳など、外界からの刺激を受け取る器官を感覚器官という。"},
+ {q:"脳やせきずいのように、判断や命令の中心となる神経を何というか。",choices:["中枢神経","末しょう神経","感覚神経のみ","運動神経のみ"],a:0,exp:"脳とせきずいをまとめて中枢神経という。"},
+ {q:"からだの各部と中枢神経をつなぐ神経を何というか。",choices:["末しょう神経","中枢神経","反射神経のみ","自律神経のみ"],a:0,exp:"感覚神経や運動神経など、中枢神経とからだの各部をつなぐ神経を末しょう神経という。"},
+ {q:"からだをつくる細胞が2つに分かれてふえる過程を何というか。",choices:["体細胞分裂","減数分裂","受精","発生"],a:0,exp:"からだをつくる細胞がふえるときに起こる細胞分裂を体細胞分裂という。"},
+ {q:"生殖細胞がつくられるときに行われる、染色体の数が半分になる細胞分裂を何というか。",choices:["減数分裂","体細胞分裂","受精","発芽"],a:0,exp:"生殖細胞ができるときには減数分裂が起こり、染色体の数が半分になる。"},
+ {q:"からだの一部から新しい個体ができる、受精を伴わない生殖を何というか。",choices:["無性生殖","有性生殖","減数分裂","体細胞分裂"],a:0,exp:"分裂やさし木のように、受精を伴わずに新しい個体をつくる生殖を無性生殖という。"},
+ {q:"染色体にあり、生物の形質を決めるもとになる本体を何というか。",choices:["DNA(遺伝子)","タンパク質のみ","細胞膜","ミトコンドリア"],a:0,exp:"染色体に含まれるDNAが遺伝子の本体であり、形質を決める情報をもつ。"},
+ {q:"脊椎動物のからだの部分で、形やはたらきは違うが基本的なつくりが同じで、共通の祖先から進化したと考えられる器官を何というか。",choices:["相同器官","相似器官","退化器官のみ","対称器官"],a:0,exp:"コウモリの翼やヒトの腕のように、起源が同じと考えられる器官を相同器官という。"},
+ {q:"脊椎動物が出現した順序として正しいのはどれか。",choices:["魚類→両生類→は虫類→ホニュウ類・鳥類","ホニュウ類→鳥類→は虫類→両生類→魚類","は虫類→魚類→両生類→鳥類","鳥類→魚類→は虫類→両生類"],a:0,exp:"化石の記録から、魚類→両生類→は虫類→ホニュウ類・鳥類の順に出現したと考えられている。"},
+ {q:"生態系で、生物の死がいやふんなどの有機物を無機物に分解する生物を何というか。",choices:["分解者","生産者","消費者","生成者"],a:0,exp:"菌類・細菌類などのように有機物を無機物に分解する生物を分解者という。"},
+ {q:"生態系の中で、植物を食べる草食動物を何というか。",choices:["消費者","生産者","分解者","独立栄養生物"],a:0,exp:"ほかの生物を食べて栄養分を得る生物を消費者といい、草食動物は消費者にあたる。"},
+ {q:"生物どうしの食べる・食べられるの関係が網の目のようにつながっていることを何というか。",choices:["食物網","食物連鎖のみ","生態ピラミッド","炭素循環"],a:0,exp:"複数の食物連鎖が複雑につながり合っている関係を食物網という。"}
+],
+earth:[
+ {q:"川によって運ばれた土砂が海底などに層状に積み重なってできる岩石を何というか。",choices:["堆積岩","火成岩","変成岩","火山岩"],a:0,exp:"れき・砂・泥などが堆積して固まった岩石を堆積岩という。"},
+ {q:"地層の中から見つかる、その地層が堆積した当時の環境を知る手がかりとなる化石を何というか。",choices:["示相化石","示準化石","模式化石","変成化石"],a:0,exp:"堆積した当時の環境がわかる化石を示相化石、堆積した年代がわかる化石を示準化石という。"},
+ {q:"マグマが地表や地表近くで急に冷えて固まってできる岩石を何というか。",choices:["火山岩","深成岩","堆積岩","石灰岩"],a:0,exp:"地表付近で急速に冷え固まった岩石を火山岩、地下深くでゆっくり冷え固まったものを深成岩という。"},
+ {q:"地震の規模の大きさを表す数値を何というか。",choices:["マグニチュード","震度","走時","初期微動継続時間"],a:0,exp:"マグニチュードは地震そのもののエネルギーの大きさを表す。震度は各地点でのゆれの大きさ。"},
+ {q:"寒気と暖気がぶつかり合ってできる、天気の変化に関わる境界を何というか。",choices:["前線","等圧線","気団","偏西風"],a:0,exp:"性質の異なる気団の境界を前線といい、天気の急変をもたらす。"},
+ {q:"空気中の水蒸気が冷やされて水滴に変わり始める温度を何というか。",choices:["露点","沸点","融点","氷点"],a:0,exp:"空気が冷やされ、水蒸気が凝結し始める温度を露点という。"},
+ {q:"月が満ち欠けして見える主な理由は何か。",choices:["月と太陽の位置関係が変わり、光る部分の見え方が変わるため","月が自分で発光する量が変わるため","毎回地球の影が月にかかるため","雲の量が変わるため"],a:0,exp:"月は自ら光らず太陽の光を反射しており、地球から見える光る部分の割合が変わることで満ち欠けして見える。"},
+ {q:"太陽系の惑星のうち、地球型惑星に分類されるのはどれか。",choices:["水星","木星","土星","天王星"],a:0,exp:"水星・金星・地球・火星は、密度が大きく主に岩石でできた地球型惑星である。"},
+ {q:"地球が1年かけて太陽のまわりを1周する運動を何というか。",choices:["公転","自転","歳差運動","章動"],a:0,exp:"地球が太陽のまわりを1年で1周する運動を公転という。"},
+ {q:"太陽系が属する、恒星の大集団を何というか。",choices:["銀河系(天の川銀河)","星雲","彗星群","小惑星帯"],a:0,exp:"太陽系は銀河系(天の川銀河)という数千億個の恒星からなる集団の一部である。"},
+ {q:"地層が波打つように曲げられた構造を何というか。",choices:["しゅう曲","断層","不整合","風化"],a:0,exp:"地層が大きな力を受けて波打つように曲げられた構造をしゅう曲という。"},
+ {q:"地層が大きな力を受けてずれ動いた構造を何というか。",choices:["断層","しゅう曲","不整合","堆積"],a:0,exp:"地層が破断してずれ動いたものを断層という。"},
+ {q:"粒の直径が2mm以上の堆積物からできた岩石を何というか。",choices:["れき岩","砂岩","泥岩","石灰岩"],a:0,exp:"堆積岩は粒の大きさによって、れき岩・砂岩・泥岩に分けられる。"},
+ {q:"サンゴの化石を含む地層からは、堆積した当時どのような環境だったと考えられるか。",choices:["あたたかく浅い海","冷たく深い海","陸上の湖","極寒の氷河地帯"],a:0,exp:"サンゴは主にあたたかく浅い海に生息するため、示相化石として利用される。"},
+ {q:"ある時代にだけ広い範囲で栄えて絶滅した生物の化石で、地層の年代を推定するのに使われる化石を何というか。",choices:["示準化石","示相化石","模式化石のみ","変成化石"],a:0,exp:"限られた時代に広く分布した生物の化石を示準化石といい、地層の年代を知る手がかりになる。"},
+ {q:"マグマの粘り気が強い(ねばい)火山ほど、噴火の様子や火山の形はどうなる傾向があるか。",choices:["激しく爆発的な噴火をし、盛り上がった形の火山になりやすい","おだやかな噴火をし、平らで広がった形になりやすい","噴火せず常に穏やかである","粘り気は噴火の様子に関係しない"],a:0,exp:"粘り気の強いマグマは気体が抜けにくく爆発的な噴火を起こしやすく、盛り上がった形の火山をつくりやすい。"},
+ {q:"マグマが冷え固まってできた岩石をまとめて何というか。",choices:["火成岩","堆積岩","変成岩","風化岩"],a:0,exp:"マグマが冷え固まってできた岩石を火成岩といい、火山岩と深成岩に分けられる。"},
+ {q:"地下深くでマグマがゆっくり冷え固まってできた岩石を何というか。",choices:["深成岩","火山岩","堆積岩","石灰岩"],a:0,exp:"深成岩はゆっくり冷えるため大きな結晶がそろった等粒状組織をもつ。"},
+ {q:"地表近くで急に冷え固まった火山岩に見られる、大きな結晶と小さな結晶が混じったつくりを何というか。",choices:["斑状組織","等粒状組織","層状組織","繊維状組織"],a:0,exp:"急に冷えた火山岩は斑晶と石基からなる斑状組織をもつ。"},
+ {q:"地震が発生した地下の場所を何というか。",choices:["震源","震央","震度","マグニチュード"],a:0,exp:"地震が発生した地下の場所を震源、その真上の地表の点を震央という。"},
+ {q:"震源の真上にあたる地表の地点を何というか。",choices:["震央","震源","観測点のみ","断層面"],a:0,exp:"震源の真上の地表の地点を震央という。"},
+ {q:"地震で最初に伝わる小さなゆれ(初期微動)を起こす波を何というか。",choices:["P波","S波","表面波のみ","反射波"],a:0,exp:"P波は伝わる速さが速く、最初の小さなゆれ(初期微動)を起こす。"},
+ {q:"地震のあとに伝わる大きなゆれ(主要動)を起こす波を何というか。",choices:["S波","P波","表面波のみ","屈折波"],a:0,exp:"S波はP波より遅れて伝わり、大きなゆれ(主要動)を起こす。"},
+ {q:"P波とS波の到着時刻の差(初期微動継続時間)と震源からの距離の関係はどれか。",choices:["初期微動継続時間が長いほど震源から遠い","初期微動継続時間が長いほど震源に近い","関係はない","マグニチュードだけで決まる"],a:0,exp:"初期微動継続時間は震源からの距離にほぼ比例して長くなる。"},
+ {q:"気圧が周囲より低く、上昇気流が生じやすい場所を何というか。",choices:["低気圧","高気圧","前線のみ","偏西風帯"],a:0,exp:"低気圧の中心付近では上昇気流が生じ、雲ができやすく天気が悪くなりやすい。"},
+ {q:"気圧が周囲より高く、下降気流が生じやすい場所を何というか。",choices:["高気圧","低気圧","前線のみ","梅雨前線"],a:0,exp:"高気圧の中心付近では下降気流が生じ、一般に晴れやすい。"},
+ {q:"寒気が暖気の下にもぐりこみながら進む前線を何というか。",choices:["寒冷前線","温暖前線","停滞前線","閉塞前線"],a:0,exp:"寒冷前線は寒気が暖気の下にもぐりこみながら進み、通過時に強い雨や雷を伴うことが多い。"},
+ {q:"暖気が寒気の上にはい上がりながら進む前線を何というか。",choices:["温暖前線","寒冷前線","停滞前線","閉塞前線"],a:0,exp:"温暖前線は暖気が寒気の上にはい上がりながら進み、広い範囲に穏やかな雨を降らせやすい。"},
+ {q:"ほぼ同じ勢力の暖気と寒気がぶつかり合い、あまり動かない前線を何というか。",choices:["停滞前線","寒冷前線","温暖前線","閉塞前線"],a:0,exp:"梅雨前線のように、暖気と寒気の勢力が同程度でほとんど動かない前線を停滞前線という。"},
+ {q:"空気のかたまりが上昇すると、周囲の気圧が下がるため空気はどうなるか。",choices:["膨張して温度が下がる","収縮して温度が上がる","変化しない","急激に密度が増す"],a:0,exp:"上昇する空気は周囲の気圧の低下により膨張し、その結果温度が下がる。"},
+ {q:"上昇した空気の温度が露点より下がると何が起こるか。",choices:["水蒸気が凝結して雲ができる","水蒸気がすべて蒸発する","気圧が急上昇する","空気が下降し始める"],a:0,exp:"空気の温度が露点以下になると水蒸気が水滴に変わり、雲ができる。"},
+ {q:"空気1立方メートル中に含むことができる水蒸気の最大量を何というか。",choices:["飽和水蒸気量","露点","湿度","気圧"],a:0,exp:"気温によって決まる、空気が含むことのできる水蒸気の最大量を飽和水蒸気量という。"},
+ {q:"湿度を求める式として正しいのはどれか。",choices:["湿度(%)=実際の水蒸気量÷飽和水蒸気量×100","湿度(%)=飽和水蒸気量÷実際の水蒸気量×100","湿度(%)=気温×水蒸気量","湿度(%)=露点÷気温×100"],a:0,exp:"湿度は、その気温での飽和水蒸気量に対する実際の水蒸気量の割合(%)で表される。"},
+ {q:"日本の夏に大きな影響を与える、あたたかく湿った気団はどれか。",choices:["小笠原気団","シベリア気団","オホーツク海気団","揚子江気団"],a:0,exp:"小笠原気団はあたたかく湿った性質をもち、日本の夏の天気に大きく影響する。"},
+ {q:"日本の冬に大きな影響を与える、冷たく乾いた気団はどれか。",choices:["シベリア気団","小笠原気団","オホーツク海気団","熱帯気団"],a:0,exp:"シベリア気団は冷たく乾いた性質をもち、日本の冬に北西の季節風をもたらす。"},
+ {q:"太陽が空を動いていくように見える、地球の自転による見かけの動きを何というか。",choices:["太陽の日周運動","太陽の年周運動","黄道","公転"],a:0,exp:"地球の自転によって、太陽が東から西へ動くように見える現象を太陽の日周運動という。"},
+ {q:"季節によって太陽の南中高度や星座の見え方が変わる、地球の公転による見かけの動きを何というか。",choices:["年周運動","日周運動","自転のみ","公転周期のみ"],a:0,exp:"地球が公転することで、太陽や星座の見える位置が1年周期で変化する現象を年周運動という。"},
+ {q:"日本で夏に太陽の南中高度が高くなる理由として正しいのはどれか。",choices:["地軸が傾いたまま公転しているため","地球が太陽に近づくため","地球の自転が速くなるため","太陽自体が動くため"],a:0,exp:"地軸が公転面に対して傾いたまま公転しているため、季節によって太陽の南中高度が変化する。"},
+ {q:"太陽・月・地球が一直線に並び、月が太陽をかくす現象を何というか。",choices:["日食","月食","満月","新月"],a:0,exp:"太陽ー月ー地球の順に一直線に並び、月が太陽を隠す現象を日食という。"},
+ {q:"太陽・地球・月が一直線に並び、地球の影が月にかかる現象を何というか。",choices:["月食","日食","新月","上弦の月"],a:0,exp:"太陽ー地球ー月の順に一直線に並び、地球の影が月に映る現象を月食という。"},
+ {q:"太陽系の惑星のうち、主に気体でできた大型の惑星を何というか。",choices:["木星型惑星","地球型惑星","矮惑星","小惑星"],a:0,exp:"木星や土星のように、密度が小さく主に気体でできた大型の惑星を木星型惑星という。"},
+ {q:"太陽のように自ら光や熱を出す天体を何というか。",choices:["恒星","惑星","衛星","小惑星"],a:0,exp:"自ら光を発する天体を恒星といい、太陽もその1つである。"},
+ {q:"地球のまわりを公転する天体で、月のように惑星のまわりを回る天体を何というか。",choices:["衛星","恒星","惑星","彗星"],a:0,exp:"惑星のまわりを公転する天体を衛星といい、月は地球の衛星である。"},
+ {q:"星座を形づくる星の見かけの明るさによる等級について正しいのはどれか。",choices:["数字が小さいほど明るく見える","数字が小さいほど暗く見える","等級は星の大きさのみを表す","すべての星は同じ等級である"],a:0,exp:"見かけの等級は数字が小さいほど明るく見える星を表す。"},
+ {q:"太陽の表面に見られる、周囲より温度が低いために黒く見える部分を何というか。",choices:["黒点","プロミネンス","コロナ","太陽風のみ"],a:0,exp:"太陽表面で周囲より温度が低い部分は黒点として観測される。"},
+ {q:"堆積岩の一種で、貝殻やサンゴなどの死がいが堆積してできた、うすい塩酸をかけると気体が発生する岩石はどれか。",choices:["石灰岩","チャート","凝灰岩","れき岩"],a:0,exp:"石灰岩は炭酸カルシウムを主成分とし、うすい塩酸をかけると二酸化炭素が発生する。"},
+ {q:"火山灰などが堆積してできた堆積岩を何というか。",choices:["凝灰岩","石灰岩","チャート","泥岩"],a:0,exp:"火山灰や軽石などが堆積して固まった岩石を凝灰岩という。"},
+ {q:"地球表面をおおう複数のプレートの動きによって、地震や火山活動、大陸の移動などを説明する考え方を何というか。",choices:["プレートテクトニクス","地向斜説","天動説","ビッグバン理論"],a:0,exp:"プレートの動きによって地震・火山・大陸移動などを説明する考え方をプレートテクトニクスという。"},
+ {q:"雲のでき方について正しい順序はどれか。",choices:["空気が上昇→膨張して温度低下→露点以下で水蒸気が凝結→雲ができる","空気が下降→収縮して温度上昇→水蒸気が凝結→雲ができる","気圧が上がる→温度が下がる→雲が消える","地表があたためられる→水蒸気が減る→雲ができる"],a:0,exp:"上昇気流によって空気が膨張し温度が下がり、露点以下になると水蒸気が凝結して雲ができる。"},
+ {q:"日本付近の天気が西から東へ変化しやすい理由として最も適切なのはどれか。",choices:["中緯度上空を吹く偏西風の影響を受けるため","地球の自転が直接影響するため","季節風が一年中同じ向きに吹くため","海流の向きがすべて西から東だから"],a:0,exp:"日本の上空にはほぼ一年中西から東へ偏西風が吹いており、その影響で低気圧や高気圧が西から東へ移動し天気も変化していく。"}
+],
+boss:[
+ {q:"抵抗10Ωと20Ωを直列につなぎ、電源電圧が6Vのとき回路全体を流れる電流は何Aか。",choices:["0.2A","0.6A","2A","30A"],a:0,exp:"直列回路の合成抵抗は10+20=30Ω。オームの法則より 6÷30=0.2A。"},
+ {q:"エタノールを加熱して発生した気体を冷やして再び液体にする操作を何というか。",choices:["蒸留(沸点の違いを利用)","ろ過(粒の大きさの違いを利用)","再結晶(溶解度の違いを利用)","中和(pHの違いを利用)"],a:0,exp:"物質ごとの沸点の違いを利用して混合物を分ける操作を蒸留という。"},
+ {q:"植物の光合成と呼吸の関係について、正しいものはどれか。",choices:["昼は光合成が呼吸を上回り酸素を放出、夜は呼吸のみで二酸化炭素を放出する","植物は昼も夜も呼吸を行わない","呼吸は動物だけが行うはたらきである","光合成は夜のほうが盛んに行われる"],a:0,exp:"植物は昼夜を問わず呼吸をしているが、光合成は光がある昼だけ行われ、昼は光合成による酸素放出が呼吸による消費を上回る。"},
+ {q:"ある地層で下から上へ「泥岩→砂岩→れき岩」の順に堆積していた場合、何が起きたと考えられるか。",choices:["海水面がだんだん浅くなっていった(海退)","海水面がだんだん深くなっていった(海進)","この場所で火山が噴火した","地震で地層が上下逆転した"],a:0,exp:"粒が大きい岩石ほど浅い海で堆積するため、泥→砂→れきの順は海が浅くなっていったことを示す。"},
+ {q:"台風が近づくと風が強くなることと関係が深いものはどれか。",choices:["等圧線の間隔が狭いほど風が強くなる","気圧が下がると風は弱まる","台風は高気圧の一種である","気圧と風の強さは無関係である"],a:0,exp:"等圧線の間隔が狭いところほど気圧の差が大きく、強い風が吹く。"},
+ {q:"塩化銅水溶液を電気分解すると、陰極・陽極にはそれぞれ何が生じるか。",choices:["陰極に銅が付着し、陽極から塩素が発生する","陰極から塩素が発生し、陽極に銅が付着する","両極から酸素が発生する","変化は起こらない"],a:0,exp:"塩化銅は銅イオンと塩化物イオンに電離し、陰極で銅が析出、陽極で塩素が発生する。"},
+ {q:"丸い種子(顕性)としわのある種子(潜性)を交配してできた子(すべて丸)を自家受粉させると、孫の代の形質の分離比はどうなるか。",choices:["丸:しわ=3:1","丸:しわ=1:1","すべて丸になる","すべてしわになる"],a:0,exp:"メンデルの分離の法則により、孫の代では顕性:潜性=3:1の比で形質が現れる。"},
+ {q:"気温・露点・湿度の関係について、正しいものはどれか。",choices:["気温が下がるほど露点に近づき、湿度は高くなる","気温が上がるほど露点に近づく","湿度は気温と無関係に一定である","露点は気圧だけで決まる"],a:0,exp:"空気中の水蒸気量が変わらなくても、気温が下がると露点との差が縮まり、湿度は高くなる。"},
+ {q:"60gの水に15gの食塩をとかした食塩水の質量パーセント濃度は何%か。",choices:["20%","15%","25%","40%"],a:0,exp:"濃度=15÷(15+60)×100=15÷75×100=20%。"},
+ {q:"酸化銅40gを炭素と加熱して完全に還元し、銅32gが得られたとすると、酸化銅中の酸素の質量は何gか。",choices:["8g","40g","32g","72g"],a:0,exp:"質量保存の法則より、酸化銅の質量-銅の質量=酸素の質量なので40-32=8g。"},
+ {q:"密度が同じ物質でできた2つの物体A・Bがあり、Aの体積がBの2倍のとき、質量の関係はどれか。",choices:["Aの質量はBの2倍になる","AとBの質量は等しい","Aの質量はBの半分になる","密度が同じでも質量の関係はわからない"],a:0,exp:"密度が同じなら質量は体積に比例するため、体積が2倍ならば質量も2倍になる。"},
+ {q:"ある地震で震源からの距離が80kmの地点で初期微動継続時間が10秒だった。初期微動継続時間が震源距離に比例すると考えると、初期微動継続時間20秒の地点の震源からの距離は何kmと推定されるか。",choices:["160km","80km","40km","320km"],a:0,exp:"初期微動継続時間は震源距離にほぼ比例するため、20秒は10秒の2倍→距離も2倍の160km。"},
+ {q:"光合成でつくられたデンプンは、植物体内でどのように運ばれ利用されるか。",choices:["水にとけやすい糖に変えられ、師管を通って植物のからだ全体に運ばれる","気孔から蒸散として放出される","道管を通って根からのみ排出される","そのままの形で葉にとどまり続ける"],a:0,exp:"デンプンは水にとけやすい糖に変えられ、師管を通ってからだ全体の細胞へ運ばれ、呼吸や成長に使われる。"},
+ {q:"凸レンズの焦点距離が10cmのとき、物体を焦点距離のちょうど2倍(20cm)の位置に置くと、できる実像の大きさは物体と比べてどうなるか。",choices:["物体と同じ大きさになる","物体より大きくなる","物体より小さくなる","実像はできない"],a:0,exp:"物体を焦点距離の2倍の位置に置くと、反対側の焦点距離の2倍の位置に物体と同じ大きさの実像ができる。"},
+ {q:"並列回路で3Ωと6Ωの抵抗をつなぎ、電源電圧が6Vのとき、回路全体を流れる電流は何Aか。",choices:["3A","0.33A","1A","9A"],a:0,exp:"各抵抗を流れる電流は6÷3=2A、6÷6=1Aで合計3A。"},
+ {q:"ヒトの体細胞の染色体数が仮に46本であるとき、減数分裂によってできる生殖細胞の染色体数は何本になるか。",choices:["23本","46本","92本","0本"],a:0,exp:"減数分裂では染色体数が半分になるため、46÷2=23本になる。"},
+ {q:"ある地層からアンモナイトの化石が見つかった。このことから、この地層が堆積したのはおよそどの地質時代と考えられるか。",choices:["中生代","古生代","新生代","先カンブリア時代"],a:0,exp:"アンモナイトは中生代に栄えて絶滅した生物であり、代表的な示準化石である。"},
+ {q:"塩酸と水酸化ナトリウム水溶液を過不足なく混ぜ合わせて完全に中和させたとき、水溶液中に多く残るイオンはどれか。",choices:["ナトリウムイオンと塩化物イオン","水素イオンだけ","水酸化物イオンだけ","炭酸イオン"],a:0,exp:"中和が完全に起こると水素イオンと水酸化物イオンは結びついて水になり、ナトリウムイオンと塩化物イオンが水溶液中に残る。"},
+ {q:"ある植物を暗室に一昼夜置いてデンプンを消費させたあと、葉の一部を光が当たらないようにアルミはくでおおって光を当てる実験を行った。ヨウ素液の反応から光合成に必要だとわかるものはどれか。",choices:["光","水だけ","二酸化炭素だけ","温度だけ"],a:0,exp:"アルミはくでおおった部分は光が当たらずデンプンができないため、この実験は光合成に光が必要であることを示す対照実験である。"},
+ {q:"仕事率100Wのモーターが10秒間仕事をしたとき、した仕事は何Jか。",choices:["1000J","100J","10J","10000J"],a:0,exp:"仕事(J)=仕事率(W)×時間(s)より100×10=1000J。"},
+ {q:"ある物質Xの水100gに対する溶解度が20℃で32gであるとき、20℃の水100gに40gのXを加えるとどうなるか。",choices:["32gまでとけて、残り8gはとけ残る","40gすべてがとける","全くとけない","水の温度が自然に上がりすべてとける"],a:0,exp:"溶解度をこえた分はとけきれずに固体として残る。"},
+ {q:"炭素を中心にした有機物の燃焼で必ず発生する気体はどれか。",choices:["二酸化炭素","酸素のみ","窒素","塩素"],a:0,exp:"有機物には炭素が含まれるため、完全燃焼すると炭素が酸素と結びつき二酸化炭素が発生する。"},
+ {q:"ヒトの心臓のつくりで、全身に血液を送り出す部屋はどこか。",choices:["左心室","右心室","左心房","右心房"],a:0,exp:"左心室は最も筋肉が厚く、全身に血液を送り出すポンプの役割をしている。"},
+ {q:"惑星が太陽に近いほど速く公転するという関係を発見したことに関連が深い法則はどれか。",choices:["ケプラーの法則","慣性の法則","フックの法則","メンデルの法則"],a:0,exp:"ケプラーは惑星の公転運動に関する法則を発見し、太陽に近い惑星ほど公転周期が短いことを示した。"},
+ {q:"ある混合気体を冷却していったとき、沸点の高い成分から先に液体になる現象を利用した分離方法はどれか。",choices:["蒸留(分留)","ろ過","再結晶","電気分解"],a:0,exp:"沸点の違いを利用して混合物を分離する操作を蒸留といい、成分ごとの沸点差を利用して順に取り出すことができる。"},
+ {q:"ある川の下流で見られる堆積物の粒の特徴として正しいものはどれか。",choices:["上流に比べて粒が小さく、丸みを帯びていることが多い","上流に比べて粒が大きく、角ばっていることが多い","上流と下流で粒の特徴に違いはない","下流では堆積が起こらない"],a:0,exp:"下流に運ばれる間に粒は削られて丸くなり、流れが穏やかなため小さな粒が堆積しやすい。"},
+ {q:"遺伝子の本体であるDNAの構造の特徴として正しいものはどれか。",choices:["二重らせん構造をしている","一本の直線構造のみである","三重らせん構造をしている","タンパク質だけでできている"],a:0,exp:"DNAは2本の鎖がらせん状に組み合わさった二重らせん構造をしている。"},
+ {q:"ある地域で地震が起きたとき、震度とマグニチュードの関係について正しいものはどれか。",choices:["マグニチュードは1つの地震につき1つの値だが、震度は場所によって異なる","震度は1つの地震につき1つの値だが、マグニチュードは場所によって異なる","震度とマグニチュードは常に同じ値になる","マグニチュードは揺れの強さ、震度は地震のエネルギーを表す"],a:0,exp:"マグニチュードは地震そのものの規模を表す1つの値だが、震度はゆれの大きさなので観測地点ごとに異なる。"},
+ {q:"電圧が一定のとき、抵抗を大きくすると回路に流れる電流と消費電力はどうなるか。",choices:["電流も消費電力も小さくなる","電流も消費電力も大きくなる","電流は大きくなるが消費電力は小さくなる","電流も消費電力も変化しない"],a:0,exp:"オームの法則より抵抗が大きいほど電流は小さくなり、電力=電圧×電流なので消費電力も小さくなる。"},
+ {q:"ある湖の水質調査で、特定の指標生物(きれいな水にしかすめない生物)が多く見つかった場合、何がわかるか。",choices:["その水域の水質が比較的良好であると推定できる","その水域は必ず汚染されていると推定できる","水温が非常に高いと推定できる","何もわからない"],a:0,exp:"水質階級ごとの指標生物の分布から、その場所の水質のおおよその状態を推定することができる。"},
+ {q:"台風のエネルギー源として最も関係が深いものはどれか。",choices:["あたたかい海面から供給される水蒸気が水滴に変わるときに放出する熱","陸地からの摩擦熱","太陽からの直接の光エネルギーのみ","地球内部からの熱エネルギー"],a:0,exp:"台風は熱帯の海面からの水蒸気が上昇して雲になる際に放出する凝結熱をエネルギー源として発達する。"},
+ {q:"無性生殖でふえた生物の子の形質について正しいものはどれか。",choices:["親と全く同じ遺伝子を受け継ぐため、形質も親と同じになりやすい","必ず親と異なる形質になる","有性生殖よりも多様な形質になりやすい","形質は環境だけで決まり遺伝子は関係しない"],a:0,exp:"無性生殖では減数分裂や受精を行わないため、子は親と同じ遺伝子をもち、形質も親と同じになりやすい。"},
+ {q:"電流を流した導線を検流計に近づけると針が振れた。これはどの現象を示しているか。",choices:["電磁誘導によって誘導電流が生じている","静電気が発生している","電気分解が起こっている","化学電池ができている"],a:0,exp:"磁界の変化によってコイルなどに電流が生じる電磁誘導の一例である。"},
+ {q:"ある地層の中で、下位の地層と上位の地層の間に大きな時間の断絶(侵食面)がみられる関係を何というか。",choices:["不整合","整合","断層","しゅう曲"],a:0,exp:"地層が堆積したあと侵食を受け、その上に新しい地層が堆積した関係を不整合という。"},
+ {q:"光合成でできた酸素の主な行き先として正しいものはどれか。",choices:["一部は呼吸に使われ、残りは気孔から放出される","すべて根から放出される","すべて師管を通って移動する","すべて体内にたくわえられ放出されない"],a:0,exp:"光合成でできた酸素は植物自身の呼吸にも使われ、余った分は気孔から空気中に放出される。"},
+ {q:"酸化と還元は化学反応の中でどのような関係で起こることが多いか。",choices:["同時に起こる(一方の物質が酸化され、他方が還元される)","必ず別々の反応として単独で起こる","酸化だけが単独で起こることが多い","還元だけが単独で起こることが多い"],a:0,exp:"酸化銅と炭素の反応のように、酸化と還元は多くの場合同時に起こる。"},
+ {q:"天気図で等圧線の間隔が広い場所の風について正しいものはどれか。",choices:["風は比較的弱い","風は非常に強い","風は必ず止まる","等圧線の間隔と風の強さは無関係"],a:0,exp:"等圧線の間隔が広いところは気圧の差が小さく、風は比較的弱くなる。"},
+ {q:"丸い種子(顕性形質)をつくる遺伝子をA、しわの種子(潜性形質)をつくる遺伝子をaとする。遺伝子型Aaの個体どうしをかけ合わせたとき、子の遺伝子型の分離比はどうなるか。",choices:["AA:Aa:aa=1:2:1","AA:Aa:aa=1:1:1","AA:Aa:aa=3:1:0","AA:Aa:aa=1:0:1"],a:0,exp:"AaどうしをかけあわせるとAA:Aa:aa=1:2:1の比で子ができる(丸:しわ=3:1)。"},
+ {q:"力学的エネルギーが保存される状況で、振り子が最下点を通過するとき、位置エネルギーと運動エネルギーの関係はどうなっているか。",choices:["位置エネルギーが最小、運動エネルギーが最大になる","位置エネルギーが最大、運動エネルギーが最小になる","どちらも常に一定である","どちらも0になる"],a:0,exp:"最下点では高さが最も低いため位置エネルギーが最小になり、その分運動エネルギーが最大になる。"},
+ {q:"ある水溶液にBTB溶液を加えたところ黄色になった。この水溶液の性質として考えられるものはどれか。",choices:["酸性","アルカリ性","中性","判別できない"],a:0,exp:"BTB溶液は酸性で黄色、中性で緑色、アルカリ性で青色を示す。"}
+]
+};
+/* ============ 高難度問題プール(計算・実験考察・複合問題) ============ */
+const HARD = {
+physics:[
+ {q:"質量2kgの物体を4mの高さまでゆっくり持ち上げた。100gの物体にはたらく重力を1Nとすると、このときの仕事は何Jか。",choices:["80J","8J","800J","2J"],a:0,exp:"2kg=2000gなので重力は20N。仕事=力×距離=20×4=80J。"},
+ {q:"電熱線に6Vの電圧を加えたところ2Aの電流が流れた。5分間電流を流したときの発熱量は何Jか。",choices:["3600J","12J","600J","60J"],a:0,exp:"電力=6×2=12W。5分=300秒なので発熱量=12×300=3600J。"},
+ {q:"2Ωと3Ωの抵抗を直列につなぎ、全体に10Vの電圧を加えた。3Ωの抵抗にかかる電圧は何Vか。",choices:["6V","10V","4V","3.3V"],a:0,exp:"合成抵抗5Ωで電流は10÷5=2A。直列では電流が共通なので3Ωには2×3=6Vかかる。"},
+ {q:"4Ωの抵抗2つを並列につなぎ、6Vの電源につないだ。回路全体に流れる電流は何Aか。",choices:["3A","1.5A","0.75A","6A"],a:0,exp:"各抵抗に6Vがかかり6÷4=1.5Aずつ流れるので、合計3A(合成抵抗2Ωでも同じ)。"},
+ {q:"1秒間に60打点する記録タイマーで台車の運動を記録した。6打点ごとに区切った1区間の長さが4.8cmのとき、この区間の平均の速さは何m/sか。",choices:["0.48m/s","4.8m/s","0.08m/s","2.88m/s"],a:0,exp:"6打点=0.1秒。4.8cm=0.048mなので、0.048÷0.1=0.48m/s。"},
+ {q:"ばねばかりにつるすと空気中で3.0N、水中に完全に沈めると1.8Nを示した。この物体にはたらく浮力は何Nか。",choices:["1.2N","1.8N","3.0N","4.8N"],a:0,exp:"浮力=空気中の重さ-水中でのばねばかりの値=3.0-1.8=1.2N。"},
+ {q:"面積0.02m^2の面に400Nの力が垂直にはたらいている。この面が受ける圧力は何Paか。",choices:["20000Pa","8Pa","2000Pa","0.00005Pa"],a:0,exp:"圧力=力÷面積=400÷0.02=20000Pa。"},
+ {q:"焦点距離12cmの凸レンズの前方18cmの位置に物体を置いた。スクリーンにできる像はどれか。",choices:["物体より大きい倒立の実像","物体より小さい倒立の実像","物体と同じ大きさの実像","物体より大きい正立の虚像"],a:0,exp:"物体が焦点距離(12cm)と焦点距離の2倍(24cm)の間にあるとき、実像は物体より大きい倒立の像になる。"},
+ {q:"稲光が見えてから5秒後に雷鳴が聞こえた。音の速さを340m/sとすると、落雷地点までのおよその距離はどれか。",choices:["約1700m","約68m","約340m","約3400m"],a:0,exp:"光は一瞬で届くとみなせるので、距離=340×5=1700m。"},
+ {q:"消費電力1000Wの電気ケトルを30分間使用したときの電力量は何kWhか。",choices:["0.5kWh","30kWh","1000kWh","2kWh"],a:0,exp:"30分=0.5時間。電力量=1kW×0.5h=0.5kWh。"},
+ {q:"モーターの回転の向きを逆にする方法として正しいものはどれか。",choices:["電流の向きか磁界の向きの、どちらか一方だけを逆にする","電流の向きと磁界の向きの両方を同時に逆にする","電圧を小さくする","コイルの巻き数を増やす"],a:0,exp:"どちらか一方を逆にすると力の向きが逆になる。両方逆にすると力の向きはもとに戻ってしまう。"},
+ {q:"直列回路で、抵抗の大きさの比が2:3のとき、それぞれにかかる電圧の比はどうなるか。",choices:["2:3","3:2","1:1","4:9"],a:0,exp:"直列では電流が共通なので、電圧は抵抗の大きさに比例し2:3になる。"},
+ {q:"振り子をある高さから離すと、反対側では最初よりわずかに低い高さまでしか上がらない。この理由として正しいものはどれか。",choices:["空気の抵抗や摩擦によって力学的エネルギーの一部が熱などに変わったため","位置エネルギーが消滅したため","運動エネルギーが生まれないため","重力が途中で小さくなるため"],a:0,exp:"力学的エネルギーの一部が熱や音のエネルギーに移り変わるため、もとの高さまでは戻らない。"},
+ {q:"斜面を使い、物体を直接持ち上げる場合の2倍の距離を引いて同じ高さまで上げた。必要な力と仕事はどうなるか(摩擦は考えない)。",choices:["力は2分の1になり、仕事は変わらない","力も仕事も2分の1になる","力は変わらず、仕事は2分の1になる","力も仕事も2倍になる"],a:0,exp:"仕事の原理により、道具を使っても仕事の大きさは変わらないため、距離が2倍なら力は2分の1になる。"},
+ {q:"同じ電圧を加えたとき、抵抗の大きさを2倍にすると消費電力はどうなるか。",choices:["2分の1になる","2倍になる","4倍になる","変わらない"],a:0,exp:"電流は2分の1になり、電力=電圧×電流なので消費電力も2分の1になる。"}
+],
+chemistry:[
+ {q:"銅と酸素は質量比4:1で結びつく。銅2.0gを完全に酸化させたとき、できる酸化銅は何gか。",choices:["2.5g","2.0g","8.0g","0.5g"],a:0,exp:"銅2.0gと結びつく酸素は0.5g。質量保存の法則より2.0+0.5=2.5g。"},
+ {q:"マグネシウムと酸素は質量比3:2で結びつく。マグネシウム0.6gを完全に燃焼させると、酸化マグネシウムは何gできるか。",choices:["1.0g","0.4g","1.5g","0.9g"],a:0,exp:"0.6gのマグネシウムと結びつく酸素は0.4g。合わせて1.0gの酸化マグネシウムになる。"},
+ {q:"水の電気分解を表す化学反応式として正しいものはどれか。",choices:["2H2O → 2H2 + O2","H2O → H2 + O2","2H2O → H2 + 2O2","H2O2 → H2 + O2"],a:0,exp:"矢印の左右で水素原子4個・酸素原子2個がそろう 2H2O → 2H2 + O2 が正しい。"},
+ {q:"炭酸水素ナトリウムを加熱したときにできる物質の組み合わせはどれか。",choices:["炭酸ナトリウム・水・二酸化炭素","塩化ナトリウム・水・酸素","炭酸カルシウム・水素・酸素","水酸化ナトリウム・水素・二酸化炭素"],a:0,exp:"炭酸水素ナトリウムの熱分解では、炭酸ナトリウム・水・二酸化炭素の3つが生じる。"},
+ {q:"質量パーセント濃度20%の食塩水250gには、食塩が何g含まれているか。",choices:["50g","20g","200g","25g"],a:0,exp:"250×0.20=50g。"},
+ {q:"15%の食塩水200gに水を加えて10%の食塩水にしたい。加える水は何gか。",choices:["100g","50g","300g","150g"],a:0,exp:"食塩は30g。10%にするには全体が300g必要なので、加える水は300-200=100g。"},
+ {q:"硝酸カリウムの溶解度が60℃で110g、20℃で32g(いずれも水100gあたり)であるとき、60℃の飽和水溶液(水100g使用)を20℃まで冷やすと結晶は何g出てくるか。",choices:["78g","110g","32g","142g"],a:0,exp:"110-32=78gがとけきれなくなり結晶として出てくる。"},
+ {q:"塩酸に水酸化ナトリウム水溶液を加えていき、BTB溶液が緑色になった。さらに塩酸を加えると液の色はどうなるか。",choices:["黄色になる","青色になる","緑色のまま変わらない","無色になる"],a:0,exp:"中性の状態から酸を加えると酸性になるため、BTB溶液は黄色を示す。"},
+ {q:"亜鉛にうすい塩酸を加えたときに発生する気体の性質として正しいものはどれか。",choices:["マッチの火を近づけると音を立てて燃える","石灰水を白くにごらせる","刺激臭があり水によくとける","線香の火を激しく燃やす"],a:0,exp:"発生するのは水素で、火を近づけるとポンと音を立てて燃える。"},
+ {q:"ダニエル電池で、電子と電流の流れる向きの関係として正しいものはどれか。",choices:["電子は亜鉛板から銅板へ流れ、電流の向きはその逆である","電子も電流も亜鉛板から銅板へ流れる","電子は銅板から亜鉛板へ流れ、電流も同じ向きである","電子は移動しない"],a:0,exp:"電子は-極(亜鉛)から+極(銅)へ導線を移動し、電流の向きは電子の移動と逆向きと決められている。"},
+ {q:"塩化銅水溶液の電気分解で陰極に銅が付着するのはなぜか。",choices:["銅イオンが陰極で電子を受け取り、銅原子になるため","銅原子が電子を失って陰極に集まるため","塩化物イオンが陰極で銅に変化するため","水が分解して銅ができるため"],a:0,exp:"陽イオンである銅イオンが陰極へ引かれ、電子を受け取って金属の銅になる。"},
+ {q:"銅の粉末を加熱し続けると質量が増えるが、やがて増えなくなる。この理由はどれか。",choices:["すべての銅が酸素と結びついてしまったため","加熱によって銅が蒸発したため","酸素が銅から離れ始めたため","質量保存の法則が成り立たなくなるため"],a:0,exp:"銅と酸素は決まった質量比で結びつくため、すべて反応し終えるとそれ以上は質量が増えない。"},
+ {q:"銅イオンを表すイオン式として正しいものはどれか。",choices:["Cu(2+)","Cu(-)","Cu2","Cu(+)"],a:0,exp:"銅原子は電子を2個失って2価の陽イオンになるため、Cu(2+)と表す。"},
+ {q:"質量54g、体積20cm^3の金属の密度は何g/cm^3か。",choices:["2.7g/cm^3","0.37g/cm^3","1080g/cm^3","34g/cm^3"],a:0,exp:"密度=質量÷体積=54÷20=2.7g/cm^3(アルミニウムの密度)。"},
+ {q:"水を電気分解するとき、少量の水酸化ナトリウムを加えるのはなぜか。",choices:["水に電流を流れやすくするため","水の沸点を下げるため","発生する気体の量を増やすため","水を中性に保つため"],a:0,exp:"純粋な水はほとんど電流を流さないため、電解質を加えてイオンを存在させ電流を流れやすくする。"}
+],
+biology:[
+ {q:"だ液のはたらきを調べる実験で、試験管を約40℃の湯につけるのはなぜか。",choices:["ヒトの体温に近い温度で消化酵素がよくはたらくため","デンプンを溶かすため","ヨウ素液の色を出やすくするため","だ液を殺菌するため"],a:0,exp:"消化酵素は体温付近で最もよくはたらくため、40℃前後に保って実験する。"},
+ {q:"BTB溶液を入れた水に息をふきこんで黄色にし、オオカナダモを入れて光を当てた。液の色はどうなり、その理由は何か。",choices:["青色に変わる。光合成で二酸化炭素が使われたため","さらに黄色が濃くなる。呼吸で二酸化炭素が増えたため","赤色に変わる。酸素が増えたため","変化しない。植物は水中で活動しないため"],a:0,exp:"光合成によって水中の二酸化炭素が減り、酸性がうすまってアルカリ性寄りになるため青色に変わる。"},
+ {q:"葉の枚数と大きさをそろえた枝で蒸散量を調べたところ、何も処理しない場合13.0mL、葉の裏にワセリンをぬった場合4.0mLの水が減った。葉の裏側からの蒸散量はおよそ何mLか。",choices:["9.0mL","4.0mL","13.0mL","17.0mL"],a:0,exp:"裏をふさぐと裏からの蒸散がなくなるため、13.0-4.0=9.0mLが葉の裏側からの蒸散量になる。"},
+ {q:"ヒトの血管のうち、酸素を最も多く含む血液が流れているのはどれか。",choices:["肺静脈","肺動脈","大静脈","じん静脈"],a:0,exp:"肺でガス交換を終えた血液が心臓へ戻る肺静脈には、最も酸素の多い動脈血が流れている。"},
+ {q:"根の細胞分裂を観察する際、うすい塩酸に根の先端をひたすのはなぜか。",choices:["細胞どうしを離れやすくして観察しやすくするため","細胞を大きくするため","染色体を作り出すため","細胞分裂を始めさせるため"],a:0,exp:"塩酸処理によって細胞どうしを結びつけている物質がとけ、押しつぶしたときに細胞が重ならず観察しやすくなる。"},
+ {q:"丸い種子をつくる純系(AA)としわの種子をつくる純系(aa)を交配してできた子(Aa)に、しわの種子をつくる個体(aa)をかけ合わせると、できる種子の丸としわの比はどうなるか。",choices:["丸:しわ=1:1","丸:しわ=3:1","すべて丸","すべてしわ"],a:0,exp:"Aa×aaでは Aa と aa が1:1でできるため、丸としわが1:1で現れる。"},
+ {q:"顕微鏡で低倍率から高倍率に変えたとき、視野の明るさと見える範囲はどうなるか。",choices:["暗くなり、見える範囲は狭くなる","明るくなり、見える範囲は広くなる","暗くなり、見える範囲は広くなる","明るさも範囲も変わらない"],a:0,exp:"倍率を上げると視野に入る光の量が減って暗くなり、観察できる範囲も狭くなる。"},
+ {q:"タンパク質が消化酵素によって最終的に分解されてできる物質はどれか。",choices:["アミノ酸","ブドウ糖","脂肪酸","グリセリン"],a:0,exp:"タンパク質はペプシンなどのはたらきで最終的にアミノ酸に分解され、柔毛から吸収される。"},
+ {q:"脂肪が消化されて最終的にできる物質の組み合わせはどれか。",choices:["脂肪酸とモノグリセリド","ブドウ糖とアミノ酸","アミノ酸とグリセリン","ブドウ糖のみ"],a:0,exp:"脂肪は胆汁と消化酵素のはたらきで脂肪酸とモノグリセリドに分解される。"},
+ {q:"ある生態系で草食動物が一時的に急激に増えた場合、その直後に起こる変化として最も適切なものはどれか。",choices:["植物が減り、肉食動物が増える","植物も肉食動物もともに増える","植物が増え、肉食動物が減る","何も変化しない"],a:0,exp:"食べられる植物は減少し、えさが増えた肉食動物は増加する。その後つり合いはもとに戻っていく。"},
+ {q:"双子葉類の茎の断面で、維管束はどのように並んでいるか。",choices:["輪の形に並んでいる","全体に散らばっている","中心に1本だけある","外側の皮の部分だけにある"],a:0,exp:"双子葉類の維管束は輪状に並び、単子葉類では散らばって分布する。"},
+ {q:"相同器官の例として最も適切なものはどれか。",choices:["クジラのひれとヒトのうで","チョウのはねと鳥のつばさ","サボテンのとげとバラのとげ","魚のえらとヒトの肺"],a:0,exp:"クジラのひれとヒトのうでは、形やはたらきは違うが骨格の基本的なつくりが同じで、共通の祖先に由来すると考えられる。"},
+ {q:"熱いものに手が触れて思わず引っこめる反応で、命令の信号が出される場所はどこか。",choices:["せきずい","大脳","小脳","筋肉"],a:0,exp:"反射では信号が大脳に届く前にせきずいから命令が出るため、反応が速い。"},
+ {q:"有性生殖を続けても、その生物の染色体の数が世代ごとに変わらないのはなぜか。",choices:["減数分裂で染色体数が半分になった生殖細胞が受精で合わさるため","受精のたびに染色体が半分ずつ捨てられるため","体細胞分裂で染色体数が半分になるため","染色体は増減しない性質をもつため"],a:0,exp:"減数分裂で半分になった生殖細胞どうしが受精することで、もとの染色体数に戻る。"},
+ {q:"丸い種子の遺伝子型がAaの個体を自家受粉させた。できた丸い種子のうち、純系(AA)である割合はどれか。",choices:["3分の1","2分の1","4分の1","4分の3"],a:0,exp:"子はAA:Aa:aa=1:2:1。丸い種子はAAとAaの3個体分なので、そのうちAAは3分の1になる。"}
+],
+earth:[
+ {q:"P波の速さが8km/s、S波の速さが4km/sのとき、震源から80km離れた地点の初期微動継続時間は何秒か。",choices:["10秒","20秒","5秒","30秒"],a:0,exp:"P波は80÷8=10秒、S波は80÷4=20秒で到達するため、その差は10秒。"},
+ {q:"P波の速さが8km/sの地震で、震源から40km離れた地点にP波が10時0分5秒に到達した。地震が発生した時刻はいつか。",choices:["10時0分0秒","10時0分5秒","10時0分10秒","9時59分55秒"],a:0,exp:"P波の到達に40÷8=5秒かかるため、発生時刻は5秒前の10時0分0秒。"},
+ {q:"気温20℃(飽和水蒸気量17.3g/m^3)の空気1m^3に、水蒸気が8.65g含まれている。この空気の湿度は何%か。",choices:["50%","20%","87%","17%"],a:0,exp:"湿度=8.65÷17.3×100=50%。"},
+ {q:"気温20℃(飽和水蒸気量17.3g/m^3)の空気の露点が10℃(飽和水蒸気量9.4g/m^3)であるとき、湿度はおよそ何%か。",choices:["約54%","約94%","約34%","約184%"],a:0,exp:"露点での飽和水蒸気量が実際の水蒸気量なので、9.4÷17.3×100≒54%。"},
+ {q:"はなれた地点の地層を比べるとき、凝灰岩の層が目印(かぎ層)として役立つのはなぜか。",choices:["火山灰は広い範囲に短期間で降り積もるため","凝灰岩はどの時代にも同じようにできるため","凝灰岩はかたく侵食されにくいため","凝灰岩には必ず化石が含まれるため"],a:0,exp:"火山の噴火による火山灰は広範囲にほぼ同時に堆積するため、離れた地層を対比する目印になる。"},
+ {q:"北緯35度の地点における夏至の日の太陽の南中高度はおよそ何度か(地軸の傾きを23.4度とする)。",choices:["約78度","約55度","約32度","約90度"],a:0,exp:"夏至の南中高度=90-緯度+23.4=90-35+23.4=78.4度。"},
+ {q:"ある星が午後8時に南中した。同じ星が午後6時に南中して見えるのはおよそ何か月後か。",choices:["1か月後","2か月後","4か月後","6か月後"],a:0,exp:"年周運動により同じ星の南中時刻は1か月に約2時間ずつ早くなるため、2時間早い午後6時に南中するのは約1か月後。"},
+ {q:"金星が真夜中に観察できないのはなぜか。",choices:["金星は地球より内側を公転しているため","金星が自ら光を出さないため","金星の公転周期が地球より長いため","金星が地球から遠すぎるため"],a:0,exp:"内惑星である金星は太陽の近くの方向にしか見えないため、夕方の西の空か明け方の東の空でしか観察できない。"},
+ {q:"日没直後、西の空に見える細い月はどれか。",choices:["三日月","満月","下弦の月","新月"],a:0,exp:"太陽に近い位置にある月は夕方の西の空に細く見え、これを三日月という。"},
+ {q:"寒冷前線が通過した直後の天気の変化として正しいものはどれか。",choices:["気温が下がり、風向が南寄りから北寄りに変わる","気温が上がり、風向が北寄りから南寄りに変わる","気温も風向も変化しない","気温が上がり、長時間おだやかな雨が降り続く"],a:0,exp:"寒冷前線の通過後は寒気に覆われるため気温が下がり、風向も北寄りに変化する。"},
+ {q:"寒冷前線付近で発達し、激しいにわか雨や雷をもたらす雲はどれか。",choices:["積乱雲","乱層雲","巻雲","高積雲"],a:0,exp:"寒気が暖気を急激に押し上げるため、垂直に発達した積乱雲ができる。"},
+ {q:"火山岩である玄武岩と、化学的な成分がほぼ同じ深成岩はどれか。",choices:["はんれい岩","花こう岩","流紋岩","安山岩"],a:0,exp:"玄武岩と はんれい岩は成分がほぼ同じで、冷え方の違いによってつくりが異なる。"},
+ {q:"日本の冬に特徴的な気圧配置とその影響の組み合わせとして正しいものはどれか。",choices:["西高東低。北西の季節風が吹き、日本海側に雪をもたらす","南高北低。南東の季節風が吹き、太平洋側に雪をもたらす","西高東低。南東の季節風が吹き、太平洋側が乾燥する","南高北低。北西の季節風が吹き、日本海側が乾燥する"],a:0,exp:"冬はシベリア高気圧が発達して西高東低となり、北西の季節風が日本海で水蒸気を含んで日本海側に雪を降らせる。"},
+ {q:"北の空の星を観察すると、星は北極星を中心にどのように動いて見えるか。",choices:["1時間に約15度、反時計回りに動く","1時間に約15度、時計回りに動く","1時間に約30度、反時計回りに動く","動いて見えない"],a:0,exp:"地球の自転により、北の空の星は北極星を中心に1時間に約15度ずつ反時計回りに回って見える。"},
+ {q:"堆積岩の地層で、下から順に「れき岩→砂岩→泥岩」と重なっている場合、堆積した環境の変化として正しいものはどれか。",choices:["だんだん水深が深くなった","だんだん水深が浅くなった","水深は変化しなかった","陸地が隆起し続けた"],a:0,exp:"粒の大きいものほど岸に近い浅い場所に堆積するため、れき→砂→泥の順は水深が深くなったことを示す。"}
+],
+boss:[
+ {q:"電熱線に6Vの電圧を加え1.5Aの電流を5分間流して水100gを加熱した。発生した熱がすべて水に伝わり、水1gを1℃上げるのに4.2J必要だとすると、水の上昇温度はおよそ何℃か。",choices:["約6.4℃","約27℃","約2.7℃","約64℃"],a:0,exp:"発熱量=6×1.5×300=2700J。水100gを1℃上げるには420J必要なので、2700÷420≒6.4℃。"},
+ {q:"銅と酸素が質量比4:1で結びつくとき、酸化銅8.0gを炭素で完全に還元して得られる銅は何gか。",choices:["6.4g","2.0g","8.0g","1.6g"],a:0,exp:"酸化銅は銅:酸素=4:1なので5等分すると銅は4/5。8.0×4/5=6.4g。"},
+ {q:"硝酸カリウムの溶解度が60℃で110g、20℃で32g(水100gあたり)であるとき、水50gを使った60℃の飽和水溶液を20℃まで冷やすと結晶は何g出てくるか。",choices:["39g","78g","55g","16g"],a:0,exp:"水50gなら溶解度も半分になる。(110-32)÷2=39g。"},
+ {q:"初期微動継続時間が震源からの距離に比例し、1秒あたり8kmに相当するとき、初期微動継続時間が8秒だった地点の震源からの距離は何kmか。",choices:["64km","8km","1km","640km"],a:0,exp:"8km/秒 × 8秒 = 64km。"},
+ {q:"気温25℃(飽和水蒸気量23.1g/m^3)、湿度60%の空気1m^3に含まれる水蒸気量はおよそ何gか。",choices:["約13.9g","約38.5g","約9.2g","約23.1g"],a:0,exp:"23.1×0.60≒13.9g。"},
+ {q:"質量2kgの物体を動滑車1個を使って引き上げるとき、必要な力とひもを引く距離はどうなるか(100gにはたらく重力を1N、滑車の重さは考えない)。",choices:["力は10Nになり、引く距離は持ち上げる高さの2倍になる","力は20Nのままで、引く距離も同じになる","力は10Nになり、引く距離も同じになる","力は40Nになり、引く距離は半分になる"],a:0,exp:"動滑車では力が半分(20N→10N)になる代わりに、引く距離は2倍になり、仕事の大きさは変わらない。"},
+ {q:"ある濃度の塩酸10cm^3と、ある濃度の水酸化ナトリウム水溶液8cm^3がちょうど中和した。同じ塩酸15cm^3を中和するのに必要な水酸化ナトリウム水溶液は何cm^3か。",choices:["12cm^3","8cm^3","20cm^3","10cm^3"],a:0,exp:"比例関係より 8×(15÷10)=12cm^3。"},
+ {q:"葉の枚数をそろえた枝で水の減少量を調べたところ、処理なし13.0mL、葉の表にワセリン10.0mL、葉の裏にワセリン4.0mL、両面にワセリン1.0mLだった。葉の表側からの蒸散量は何mLか。",choices:["3.0mL","9.0mL","10.0mL","12.0mL"],a:0,exp:"両面をふさぐと茎からの1.0mLのみ。裏だけふさいだ4.0mLから茎の1.0mLを引いた3.0mLが表側からの蒸散量。"},
+ {q:"丸い種子の純系としわの種子の純系をかけ合わせた子をすべて自家受粉させたところ、孫が2000個できた。このうちしわの種子はおよそ何個か。",choices:["約500個","約1000個","約1500個","0個"],a:0,exp:"孫では丸:しわ=3:1になるため、2000×(1/4)=約500個。"},
+ {q:"密度0.8g/cm^3の物体を水(密度1.0g/cm^3)に入れるとどうなるか。",choices:["浮いて、体積の一部が水面から出た状態で静止する","完全に沈む","水中の途中で静止する","水にとける"],a:0,exp:"水より密度が小さい物体は浮き、押しのけた水の重さが物体の重さと等しくなる位置で静止する。"},
+ {q:"光を当てた植物の二酸化炭素の吸収量から求められるのは何か。",choices:["見かけの光合成量(実際の光合成量から呼吸量を引いたもの)","実際の光合成量そのもの","呼吸量そのもの","蒸散量"],a:0,exp:"植物は光合成と同時に呼吸もしているため、測定される吸収量は差し引きの見かけの光合成量になる。"},
+ {q:"体重500Nの人が両足(接地面積の合計0.05m^2)で立っているとき、片足を上げると床が受ける圧力はどうなるか。",choices:["20000Paになり、もとの2倍になる","10000Paのまま変わらない","5000Paになり、もとの半分になる","0Paになる"],a:0,exp:"両足では500÷0.05=10000Pa。片足では面積が半分になるため圧力は2倍の20000Paになる。"},
+ {q:"消費電力500Wの器具を2時間使ったときの電力量は何kWhか。",choices:["1kWh","1000kWh","0.25kWh","2kWh"],a:0,exp:"0.5kW×2h=1kWh。"},
+ {q:"銅の酸化を表す化学反応式として正しいものはどれか。",choices:["2Cu + O2 → 2CuO","Cu + O → CuO","Cu + O2 → CuO2","2Cu + O → 2CuO"],a:0,exp:"酸素は分子(O2)として存在するため、左右で原子の数がそろう 2Cu + O2 → 2CuO が正しい。"},
+ {q:"斜面を下る台車の運動で、斜面の角度を大きくすると速さの変化のしかたはどうなるか。",choices:["1秒あたりの速さの増え方が大きくなる","速さは一定のまま変わらない","1秒あたりの速さの増え方が小さくなる","速さがだんだん減っていく"],a:0,exp:"斜面が急なほど運動の向きにはたらく力の成分が大きくなり、速さの増え方(加速)が大きくなる。"}
+]
+};
+
+
+
+/* ============================================================
+   問題の自動生成
+   数値問題は答えを計算で導き、誤答も「起こりがちな誤り」から作る。
+   用語問題は同種の語句表から誤答を引くため、正解が常に一意に定まる。
+   ============================================================ */
+function qrng(seed){let x=(seed>>>0)||1;return function(){x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};}
+function iR(r,lo,hi,step){step=step||1;return lo+Math.floor(r()*Math.floor((hi-lo)/step+1))*step;}
+function pk(r,a){return a[Math.floor(r()*a.length)];}
+function nf(v){const n=Math.round(v*1000)/1000;return String(n);}
+/* 数値問題:正解と、誤りやすい値から誤答を3つ作る */
+function numQ(q,val,unit,cands,exp){
+  const f=v=>nf(v)+unit, ans=f(val), used=new Set([ans]), w=[];
+  for(let i=0;i<cands.length&&w.length<3;i++){
+    const c=cands[i];
+    if(!isFinite(c)||c<=0) continue;
+    const s=f(c); if(used.has(s)) continue;
+    used.add(s); w.push(s);
+  }
+  let k=2;
+  while(w.length<3&&k<24){const s=f(val*k);if(!used.has(s)){used.add(s);w.push(s);}k++;}
+  while(w.length<3){const s=f(val+w.length*0.5+0.5);if(!used.has(s)){used.add(s);w.push(s);}else break;}
+  if(w.length<3) return null;
+  return {q:q,choices:[ans].concat(w),a:0,exp:exp,kind:"calc"};
+}
+/* 用語問題:同じ表の別項目を誤答にする */
+function factQ(r,q,ans,pool,exp){
+  const used=new Set([ans]), w=[], s=pool.slice();
+  for(let i=s.length-1;i>0;i--){const j=Math.floor(r()*(i+1));const t=s[i];s[i]=s[j];s[j]=t;}
+  for(let i=0;i<s.length&&w.length<3;i++){ if(!used.has(s[i])){used.add(s[i]);w.push(s[i]);} }
+  if(w.length<3) return null;
+  return {q:q,choices:[ans].concat(w),a:0,exp:exp,kind:"term"};
+}
+
+/* ---- 用語表 ---- */
+const T={
+  law:["慣性の法則","フックの法則","オームの法則","質量保存の法則","作用・反作用の法則","力学的エネルギー保存の法則","電磁誘導","仕事の原理"],
+  organ:["肝臓","じん臓","すい臓","小腸","大腸","肺","心臓","胃"],
+  organWork:{"肝臓":"有害なアンモニアを尿素に変える","じん臓":"血液から不要物をこし取り尿をつくる","すい臓":"消化酵素を含むすい液を出す",
+    "小腸":"柔毛から養分を吸収する","大腸":"主に水分を吸収する","肺":"肺胞で酸素と二酸化炭素を交換する",
+    "心臓":"血液を全身に送り出す","胃":"胃液でタンパク質を分解する"},
+  blood:["赤血球","白血球","血小板","血しょう"],
+  bloodWork:{"赤血球":"酸素を運ぶ","白血球":"細菌などを分解する","血小板":"出血を止める","血しょう":"養分や不要物を溶かして運ぶ"},
+  enzyme:{"だ液":"デンプン","胃液":"タンパク質","すい液":"デンプン・タンパク質・脂肪","胆汁":"脂肪(分解を助ける)"},
+  animal:["魚類","両生類","は虫類","鳥類","ホニュウ類","節足動物","軟体動物"],
+  animalTrait:{"魚類":"一生えらで呼吸し、水中に卵を産む","両生類":"子はえら、親は肺と皮膚で呼吸する",
+    "は虫類":"うろこにおおわれ、陸上に殻のある卵を産む","鳥類":"羽毛におおわれた恒温動物","ホニュウ類":"胎生で子をうみ、体表が毛でおおわれる",
+    "節足動物":"外骨格をもち、体やあしに節がある","軟体動物":"内臓が外とう膜でおおわれている"},
+  plant:["被子植物(双子葉類)","被子植物(単子葉類)","裸子植物","シダ植物","コケ植物"],
+  plantTrait:{"被子植物(双子葉類)":"子葉が2枚で、維管束が輪状に並ぶ","被子植物(単子葉類)":"子葉が1枚で、維管束が散らばる",
+    "裸子植物":"胚珠がむき出しで子房がない","シダ植物":"根・茎・葉の区別があり胞子でふえる","コケ植物":"根・茎・葉の区別がなく仮根をもつ"},
+  rock:["玄武岩","安山岩","流紋岩","はんれい岩","せん緑岩","花こう岩","石灰岩","チャート","凝灰岩","れき岩","砂岩","泥岩"],
+  rockKind:{"玄武岩":"火山岩","安山岩":"火山岩","流紋岩":"火山岩","はんれい岩":"深成岩","せん緑岩":"深成岩","花こう岩":"深成岩",
+    "石灰岩":"堆積岩","チャート":"堆積岩","凝灰岩":"堆積岩","れき岩":"堆積岩","砂岩":"堆積岩","泥岩":"堆積岩"},
+  front:["寒冷前線","温暖前線","停滞前線","閉塞前線"],
+  frontTrait:{"寒冷前線":"積乱雲が発達し、短時間の強い雨と気温の低下をもたらす",
+    "温暖前線":"乱層雲が広がり、長時間おだやかな雨を降らせる",
+    "停滞前線":"勢力が同程度の気団がぶつかり、ほとんど動かない",
+    "閉塞前線":"寒冷前線が温暖前線に追いついてできる"},
+  airmass:["シベリア気団","小笠原気団","オホーツク海気団","揚子江気団"],
+  airmassTrait:{"シベリア気団":"冷たく乾いており、冬の北西の季節風をもたらす",
+    "小笠原気団":"あたたかく湿っており、夏の蒸し暑さをもたらす",
+    "オホーツク海気団":"冷たく湿っており、梅雨や冷夏に関わる",
+    "揚子江気団":"あたたかく乾いており、春や秋の移動性高気圧をつくる"},
+  body:["恒星","惑星","衛星","彗星","銀河系"],
+  bodyTrait:{"恒星":"自ら光や熱を出す天体","惑星":"恒星のまわりを公転する大きな天体",
+    "衛星":"惑星のまわりを公転する天体","彗星":"細長い軌道をもち、太陽に近づくと尾を引く",
+    "銀河系":"太陽系が属する、数千億の恒星からなる集団"},
+  formula:{"水":"H2O","二酸化炭素":"CO2","酸素":"O2","水素":"H2","窒素":"N2","アンモニア":"NH3",
+    "塩化ナトリウム":"NaCl","水酸化ナトリウム":"NaOH","塩化水素":"HCl","硫酸":"H2SO4",
+    "酸化銅":"CuO","酸化銀":"Ag2O","炭酸水素ナトリウム":"NaHCO3","塩化銅":"CuCl2","メタン":"CH4"},
+  change:{"融解":"固体が液体になる","凝固":"液体が固体になる","蒸発":"液体が気体になる",
+    "凝縮":"気体が液体になる","昇華":"固体が直接気体になる"},
+  ion:{"ナトリウムイオン":"Na+","塩化物イオン":"Cl-","水素イオン":"H+","水酸化物イオン":"OH-",
+    "銅イオン":"Cu2+","亜鉛イオン":"Zn2+","硫酸イオン":"SO4 2-","マグネシウムイオン":"Mg2+"},
+  gasMake:{"酸素":"過酸化水素水に二酸化マンガンを加える","二酸化炭素":"石灰石にうすい塩酸を加える",
+    "水素":"亜鉛にうすい塩酸を加える","アンモニア":"塩化アンモニウムと水酸化カルシウムを混ぜて加熱する"},
+  gasTest:{"酸素":"火のついた線香を入れると激しく燃える","二酸化炭素":"石灰水に通すと白くにごる",
+    "水素":"火を近づけると音を立てて燃える","アンモニア":"水にとけやすく、水溶液はアルカリ性を示す"},
+  cell:{"核":"染色体を含み、遺伝の情報を担う","細胞膜":"細胞を包み、物質の出入りを調節する",
+    "細胞壁":"植物細胞にあり、体を支える丈夫なつくり","葉緑体":"光合成を行う緑色の粒",
+    "液胞":"水や不要物をたくわえる袋","細胞質":"核以外の部分全体"},
+  nerve:{"感覚器官":"光や音などの刺激を受け取る","感覚神経":"刺激の信号を中枢へ伝える",
+    "せきずい":"反射のとき、脳を経ずに命令を出す","大脳":"考えたり判断したりする",
+    "運動神経":"中枢からの命令を筋肉へ伝える"},
+  eco:{"生産者":"光合成で自ら養分をつくる","消費者":"ほかの生物を食べて養分を得る",
+    "分解者":"死がいやふんの有機物を無機物に分解する"},
+  vessel:{"肺動脈":"心臓から肺へ向かい、二酸化炭素の多い血液が流れる",
+    "肺静脈":"肺から心臓へ戻り、酸素の最も多い血液が流れる",
+    "大動脈":"心臓から全身へ血液を送り出す","大静脈":"全身から心臓へ血液が戻る",
+    "門脈":"小腸から肝臓へ、養分の多い血液を運ぶ"},
+  whyP:{"水圧は深いところほど大きい":"上にある水の重さが増えるから",
+    "山頂では気圧が低い":"上にある空気の量が少ないから",
+    "急ブレーキで体が前に傾く":"運動を続けようとする慣性がはたらくから",
+    "電熱線に電流を流すと熱くなる":"電気エネルギーが熱エネルギーに変わるから",
+    "振り子はもとの高さまで戻らない":"摩擦や空気抵抗で力学的エネルギーの一部が熱に変わるから",
+    "雷は光ってから音が遅れて届く":"音の速さが光の速さよりはるかに遅いから",
+    "斜面を使うと小さい力で持ち上げられる":"動かす距離が長くなり、仕事の大きさは変わらないから",
+    "磁石をコイルに出し入れすると電流が流れる":"磁界の変化が電圧を生じさせるから"},
+  whyC:{"金属を加熱すると質量が増える":"結びついた酸素の分だけ質量が増えるから",
+    "密閉容器では反応の前後で質量が変わらない":"原子の種類と数が変化しないから",
+    "純粋な水はほとんど電流を流さない":"イオンがほとんど存在しないから",
+    "うすい塩酸に亜鉛を入れると気体が出る":"亜鉛がイオンになり、水素が発生するから",
+    "二酸化炭素を通すと石灰水が白くにごる":"炭酸カルシウムができて沈殿するから",
+    "再結晶で物質を取り出せる":"温度によって溶解度が変わるから",
+    "中和すると水ができる":"水素イオンと水酸化物イオンが結びつくから",
+    "蒸留で混合物を分けられる":"物質ごとに沸点が異なるから"},
+  whyB:{"だ液のはたらきを調べる実験を約40℃で行う":"体温に近い温度で消化酵素がよくはたらくから",
+    "根の先端をうすい塩酸で処理する":"細胞どうしを離れやすくして観察しやすくするから",
+    "小腸の内側に柔毛がある":"表面積を広げて養分を効率よく吸収するため",
+    "肺に肺胞が多数ある":"表面積を広げて気体の交換を効率よく行うため",
+    "反射は反応がきわめて速い":"信号が脳を経ずにせきずいから出るから",
+    "有性生殖の子は多様な形質をもつ":"両親の遺伝子が組み合わさるから",
+    "葉の裏側に気孔が多い":"蒸散や気体の出入りを行うため",
+    "夜の植物は二酸化炭素を出す":"光合成が行われず呼吸だけが続くから"},
+  whyE:{"上昇する空気は冷える":"気圧が下がって膨張するから",
+    "火山灰の層が地層の対比に役立つ":"広い範囲に短期間で降り積もるから",
+    "日本の天気は西から東へ変わる":"上空を吹く偏西風に流されるから",
+    "冬の日本海側で雪が多い":"季節風が日本海をわたる間に水蒸気を含むから",
+    "晴れた日の昼に海から陸へ風が吹く":"陸のほうがあたたまりやすく上昇気流が生じるから",
+    "月が満ち欠けして見える":"太陽との位置関係で光る部分の見え方が変わるから",
+    "金星は真夜中に見えない":"地球より内側を公転しているから",
+    "深成岩の結晶は大きい":"地下深くでゆっくり冷えて固まったから"},
+  photo:{"光合成":"光のエネルギーを使い、二酸化炭素と水から養分と酸素をつくる",
+    "呼吸":"酸素を使って養分を分解し、エネルギーを取り出す",
+    "蒸散":"気孔から水を水蒸気として放出する"}
+};
+const keys=o=>Object.keys(o);
+const vals=o=>keys(o).map(k=>o[k]);
+
+/* ---- 基本問題の型 ---- */
+const GB={
+physics:[
+ r=>{const R=iR(r,2,60,2),I=iR(r,1,9),V=I*R;
+   return numQ(`${V}Vの電源に${R}Ωの抵抗をつないだとき、流れる電流は何Aか。`,I,"A",[V*R,V+R,V/(R/2),I*2],
+     `オームの法則(電流=電圧÷抵抗)より ${V}÷${R}=${I}A。`);},
+ r=>{const R=iR(r,3,50),I=iR(r,2,9),V=I*R;
+   return numQ(`${R}Ωの抵抗に${I}Aの電流を流すには、何Vの電圧が必要か。`,V,"V",[R+I,R/I,V*2,V/2],
+     `電圧=電流×抵抗より ${I}×${R}=${V}V。`);},
+ r=>{const I=iR(r,2,10),R=iR(r,3,40),V=I*R;
+   return numQ(`${V}Vの電圧を加えると${I}Aの電流が流れた。この抵抗は何Ωか。`,R,"Ω",[V*I,V+I,I/V*100,R*2],
+     `抵抗=電圧÷電流より ${V}÷${I}=${R}Ω。`);},
+ r=>{const a=iR(r,2,40,2),b=iR(r,2,40,2);if(a===b)return null;
+   return numQ(`${a}Ωと${b}Ωの抵抗を直列につないだときの合成抵抗は何Ωか。`,a+b,"Ω",[a*b/(a+b),a*b,Math.abs(a-b),(a+b)/2],
+     `直列では合成抵抗は各抵抗の和になるので ${a}+${b}=${a+b}Ω。`);},
+ r=>{const a=iR(r,4,40,4);
+   return numQ(`${a}Ωの抵抗を2つ並列につないだときの合成抵抗は何Ωか。`,a/2,"Ω",[a*2,a,a*a,a/4],
+     `同じ抵抗2つの並列では、合成抵抗はもとの半分の ${a/2}Ωになる。`);},
+ r=>{const V=iR(r,3,100),I=iR(r,1,9);
+   return numQ(`${V}Vの電圧で${I}Aの電流が流れる器具の消費電力は何Wか。`,V*I,"W",[V/I,V+I,V*I*2,V-I],
+     `電力=電圧×電流より ${V}×${I}=${V*I}W。`);},
+ r=>{const P=iR(r,200,1500,100),h=pk(r,[0.5,1,1.5,2,3]);
+   return numQ(`消費電力${P}Wの器具を${h}時間使ったときの電力量は何Whか。`,P*h,"Wh",[P/h,P+h*100,P*h*60,P],
+     `電力量=電力×時間より ${P}×${h}=${P*h}Wh。`);},
+ r=>{const F=iR(r,5,60,5),s=iR(r,2,12);
+   return numQ(`${F}Nの力で物体を力の向きに${s}m動かしたときの仕事は何Jか。`,F*s,"J",[F/s,F+s,F*s*2,s/F],
+     `仕事=力×距離より ${F}×${s}=${F*s}J。`);},
+ r=>{const W=iR(r,100,3000,100),t=iR(r,2,20,2);
+   return numQ(`${W}Jの仕事を${t}秒でしたときの仕事率は何Wか。`,W/t,"W",[W*t,t/W,W-t,W/(t*2)],
+     `仕事率=仕事÷時間より ${W}÷${t}=${W/t}W。`);},
+ r=>{const F=iR(r,100,900,100),S=pk(r,[0.01,0.02,0.05,0.1,0.2,0.5]);
+   return numQ(`面積${S}m^2の面に${F}Nの力が垂直にはたらくときの圧力は何Paか。`,F/S,"Pa",[F*S,S/F,F/(S*2),F],
+     `圧力=力÷面積より ${F}÷${S}=${F/S}Pa。`);},
+ r=>{const v=iR(r,2,25),t=iR(r,3,30);
+   return numQ(`${v*t}mの距離を${t}秒で進んだ物体の平均の速さは何m/sか。`,v,"m/s",[v*t,t/v,v*2,v*t/2],
+     `速さ=距離÷時間より ${v*t}÷${t}=${v}m/s。`);},
+ r=>{const d=pk(r,[0.9,1.2,2.7,7.9,8.9,11.3]),V=iR(r,10,60,10),m=Math.round(d*V*10)/10;
+   return numQ(`質量${m}g、体積${V}cm^3の物質の密度は何g/cm^3か。`,d,"g/cm^3",[V/m,m*V,d*2,m-V],
+     `密度=質量÷体積より ${m}÷${V}=${d}g/cm^3。`);},
+ r=>{const air=pk(r,[2.5,3,4,4.5,5,6]),buo=pk(r,[0.8,1,1.2,1.5,2]);if(buo>=air)return null;
+   return numQ(`ばねばかりの値が空気中で${air}N、水中で${Math.round((air-buo)*10)/10}Nだった。浮力は何Nか。`,buo,"N",[air,air+buo,air*buo,buo*2],
+     `浮力=空気中の重さ-水中での値より ${air}-${Math.round((air-buo)*10)/10}=${buo}N。`);},
+ r=>{const t=iR(r,2,12);
+   return numQ(`稲光が見えてから${t}秒後に雷鳴が聞こえた。音の速さを340m/sとすると、落雷地点までの距離は何mか。`,340*t,"m",[340/t,340+t,340*t*2,340],
+     `距離=速さ×時間より 340×${t}=${340*t}m。`);},
+ r=>{const kg=pk(r,[0.5,1,1.5,2,2.5,3,4,5]);
+   return numQ(`質量${kg}kgの物体にはたらく重力は何Nか(100gの物体にはたらく重力を1Nとする)。`,kg*10,"N",[kg,kg*100,kg/10,kg*10*2],
+     `100gで1Nなので、${kg}kg=${kg*1000}gでは ${kg*10}N。`);},
+ r=>{const k=pk(r,keys({"慣性の法則":1,"フックの法則":1,"作用・反作用の法則":1,"仕事の原理":1,"電磁誘導":1}));
+   const d={"慣性の法則":"力がはたらかない、またはつり合っているとき、物体は静止か等速直線運動を続ける",
+     "フックの法則":"ばねの伸びは加えた力の大きさに比例する",
+     "作用・反作用の法則":"力を及ぼすと、同じ大きさで逆向きの力を受け返す",
+     "仕事の原理":"道具を使っても仕事の大きさは変わらない",
+     "電磁誘導":"コイル内部の磁界が変化すると電流が生じる"};
+   return factQ(r,`次の説明にあてはまる法則・現象はどれか。「${d[k]}」`,k,T.law,`${k}の説明である。`);}
+],
+chemistry:[
+ r=>{const m=pk(r,[0.4,0.8,1.2,1.6,2,2.4,3.2,4]);
+   return numQ(`銅と酸素は質量比4:1で結びつく。銅${m}gを完全に酸化させたときにできる酸化銅は何gか。`,m*1.25,"g",[m,m*4,m*1.5,m*0.25],
+     `結びつく酸素は ${Math.round(m*0.25*100)/100}g。質量保存の法則より ${m}+${Math.round(m*0.25*100)/100}=${Math.round(m*1.25*100)/100}g。`);},
+ r=>{const m=pk(r,[0.3,0.6,0.9,1.2,1.5,2.1,3]);
+   return numQ(`マグネシウムと酸素は質量比3:2で結びつく。マグネシウム${m}gを完全に燃焼させたときにできる酸化マグネシウムは何gか。`,
+     Math.round(m*5/3*1000)/1000,"g",[m*2,m*3,m*2/3,m],
+     `結びつく酸素は ${Math.round(m*2/3*100)/100}g。合計 ${Math.round(m*5/3*100)/100}g。`);},
+ r=>{const m=pk(r,[3.5,7,10.5,14,21]);
+   return numQ(`鉄と硫黄は質量比7:4で結びつく。鉄${m}gと過不足なく反応する硫黄は何gか。`,Math.round(m*4/7*1000)/1000,"g",[m*7/4,m,m*2,m/2],
+     `7:4の比より ${m}×4÷7=${Math.round(m*4/7*100)/100}g。`);},
+ r=>{const M=pk(r,[100,200,250,400,500]),p=pk(r,[4,5,8,10,12,20,25]);
+   const a=M*p/100, b=M-a;
+   return numQ(`水${b}gに食塩${a}gをとかした水溶液の質量パーセント濃度は何%か。`,p,"%",[a/b*100,b/M*100,a,p*2],
+     `濃度=溶質÷溶液全体×100より ${a}÷${M}×100=${p}%。`);},
+ r=>{const p=pk(r,[4,5,8,10,12,15,20,25]),M=iR(r,100,500,50);
+   return numQ(`質量パーセント濃度${p}%の水溶液${M}gに含まれる溶質は何gか。`,M*p/100,"g",[M/p,M*p,p,M-M*p/100],
+     `${M}×${p}÷100=${M*p/100}g。`);},
+ r=>{const p=pk(r,[15,20,25,30]),q=pk(r,[5,10]),M=iR(r,100,400,100);if(q>=p)return null;
+   return numQ(`${p}%の水溶液${M}gに水を加えて${q}%にしたい。加える水は何gか。`,M*(p/q-1),"g",[M*p/q,M*q/p,M,M*(p-q)/100],
+     `溶質は ${M*p/100}g。${q}%にするには全体が ${M*p/q}g必要なので、加える水は ${M*p/q}-${M}=${M*(p/q-1)}g。`);},
+ r=>{const s1=pk(r,[85,110,169]),s2=pk(r,[13,24,32]),w=pk(r,[50,100,200]);if(s2>=s1)return null;
+   return numQ(`ある物質の溶解度は高温で${s1}g、低温で${s2}g(いずれも水100gあたり)である。水${w}gを使った高温の飽和水溶液を低温まで冷やすと、出てくる結晶は何gか。`,
+     (s1-s2)*w/100,"g",[s1*w/100,s2*w/100,(s1-s2),(s1+s2)*w/100],
+     `溶解度の差 ${s1-s2}g/100g に水の量をかけて (${s1}-${s2})×${w}÷100=${(s1-s2)*w/100}g。`);},
+ r=>{const k=pk(r,keys(T.gasMake));
+   return factQ(r,`${k}を発生させる方法として正しいものはどれか。`,T.gasMake[k],vals(T.gasMake),`${k}は「${T.gasMake[k]}」で発生させる。`);},
+ r=>{const k=pk(r,keys(T.gasTest));
+   return factQ(r,`${k}の性質を確かめる方法として正しいものはどれか。`,T.gasTest[k],vals(T.gasTest),`${k}の代表的な確認方法である。`);},
+ r=>{const k=pk(r,keys(T.formula));
+   return factQ(r,`${k}の化学式はどれか。`,T.formula[k],vals(T.formula),`${k}は ${T.formula[k]} と表す。`);},
+ r=>{const k=pk(r,keys(T.formula));
+   return factQ(r,`化学式 ${T.formula[k]} が表す物質はどれか。`,k,keys(T.formula),`${T.formula[k]} は${k}である。`);},
+ r=>{const k=pk(r,keys(T.change));
+   return factQ(r,`「${T.change[k]}」変化を何というか。`,k,keys(T.change),`${k}の説明である。`);},
+ r=>{const k=pk(r,keys(T.ion));
+   return factQ(r,`${k}をイオン式で表すとどれか。`,T.ion[k],vals(T.ion),`${k}は ${T.ion[k]} と表す。`);}
+],
+biology:[
+ r=>{const k=pk(r,keys(T.organWork));
+   return factQ(r,`${k}のはたらきとして正しいものはどれか。`,T.organWork[k],vals(T.organWork),`${k}は「${T.organWork[k]}」はたらきをもつ。`);},
+ r=>{const k=pk(r,keys(T.bloodWork));
+   return factQ(r,`${k}のはたらきとして正しいものはどれか。`,T.bloodWork[k],vals(T.bloodWork),`${k}は「${T.bloodWork[k]}」役割をもつ。`);},
+ r=>{const k=pk(r,keys(T.enzyme));
+   return factQ(r,`${k}が分解にはたらく養分はどれか。`,T.enzyme[k],vals(T.enzyme),`${k}は ${T.enzyme[k]} にはたらく。`);},
+ r=>{const k=pk(r,keys(T.animalTrait));
+   return factQ(r,`${k}の特徴として正しいものはどれか。`,T.animalTrait[k],vals(T.animalTrait),`${k}の特徴である。`);},
+ r=>{const k=pk(r,keys(T.animalTrait));
+   return factQ(r,`次の特徴をもつ動物のなかまはどれか。「${T.animalTrait[k]}」`,k,T.animal,`${k}の特徴である。`);},
+ r=>{const k=pk(r,keys(T.plantTrait));
+   return factQ(r,`${k}の特徴として正しいものはどれか。`,T.plantTrait[k],vals(T.plantTrait),`${k}の特徴である。`);},
+ r=>{const k=pk(r,keys(T.plantTrait));
+   return factQ(r,`次の特徴をもつ植物のなかまはどれか。「${T.plantTrait[k]}」`,k,T.plant,`${k}の特徴である。`);},
+ r=>{const n=iR(r,400,4000,400);
+   return numQ(`丸い種子をつくる純系としわの種子をつくる純系をかけ合わせ、できた子を自家受粉させたところ孫が${n}個できた。しわの種子はおよそ何個か。`,
+     n/4,"個",[n/2,n*3/4,n,n/3],`孫では丸:しわ=3:1になるので ${n}×1/4=${n/4}個。`);},
+ r=>{const n=iR(r,400,4000,400);
+   return numQ(`丸い種子をつくる純系としわの種子をつくる純系をかけ合わせ、できた子を自家受粉させたところ孫が${n}個できた。丸い種子はおよそ何個か。`,
+     n*3/4,"個",[n/4,n/2,n,n*2/3],`孫では丸:しわ=3:1になるので ${n}×3/4=${n*3/4}個。`);},
+ r=>{const n=pk(r,[8,12,16,20,24,26,38,46,48]);
+   return numQ(`ある生物の体細胞の染色体数が${n}本であるとき、減数分裂でできる生殖細胞の染色体数は何本か。`,n/2,"本",[n,n*2,n/4,n-2],
+     `減数分裂では染色体数が半分になるので ${n}÷2=${n/2}本。`);},
+ r=>{const all=pk(r,[9,10.5,12,13,15]),back=pk(r,[2.5,3,4,4.5]);if(back>=all)return null;
+   return numQ(`枝からの水の減少量は、何も処理しないとき${all}mL、葉の裏にワセリンをぬったとき${back}mLだった。葉の裏側からの蒸散量は何mLか。`,
+     Math.round((all-back)*100)/100,"mL",[all,back,all+back,all/back],
+     `裏をふさぐと裏からの蒸散がなくなるので ${all}-${back}=${Math.round((all-back)*100)/100}mL。`);},
+ r=>{const a=pk(r,[5,10,15]),b=pk(r,[4,10,15,20,40,60]);
+   return numQ(`接眼レンズが${a}倍、対物レンズが${b}倍のときの顕微鏡の倍率は何倍か。`,a*b,"倍",[a+b,b/a,a*b*2,b-a],
+     `倍率=接眼×対物より ${a}×${b}=${a*b}倍。`);},
+ r=>{const v=iR(r,50,90,5),n=iR(r,60,80,5);
+   return numQ(`心臓が1回の拍動で${v}mLの血液を送り出し、1分間に${n}回拍動するとき、1分間に送り出される血液は何mLか。`,
+     v*n,"mL",[v+n,v/n,n/v,v*n/2],`${v}×${n}=${v*n}mL。`);},
+ r=>{const k=pk(r,keys(T.cell));
+   return factQ(r,`細胞のつくりのうち「${T.cell[k]}」ものはどれか。`,k,keys(T.cell),`${k}の説明である。`);},
+ r=>{const k=pk(r,keys(T.cell));
+   return factQ(r,`${k}のはたらきや特徴として正しいものはどれか。`,T.cell[k],vals(T.cell),`${k}の説明である。`);},
+ r=>{const k=pk(r,keys(T.nerve));
+   return factQ(r,`「${T.nerve[k]}」はたらきをもつのはどれか。`,k,keys(T.nerve),`${k}のはたらきである。`);},
+ r=>{const k=pk(r,keys(T.vessel));
+   return factQ(r,`${k}の説明として正しいものはどれか。`,T.vessel[k],vals(T.vessel),`${k}の説明である。`);},
+ r=>{const k=pk(r,keys(T.vessel));
+   return factQ(r,`次の説明にあてはまる血管はどれか。「${T.vessel[k]}」`,k,keys(T.vessel),`${k}である。`);},
+ r=>{const k=pk(r,keys(T.eco));
+   return factQ(r,`生態系における${k}の説明として正しいものはどれか。`,T.eco[k],vals(T.eco),`${k}の説明である。`);},
+ r=>{const k=pk(r,keys(T.photo));
+   return factQ(r,`「${T.photo[k]}」はたらきを何というか。`,k,keys(T.photo),`${k}の説明である。`);},
+ r=>{const n=iR(r,400,4000,400);
+   return numQ(`遺伝子型Aaの個体と、潜性形質の個体(aa)をかけ合わせて${n}個体の子ができた。潜性形質が現れるのはおよそ何個体か。`,
+     n/2,"個体",[n/4,n*3/4,n,n/3],`Aa×aa では顕性:潜性=1:1になるので ${n/2}個体。`);}
+],
+earth:[
+ r=>{const v=pk(r,[3,4,5,6,8]),d=v*iR(r,4,30);
+   return numQ(`地震の波が${v}km/sで伝わるとき、震源から${d}km離れた地点に届くまで何秒かかるか。`,d/v,"秒",[d*v,v/d,d,d/(v*2)],
+     `時間=距離÷速さより ${d}÷${v}=${d/v}秒。`);},
+ r=>{const vp=8,vs=4,d=iR(r,40,320,40);
+   return numQ(`P波の速さが${vp}km/s、S波の速さが${vs}km/sのとき、震源から${d}km離れた地点の初期微動継続時間は何秒か。`,
+     d/vs-d/vp,"秒",[d/vp,d/vs,d/(vp+vs),(vp-vs)],
+     `P波は${d/vp}秒、S波は${d/vs}秒で到達するので、その差は ${d/vs-d/vp}秒。`);},
+ r=>{const k=pk(r,[6,7,8,9]),t=iR(r,3,20);
+   return numQ(`初期微動継続時間が震源距離に比例し、1秒あたり${k}kmに相当するとき、初期微動継続時間が${t}秒だった地点の震源からの距離は何kmか。`,
+     k*t,"km",[k/t,t/k,k*t*2,k+t],`${k}×${t}=${k*t}km。`);},
+ r=>{const sat=pk(r,[9.4,12.8,17.3,20.6,23.1,30.4]),h=pk(r,[30,40,50,60,70,80]);
+   const act=Math.round(sat*h/100*100)/100;
+   return numQ(`気温がある温度のとき飽和水蒸気量は${sat}g/m^3である。空気1m^3に水蒸気が${act}g含まれるとき、湿度は何%か。`,
+     h,"%",[act,sat,act/sat,sat/act*100],`湿度=実際の水蒸気量÷飽和水蒸気量×100より ${act}÷${sat}×100=${h}%。`);},
+ r=>{const dew=pk(r,[9.4,12.8,17.3]),now=pk(r,[17.3,20.6,23.1,30.4]);if(dew>=now)return null;
+   return numQ(`気温での飽和水蒸気量が${now}g/m^3、露点での飽和水蒸気量が${dew}g/m^3であるとき、湿度はおよそ何%か。`,
+     Math.round(dew/now*1000)/10,"%",[now/dew*100,dew,now,dew/now*10],
+     `露点での飽和水蒸気量が実際の水蒸気量なので ${dew}÷${now}×100≒${Math.round(dew/now*1000)/10}%。`);},
+ r=>{const lat=iR(r,24,45),kind=pk(r,["春分・秋分","夏至","冬至"]);
+   const h={"春分・秋分":90-lat,"夏至":Math.round((90-lat+23.4)*10)/10,"冬至":Math.round((90-lat-23.4)*10)/10}[kind];
+   if(h<=0)return null;
+   return numQ(`北緯${lat}度の地点における${kind}の日の太陽の南中高度は何度か(地軸の傾きを23.4度とする)。`,
+     h,"度",[lat,90-lat,90+lat-23.4,180-lat],
+     `${kind}の南中高度は ${kind==="春分・秋分"?`90-緯度=90-${lat}`:(kind==="夏至"?`90-緯度+23.4=90-${lat}+23.4`:`90-緯度-23.4=90-${lat}-23.4`)}=${h}度。`);},
+ r=>{const h=iR(r,2,10);
+   return numQ(`星は地球の自転により1時間に約15度動いて見える。${h}時間ではおよそ何度動くか。`,15*h,"度",[15/h,h,15*h*2,360/h],
+     `15×${h}=${15*h}度。`);},
+ r=>{const m=iR(r,2,10);
+   return numQ(`星は地球の公転により、同じ時刻に見える位置が1か月に約30度ずつ西へ動く。${m}か月後にはおよそ何度動いているか。`,
+     30*m,"度",[30/m,m*15,360/m,30],`30×${m}=${30*m}度。`);},
+ r=>{const k=pk(r,keys(T.rockKind));
+   return factQ(r,`${k}はどのなかまの岩石か。`,T.rockKind[k],["火山岩","深成岩","堆積岩","変成岩"],`${k}は${T.rockKind[k]}に分類される。`);},
+ r=>{const k=pk(r,keys(T.frontTrait));
+   return factQ(r,`${k}の特徴として正しいものはどれか。`,T.frontTrait[k],vals(T.frontTrait),`${k}の特徴である。`);},
+ r=>{const k=pk(r,keys(T.airmassTrait));
+   return factQ(r,`${k}の性質として正しいものはどれか。`,T.airmassTrait[k],vals(T.airmassTrait),`${k}の性質である。`);},
+ r=>{const k=pk(r,keys(T.bodyTrait));
+   return factQ(r,`次の説明にあてはまる天体はどれか。「${T.bodyTrait[k]}」`,k,T.body,`${k}の説明である。`);}
+]
+};
+GB.boss=GB.physics.concat(GB.chemistry,GB.biology,GB.earth);
+
+/* ---- 応用問題の型(二段階の計算・分野横断) ---- */
+const GH={
+physics:[
+ r=>{const a=iR(r,2,20,2),b=iR(r,2,20,2),V=iR(r,6,60,6);if(a===b)return null;
+   const I=V/(a+b),v2=Math.round(I*b*100)/100;
+   return numQ(`${a}Ωと${b}Ωを直列につなぎ、全体に${V}Vを加えた。${b}Ωにかかる電圧は何Vか。`,v2,"V",[V,V/2,I,V*b/a],
+     `合成抵抗は${a+b}Ω、電流は ${V}÷${a+b}=${Math.round(I*100)/100}A。${b}Ωには ${Math.round(I*100)/100}×${b}=${v2}V。`);},
+ r=>{const p=pk(r,[[3,6],[4,12],[6,12],[5,20],[10,15],[12,24]]),a=p[0],b=p[1];
+   const V=a*b/(a+b)*iR(r,1,6), I=V/a+V/b;
+   return numQ(`${a}Ωと${b}Ωを並列につなぎ、${V}Vを加えた。回路全体に流れる電流は何Aか。`,I,"A",[V/(a+b),V/a,V/b,I/2],
+     `各抵抗に同じ電圧がかかるので ${V}÷${a}+${V}÷${b}=${I}A。`);},
+ r=>{const V=iR(r,3,12),I=pk(r,[1,1.5,2,2.5,3]),t=iR(r,60,600,60);
+   return numQ(`電熱線に${V}Vを加え${I}Aの電流を${t}秒間流したときの発熱量は何Jか。`,V*I*t,"J",[V*I,V*t,I*t,V*I*t/60],
+     `発熱量=電圧×電流×時間より ${V}×${I}×${t}=${V*I*t}J。`);},
+ r=>{const Q=iR(r,2100,12600,2100),m=pk(r,[50,100,200]);
+   const dT=Math.round(Q/(m*4.2)*10)/10;
+   return numQ(`${Q}Jの熱がすべて水${m}gに伝わったとき、水温は何℃上がるか(水1gを1℃上げるのに4.2J必要とする)。`,
+     dT,"℃",[Q/m,m/Q,dT*2,Q/4.2],
+     `水${m}gを1℃上げるには ${m*4.2}J必要なので ${Q}÷${m*4.2}=${dT}℃。`);},
+ r=>{const kg=pk(r,[1,2,3,4,5]),h=iR(r,2,10);
+   return numQ(`質量${kg}kgの物体を動滑車1個で${h}m引き上げるとき、ひもを引く長さは何mか(滑車の重さは考えない)。`,
+     h*2,"m",[h,h/2,h*4,kg*h],`動滑車では力が半分になる代わりに、引く長さは2倍の ${h*2}mになる。`);},
+ r=>{const kg=pk(r,[1,2,3,4,5]);
+   return numQ(`質量${kg}kgの物体を動滑車1個で引き上げるとき、必要な力は何Nか(100gにはたらく重力を1N、滑車の重さは考えない)。`,
+     kg*5,"N",[kg*10,kg,kg*20,kg*2.5],`重力は${kg*10}N。動滑車で半分になるので ${kg*5}N。`);},
+ r=>{const F=iR(r,10,80,10),s=iR(r,2,10),t=iR(r,2,10);
+   return numQ(`${F}Nの力で物体を${s}m動かすのに${t}秒かかった。このときの仕事率は何Wか。`,F*s/t,"W",[F*s,F/t,s/t,F*s*t],
+     `仕事は ${F}×${s}=${F*s}J。仕事率は ${F*s}÷${t}=${F*s/t}W。`);},
+ r=>{const k=pk(r,keys(T.whyP));
+   return factQ(r,`${k}のはなぜか。理由として最も適切なものはどれか。`,T.whyP[k],vals(T.whyP),`${k}のは、${T.whyP[k]}である。`);},
+ r=>{const k=pk(r,keys(T.whyP));
+   return factQ(r,`次の理由で説明できる事がらはどれか。「${T.whyP[k]}」`,k,keys(T.whyP),`${k}の理由である。`);}
+],
+chemistry:[
+ r=>{const ox=pk(r,[2,4,5,8,10,20]);
+   return numQ(`銅と酸素は質量比4:1で結びつく。酸化銅${ox}gを炭素で完全に還元したとき、得られる銅は何gか。`,
+     Math.round(ox*4/5*1000)/1000,"g",[ox/5,ox,ox*5/4,ox/2],
+     `酸化銅は銅:酸素=4:1なので銅は全体の4/5。${ox}×4÷5=${Math.round(ox*4/5*100)/100}g。`);},
+ r=>{const ox=pk(r,[2,4,5,8,10,20]);
+   return numQ(`銅と酸素は質量比4:1で結びつく。酸化銅${ox}gに含まれる酸素は何gか。`,
+     Math.round(ox/5*1000)/1000,"g",[ox*4/5,ox,ox/4,ox/2],
+     `酸素は全体の1/5なので ${ox}÷5=${Math.round(ox/5*100)/100}g。`);},
+ r=>{const a=pk(r,[10,20]),f=pk(r,[0.4,0.5,0.6,0.8,1.2,1.5]),b=a*f,mul=pk(r,[1.5,2,2.5,3]),cc=a*mul;
+   return numQ(`ある塩酸${a}cm^3と、ある水酸化ナトリウム水溶液${b}cm^3がちょうど中和した。同じ塩酸${cc}cm^3を中和するのに必要な水酸化ナトリウム水溶液は何cm^3か。`,
+     b*mul,"cm^3",[a*cc/b,b,cc,b*a/cc],
+     `比例関係より ${b}×${cc}÷${a}=${b*mul}cm^3。`);},
+ r=>{const p=pk(r,[10,20,25]),M=iR(r,100,400,100),add=iR(r,50,200,50);
+   const nc=Math.round(M*p/(M+add)*100)/100;
+   return numQ(`${p}%の水溶液${M}gに水を${add}g加えたとき、濃度は何%になるか。`,nc,"%",[p,M*p/100,p-add/10,p*2],
+     `溶質は${M*p/100}gのまま、全体は${M+add}gになるので ${M*p/100}÷${M+add}×100=${nc}%。`);},
+ r=>{const s1=pk(r,[110,169,85]),s2=pk(r,[32,24,13]),w=pk(r,[50,150,200,250]);if(s2>=s1)return null;
+   return numQ(`溶解度が高温で${s1}g、低温で${s2}g(水100gあたり)の物質がある。水${w}gを用いた高温の飽和水溶液を低温まで冷やすと、析出する結晶は何gか。`,
+     Math.round((s1-s2)*w/100*100)/100,"g",[(s1-s2),s1*w/100,s2*w/100,(s1-s2)*100/w],
+     `(${s1}-${s2})×${w}÷100=${Math.round((s1-s2)*w/100*100)/100}g。`);},
+ r=>{const k=pk(r,keys(T.whyC));
+   return factQ(r,`${k}のはなぜか。理由として最も適切なものはどれか。`,T.whyC[k],vals(T.whyC),`${k}のは、${T.whyC[k]}である。`);},
+ r=>{const k=pk(r,keys(T.whyC));
+   return factQ(r,`次の理由で説明できる事がらはどれか。「${T.whyC[k]}」`,k,keys(T.whyC),`${k}の理由である。`);}
+],
+biology:[
+ r=>{const n=iR(r,600,4800,600);
+   return numQ(`遺伝子型Aaの個体どうしをかけ合わせて${n}個体の子ができた。遺伝子型がAaになるのはおよそ何個体か。`,
+     n/2,"個体",[n/4,n*3/4,n,n/3],`AA:Aa:aa=1:2:1なので Aa は全体の1/2で ${n/2}個体。`);},
+ r=>{const n=iR(r,600,4800,600);
+   return numQ(`遺伝子型Aaの個体どうしをかけ合わせて${n}個体の子ができた。遺伝子型がAAになるのはおよそ何個体か。`,
+     n/4,"個体",[n/2,n*3/4,n,n/3],`AA:Aa:aa=1:2:1なので AA は全体の1/4で ${n/4}個体。`);},
+ r=>{const all=pk(r,[11,12,13,14,15]),front=pk(r,[9,10,10.5]),back=pk(r,[3.5,4,4.5]),stem=pk(r,[0.5,1,1.5]);
+   if(!(front<all&&back<front))return null;
+   return numQ(`枝の水の減少量は、処理なし${all}mL、葉の表にワセリン${front}mL、葉の裏にワセリン${back}mL、両面にワセリン${stem}mLだった。葉の表側からの蒸散量は何mLか。`,
+     Math.round((back-stem)*100)/100,"mL",[all-front,all-back,front-stem,all-stem],
+     `裏だけふさいだ${back}mLは「表+茎」。茎は${stem}mLなので表は ${back}-${stem}=${Math.round((back-stem)*100)/100}mL。`);},
+ r=>{const all=pk(r,[11,12,13,14,15]),front=pk(r,[9,10,10.5]),back=pk(r,[3.5,4,4.5]),stem=pk(r,[0.5,1,1.5]);
+   if(!(front<all&&back<front))return null;
+   return numQ(`枝の水の減少量は、処理なし${all}mL、葉の表にワセリン${front}mL、葉の裏にワセリン${back}mL、両面にワセリン${stem}mLだった。葉の裏側からの蒸散量は何mLか。`,
+     Math.round((front-stem)*100)/100,"mL",[all-front,back-stem,all-back,all-stem],
+     `表だけふさいだ${front}mLは「裏+茎」。茎は${stem}mLなので裏は ${front}-${stem}=${Math.round((front-stem)*100)/100}mL。`);},
+ r=>{const n=pk(r,[8,12,16,20,24,26,38,46]);
+   return numQ(`体細胞の染色体数が${n}本の生物で、受精卵の染色体数は何本か。`,n,"本",[n/2,n*2,n/4,n+2],
+     `生殖細胞は${n/2}本。受精でそれが合わさり ${n}本に戻る。`);},
+ r=>{const k=pk(r,keys(T.whyB));
+   return factQ(r,`${k}のはなぜか。理由として最も適切なものはどれか。`,T.whyB[k],vals(T.whyB),`${k}のは、${T.whyB[k]}である。`);},
+ r=>{const k=pk(r,keys(T.whyB));
+   return factQ(r,`次の理由で説明できる事がらはどれか。「${T.whyB[k]}」`,k,keys(T.whyB),`${k}の理由である。`);}
+],
+earth:[
+ r=>{const vp=8,d=iR(r,40,320,40),base=iR(r,0,50);
+   const arr=base+d/vp;
+   return numQ(`P波の速さが${vp}km/sの地震で、震源から${d}km離れた地点にP波が「10時0分${arr}秒」に到達した。地震が発生した時刻は10時0分何秒か。`,
+     base,"秒",[arr,d/vp,arr+d/vp,d/vp*2],
+     `P波の到達に ${d}÷${vp}=${d/vp}秒かかるので、発生は ${arr}-${d/vp}=${base}秒。`);},
+ r=>{const sat=pk(r,[17.3,20.6,23.1,30.4]),h=pk(r,[40,50,60,70,80]);
+   return numQ(`気温での飽和水蒸気量が${sat}g/m^3、湿度が${h}%のとき、空気1m^3に含まれる水蒸気量は何gか。`,
+     Math.round(sat*h/100*100)/100,"g",[sat,h,sat/h*100,sat*h],
+     `${sat}×${h}÷100=${Math.round(sat*h/100*100)/100}g。`);},
+ r=>{const lat=iR(r,26,44),h=90-lat;
+   return numQ(`春分の日に太陽の南中高度が${h}度だった。この地点の緯度は北緯何度か。`,lat,"度",[h,90+lat,h/2,180-h],
+     `春分では南中高度=90-緯度なので、緯度=90-${h}=${lat}度。`);},
+ r=>{const m=iR(r,1,6);
+   return numQ(`同じ星が南中する時刻は1か月に約2時間ずつ早くなる。${m}か月後、南中時刻は何時間早くなるか。`,
+     2*m,"時間",[m,m/2,24/m,30*m],`2×${m}=${2*m}時間。`);},
+ r=>{const k=pk(r,keys(T.whyE));
+   return factQ(r,`${k}のはなぜか。理由として最も適切なものはどれか。`,T.whyE[k],vals(T.whyE),`${k}のは、${T.whyE[k]}である。`);},
+ r=>{const k=pk(r,keys(T.whyE));
+   return factQ(r,`次の理由で説明できる事がらはどれか。「${T.whyE[k]}」`,k,keys(T.whyE),`${k}の理由である。`);}
+]
+};
+GH.boss=GH.physics.concat(GH.chemistry,GH.biology,GH.earth);
+
+/* ---- 目標数まで生成し、重複は捨てる ---- */
+function buildPool(tmpls,target,seed,seenTexts){
+  const r=qrng(seed), out=[], seen=new Set(seenTexts||[]);
+  let guard=0;
+  while(out.length<target&&guard++<target*120){
+    const t=tmpls[Math.floor(r()*tmpls.length)];
+    let q=null;
+    try{ q=t(r); }catch(e){ q=null; }
+    if(!q||!q.q||seen.has(q.q)) continue;
+    if(q.choices.length!==4) continue;
+    if(new Set(q.choices).size!==4) continue;
+    seen.add(q.q); out.push(q);
+  }
+  return out;
+}
+(function expandPools(){
+  const subj=["physics","chemistry","biology","earth","boss"];
+  /* 層をまたいで同じ問題が出ないよう、全分野で共通の既出集合を持つ */
+  const seen=new Set();
+  subj.forEach(function(k){
+    QUESTIONS[k].forEach(q=>seen.add(q.q));
+    HARD[k].forEach(q=>seen.add(q.q));
+  });
+  subj.forEach(function(k,i){
+    const add=buildPool(GB[k],200-QUESTIONS[k].length,7001+i*131,seen);
+    add.forEach(q=>seen.add(q.q));
+    QUESTIONS[k]=QUESTIONS[k].concat(add);
+    const addH=buildPool(GH[k],100-HARD[k].length,9001+i*137,seen);
+    addH.forEach(q=>seen.add(q.q));
+    HARD[k]=HARD[k].concat(addH);
+  });
+  /* 手書きの問題にも種別を付ける。選択肢がすべて数値なら計算問題とみなす */
+  const looksNumeric=q=>q.choices.every(ch=>/^-?[\d.]+\s*[^\d\s]{0,8}$/.test(String(ch).trim()));
+  subj.forEach(function(k){
+    [QUESTIONS[k],HARD[k]].forEach(function(pool){
+      pool.forEach(function(q){ if(!q.kind) q.kind=looksNumeric(q)?"calc":"term"; });
+    });
+  });
+})();
+
+/* ============ 層(フロア)構成 ============ */
+const FLOORS = [
+ {id:"physics", stratum:"STRATUM I", label:"力の層", color:"#5b8cff", sigil:"physics",
+  desc:"電流、力、光。目に見えぬ法則を身にまとう者たちが、最初の関門に立つ。",
+  monsters:[{name:"ボルテージ・スライム",shape:"slime",req:1},{name:"フォース・ゴーレム",shape:"golem",req:2},{name:"ルミナス・バット",shape:"bat",req:3}]},
+ {id:"chemistry", stratum:"STRATUM II", label:"変性の層", color:"#2fd3a5", sigil:"chemistry",
+  desc:"結びつき、離れ、姿を変える。物質の理を操る者たちの領域。",
+  monsters:[{name:"ミスト・ドレイク",shape:"dragon",req:1},{name:"アシッド・クラブ",shape:"crab",req:2},{name:"メタル・ラスター",shape:"armor",req:3}]},
+ {id:"biology", stratum:"STRATUM III", label:"生命の層", color:"#ffc857", sigil:"biology",
+  desc:"増殖、継承、循環。生命のしくみそのものを宿した者たちが待つ。",
+  monsters:[{name:"クロロ・スプラウト",shape:"sprout",req:1},{name:"ジーンウルフ",shape:"wolf",req:2},{name:"エコ・シェイパー",shape:"amoeba",req:3}]},
+ {id:"earth", stratum:"STRATUM IV", label:"大地の層", color:"#d08a4e", sigil:"earth",
+  desc:"積もる地層、荒れる大気、めぐる天体。悠久の時を従える者たちの層。",
+  monsters:[{name:"ストラータ・タートル",shape:"turtle",req:1},{name:"テンペスト・イーグル",shape:"eagle",req:2},{name:"コスモ・ジェリー",shape:"jelly",req:3}]},
+ {id:"boss", stratum:"STRATUM V", label:"深奥の間", color:"#b06ef5", sigil:"boss",
+  desc:"四つの理が溶け合い、渦を巻く。塔の頂に座す、異変の根源。",
+  monsters:[{name:"カオス・エレメンタル",shape:"chaos",req:5}]}
+];
+
+/* ============ 紋章(サイジル) ============ */
+function sigilSVG(key,size,color){
+  const s=size||22, c=color||"currentColor";
+  const o=`stroke="${c}" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"`;
+  const inner={
+    physics:`<circle cx="20" cy="20" r="3.4" ${o}/><ellipse cx="20" cy="20" rx="15" ry="6.4" ${o}/>
+      <ellipse cx="20" cy="20" rx="15" ry="6.4" ${o} transform="rotate(60 20 20)"/>
+      <ellipse cx="20" cy="20" rx="15" ry="6.4" ${o} transform="rotate(120 20 20)"/>`,
+    chemistry:`<path d="M20 5 L33 12.5 L33 27.5 L20 35 L7 27.5 L7 12.5Z" ${o}/>
+      <path d="M20 13 L26 17 L26 24 L20 28 L14 24 L14 17Z" ${o}/><circle cx="20" cy="20" r="1.6" fill="${c}"/>`,
+    biology:`<path d="M20 34 C6 26 8 10 20 6 C32 10 34 26 20 34Z" ${o}/>
+      <path d="M20 8 L20 32 M20 15 L13 12 M20 15 L27 12 M20 22 L12 19 M20 22 L28 19" ${o}/>`,
+    earth:`<circle cx="20" cy="20" r="14.5" ${o}/><path d="M6 24 L14 15 L20 21 L27 12 L34 21" ${o}/>
+      <path d="M6.5 27.5 L33.5 27.5" ${o}/>`,
+    boss:`<path d="M20 3 L24.6 15.4 L37 20 L24.6 24.6 L20 37 L15.4 24.6 L3 20 L15.4 15.4Z" ${o}/>
+      <circle cx="20" cy="20" r="4.6" ${o}/><circle cx="20" cy="20" r="1.8" fill="${c}"/>`
+  }[key]||"";
+  return `<svg width="${s}" height="${s}" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+}
+
+/* ============ 記章(メダル) ============ */
+function mix(hex,target,amt){
+  const p=s=>parseInt(s,16);
+  const h=hex.replace('#',''),t=target.replace('#','');
+  const f=(a,b)=>Math.round(p(a)+(p(b)-p(a))*amt).toString(16).padStart(2,'0');
+  return '#'+f(h.substr(0,2),t.substr(0,2))+f(h.substr(2,2),t.substr(2,2))+f(h.substr(4,2),t.substr(4,2));
+}
+const GOLD="#d9b45e", GOLD_HI="#f7e4ac", EMBER="#ffb45c";
+
+/* ============================================================
+   描画エンジン ― 符号付き距離場からの生成描画
+   手描きのパスを廃し、骨格プリミティブの距離場から
+   輪郭・陰影帯・リムライトをすべて計算で導出する。
+   ============================================================ */
+
+/* --- 値ノイズ(決定的) --- */
+function makeNoise(seed){
+  const hash=(x,y)=>{
+    let n=Math.imul(x,374761393)^Math.imul(y,668265263)^Math.imul(seed,1442695041);
+    n=Math.imul(n^(n>>>13),1274126177);
+    return ((n^(n>>>16))>>>0)/4294967295;
+  };
+  return (x,y)=>{
+    const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi;
+    const u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
+    const a=hash(xi,yi),b=hash(xi+1,yi),c=hash(xi,yi+1),d=hash(xi+1,yi+1);
+    return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;
+  };
+}
+/* --- プリミティブの距離関数 --- */
+function sdCircle(px,py,cx,cy,r){return Math.hypot(px-cx,py-cy)-r;}
+function sdCapsule(px,py,ax,ay,bx,by,r){
+  const pax=px-ax,pay=py-ay,bax=bx-ax,bay=by-ay;
+  const dd=bax*bax+bay*bay;
+  let h=dd>0?(pax*bax+pay*bay)/dd:0; h=h<0?0:(h>1?1:h);
+  return Math.hypot(pax-bax*h,pay-bay*h)-r;
+}
+/* 滑らかな和集合(kが小さいほど角が立つ) */
+function smin(a,b,k){
+  const h=Math.max(0,Math.min(1,0.5+0.5*(b-a)/k));
+  return b*(1-h)+a*h-k*h*(1-h);
+}
+/* --- 骨格から距離場を組み立てる --- */
+function buildField(def,noise){
+  const k=def.k===undefined?9:def.k;
+  const na=def.na===undefined?0:def.na, nf=def.nf===undefined?0.05:def.nf;
+  return (x,y)=>{
+    let d=1e9;
+    for(let i=0;i<def.s.length;i++){
+      const s=def.s[i];
+      const dd=(s.length===3)?sdCircle(x,y,s[0],s[1],s[2])
+        :(s.length===4)?Math.abs(Math.hypot(x-s[0],y-s[1])-s[2])-s[3]
+        :sdCapsule(x,y,s[0],s[1],s[2],s[3],s[4]);
+      d=(i===0)?dd:smin(d,dd,k);
+    }
+    if(na) d+=(noise(x*nf,y*nf)-0.5)*na;
+    return d;
+  };
+}
+/* ============================================================
+   画素単位のレンダラ
+   距離場から法線を復元し、拡散・鏡面・リム・環境遮蔽・透過光を
+   画素ごとに解いて一度だけ焼き込む。
+   格子に前計算してから差分で勾配を取り、ノイズ評価を最小化する。
+   ============================================================ */
+function hex2rgb(h){h=h.replace('#','');return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];}
+function nrm3(x,y,z){const m=Math.hypot(x,y,z)||1;return [x/m,y/m,z/m];}
+function makeFbm(noise){
+  return (x,y,oct)=>{
+    let a=0,amp=0.5,f=1;
+    for(let i=0;i<(oct||3);i++){a+=noise(x*f,y*f)*amp;amp*=0.5;f*=2.03;}
+    return a;
+  };
+}
+
+/* --- sRGB と線形の相互変換表(逐次のべき乗を避ける) --- */
+const S2L=new Float32Array(256);
+for(let i=0;i<256;i++) S2L[i]=Math.pow(i/255,2.2);
+const L2S=new Uint8Array(4097);
+for(let i=0;i<=4096;i++) L2S[i]=Math.round(255*Math.pow(i/4096,1/2.2));
+function toLin(hex){const r=hex2rgb(hex);return [S2L[r[0]],S2L[r[1]],S2L[r[2]]];}
+/* 4x4 秩序ディザ(暗部の階調段差を消す) */
+const BAYER=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>(v/16-0.46)/255);
+
+/* 部位数が増えても破綻しないよう、画面をタイルに割り、
+   各タイルに影響が及ぶ部位だけを評価する */
+function primBBox(s){
+  if(s.length===3) return [s[0]-s[2],s[1]-s[2],s[0]+s[2],s[1]+s[2]];
+  if(s.length===4) return [s[0]-s[2]-s[3],s[1]-s[2]-s[3],s[0]+s[2]+s[3],s[1]+s[2]+s[3]];
+  return [Math.min(s[0],s[2])-s[4],Math.min(s[1],s[3])-s[4],
+          Math.max(s[0],s[2])+s[4],Math.max(s[1],s[3])+s[4]];
+}
+function fieldGrid(prims,k,S,sc,noise,na,nf){
+  const out=new Float32Array(S*S).fill(1e9);
+  const bb=prims.map(primBBox), marg=k*2.4+22, TS=24, nt=Math.ceil(S/TS);
+  for(let tj=0;tj<nt;tj++)for(let ti=0;ti<nt;ti++){
+    const x0=ti*TS*sc, y0=tj*TS*sc, x1=(ti+1)*TS*sc, y1=(tj+1)*TS*sc;
+    const list=[];
+    for(let p=0;p<prims.length;p++){
+      const b=bb[p];
+      if(b[2]+marg<x0||b[0]-marg>x1||b[3]+marg<y0||b[1]-marg>y1) continue;
+      list.push(prims[p]);
+    }
+    if(!list.length) continue;
+    const jmax=Math.min(S,(tj+1)*TS), imax=Math.min(S,(ti+1)*TS);
+    for(let j=tj*TS;j<jmax;j++){
+      for(let i=ti*TS;i<imax;i++){
+        const x=(i+0.5)*sc, y=(j+0.5)*sc;
+        let d=1e9;
+        for(let q=0;q<list.length;q++){
+          const s=list[q];
+          const dd=(s.length===3)?sdCircle(x,y,s[0],s[1],s[2])
+            :(s.length===4)?Math.abs(Math.hypot(x-s[0],y-s[1])-s[2])-s[3]
+            :sdCapsule(x,y,s[0],s[1],s[2],s[3],s[4]);
+          d=(q===0)?dd:smin(d,dd,k);
+        }
+        if(na) d+=(noise(x*nf,y*nf)-0.5)*na;
+        out[j*S+i]=d;
+      }
+    }
+  }
+  return out;
+}
+
+/* 岩が割れるように、体をセル状の塊へ分割して欠け落とす */
+function cellHash(i,j,seed){
+  let n=Math.imul(i,374761393)^Math.imul(j,668265263)^Math.imul(seed,1442695041);
+  n=Math.imul(n^(n>>>13),1274126177);
+  return ((n^(n>>>16))>>>0)/4294967295;
+}
+function cellAt(x,y,cs,seed,out){
+  const gi=Math.floor(x/cs), gj=Math.floor(y/cs);
+  let b1=1e9,b2=1e9,bi=0,bj=0;
+  for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){
+    const ci=gi+di, cj=gj+dj;
+    const fx=(ci+0.15+0.7*cellHash(ci,cj,seed))*cs;
+    const fy=(cj+0.15+0.7*cellHash(ci,cj,seed+77))*cs;
+    const dx=x-fx, dy=y-fy, d=dx*dx+dy*dy;
+    if(d<b1){b2=b1;b1=d;bi=ci;bj=cj;} else if(d<b2) b2=d;
+  }
+  out[0]=bi; out[1]=bj; out[2]=Math.sqrt(b2)-Math.sqrt(b1);
+}
+
+function renderPixels(def,c,S,noise,fbm){
+  const sc=200/S, N2=S*S;
+  const det=def.det===undefined?1.6:def.det, fur=def.fur||0;
+
+  /* 第1段:タイル分割した距離場を求め、描画対象を絞り込む */
+  const fld=fieldGrid(def.s,def.k===undefined?9:def.k,S,sc,noise,def.na||0,def.nf||0.05);
+  const hasG=!!(def.gold&&def.gold.length);
+  const gld=hasG?fieldGrid(def.gold,def.gk===undefined?3:def.gk,S,sc,noise,0,0):null;
+  const FG=hasG;
+  /* 損壊:表層のセルから順に塊が欠け落ち、残った塊の間に割れ目が走る */
+  const chip=def.chip;
+  const seam=chip?new Float32Array(N2):null;
+  if(chip){
+    const cs=chip.cell||19, cseed=chip.seed|0, frac=chip.frac||0;
+    const th=def.thick||30, tmp=[0,0,0];
+    for(let j=0;j<S;j++)for(let i=0;i<S;i++){
+      const o=j*S+i; if(fld[o]>26) continue;
+      const x=(i+0.5)*sc, y=(j+0.5)*sc;
+      cellAt(x,y,cs,cseed,tmp);
+      const depth=Math.max(0,Math.min(1,-fld[o]/th));
+      /* 表層ほど欠けやすい:内側から穴が開くのを避ける */
+      const p=frac*(0.28+0.72*(1-depth));
+      if(cellHash(tmp[0],tmp[1],cseed+911)<p) fld[o]+=90;
+      else seam[o]=tmp[2];
+    }
+  }
+  const near=new Uint8Array(N2);
+  for(let o=0;o<N2;o++){
+    if(fld[o]<16||(hasG&&gld[o]<16)) near[o]=1;
+  }
+  /* 第2段:表面近傍のみ、三段階の周波数で凹凸と汚れを作る */
+  const bmpA=new Float32Array(N2), bmpB=new Float32Array(N2);
+  const pat=new Float32Array(N2), crk=new Float32Array(N2), met=new Float32Array(N2);
+  for(let j=0;j<S;j++){
+    for(let i=0;i<S;i++){
+      const o=j*S+i; if(!near[o]) continue;
+      const x=(i+0.5)*sc, y=(j+0.5)*sc;
+      const g1=fbm(x*0.14,y*0.14,3);
+      fld[o]+=(g1-0.5)*det;
+      if(fur) fld[o]-=Math.max(0,fbm(x*0.42,y*0.42,2)-0.42)*fur;
+      bmpA[o]=fbm(x*0.42,y*0.42,4);   /* 中周波:面の起伏 */
+      bmpB[o]=fbm(x*1.7,y*1.7,2);      /* 高周波:肌理 */
+      pat[o]=g1;
+      crk[o]=fbm(x*0.055,y*0.055,3);
+      if(FG){
+        const gd=gld[o];
+        met[o]=Math.max(0,Math.min(1,(fld[o]-gd)/2.2+0.5));
+        fld[o]=Math.min(fld[o],gd);
+      }
+    }
+  }
+
+  /* 線形空間の配色 */
+  const base=toLin(mix(c,'#312e3d',0.66));
+  const amb =toLin(mix(c,'#201d30',0.62));
+  const boneC=toLin(mix(c,'#f2e7cb',0.82));
+  const goldC=toLin('#f7d78a');
+  const sssC =toLin(mix(c,'#ffb45c',0.55));
+  const metalC=toLin(def.metal||'#f7d78a');
+  const grime=toLin(mix(c,'#161320',0.72));
+
+  const KEY=nrm3(-0.56,-0.72,0.41);
+  const FILL=nrm3(0.62,0.24,0.52);
+  const RIM=nrm3(0.46,-0.36,-0.62);
+  const H=nrm3(KEY[0],KEY[1],KEY[2]+1);
+  const thick=def.thick||30, shin=def.shin||26;
+  const specAmt=def.spec===undefined?0.5:def.spec;
+  const sssAmt=(def.sss||0)*0.45, crackAmt=def.crack||0;
+  const bs=def.bump===undefined?0.5:def.bump;
+  const lights=(def.eyes||[]).map(e=>[e[0],e[1],e[2]*2.7,.62]).concat(def.lights||[]);
+  const lcol=lights.map(L=>toLin(L[4]||'#f7d78a'));
+  const allMetal=def.allMetal?1:0;
+  const voids=def.voids||[];
+  const chipGlow=def.chipGlow||0;
+  /* 足元の霧から立ちのぼる残り火の照り返し(全個体共通の下方光) */
+  const UNDER=nrm3(0.06,0.92,0.3);
+  const underAmt=(def.under===undefined?0.26:def.under)*0.3;
+  const emberL=toLin('#ff9c3c');
+  /* 影を落とす向き(光源へ向かう方向) */
+  const shx=KEY[0]/Math.hypot(KEY[0],KEY[1]), shy=KEY[1]/Math.hypot(KEY[0],KEY[1]);
+  const shz=KEY[2]/Math.hypot(KEY[0],KEY[1]);
+
+  const px=new Uint8ClampedArray(N2*4);
+  const cl=(v,lo,hi)=>v<lo?lo:(v>hi?hi:v);
+  const at=(i,j)=>fld[cl(j,0,S-1)*S+cl(i,0,S-1)];
+  const ba=(i,j)=>bmpA[cl(j,0,S-1)*S+cl(i,0,S-1)];
+  const bb=(i,j)=>bmpB[cl(j,0,S-1)*S+cl(i,0,S-1)];
+  /* 格子の双一次補間(部分標本と影の追跡に使う) */
+  const samp=(wx,wy)=>{
+    const fx=wx/sc-0.5, fy=wy/sc-0.5;
+    const i0=Math.floor(fx), j0=Math.floor(fy);
+    const tx=fx-i0, ty=fy-j0;
+    const a=at(i0,j0),b=at(i0+1,j0),d0=at(i0,j0+1),e=at(i0+1,j0+1);
+    return (a*(1-tx)+b*tx)*(1-ty)+(d0*(1-tx)+e*tx)*ty;
+  };
+
+  for(let j=0;j<S;j++){
+    for(let i=0;i<S;i++){
+      const o=j*S+i, o4=o*4;
+      if(!near[o]){px[o4+3]=0;continue;}
+      const d=fld[o];
+      let cov=cl(0.5-d/(sc*1.5),0,1);
+      if(cov<=0.002){px[o4+3]=0;continue;}
+      const x=(i+0.5)*sc, y=(j+0.5)*sc;
+
+      /* 輪郭付近だけ2x2の部分標本で被覆率を精密化 */
+      if(d>-sc*1.8&&d<sc*1.8){
+        const q=sc/3; let acc=0;
+        for(let sy=-1;sy<=1;sy++) for(let sx=-1;sx<=1;sx++)
+          acc+=cl(0.5-samp(x+sx*q,y+sy*q)/(sc*0.62),0,1);
+        cov=acc/9;
+        if(cov<=0.002){px[o4+3]=0;continue;}
+      }
+
+      const h=cl(-d/thick,0,1), t=1-h;
+      const nz=Math.cos(t*Math.PI*0.5), nxy=Math.sin(t*Math.PI*0.5);
+      let gx=at(i+1,j)-at(i-1,j), gy=at(i,j+1)-at(i,j-1);
+      const gm=Math.hypot(gx,gy)||1; gx/=gm; gy/=gm;
+      /* 二周波の凹凸を重ねる */
+      const bxA=(ba(i+1,j)-ba(i-1,j)), byA=(ba(i,j+1)-ba(i,j-1));
+      const bxB=(bb(i+1,j)-bb(i-1,j)), byB=(bb(i,j+1)-bb(i,j-1));
+      let nvx=gx*nxy+(bxA*5.5+bxB*2.6)*bs, nvy=gy*nxy+(byA*5.5+byB*2.6)*bs, nvz=nz;
+      const nm=Math.sqrt(nvx*nvx+nvy*nvy+nvz*nvz)||1;
+      nvx/=nm; nvy/=nm; nvz/=nm;
+
+      /* 曲率:窪みには汚れが溜まり、稜には摩耗した光沢が出る */
+      const lap=4*d-(at(i+1,j)+at(i-1,j)+at(i,j+1)+at(i,j-1));
+      const cav=cl(lap*0.55,-1,1);
+      const ao=(0.3+0.7*Math.sqrt(h))*(1-0.34*Math.max(0,cav));
+      const wear=Math.max(0,-cav);
+
+      /* 自己投影:光へ向かって高さ場を辿る(向背面では省略) */
+      let sh=1;
+      const dif0=Math.max(0,nvx*KEY[0]+nvy*KEY[1]+nvz*KEY[2]);
+      if(dif0>0.03){
+        const h0=Math.max(0,-d);
+        for(let s=1;s<=10;s++){
+          const tt=s*2.1, si=(x+shx*tt)/sc-0.5, sj=(y+shy*tt)/sc-0.5;
+          const hh=Math.max(0,-at(si+0.5|0,sj+0.5|0));
+          const ray=h0+shz*tt;
+          if(hh>ray){ sh=Math.min(sh,cl((ray-hh)/6+0.72,0.3,1)); }
+        }
+      }
+      const dif=Math.pow(dif0,1.55)*sh;
+      const und=Math.max(0,nvx*UNDER[0]+nvy*UNDER[1]+nvz*UNDER[2]);
+      const fil=Math.max(0,nvx*FILL[0]+nvy*FILL[1]+nvz*FILL[2]);
+      const fres=Math.pow(1-cl(nvz,0,1),4.5);
+      const rim=Math.pow(Math.max(0,nvx*RIM[0]+nvy*RIM[1]+nvz*RIM[2]),2.6)*(0.3+0.7*fres);
+      const nh=Math.max(0,nvx*H[0]+nvy*H[1]+nvz*H[2]);
+      const spe=(Math.pow(nh,shin)+Math.pow(nh,shin*4.5)*0.7)*specAmt*(0.55+0.45*fres)*sh;
+
+      const ptn=0.72+0.56*pat[o];
+      const sss=sssAmt*Math.exp(-h*3.4);
+      let crack=0;
+      if(crackAmt){
+        const cv=Math.abs(crk[o]-0.5);
+        crack=crackAmt*Math.max(0,1-cv/0.03)*Math.min(1,h*3.2);
+      }
+      let socket=1, lr=0,lg=0,lb=0;
+      for(let q=0;q<voids.length;q++){
+        const V=voids[q], vx=V[0]-x, vy=V[1]-y;
+        const v2=vx*vx+vy*vy;
+        if(v2>V[2]*V[2]) continue;
+        socket*=1-0.92*Math.pow(1-Math.sqrt(v2)/V[2],1.4);
+      }
+      for(let q=0;q<lights.length;q++){
+        const L=lights[q], dx=L[0]-x, dy=L[1]-y;
+        const d2=dx*dx+dy*dy, rr=L[2];
+        if(d2>rr*rr*9) continue;
+        const dd=Math.sqrt(d2)||0.001;
+        const k1=1/(dd*1.0846);
+        const nd=Math.max(0,nvx*dx*k1+nvy*dy*k1+nvz*0.3872);
+        const w=L[3]*(Math.exp(-dd/(rr*0.9))*nd*0.85
+               +Math.pow(Math.max(0,1-dd/(rr*0.46)),2)*2.3);
+        const lc=lcol[q];
+        lr+=lc[0]*w; lg+=lc[1]*w; lb+=lc[2]*w;
+        socket*=1-0.62*Math.max(0,1-dd/(rr*1.25));
+      }
+      /* 割れ目:溝は光を失い、奥から熱がにじむ */
+      let fr=0;
+      if(seam){ const sm=seam[o]; if(sm>0&&sm<2.8) fr=1-sm/2.8; }
+      if(fr){ socket*=1-0.62*fr; }
+      const m=allMetal?1:met[o];
+      const spM=spe*(1+m*1.8+wear*0.9), rimM=rim*(1+m*0.8+wear*0.5);
+      const dth=BAYER[(i&3)+((j&3)<<2)];
+      for(let k=0;k<3;k++){
+        const alb=(base[k]*ptn*(1-m)+metalC[k]*0.92*m)*(1-0.35*Math.max(0,cav))
+                 +grime[k]*0.35*Math.max(0,cav);
+        const v= alb*(0.012+dif*0.99)*ao*socket
+               + amb[k]*(0.045+fil*0.34)*ao*socket
+               + boneC[k]*rimM*0.72*(0.3+0.7*socket)
+               + spM*(0.25+0.75*socket)
+               + sssC[k]*sss*socket
+               + emberL[k]*und*underAmt*(0.35+0.65*h)*socket
+               + goldC[k]*crack + emberL[k]*fr*fr*0.5*chipGlow + (k===0?lr:k===1?lg:lb);
+        px[o4+k]=L2S[cl(Math.round(v*4096),0,4096)]+dth*255;
+      }
+      px[o4+3]=cov*255;
+    }
+  }
+  return px;
+}
+
+/* ============================================================
+   骨格定義 ― 円と円柱のみ。形はすべて距離場から生成される。
+   s:プリミティブ / k:融合の鋭さ / na,nf:輪郭を毀すノイズ
+   ============================================================ */
+const BODY={
+  /* ボルテージ・スライム:内部に無数の眼を浮かべる変形体。中央に空洞の口 */
+  slime:{s:[[100,152,32],[66,152,24],[134,150,24],[100,124,26],
+      [100,124,68,150,7],[100,124,132,148,7],[100,124,100,96,8],
+      [100,96,80,78,6],[100,96,120,80,6],[80,78,66,62,4],[120,80,134,64,4],
+      [70,172,66,186,6],[132,170,136,184,5],
+      [66,62,58,44,3],[134,64,144,46,3],[100,96,100,72,4]],k:15,na:10,nf:.038,
+    eyes:[[74,140,3.4],[100,132,3],[126,138,3.2],[86,102,3.6],[116,104,3.4],[100,74,2.6]],
+    voids:[[100,158,20],[100,110,10]],
+    thick:32,spec:.8,shin:44,sss:.6,bump:.35,det:2.4,under:.4,
+    gold:[[76,134,92,110,2.4],[92,110,86,128,2.4],[86,128,104,122,2.4],[104,122,78,160,2.4],
+      [86,164,94,150,1.6],[106,150,114,164,1.6]],
+    lights:[[100,120,30,.7,'#cfe4ff']],
+    gr:54,gy:176},
+  /* フォース・ゴーレム:肩から棘を生やし、胸の裂け目から炉の光を漏らす巨躯 */
+  golem:{s:[[100,48,15],[100,60,100,70,9],[100,92,27],[100,126,22],
+      [66,78,18],[134,78,18],
+      [64,82,50,114,12],[136,82,150,114,12],
+      [50,114,42,146,11],[150,114,158,146,11],[38,158,15],[162,158,15],
+      [88,140,82,168,13],[112,140,118,168,13],[82,168,80,186,10],[118,168,120,186,10],
+      [60,66,44,36,5],[140,66,156,36,5],[70,64,62,40,4],[130,64,138,40,4],
+      [100,36,100,16,4],[92,66,86,44,3],[108,66,114,44,3],
+      [36,150,24,132,5],[164,150,176,132,5]],k:5,na:6,nf:.05,
+    eyes:[[93,46,3.4],[108,45,3.4],[100,56,2.4]],
+    voids:[[100,96,17],[100,52,12]],
+    thick:40,spec:.2,shin:10,crack:.8,bump:1,det:3,under:.34,
+    gold:[[100,96,8],[76,84,124,84,2],[82,110,118,110,1.8],[88,120,92,132,1.6],[112,120,108,132,1.6]],
+    lights:[[100,96,32,1.1]],
+    gr:70,gy:192},
+  /* ルミナス・バット:四つの眼と鉤爪を備えた翼手 */
+  bat:{s:[[100,106,12],[100,122,9],[100,88,10],
+      [92,79,82,52,6],[108,79,118,52,6],[84,54,76,34,3],[116,54,124,34,3],
+      [96,102,68,92,5],[104,102,132,92,5],
+      [68,92,36,74,4],[132,92,164,74,4],
+      [36,74,16,50,2.6],[164,74,184,50,2.6],
+      [36,74,8,80,2.6],[164,74,192,80,2.6],
+      [36,74,18,110,2.6],[164,74,182,110,2.6],
+      [36,74,42,132,2.6],[164,74,158,132,2.6],
+      [16,50,8,80,5],[8,80,18,110,5],[18,110,42,132,5],[42,132,100,128,6],
+      [184,50,192,80,5],[192,80,182,110,5],[182,110,158,132,5],[158,132,100,128,6],
+      [36,74,26,62,3],[164,74,174,62,3],[100,134,96,150,4],[100,134,104,150,4]],k:8,na:8,nf:.05,
+    eyes:[[94,84,2.8],[106,84,2.8],[91,92,2.2],[109,92,2.2]],
+    voids:[[100,98,9]],
+    thick:14,spec:.45,sss:.45,fur:2.8,bump:.5,det:1.8,under:.3,
+    gold:[[100,116,7],[96,96,94,104,1.4],[104,96,106,104,1.4],[80,50,84,58,2],[120,50,116,58,2]],
+    lights:[[100,116,26,1,'#ffe9b0']],
+    gr:40,gy:172},
+  /* ミスト・ドレイク:背に棘列を並べ、裂けた顎に牙を持つ */
+  dragon:{s:[[162,62,11],[156,72,180,78,4],
+      [104,108,122,92,11],[122,92,144,74,10],[144,74,158,66,9],
+      [80,128,20],[58,146,16],[58,146,32,160,9],[32,160,12,170,5],
+      [88,124,72,150,7],[72,150,62,168,5],[60,148,46,172,8],
+      [96,116,72,88,6],[72,88,50,66,5],
+      [50,66,28,44,3],[50,66,18,72,3],[50,66,30,98,3],
+      [28,44,18,72,5],[18,72,30,98,5],[30,98,88,120,6],
+      [154,50,142,26,4],[168,52,174,26,4],
+      [110,102,104,84,3.5],[128,86,124,68,3.5],[146,70,144,52,3],[88,122,78,106,3.5],[68,140,56,128,3],
+      [28,44,16,32,2.5],[30,98,22,112,2.5]],k:10,na:7,nf:.05,
+    eyes:[[157,55,2.8],[168,59,2.4],[152,66,2.2],[164,68,2]],
+    voids:[[166,74,9]],
+    thick:16,spec:.5,sss:.32,fur:2,bump:.6,det:1.8,under:.3,
+    gold:[[152,48,142,28,2.6],[167,50,172,28,2.6],[160,70,176,75,1.8],
+      [160,72,158,80,1.4],[166,72,165,80,1.4],[172,74,172,81,1.2]],
+    mist:[[60,152,46,18,.34],[130,96,34,13,.22],[96,128,52,16,.18]],
+    gr:48,gy:180,gx:76},
+  /* アシッド・クラブ:複眼を並べ、鋸歯の鋏を掲げる */
+  crab:{s:[[100,116,30],[76,120,24],[124,120,24],
+      [72,112,50,96,9],[50,96,8],[50,96,26,66,10],[26,66,38,44,6],
+      [128,120,152,110,7],[152,110,6],[152,110,174,94,6],[174,94,168,78,4],
+      [82,134,62,156,5],[62,156,50,182,3.5],
+      [90,140,74,166,5],[74,166,66,190,3.5],
+      [98,144,88,172,4.5],[88,172,84,192,3],
+      [118,134,138,156,5],[138,156,150,182,3.5],
+      [110,140,126,166,5],[126,166,134,190,3.5],
+      [102,144,112,172,4.5],[112,172,116,192,3],
+      [88,94,82,62,3.5],[110,94,118,62,3.5],
+      [84,98,74,84,2.6],[116,98,126,84,2.6],
+      [78,100,66,92,2.4],[122,100,134,92,2.4]],k:10,na:8,nf:.05,
+    eyes:[[81,57,3],[119,57,3],[72,80,2.4],[128,80,2.4],[64,89,2],[136,89,2]],
+    voids:[[100,128,13]],
+    thick:22,spec:.9,shin:44,crack:.2,bump:.6,det:1.6,under:.32,
+    gold:[[64,124,96,112,2.4],[96,112,132,124,2.4],
+      [30,60,36,52,1.8],[34,66,40,58,1.6],[38,72,44,64,1.4],
+      [170,88,176,82,1.6],[166,94,172,88,1.4]],
+    lights:[[32,58,20,.6,'#8bf0cf'],[100,150,24,.34,'#8bf0cf']],
+    gr:64,gy:184},
+  /* メタル・ラスター:兜の奥は空洞。釘の冠と棘の肩甲 */
+  armor:{s:[[100,56,17],[100,34,100,18,4],[100,76,100,84,11],
+      [100,110,27],[100,140,23],
+      [62,86,17],[138,86,17],[60,90,50,116,9],[140,90,150,116,9],
+      [50,116,44,142,8],[150,116,156,142,8],[42,150,9],[158,150,9],
+      [86,152,82,178,11],[114,152,118,178,11],
+      [86,32,80,14,3],[114,32,120,14,3],[92,30,90,12,2.4],[108,30,110,12,2.4],
+      [56,76,44,54,4],[144,76,156,54,4],
+      [74,96,64,80,3],[126,96,136,80,3],
+      [40,158,30,174,4],[160,158,170,174,4]],k:4,na:4,nf:.06,
+    eyes:[[91,58,2.8],[109,58,2.8],[100,66,2.2]],
+    voids:[[100,62,15],[100,110,9]],
+    thick:26,spec:1.35,shin:92,bump:.16,det:.8,under:.28,
+    gold:[[80,76,120,76,3],[100,96,100,132,2.4],[76,120,100,134,2.6],[100,134,124,120,2.6],
+      [100,20,100,44,2.2],[62,86,18,1.6],[138,86,18,1.6],
+      [88,70,90,78,1.4],[100,70,100,78,1.4],[112,70,110,78,1.4]],
+    lights:[[100,62,18,.7]],
+    gr:52,gy:188},
+  /* クロロ・スプラウト:茨と化した側根、蕾の内に眼 */
+  sprout:{s:[[100,148,100,110,7],
+      [96,108,62,88,11],[104,106,138,86,11],
+      [98,102,80,68,8],[102,100,122,66,8],[104,52,10],
+      [100,148,100,182,6],[100,156,72,178,4],[100,164,128,182,4],[100,170,88,192,3],
+      [100,132,11],
+      [78,96,62,84,3],[122,94,138,82,3],[88,86,78,70,2.6],[112,84,124,68,2.6],
+      [96,60,88,44,3],[112,60,120,44,3],
+      [86,176,74,190,2.6],[114,176,126,190,2.6]],k:10,na:7,nf:.05,
+    eyes:[[104,52,3.4],[92,128,3],[110,130,3],[86,116,2.2],[116,118,2.2]],
+    voids:[[100,140,11]],
+    thick:22,spec:.32,sss:.5,fur:2.4,bump:.6,det:1.9,under:.34,
+    gold:[[104,52,11],[100,70,104,58,2],[94,140,98,150,1.4],[108,140,104,150,1.4]],
+    lights:[[104,52,30,1],[100,134,20,.3]],
+    gr:46,gy:190},
+  /* ジーンウルフ:四つの眼、剥き出しの牙、逆立つ首の棘 */
+  wolf:{s:[[100,94,25],[76,104,10],[124,104,10],
+      [100,116,100,144,14],[100,148,8],
+      [82,74,68,42,8],[118,74,132,42,8],
+      [100,158,22],[74,172,17],[126,172,17],
+      [138,150,162,142,8],[162,142,176,160,7],
+      [80,150,62,138,3.5],[120,150,138,138,3.5],
+      [70,160,52,150,3],[130,160,148,150,3],
+      [86,80,78,60,3],[114,80,122,60,3]],k:8,na:7,nf:.05,
+    eyes:[[86,88,3.6],[114,88,3.6],[80,100,2.4],[120,100,2.4]],
+    voids:[[100,140,12]],
+    thick:24,spec:.25,fur:5.5,bump:.85,det:1.8,under:.32,
+    gold:[[100,146,5],[152,146,166,144,2],[166,144,158,156,2],[158,156,172,162,2],
+      [92,134,90,146,1.5],[108,134,110,146,1.5],[96,138,95,148,1.2],[104,138,105,148,1.2]],
+    lights:[[100,146,13,.35]],
+    gr:52,gy:188},
+  /* エコ・シェイパー:仮足の先まで眼が生じ、中心に空洞を抱く */
+  amoeba:{s:[[96,112,28],
+      [72,98,40,74,14],[122,102,158,82,13],[86,138,62,170,12],[124,136,150,164,11],[108,82,114,52,10],
+      [78,126,7],[40,74,24,58,7],[158,82,176,68,6],[62,170,50,186,6]],k:20,na:14,nf:.03,
+    eyes:[[82,106,4],[112,96,3.4],[96,132,2.6],[46,78,2.8],[150,86,2.6],[68,164,2.4],[112,60,2.2]],
+    voids:[[100,116,15]],
+    thick:36,spec:.55,sss:.5,bump:.45,det:3.4,under:.36,
+    gold:[[104,116,7]],lights:[[104,116,20,.7]],
+    gr:62,gy:184},
+  /* ストラータ・タートル:甲羅を割って突き出す岩の棘 */
+  turtle:{s:[[100,110,40],[74,122,30],[126,122,30],[100,134,42],
+      [146,128,164,132,9],[170,134,12],
+      [66,150,58,180,13],[134,150,142,180,13],[94,156,88,184,11],[118,156,124,184,11],
+      [40,144,24,150,6],
+      [78,88,64,64,6],[122,90,138,66,6],[100,80,100,54,5],
+      [56,110,38,96,4],[144,110,162,96,4],
+      [62,168,54,186,4],[138,168,146,186,4]],k:14,na:7,nf:.045,
+    eyes:[[174,129,2.8],[184,135,2.2],[166,138,2]],
+    voids:[[176,140,9]],
+    thick:40,spec:.2,crack:.55,bump:1.1,det:2.8,under:.3,
+    gold:[[40,134,160,134,2.2],[88,84,4.5],[122,90,4.5],[100,110,44,1.4],
+      [172,140,178,136,1.4],[168,144,174,140,1.2]],
+    gr:76,gy:190},
+  /* テンペスト・イーグル:四つの眼と、翼の鉤爪 */
+  eagle:{s:[[100,78,14],[100,88,114,100,6],[100,118,21],[100,142,100,178,12],
+      [90,102,64,80,8],[110,102,136,80,8],
+      [64,80,38,54,6],[136,80,162,54,6],
+      [38,54,16,30,3],[38,54,6,48,3],[38,54,14,70,3],
+      [162,54,184,30,3],[162,54,194,48,3],[162,54,186,70,3],
+      [64,80,46,98,5],[136,80,154,98,5],
+      [90,146,84,170,5],[110,146,116,170,5],[84,170,74,184,3],[116,170,126,184,3],
+      [64,80,54,66,3],[136,80,146,66,3],
+      [92,66,86,48,3],[108,66,114,48,3]],k:8,na:8,nf:.05,
+    eyes:[[93,74,3],[107,74,3],[89,84,2.2],[111,84,2.2]],
+    voids:[[100,96,9]],
+    thick:17,spec:.4,fur:3.8,bump:.7,det:1.9,under:.3,
+    gold:[[100,88,114,100,4],[84,170,74,184,2],[116,170,126,184,2],
+      [104,94,102,102,1.3],[110,97,108,104,1.2]],
+    lights:[[100,78,15,.3]],
+    gr:44,gy:190},
+  /* コスモ・ジェリー:傘の縁に眼が環をなし、刺胞の棘を垂らす */
+  jelly:{s:[[100,76,42],[100,62,34],[64,98,14],[136,98,14],
+      [88,108,76,158,9],[76,158,70,194,6],
+      [112,108,124,158,9],[124,158,130,194,6],
+      [100,110,98,166,8],[98,166,100,196,5],
+      [56,102,40,178,3],[144,102,160,178,3],
+      [72,108,60,188,2.5],[128,108,140,188,2.5],
+      [64,96,52,108,2.4],[136,96,148,108,2.4],[80,104,72,118,2.2],[120,104,128,118,2.2]],k:12,na:8,nf:.045,
+    eyes:[[70,86,2.8],[130,88,2.8],[86,96,2.6],[114,98,2.6],[100,66,2.4],[58,100,2.2],[142,102,2.2]],
+    voids:[[100,104,13]],
+    thick:30,spec:.6,sss:.8,bump:.3,det:2.1,under:.38,
+    gold:[[70,58,2.4],[128,66,2.6],[100,48,2.2],[112,90,2],[84,92,1.8]],
+    lights:[[100,80,36,.55,'#bcd8ff']],
+    gr:38,gy:194},
+  /* カオス・エレメンタル:六つの眼を弧に並べ、裂けた胸から理を漏らす */
+  chaos:{s:[[100,72,19],
+      [100,52,100,16,5],[78,60,58,26,4],[122,60,142,26,4],[66,74,42,48,3.5],[134,74,158,48,3.5],
+      [88,54,80,24,3.5],[112,54,120,24,3.5],
+      [100,114,31],[64,100,21],[136,100,21],
+      [62,106,48,142,11],[138,106,152,142,11],
+      [46,142,34,164,7],[154,142,166,164,7],
+      [100,148,27],[86,166,82,190,12],[114,166,118,190,12],
+      [58,88,40,64,4],[142,88,160,64,4]],k:7,na:6,nf:.05,
+    eyes:[[88,68,4],[112,68,4],[78,78,3],[122,78,3],[100,60,2.8],[100,84,2.6]],
+    voids:[[100,114,20],[100,74,13]],
+    thick:34,spec:.65,shin:34,crack:.9,bump:.55,det:2.2,under:.42,
+    gold:[[100,112,10],[100,20,100,50,2.6],[60,30,76,58,2.2],[140,30,124,58,2.2],
+      [72,124,128,124,2],[100,114,38,1.6],
+      [90,96,88,106,1.5],[100,96,100,106,1.5],[110,96,112,106,1.5]],
+    lights:[[100,40,26,.85,'#8fb4ff'],[156,106,26,.85,'#7fe6c6'],
+            [100,186,26,.85,'#ffd98a'],[44,106,26,.85,'#e2a8ff'],[100,112,34,1.2]],
+    gr:62,gy:198}
+
+};
+/* 金の装飾(層ごとの意匠) */
+const RES=384;
+const _pxCache={};
+function lcg(s){let x=s>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};}
+/* 抉れる位置は個体ごとに固定。段数が進むほど累積する */
+/* 崩れ落ちた塊は足元に積もる */
+function rubbleFor(def,seed,stage){
+  const rnd=lcg(seed*104729+7), out=[], gx=def.gx||100, gy=def.gy||176, gr=def.gr||50;
+  for(let i=0;i<stage;i++){
+    const x=gx+(rnd()*2-1)*gr*0.85;
+    const y=gy-2+rnd()*10;
+    const r=4+rnd()*5;
+    out.push([x,y,r]);
+  }
+  return out;
+}
+function creaturePixels(shape,color,stage){
+  stage=stage||0;
+  const key=shape+color+"#"+stage;
+  if(!_pxCache[key]){
+    const base=BODY[shape]||BODY.slime;
+    let seed=0; for(let i=0;i<shape.length;i++) seed+=shape.charCodeAt(i)*11;
+    let def=base;
+    if(stage>0){
+      const rub=rubbleFor(base,seed,stage);
+      def=Object.assign({},base,{
+        chip:{frac:Math.min(0.68,stage*0.155),cell:18,seed:seed},
+        chipGlow:Math.min(1.1,0.4+stage*0.2),
+        crack:(base.crack||0)+stage*0.18,
+        det:(base.det||1.6)+stage*0.2,
+        fur:(base.fur||0)+stage*0.5,
+        s:base.s.concat(rub)
+      });
+    }
+    const noise=makeNoise(seed);
+    _pxCache[key]=renderPixels(def,color,RES,noise,makeFbm(noise));
+  }
+  return _pxCache[key];
+}
+function overlaySVG(shape,color){
+  const def=BODY[shape]||BODY.slime;
+  const fogc=mix(color,'#5a5470',.7);
+  /* 焼き込めない「動く光」だけを重ねる:眼の明滅・舞う残り火・足元の霧 */
+  const flick=(def.eyes||[]).map((e,i)=>
+    `<circle cx="${e[0]}" cy="${e[1]}" r="${(e[2]*2.1).toFixed(1)}" fill="${EMBER}" opacity=".3" filter="url(#glw)">
+      <animate attributeName="opacity" values=".16;.5;.16" dur="${(2.8+i*0.6).toFixed(1)}s" repeatCount="indefinite"/>
+    </circle>`).join("");
+  const emb=[[100,def.gy-40,2.2],[100-def.gr*0.4,def.gy-24,1.6],[100+def.gr*0.35,def.gy-32,1.8]]
+    .map((e,i)=>`<circle cx="${e[0].toFixed(0)}" cy="${e[1]}" r="${e[2]}" fill="${EMBER}" opacity="0" filter="url(#glw)">
+      <animate attributeName="cy" values="${e[1]};${e[1]-46}" dur="${6+i}s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;.75;0" dur="${6+i}s" repeatCount="indefinite"/></circle>`).join("");
+  return `<defs>
+      <filter id="glw" x="-160%" y="-160%" width="420%" height="420%"><feGaussianBlur stdDeviation="4"/></filter>
+      <filter id="fogf" x="-90%" y="-260%" width="280%" height="620%"><feGaussianBlur stdDeviation="10"/></filter>
+    </defs>
+    ${(def.mist||[]).map((m,i)=>`<ellipse cx="${m[0]}" cy="${m[1]}" rx="${m[2]}" ry="${m[3]}" fill="${fogc}" opacity="${m[4]}" filter="url(#fogf)">
+      <animate attributeName="rx" values="${m[2]};${(m[2]*1.18).toFixed(0)};${m[2]}" dur="${9+i*2}s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="${m[4]};${(m[4]*0.5).toFixed(2)};${m[4]}" dur="${9+i*2}s" repeatCount="indefinite"/>
+    </ellipse>`).join("")}
+    <ellipse cx="${def.gx||100}" cy="${def.gy}" rx="${def.gr}" ry="15" fill="${fogc}" opacity=".4" filter="url(#fogf)"/>
+    <ellipse cx="${def.gx||100}" cy="${def.gy+5}" rx="${(def.gr*0.6).toFixed(0)}" ry="7" fill="#03020a" opacity=".75" filter="url(#fogf)"/>
+    ${flick}${emb}`;
+}
+/* 装飾は id を共有するため、層ごとの色差し替えに追従させる */
+function mountMonster(el,shape,color,stage){
+  const px=creaturePixels(shape,color,stage||0);
+  el.innerHTML="";
+  el.style.visibility="";
+  const cv=document.createElement("canvas");
+  cv.width=cv.height=RES; cv.className="mon-img";
+  const ctx=cv.getContext("2d");
+  const im=ctx.createImageData(RES,RES);
+  im.data.set(px); ctx.putImageData(im,0,0);
+  el.appendChild(cv);
+  const fx=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  fx.setAttribute("viewBox","0 0 200 200");
+  fx.setAttribute("class","mon-fx");
+  fx.innerHTML=overlaySVG(shape,color);
+  el.appendChild(fx);
+}
+
+/* ============================================================
+   記章 ― モンスターと同じ距離場・同じ光で焼き込む
+   ============================================================ */
+function starArms(n,r1,r2,w){
+  const out=[];
+  for(let i=0;i<n;i++){
+    const a=(-90+i*360/n)*Math.PI/180, r=(n>=6&&(i%2))?r2:r1;
+    out.push([100,100,100+Math.cos(a)*r,100+Math.sin(a)*r,w]);
+  }
+  return out;
+}
+function emblemDef(kind,color){
+  if(kind==="floor") return {
+    s:[[100,100,54,3],[100,100,18]].concat(starArms(6,44,30,3.5)),
+    allMetal:1,metal:mix(color,'#f6ecd2',.5),spec:1,shin:64,bump:.2,det:.7,thick:24,k:3,
+    lights:[[100,100,46,.55,color]],gr:40,gy:190};
+  if(kind==="normal") return {
+    s:[[100,100,56,3.5],[100,100,16]].concat(starArms(5,44,44,7)),
+    allMetal:1,metal:'#e4ebf7',spec:1.1,shin:76,bump:.16,det:.6,thick:26,k:4,
+    lights:[[100,100,42,.5,'#eef4ff']],gr:40,gy:190};
+  if(kind==="hard") return {
+    s:[[100,100,58,4],[100,100,46,1.6],[100,100,15]]
+      .concat(starArms(8,42,27,6))
+      .concat([[46,116,34,86,4],[38,88,52,64,4],[154,116,166,86,4],[162,88,148,64,4]]),
+    allMetal:1,metal:'#f2d489',spec:1.15,shin:70,bump:.2,det:.7,thick:26,k:4,
+    lights:[[100,100,44,.6,'#ffe6a8']],gr:40,gy:190};
+  return {
+    s:[[100,100,60,3],[100,100,19],
+       [100,40,140,100,5],[140,100,100,160,5],[100,160,60,100,5],[60,100,100,40,5]],
+    allMetal:1,metal:'#eae2f2',spec:1.2,shin:82,bump:.14,det:.5,thick:28,k:3,
+    lights:[[100,46,40,.75,'#8fb4ff'],[154,100,40,.75,'#7fe6c6'],
+            [100,154,40,.75,'#ffd98a'],[46,100,40,.75,'#e2a8ff'],
+            [100,100,30,.45,'#ffffff']],gr:40,gy:190};
+}
+const _emCache={};
+function mountEmblem(el,kind,color){
+  const key=kind+(color||"");
+  if(!_emCache[key]){
+    const def=emblemDef(kind,color||"#d6b45e");
+    let seed=0; for(let i=0;i<key.length;i++) seed+=key.charCodeAt(i)*17;
+    const noise=makeNoise(seed);
+    _emCache[key]=renderPixels(def,color||"#d6b45e",216,noise,makeFbm(noise));
+  }
+  el.innerHTML="";
+  const cv=document.createElement("canvas");
+  cv.width=cv.height=216; cv.className="mon-img";
+  const ctx=cv.getContext("2d");
+  const im=ctx.createImageData(216,216);
+  im.data.set(_emCache[key]); ctx.putImageData(im,0,0);
+  el.appendChild(cv);
+}
+
+/* ============================================================
+   撃破カットイン ― 破断と同じ割れ目に沿って body を砕く
+   ============================================================ */
+function clipHalf(poly,a,b){
+  const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,nx=b[0]-a[0],ny=b[1]-a[1];
+  const side=p=>(p[0]-mx)*nx+(p[1]-my)*ny;
+  const out=[];
+  for(let i=0;i<poly.length;i++){
+    const p=poly[i],q=poly[(i+1)%poly.length];
+    const sp=side(p),sq=side(q);
+    if(sp<=0) out.push(p);
+    if((sp<0&&sq>0)||(sp>0&&sq<0)){
+      const t=sp/(sp-sq);
+      out.push([p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t]);
+    }
+  }
+  return out;
+}
+/* 種点のボロノイ領域を凸多角形として求める */
+function shardPolys(n,w,h,seed){
+  const rnd=lcg(seed),pts=[];
+  for(let i=0;i<n;i++) pts.push([w*(0.12+rnd()*0.76), h*(0.12+rnd()*0.76)]);
+  const rect=[[0,0],[w,0],[w,h],[0,h]];
+  return pts.map((p,i)=>{
+    let poly=rect;
+    for(let j=0;j<n&&poly.length>2;j++){ if(i!==j) poly=clipHalf(poly,p,pts[j]); }
+    return {poly:poly,cx:p[0],cy:p[1]};
+  }).filter(s=>s.poly.length>2);
+}
+function playShatter(name,done){
+  /* 演出が失敗しても進行は止めない。後始末は必ず走る */
+  let finished=false;
+  const finish=()=>{ if(finished)return; finished=true; done(); };
+  const guard=setTimeout(finish,1400);
+  try{ playShatterFx(name,()=>{clearTimeout(guard);finish();}); }
+  catch(e){
+    console.warn("撃破演出を省略しました:", (e&&e.message)||e);
+    clearTimeout(guard); setTimeout(finish,260);
+  }
+}
+/* 破片を飛ばす。アニメーションAPIに依存せず、遷移だけで動かす */
+function fly(el,dx,dy,rot,scale,dur,delay){
+  el.style.transform="translate(0px,0px) rotate(0deg) scale(1)";
+  el.style.opacity="1";
+  el.style.transition="transform "+dur+"ms cubic-bezier(.16,.72,.3,1) "+delay+"ms, opacity "+dur+"ms ease-in "+delay+"ms";
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      el.style.transform="translate("+dx.toFixed(1)+"px,"+dy.toFixed(1)+"px) rotate("+rot.toFixed(1)+"deg) scale("+scale+")";
+      el.style.opacity="0";
+    });
+  });
+}
+function playShatterFx(name,done){
+  const wrap=$("monsterSvgWrap");
+  if(!wrap) throw new Error("モンスターの表示領域が見つかりません");
+  const field=wrap.parentNode||wrap;
+  const layer=document.createElement("div");
+  layer.className="shatter";
+  const SH=256, N=17;
+  let src=null;
+  try{ src=wrap.getElementsByTagName("canvas")[0]||null; }catch(e){ src=null; }
+  if(src){
+   try{
+    const polys=shardPolys(N,SH,SH,(name.length*9173+7)>>>0);
+    polys.forEach(function(sp){
+      const holder=document.createElement("div");
+      holder.className="shard";
+      const cv=document.createElement("canvas");
+      cv.width=SH; cv.height=SH;
+      const ctx=cv.getContext("2d");
+      ctx.beginPath();
+      ctx.moveTo(sp.poly[0][0],sp.poly[0][1]);
+      for(let i=1;i<sp.poly.length;i++) ctx.lineTo(sp.poly[i][0],sp.poly[i][1]);
+      ctx.closePath(); ctx.clip();
+      ctx.drawImage(src,0,0,SH,SH);
+      holder.appendChild(cv);
+      layer.appendChild(holder);
+      /* 中心から外へ、重力で落ちながら回る */
+      const ax=(sp.cx-SH/2)/SH, ay=(sp.cy-SH/2)/SH;
+      const mag=90+Math.random()*120;
+      fly(holder,
+        ax*mag*2.2+(Math.random()-0.5)*30,
+        ay*mag*1.5+40+Math.random()*70,
+        (Math.random()-0.5)*150, .82,
+        Math.round(820+Math.random()*260), Math.round(Math.random()*70));
+    });
+   }catch(e){ console.warn("破片の生成を省略しました:", (e&&e.message)||e); }
+  }
+  const burst=document.createElement("div"); burst.className="burst"; layer.appendChild(burst);
+  const wave=document.createElement("div"); wave.className="shockwave"; layer.appendChild(wave);
+  for(let i=0;i<16;i++){
+    const s=document.createElement("div"); s.className="spark";
+    const a=Math.random()*Math.PI*2, r=70+Math.random()*130;
+    layer.appendChild(s);
+    fly(s,Math.cos(a)*r,Math.sin(a)*r-20,0,.2,Math.round(620+Math.random()*380),0);
+  }
+  field.appendChild(layer);
+  wrap.style.visibility="hidden";
+  $("killName").textContent=name;
+  const band=$("killBanner");
+  band.classList.remove("on"); void band.offsetWidth; band.classList.add("on");
+  setTimeout(function(){
+    if(layer.parentNode) layer.parentNode.removeChild(layer);
+    band.classList.remove("on");
+    /* ここで表示を戻すと倒した個体が一瞬現れる。復帰は次の描画時に行う */
+    done();
+  },1080);
+}
+
+/* 描画は重いので、常に一手先の層を空き時間に焼いておく */
+const _idle=(fn)=>(window.requestIdleCallback||((f)=>setTimeout(f,40)))(fn);
+function warmFloor(idx){
+  const f=FLOORS[idx]; if(!f) return;
+  f.monsters.forEach(m=>_idle(()=>creaturePixels(m.shape,f.color)));
+}
+function warmEmblem(kind,color){ _idle(()=>{
+  const el=document.createElement("div"); mountEmblem(el,kind,color);
+}); }
+
+/* ============================================================
+   焼き込みの待ち時間 ― 観測機器の較正として見せる
+   ============================================================ */
+const LORE=[
+  "塔の記録によれば、住人は理そのものが凝って形を得たものだという。",
+  "観測は干渉である。見た瞬間、こちらもまた見られている。",
+  "四つの理は本来ひとつだった。塔はそれが分かたれた跡に建つ。",
+  "分光器は偽りを退ける。ただし、退けられるのは二つまで。",
+  "登る者はみな問われる。答えではなく、答えに至る道筋を。",
+  "最上階の光は、四層すべての色を含んでいると伝えられている。"
+];
+const ARC_C=2*Math.PI*84;
+function hasCreature(shape,color){return !!_pxCache[shape+color];}
+function loadProgress(p){
+  $("loadArc").style.strokeDasharray=ARC_C;
+  $("loadArc").style.strokeDashoffset=ARC_C*(1-p);
+  $("loadPct").textContent=Math.round(p*100);
+}
+let _ticksDone=false;
+function loadTicks(){
+  if(_ticksDone) return; _ticksDone=true;
+  const el=document.getElementById("loadTicks"); if(!el) return;
+  let s="";
+  for(let i=0;i<48;i++){
+    const a=i*7.5*Math.PI/180, lng=i%4===0;
+    const r1=90,r2=lng?80:86;
+    s+=`<line x1="${(100+Math.cos(a)*r1).toFixed(1)}" y1="${(100+Math.sin(a)*r1).toFixed(1)}"
+      x2="${(100+Math.cos(a)*r2).toFixed(1)}" y2="${(100+Math.sin(a)*r2).toFixed(1)}"
+      stroke="#d6b26a" stroke-width="${lng?1:.6}" opacity="${lng?.4:.18}"/>`;
+  }
+  el.innerHTML=s;
+}
+/* 焼き込みは重いので、1体ごとに描画の機会を譲りながら進める */
+function ensureFloorReady(idx,done){
+  const f=FLOORS[idx];
+  if(!f){done();return;}
+  const pending=f.monsters.filter(m=>!hasCreature(m.shape,f.color));
+  if(!pending.length){done();return;}
+  setElem(f.color);
+  loadTicks();
+  $("loadLore").textContent=LORE[Math.floor(Math.random()*LORE.length)];
+  $("loadStatus").textContent=f.stratum+" — Illuminating";
+  $("loadName").textContent="";
+  loadProgress(0);
+  showScreen("screen-loading");
+  let i=0;
+  const step=()=>{
+    if(i>=pending.length){
+      $("loadStatus").textContent="Aperture open";
+      $("loadName").textContent=f.label+" へ";
+      loadProgress(1);
+      setTimeout(done,420);
+      return;
+    }
+    $("loadName").textContent="〈"+pending[i].name+"〉を 灯す";
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      creaturePixels(pending[i].shape,f.color);
+      i++; loadProgress(i/pending.length);
+      setTimeout(step,90);
+    }));
+  };
+  setTimeout(step,260);
+}
+
+/* ============ 難易度 ============ */
+const DIFF={
+  normal:{label:"ふつう",latin:"ADEPT",marks:1,damage:15,hardRatio:.2,calcRatio:.25,spectrum:3,tier:"normal",
+    desc:"語句・基礎が中心で計算は控えめ。気力は塔で共通、ミス7回まで。分光は層ごと3回。",
+    title:"観測塔 踏破",eyebrow:"Summit Reached"},
+  hard:{label:"むずかしい",latin:"SCHOLAR",marks:2,damage:25,hardRatio:.7,calcRatio:.5,spectrum:2,tier:"hard",
+    desc:"語句と計算が半々。応用問題が多い。気力は塔で共通、ミス4回まで。分光は層ごと2回。",
+    title:"黄金の 踏破者",eyebrow:"Golden Ascent"},
+  expert:{label:"エキスパート",latin:"ARCHON",marks:3,damage:34,hardRatio:1,calcRatio:.75,spectrum:1,tier:"expert",
+    desc:"計算と考察が中心の難問のみ。気力は塔で共通、ミス3回まで。分光は層ごと1回。",
+    title:"極致 — 塔を統べる者",eyebrow:"Apex Attained"}
+};
+let diffKey="hard";
+
+/* ============ 状態 ============ */
+let floorIdx=0,monsterIdx=0,hitsLeft=0,hitsMax=0;
+let floorQueue=[],qIdx=0,hitPlan=[],floorReq=0;
+let score={correct:0,total:0},floorScore={correct:0,total:0};
+let wrongLog=[],floorWrong=[];
+let playerHp=100,lastCorrect=false,retryCount=0,locked=false,runToken=0;
+let spectrumLeft=0,spectrumUsedNow=false,choiceBtns=[],correctIdx=-1;
+const ARC_LEN=2*Math.PI*92;
+
+const $=id=>document.getElementById(id);
+const shuffle=a=>{const b=a.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
+function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));$(id).classList.add("active");}
+function setElem(color){
+  $("stage").style.setProperty("--elem",color);
+  const a=$("nebStopA");if(a)a.setAttribute("stop-color",color);
+}
+/* 観測目盛 ― 5度ごとの刻み、30度ごとに長い刻み */
+(function dial(){
+  const el=$("dial");if(!el)return;
+  let s="";
+  for(let i=0;i<72;i++){
+    const a=i*5*Math.PI/180,long=i%6===0;
+    const r1=96,r2=long?86:92,o=long?.42:.2;
+    s+=`<line x1="${(100+Math.sin(a)*r1).toFixed(1)}" y1="${(100-Math.cos(a)*r1).toFixed(1)}"
+      x2="${(100+Math.sin(a)*r2).toFixed(1)}" y2="${(100-Math.cos(a)*r2).toFixed(1)}"
+      stroke="#d6b26a" stroke-width="${long?1.1:.7}" opacity="${o}"/>`;
+  }
+  el.innerHTML=s;
+})();
+function replay(el){el.querySelectorAll(".rise").forEach(n=>{n.style.animation="none";void n.offsetWidth;n.style.animation="";});}
+
+/* ============ 星空 ============ */
+(function stars(){
+  const f=$("starfield");let html="";
+  for(let i=0;i<70;i++){
+    const s=(Math.random()*1.8+.6).toFixed(2);
+    html+=`<span class="star" style="left:${(Math.random()*100).toFixed(2)}%;top:${(Math.random()*100).toFixed(2)}%;
+      width:${s}px;height:${s}px;animation-delay:${(Math.random()*4).toFixed(2)}s;opacity:${(Math.random()*.5+.2).toFixed(2)}"></span>`;
+  }
+  f.innerHTML=html;
+})();
+
+/* ============ 全画面 ============ */
+(function fullscreenSetup(){
+  const btn=$("fullscreenBtn"), el=document.documentElement;
+  const req=el.requestFullscreen||el.webkitRequestFullscreen;
+  const exit=document.exitFullscreen||document.webkitExitFullscreen;
+  /* iPhone の Safari など、全画面に対応しない環境ではボタン自体を出さない */
+  if(!req){ btn.style.display="none"; return; }
+  const isFs=()=>document.fullscreenElement||document.webkitFullscreenElement;
+  btn.addEventListener("click",()=>{
+    try{ isFs()? exit.call(document) : req.call(el); }
+    catch(e){ btn.style.display="none"; }
+  });
+  const sync=()=>{ btn.textContent=isFs()?"EXIT":"FULLSCREEN"; };
+  document.addEventListener("fullscreenchange",sync);
+  document.addEventListener("webkitfullscreenchange",sync);
+})();
+
+/* ============ タイトル ============ */
+$("sigilRow").innerHTML=FLOORS.map(f=>`<span class="sg" style="color:${f.color}">${sigilSVG(f.sigil,26,f.color)}</span>`).join("");
+$("diffRow").innerHTML=Object.keys(DIFF).map(k=>{
+  const d=DIFF[k];
+  const marks=[1,2,3].map(n=>`<i class="${n<=d.marks?'on':''}"></i>`).join("");
+  return `<button class="diff-card${k===diffKey?' selected':''}" data-diff="${k}">
+    <div class="rank">${d.latin}</div><div class="name">${d.label}</div>
+    <div class="desc">${d.desc}</div><div class="marks">${marks}</div></button>`;
+}).join("");
+document.querySelectorAll(".diff-card").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".diff-card").forEach(x=>x.classList.remove("selected"));
+  b.classList.add("selected");diffKey=b.dataset.diff;
+}));
+$("btnStart").addEventListener("click",()=>{
+  floorIdx=0;score={correct:0,total:0};wrongLog=[];retryCount=0;
+  playerHp=100;
+  ensureFloorReady(0,goFloorIntro);
+});
+
+/* ============ 層の導入 ============ */
+function goFloorIntro(){
+  const f=FLOORS[floorIdx];
+  setElem(f.color);
+  $("floorStratum").textContent=f.stratum;
+  $("floorSigil").innerHTML=sigilSVG(f.sigil,54,f.color);
+  $("floorIntroLabel").textContent=f.label;
+  $("floorIntroDesc").textContent=f.desc;
+  mountMonster($("floorIntroMonsterWrap"),f.monsters[0].shape,f.color);
+  showScreen("screen-floorIntro");
+  warmFloor(floorIdx);replay($("screen-floorIntro"));
+}
+$("btnFloorEnter").addEventListener("click",startFloor);
+
+/* ============ 出題抽出 ============ */
+function allowedMisses(){return Math.ceil(100/DIFF[diffKey].damage);}
+/* 計算問題と語句・考察問題を、指定した数だけ取り出す */
+function drawKind(pool,nCalc,nTerm){
+  const calc=shuffle(pool.filter(q=>q.kind==="calc"));
+  const term=shuffle(pool.filter(q=>q.kind!=="calc"));
+  const a=calc.slice(0,Math.min(nCalc,calc.length));
+  const b=term.slice(0,Math.min(nTerm,term.length));
+  let out=a.concat(b);
+  const lack=nCalc+nTerm-out.length;
+  if(lack>0){
+    const rest=calc.slice(a.length).concat(term.slice(b.length));
+    out=out.concat(shuffle(rest).slice(0,lack));
+  }
+  return out;
+}
+/* 難易度ごとに計算問題の割合を変える。端数は確率で丸め、長い目で見て設定値に一致させる */
+function pickQuestions(id,n){
+  const c=DIFF[diffKey];
+  const nH=Math.min(Math.round(n*c.hardRatio),HARD[id].length);
+  const nB=n-nH;
+  const wantCalc=Math.max(0,Math.min(n,Math.floor(n*c.calcRatio+Math.random())));
+  const cH=Math.min(nH,Math.round(wantCalc*nH/Math.max(1,n)));
+  const cB=Math.min(nB,wantCalc-cH);
+  return shuffle(drawKind(HARD[id],cH,nH-cH).concat(drawKind(QUESTIONS[id],cB,nB-cB)));
+}
+function refillQueue(){
+  const id=FLOORS[floorIdx].id;
+  const add=pickQuestions(id,4).filter(q=>floorQueue.indexOf(q)<0);
+  floorQueue=floorQueue.concat(add.length?add:pickQuestions(id,4));
+}
+
+/* ============ 層の開始 ============ */
+function startFloor(){
+  const f=FLOORS[floorIdx],c=DIFF[diffKey];
+  setElem(f.color);
+  hitPlan=f.monsters.map(m=>m.req);
+  floorReq=hitPlan.reduce((a,b)=>a+b,0);
+  floorQueue=pickQuestions(f.id,floorReq+allowedMisses()+1);
+  qIdx=0;monsterIdx=0;locked=false;runToken++;
+  spectrumLeft=c.spectrum;
+  floorScore={correct:0,total:0};floorWrong=[];
+  hitsLeft=hitPlan[0];hitsMax=hitPlan[0];
+  $("battleSigil").innerHTML=sigilSVG(f.sigil,16,f.color);
+  $("battleFloorLabel").textContent=`${f.stratum}  ${f.label}`;
+  $("hpArc").style.strokeDasharray=ARC_LEN;
+  buildSegs();buildDots();updateSpectrum();
+  warmEmblem("floor",f.color);
+  setMessage(`${f.monsters[0].name} が 立ちはだかった。正答 ${hitsMax} 回で 崩せる。`);
+  renderMonster();
+  showScreen("screen-battle");
+}
+function buildDots(){
+  const done=floorScore.correct;
+  $("progressDots").innerHTML=Array.from({length:floorReq},(_,i)=>
+    `<span class="pd${i<done?' done':(i===done?' now':'')}"></span>`).join("");
+}
+function buildSegs(){
+  const n=Math.ceil(100/DIFF[diffKey].damage);
+  $("playerSegs").innerHTML=Array.from({length:n},()=>`<span class="seg"></span>`).join("");
+  updateVitals();
+}
+function updateVitals(){
+  const c=DIFF[diffKey];
+  const left=Math.max(0,Math.ceil(playerHp/c.damage));
+  const segs=$("playerSegs").children;
+  for(let i=0;i<segs.length;i++) segs[i].classList.toggle("lost",i>=left);
+  $("playerHpText").textContent=`${left} / ${segs.length}`;
+}
+function renderMonster(){
+  const f=FLOORS[floorIdx],m=f.monsters[monsterIdx];
+  $("monsterName").textContent=m.name;
+  const stage=Math.max(0,hitsMax-hitsLeft);
+  mountMonster($("monsterSvgWrap"),m.shape,f.color,stage);
+  /* 次の損壊段階を先に焼いておく */
+  if(stage<hitsMax) _idle(()=>creaturePixels(m.shape,f.color,stage+1));
+  const ratio=Math.max(0,hitsLeft/hitsMax);
+  $("hpArc").style.strokeDashoffset=ARC_LEN*(1-ratio);
+  $("monsterHpLabel").textContent=`のこり 正答 ${hitsLeft}`;
+}
+function setMessage(t){
+  const el=$("battleMessageText");
+  el.textContent=t;el.style.animation="none";void el.offsetWidth;el.style.animation="";
+}
+
+/* ============ コマンド ============ */
+$("btnAttack").addEventListener("click",()=>{if(locked)return;if(qIdx>=floorQueue.length)refillQueue();openQuiz(floorQueue[qIdx]);});
+
+/* ============ 特技:分光 ============ */
+function pips(n,max){return Array.from({length:max},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join("");}
+function updateSpectrum(){
+  const max=DIFF[diffKey].spectrum;
+  $("spectrumPips").innerHTML=pips(spectrumLeft,max);
+  $("spectrumPipsQuiz").innerHTML=pips(spectrumLeft,max);
+  $("btnSpectrum").disabled=(spectrumLeft<=0||spectrumUsedNow);
+}
+$("btnSpectrum").addEventListener("click",()=>{
+  if(spectrumLeft<=0||spectrumUsedNow)return;
+  const wrongs=choiceBtns.filter((b,i)=>i!==correctIdx&&!b.classList.contains("eliminated"));
+  shuffle(wrongs).slice(0,2).forEach((b,i)=>{
+    setTimeout(()=>{b.classList.add("eliminated");b.disabled=true;},i*160);
+  });
+  spectrumLeft--;spectrumUsedNow=true;updateSpectrum();
+});
+
+/* ============ 設問 ============ */
+const KEYS=["A","B","C","D"];
+function openQuiz(q){
+  const f=FLOORS[floorIdx];
+  $("quizSigil").innerHTML=sigilSVG(f.sigil,15,f.color);
+  $("quizSubject").textContent=`${f.stratum} — ${f.label}`;
+  $("quizQuestion").textContent=q.q;
+  const order=shuffle(q.choices.map((c,i)=>i));
+  const correctPos=order.indexOf(q.a);
+  const wrap=$("quizChoices");wrap.innerHTML="";
+  choiceBtns=[];correctIdx=correctPos;spectrumUsedNow=false;
+  order.forEach((orig,pos)=>{
+    const b=document.createElement("button");
+    b.className="choice-btn";
+    b.innerHTML=`<span class="key"><span>${KEYS[pos]}</span></span><span>${q.choices[orig]}</span>`;
+    b.addEventListener("click",()=>handleAnswer(pos,correctPos,q));
+    wrap.appendChild(b);choiceBtns.push(b);
+  });
+  updateSpectrum();
+  $("quizAsking").style.display="block";
+  $("quizFeedback").classList.remove("active");
+  $("quizOverlay").classList.add("active");
+  $("quizBox").style.animation="none";void $("quizBox").offsetWidth;$("quizBox").style.animation="";
+}
+function handleAnswer(pos,correctPos,q){
+  const c=DIFF[diffKey];
+  document.querySelectorAll(".choice-btn").forEach((b,i)=>{
+    b.disabled=true;
+    if(i===correctPos)b.classList.add("correct");
+    else if(i===pos)b.classList.add("wrong");
+  });
+  $("btnSpectrum").disabled=true;
+  const ok=pos===correctPos;lastCorrect=ok;
+  score.total++;floorScore.total++;
+  if(ok){score.correct++;floorScore.correct++;}
+  else{
+    playerHp=Math.max(0,playerHp-c.damage);
+    const rec={q:q.q,correctText:q.choices[q.a],exp:q.exp};
+    wrongLog.push(rec);floorWrong.push(rec);
+  }
+  setTimeout(()=>{
+    $("quizAsking").style.display="none";
+    $("quizFeedback").classList.add("active");
+    const h=$("feedbackHeadline");
+    h.innerHTML=`<i class="bolt"></i>${ok?"会心の 一撃。理を 射抜いた":"手ごたえなし。理を 取り違えた"}`;
+    h.className=ok?"good":"bad";
+    $("feedbackExp").textContent=`正解:「${q.choices[q.a]}」 ― ${q.exp}`;
+  },620);
+}
+$("feedbackContinue").addEventListener("click",()=>{
+  if(locked)return;
+  $("quizOverlay").classList.remove("active");
+  const f=FLOORS[floorIdx];
+  updateVitals();
+  if(playerHp<=0){locked=true;goDefeat();return;}
+  qIdx++;
+  if(qIdx>=floorQueue.length)refillQueue();
+  buildDots();
+  if(!lastCorrect){
+    setMessage(`理を 取り違えた。${f.monsters[monsterIdx].name} は 無傷のまま だ。`);
+    renderMonster();
+    return;
+  }
+  hitsLeft--;
+  const w=$("monsterSvgWrap");w.classList.remove("hit");void w.offsetWidth;w.classList.add("hit");
+  if(hitsLeft<=0){
+    const fallen=f.monsters[monsterIdx].name;
+    locked=true;
+    $("hpArc").style.strokeDashoffset=ARC_LEN;
+    $("monsterHpLabel").textContent="のこり 正答 0";
+    setMessage(`${fallen} の 核が 砕けた。`);
+    const tk=runToken;
+    playShatter(fallen,()=>{
+      if(tk!==runToken) return;   /* 層をやり直した後の遅延実行を無効化 */
+      monsterIdx++;
+      if(monsterIdx<f.monsters.length){
+        hitsLeft=hitPlan[monsterIdx];hitsMax=hitPlan[monsterIdx];
+        setMessage(`続く ${f.monsters[monsterIdx].name} は 正答 ${hitsMax} 回を 要する。`);
+        renderMonster();
+        locked=false;
+      }else{
+        setMessage(`${fallen} は 崩れ落ちた。この層を 制した。`);
+        setTimeout(()=>goFloorClear(false),420);
+      }
+    });
+  }else{
+    setMessage(`理が 通った。あと 正答 ${hitsLeft} 回で 崩せる。`);
+    renderMonster();
+  }
+});
+
+/* ============ 数値カウントアップ ============ */
+function countUp(el,to,suffix,dur){
+  const d=dur||900,t0=performance.now();
+  (function step(t){
+    const p=Math.min(1,(t-t0)/d),e=1-Math.pow(1-p,3);
+    el.innerHTML=Math.round(to*e)+(suffix||"");
+    if(p<1)requestAnimationFrame(step);
+  })(t0);
+}
+function statCell(label,valueId,suffix){
+  return `<div class="stat"><span class="v" id="${valueId}">0</span><span class="cap">${label}</span></div>`;
+}
+function reviewHTML(list,head){
+  if(!list.length)return `<div class="review-item" style="border-top:none;color:var(--good)">誤答なし。完全な 読み解きだった。</div>`;
+  return `<div class="cap" style="text-align:left">${head}</div>`+list.map(w=>
+    `<div class="review-item"><div class="q">Q. ${w.q}</div><div class="a">A. ${w.correctText}</div><div class="exp">${w.exp}</div></div>`).join("");
+}
+/* ============ まなびの基板へ送る ============ */
+function sendToHub(done,note){
+  if(!window.manabiReport) return;
+  /* 正答率を1000点満点に換算して送る */
+  const pts=score.total?Math.round(score.correct/score.total*1000):0;
+  window.manabiReport({
+    app:"science-quest",
+    done:done,
+    total:FLOORS.length,
+    best:pts,
+    note:note
+  });
+}
+/* ============ 敗北 ============ */
+function goDefeat(){
+  const f=FLOORS[floorIdx];
+  sendToHub(floorIdx,f.label+" で力尽きた");
+  $("defeatTitle").textContent=`${f.label} に 阻まれた`;
+  $("defeatStats").innerHTML=statCell("この層の正答","dfA","")+statCell("出題数","dfB","");
+  countUp($("dfA"),floorScore.correct,"");countUp($("dfB"),floorScore.total,"");
+  $("defeatReview").innerHTML=reviewHTML(floorWrong,"この層で 取り違えた 理");
+  showScreen("screen-defeat");
+}
+$("btnRetryFloor").addEventListener("click",()=>{
+  retryCount++;
+  playerHp=100;
+  score.correct-=floorScore.correct;score.total-=floorScore.total;
+  wrongLog=wrongLog.slice(0,wrongLog.length-floorWrong.length);
+  startFloor();
+});
+$("btnGiveUp").addEventListener("click",()=>showScreen("screen-title"));
+
+/* ============ 層のクリア ============ */
+function goFloorClear(fled){
+  const f=FLOORS[floorIdx];
+  sendToHub(floorIdx+1,f.label+" 制覇");
+  mountEmblem($("floorClearMedal"),"floor",f.color);
+  $("floorClearTitle").textContent=fled?`${f.label} を あとにした`:`${f.label} 制覇`;
+  $("floorClearStats").innerHTML=statCell("この層の正答","fcA","")+statCell("累計正答","fcB","")+statCell("正答率","fcC","%");
+  countUp($("fcA"),floorScore.correct,"");
+  countUp($("fcB"),score.correct,"");
+  countUp($("fcC"),score.total?Math.round(score.correct/score.total*100):0,"%");
+  warmFloor(floorIdx+1);
+  if(floorIdx+1>=FLOORS.length) warmEmblem(DIFF[diffKey].tier);
+  showScreen("screen-floorClear");
+}
+$("btnNextFloor").addEventListener("click",()=>{
+  floorIdx++;
+  if(floorIdx<FLOORS.length)ensureFloorReady(floorIdx,goFloorIntro);else goEnd();
+});
+
+/* ============ 踏破(難易度別の演出) ============ */
+function goEnd(){
+  const c=DIFF[diffKey];
+  sendToHub(FLOORS.length,DIFF[diffKey].label+" で全層踏破");
+  const pct=score.total?Math.round(score.correct/score.total*100):0;
+  let rankJp="見習い観測者",rankLa="NOVICE";
+  if(pct>=95){rankJp="賢者";rankLa="SAGE";}
+  else if(pct>=85){rankJp="上級研究者";rankLa="SAVANT";}
+  else if(pct>=70){rankJp="観測者";rankLa="OBSERVER";}
+
+  const scr=$("screen-end");
+  scr.className="screen center tier-"+c.tier;
+  setElem(FLOORS[FLOORS.length-1].color);
+
+  $("endEyebrow").textContent=c.eyebrow;
+  mountEmblem($("endMedal"),c.tier);
+  $("endTitle").textContent=c.title;
+  $("endRankName").textContent=`${c.latin} · ${rankLa} — ${rankJp}`;
+
+  $("endStats").innerHTML=statCell("正答率","enA","%")+statCell("正答数","enB","")+statCell("出題数","enC","");
+  countUp($("enA"),pct,"%",1200);
+  countUp($("enB"),score.correct,"",1000);
+  countUp($("enC"),score.total,"",800);
+
+  const badges=[];
+  if(!wrongLog.length)badges.push(`<span class="badge hot"><i></i>無傷 踏破</span>`);
+  if(pct>=90)badges.push(`<span class="badge"><i></i>精度 90%超</span>`);
+  if(diffKey==="expert")badges.push(`<span class="badge"><i></i>極難度 制覇</span>`);
+  if(!retryCount)badges.push(`<span class="badge"><i></i>一度も 倒れず</span>`);
+  $("endBadges").innerHTML=badges.map((b,i)=>b.replace('class="badge',`style="animation-delay:${.5+i*.14}s" class="badge`)).join("");
+
+  $("endReview").innerHTML=reviewHTML(wrongLog,"取り違えた 理の 復習");
+
+  const motes=$("endMotes");
+  const n=c.tier==="expert"?30:(c.tier==="hard"?14:0);
+  motes.innerHTML=Array.from({length:n},()=>{
+    const dur=(Math.random()*6+7).toFixed(1),d=(Math.random()*7).toFixed(1);
+    return `<span class="mote" style="left:${(Math.random()*100).toFixed(1)}%;animation-duration:${dur}s;animation-delay:${d}s"></span>`;
+  }).join("");
+
+  $("endOrbitRing").innerHTML=c.tier==="expert"
+    ? FLOORS.slice(0,4).map(f=>`<span class="os">${sigilSVG(f.sigil,24,f.color)}</span>`).join("") : "";
+
+  if(c.tier==="expert"){
+    const fl=$("endFlash");fl.classList.remove("go");void fl.offsetWidth;fl.classList.add("go");
+  }
+  showScreen("screen-end");
+}
+$("btnReplay").addEventListener("click",()=>{showScreen("screen-title");replay($("screen-title"));});
+
+})();
+</script>
+<script>
+/* 付属ファイルが配置されているかを自己診断し、抜けていれば理由を明示する */
+(function checkAssets(){
+  var img=new Image();
+  img.onload=function(){};
+  img.onerror=function(){
+    console.warn(
+      "[サイエンスクエスト] アイコン画像（icon-192.png）が見つかりません。\n"+
+      "  ・タブのアイコンは本体に埋め込んであるため表示されます\n"+
+      "  ・ホーム画面への追加やSNSの共有画像を使うには、icon-192.png / icon-512.png / og-image.png を index.html と同じ場所に置いてください\n"+
+      "  確認方法: "+location.href.replace(/[^/]*$/,"")+"icon-192.png を開く"
+    );
+  };
+  img.src="./icon-192.png";
+})();
+/* オフライン対応。file:// で開いた場合や非対応環境では何もしない */
+if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
+  window.addEventListener("load",function(){
+    navigator.serviceWorker.register("sw.js").catch(function(e){
+      console.info("オフライン機能は無効です:",(e&&e.message)||e);
+    });
+  });
+}
+</script>
+</body>
+</html>

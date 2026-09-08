@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<script src="../../config.js"></script>
+<script src="../../hub-progress.js"></script>
+<script src="../../manabi-connect.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>日本一周クエスト 〜五教科の御朱印〜</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#101a33">
+<meta name="description" content="中学5教科を日本一周しながら学ぶドット絵RPG。750問収録。">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="日本一周クエスト">
+<link rel="icon" href="favicon.ico?v=3" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32-v2.png?v=3">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
+<link rel="apple-touch-icon-precomposed" sizes="180x180" href="apple-touch-icon-precomposed.png?v=3">
+<link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon-167-v2.png?v=3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sumi:#0b1020; --ai:#101a33; --kon:#1d3a6b; --mizu:#0e1a33;
+  --kin:#d8a94a; --kin-d:#8a6a24; --shu:#c8422e; --kinari:#f3ede0;
+  --wakatake:#5fbf8f; --murasaki:#7a63b8; --sumi2:#16161a;
+  --dot:"DotGothic16","MS Gothic","Osaka-Mono",monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:var(--sumi);
+  color:var(--kinari);
+  font-family:var(--dot);
+  font-size:15px;line-height:1.7;letter-spacing:.04em;
+  display:flex;justify-content:center;align-items:flex-start;
+  min-height:100%;overflow-x:hidden;
+  image-rendering:pixelated;
+}
+svg{shape-rendering:crispEdges}
+#app{width:100%;max-width:760px;padding:14px 14px 40px;position:relative}
+.screen{display:none}
+.screen.on{display:block}
+.mincho{font-family:var(--dot)}
+
+/* ── ドットの二重枠 ── */
+.win{
+  background:var(--ai);
+  border:3px solid var(--kin);
+  box-shadow:0 0 0 3px var(--sumi2),4px 4px 0 rgba(0,0,0,.55);
+  padding:14px 16px;margin-bottom:2px;
+}
+
+/* ── タイトル ── */
+#title{text-align:center;padding-top:20px}
+.title-mark{font-size:12px;letter-spacing:.5em;color:var(--kin);margin-bottom:12px}
+h1{font-size:clamp(26px,7.6vw,44px);margin:0 0 6px;line-height:1.2;font-weight:400;
+  color:var(--kinari);text-shadow:4px 4px 0 var(--kin-d)}
+.sub{font-size:clamp(12px,3.4vw,15px);letter-spacing:.24em;color:#9fb0d0;margin-bottom:20px}
+.hinomaru{width:96px;height:96px;margin:4px auto 18px;position:relative}
+.hinomaru::after{content:"";position:absolute;inset:0;background:var(--shu);
+  box-shadow:0 0 0 6px var(--sumi2), -12px 0 0 -6px var(--shu), 12px 0 0 -6px var(--shu),
+             0 -12px 0 -6px var(--shu), 0 12px 0 -6px var(--shu);
+  animation:blink 2.4s steps(1) infinite}
+@keyframes blink{0%,80%{opacity:1}80.1%,100%{opacity:.72}}
+
+.btn{
+  display:inline-block;border:3px solid var(--kin);background:var(--kon);
+  color:var(--kinari);font-family:var(--dot);font-size:16px;padding:11px 22px;
+  cursor:pointer;letter-spacing:.1em;box-shadow:4px 4px 0 var(--sumi2);
+}
+.btn:hover,.btn:focus-visible{background:var(--kin);color:var(--sumi2);outline:none}
+.btn:active{transform:translate(4px,4px);box-shadow:none}
+.btn.sm{font-size:13px;padding:8px 14px;border-width:2px;box-shadow:3px 3px 0 var(--sumi2)}
+.btn.ghost{background:var(--ai)}
+.btnrow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+
+/* ── 見出し・ツール ── */
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.bar h2{font-size:15px;margin:0;letter-spacing:.14em;color:var(--kin);font-weight:400}
+.tools{display:flex;gap:6px}
+.icobtn{border:2px solid var(--kin);background:var(--ai);color:var(--kinari);
+  padding:5px 9px;font-size:12px;cursor:pointer;font-family:var(--dot);
+  box-shadow:2px 2px 0 var(--sumi2)}
+.icobtn:hover{background:var(--kin);color:var(--sumi2)}
+.icobtn:active{transform:translate(2px,2px);box-shadow:none}
+
+/* ── マップ ── */
+#mapwrap{position:relative}
+svg#japan{width:100%;height:auto;display:block;touch-action:manipulation}
+.isle{fill:var(--f,#14264a);stroke:none;cursor:pointer}
+.isle:hover,.isle:focus{fill:var(--fh,rgba(243,237,224,.22));outline:none}
+.isle.locked{cursor:not-allowed}
+.pin-label{font-size:11px;fill:var(--kinari);pointer-events:none;font-family:var(--dot)}
+.pin-sub{font-size:10px;fill:#9fb0d0;pointer-events:none;font-family:var(--dot)}
+.sea-line{fill:none;stroke:rgba(216,169,74,.12);stroke-width:2}
+.stamp{pointer-events:none}
+.stamp text{fill:var(--shu);font-family:var(--dot)}
+.stamp rect{fill:none;stroke:var(--shu);stroke-width:3}
+.inset-frame{fill:none;stroke:rgba(216,169,74,.55);stroke-width:2;stroke-dasharray:4 4}
+.inset-label{font-size:10px;fill:#a8b7d4;font-family:var(--dot)}
+#loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(11,16,32,.9);font-size:13px;letter-spacing:.14em;color:var(--kin)}
+#loading.off{display:none}
+.credit{font-size:11px;color:#7d8ba7;margin-top:8px;line-height:1.6}
+body.dark{background:#05060c}
+body.dark .win,body.dark .lg,body.dark .zcard,body.dark .icobtn,body.dark .ch{border-color:#5fbf8f}
+body.dark .bar h2,body.dark .lg b,body.dark .ch b{color:#5fbf8f}
+body.dark .btn{border-color:#5fbf8f}
+body.dark .btn:hover{background:#5fbf8f;color:#05060c}
+body.dark .field{border-color:#5fbf8f}
+body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
+
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px}
+.lg{border:2px solid var(--kin);padding:8px 10px;font-size:12px;background:var(--ai);
+  box-shadow:3px 3px 0 var(--sumi2)}
+.lg b{display:block;font-size:13px;color:var(--kin);font-weight:400;margin-bottom:2px}
+.lg span{color:#a8b7d4}
+.lg.done{border-color:var(--shu)}
+.lg.done b{color:#f0907c}
+
+/* ── 戦闘 ── */
+.field{position:relative;height:min(44vh,290px);border:3px solid var(--kin);
+  box-shadow:0 0 0 3px var(--sumi2);background:#0a1730;overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+#stage{position:absolute;inset:0;z-index:0}
+#stage svg{width:100%;height:100%;display:block}
+#enemy{width:min(52%,190px);position:relative;z-index:2;animation:idle 1.1s steps(1) infinite}
+#enemy.boss{width:min(68%,250px);animation:idle 1.5s steps(1) infinite}
+@keyframes idle{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){#enemy,#enemy.boss{animation:none}}
+#enemy.hit{animation:shake .3s steps(1) 2}
+#enemy.dead{animation:dead .5s steps(4) forwards}
+@keyframes shake{0%{transform:translateX(0)}33%{transform:translateX(-10px)}66%{transform:translateX(10px)}100%{transform:translateX(0)}}
+@keyframes dead{to{opacity:0;transform:scale(.3)}}
+.ename{position:absolute;z-index:2;top:8px;left:0;right:0;text-align:center;font-size:13px;
+  letter-spacing:.16em;color:var(--kinari);text-shadow:2px 2px 0 var(--sumi2)}
+.ehp{position:absolute;z-index:2;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:4px}
+.ehp i{width:16px;height:12px;background:var(--shu);border:2px solid var(--sumi2);display:block}
+.ehp i.off{background:#39415a}
+
+.hud{display:flex;justify-content:space-between;align-items:center;margin:10px 0;
+  font-size:12px;gap:10px;flex-wrap:wrap}
+.hearts{display:flex;gap:5px}
+.hearts i{width:15px;height:15px;display:block;background:var(--shu);border:2px solid var(--sumi2)}
+.hearts i.off{background:#39415a}
+.omamori{color:var(--kin);font-size:12px}
+#progress{color:#9fb0d0;font-size:12px}
+
+.msg{min-height:52px;font-size:14px;line-height:1.8;margin-bottom:12px}
+.msg .ok{color:var(--wakatake)}
+.msg .ng{color:#f08b7a}
+.q{font-size:clamp(15px,4.2vw,18px);line-height:1.7;margin:2px 0 14px}
+.choices{display:grid;gap:9px}
+.ch{text-align:left;border:2px solid var(--kin);background:var(--kon);color:var(--kinari);
+  padding:11px 12px;font-size:14px;cursor:pointer;font-family:var(--dot);line-height:1.6;
+  box-shadow:3px 3px 0 var(--sumi2)}
+.ch:hover:not(:disabled){background:var(--kin);color:var(--sumi2)}
+.ch:active:not(:disabled){transform:translate(3px,3px);box-shadow:none}
+.ch:disabled{cursor:default;opacity:.6;box-shadow:none}
+.ch.right{background:#1f6b4d;border-color:var(--wakatake);color:var(--kinari);opacity:1}
+.ch.wrong{background:#7a2a1e;border-color:var(--shu);color:var(--kinari);opacity:1}
+.ch b{color:var(--kin);margin-right:8px;font-weight:400}
+.ch.right b,.ch.wrong b{color:var(--kinari)}
+
+/* ── 結果・御朱印帳・図鑑 ── */
+.stamps{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;margin:14px 0}
+.st{aspect-ratio:1;border:2px dashed #4a5163;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:4px;font-size:11px;color:#8494b3;background:var(--ai)}
+.st.got{border:3px solid var(--shu);border-style:solid;color:var(--kinari);animation:press .4s steps(3)}
+.st b{font-size:15px;color:var(--shu);font-weight:400}
+@keyframes press{0%{transform:scale(2.2)}60%{transform:scale(.9)}100%{transform:none}}
+.review{margin-top:14px;font-size:13px;line-height:1.9}
+.review h3{font-size:13px;color:var(--kin);letter-spacing:.14em;margin:0 0 8px;font-weight:400}
+.review li{margin-bottom:10px;color:#cfd8ea}
+.review li em{color:var(--wakatake);font-style:normal}
+.tag{display:inline-block;font-size:11px;border:2px solid var(--kin);color:var(--kin);padding:0 6px;margin-right:6px}
+.note{font-size:12px;color:#93a3c2;line-height:1.8}
+.zgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+.zcard{border:2px solid var(--kin);padding:8px 6px 10px;text-align:center;background:var(--ai);
+  box-shadow:3px 3px 0 var(--sumi2)}
+.zcard.boss{border-color:var(--shu)}
+.zcard svg{width:78%;height:auto}
+.zcard b{display:block;font-size:11px;margin-top:4px;font-weight:400}
+.zcard span{font-size:10px;color:#93a3c2}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- タイトル -->
+<section id="title" class="screen on">
+  <div class="title-mark">中学 五教科 RPG</div>
+  <div class="hinomaru"></div>
+  <h1 class="mincho">日本一周クエスト</h1>
+  <div class="sub mincho">〜 五教科の御朱印 〜</div>
+  <div class="win" style="text-align:left">
+    <p class="note" style="margin:0 0 10px">
+      北海道・東日本・西日本・九州・四国。五つの地に、五つの教科の主が眠る。<br>
+      問いに答えて主を倒し、御朱印を集めよ。三つ集まれば、東京への道がひらく。
+    </p>
+    <p class="note" style="margin:0">HP は5。まちがえるたびに1つ減る。0になったらその地は仕切り直し。</p>
+  </div>
+  <div class="btnrow">
+    <button class="btn" id="startBtn">旅に出る</button>
+    <button class="btn ghost sm" id="fsBtn">全画面</button>
+    <button class="btn ghost sm" id="sndBtn">音 ♪ ON</button>
+  </div>
+  <p class="note" style="margin:14px 0 0;font-size:11px">版 v5　—　この表示が変わらないときは更新が届いていません</p>
+  <div class="btnrow">
+    <button class="btn ghost sm" id="zukanBtn">モンスター図鑑</button>
+    <button class="btn ghost sm" id="updBtn">更新を確認</button>
+    <button class="btn ghost sm" id="resetBtn">記録を消す</button>
+  </div>
+</section>
+
+<!-- ワールドマップ -->
+<section id="map" class="screen">
+  <div class="bar">
+    <h2 class="mincho">日本列島マップ</h2>
+    <div class="tools">
+      <button class="icobtn" id="mReview">復習 0</button>
+      <button class="icobtn" id="mSide">裏へ</button>
+      <button class="icobtn" id="mSnd">♪</button>
+      <button class="icobtn" id="mFs">⛶</button>
+      <button class="icobtn" id="mTitle">タイトル</button>
+    </div>
+  </div>
+  <div class="win" id="mapwrap">
+    <svg id="japan" viewBox="0 0 520 430" role="img" aria-label="日本列島マップ">
+      <path class="sea-line" d="M30,120 Q160,150 250,110 T500,150"/>
+      <path class="sea-line" d="M20,330 Q170,300 300,340 T510,300"/>
+      <g id="isles"></g>
+      <g id="labels"></g>
+      <g id="stamps"></g>
+    </svg>
+    <div id="loading">地図データを読み込み中…</div>
+  </div>
+  <div class="legend" id="legend"></div>
+  <p class="note" style="margin-top:12px">地図の島をえらぶと、その地の主との旅がはじまる。</p>
+  <p class="credit" id="credit">地図データ出典：地球地図日本（国土地理院）／ dataofjapan/land</p>
+</section>
+
+<!-- バトル -->
+<section id="battle" class="screen">
+  <div class="bar">
+    <h2 class="mincho" id="areaTitle">－</h2>
+    <div class="tools">
+      <button class="icobtn" id="bSnd">♪</button>
+      <button class="icobtn" id="bBack">退く</button>
+    </div>
+  </div>
+  <div class="field">
+    <div id="stage"></div>
+    <div class="ename mincho" id="ename">－</div>
+    <div id="enemy"></div>
+    <div class="ehp" id="ehp"></div>
+  </div>
+  <div class="hud">
+    <div class="hearts" id="hearts">♥♥♥♥♥</div>
+    <div class="omamori" id="omamori"></div>
+    <div id="progress" style="color:#9fb0d0;font-size:12px"></div>
+  </div>
+  <div class="win">
+    <div class="msg mincho" id="msg">－</div>
+    <div class="q" id="qtext">－</div>
+    <div class="choices" id="choices"></div>
+    <div class="btnrow" style="justify-content:flex-end;display:none" id="nextRow">
+      <button class="btn sm" id="nextBtn">つぎへ ▶</button>
+    </div>
+  </div>
+</section>
+
+<!-- モンスター図鑑 -->
+<section id="zukan" class="screen">
+  <div class="bar">
+    <h2 class="mincho">モンスター図鑑</h2>
+    <div class="tools"><button class="icobtn" id="zBack">もどる</button></div>
+  </div>
+  <div class="zgrid" id="zgrid"></div>
+</section>
+
+<!-- 結果 -->
+<section id="result" class="screen">
+  <div class="win">
+    <h2 class="mincho" id="rTitle" style="margin:0 0 4px;font-size:22px">－</h2>
+    <p class="note" id="rSub" style="margin:0 0 6px"></p>
+    <div class="stamps" id="rStamps"></div>
+    <div class="review" id="rReview"></div>
+    <div class="btnrow">
+      <button class="btn" id="rBack">地図にもどる</button>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script src="questions.js"></script>
+<script>
+"use strict";
+
+/* ============ 問題データ（questions.js から読み込む） ============ */
+const QD=window.QDATA||null;
+function pool(sub,mode){
+ const s=(QD&&QD[sub])||{};
+ const arr=(mode==="dark"?s.adv:s.basic)||[];
+ return arr.slice();
+}
+function tokyoPool(mode){
+ let all=[];
+ if(QD) for(const k of Object.keys(QD)) all=all.concat(pool(k,mode));
+ return all;
+}
+
+/* ============ エリア定義 ============ */
+const AREAS={
+ hokkaido:{name:"北海道",subject:"理科",sub:"rika",item:"流氷の結晶",
+   zako:["ユキダマ","リュウヒョウワニ","フブキネコ"],boss:"氷獄のブリザードベア",
+   color:"#7fd4e8",tag:"雪と大地の実験場"},
+ higashi:{name:"東日本",subject:"社会",sub:"shakai",item:"時渡りの巻物",
+   zako:["ハニワゴースト","オボロムシャ","カミナリガラス"],boss:"時渡り武者トキムシャ",
+   color:"#c8a55f",tag:"歴史が積もる大地"},
+ nishi:{name:"西日本",subject:"国語",sub:"kokugo",item:"言霊の筆",
+   zako:["マキモノヘビ","コトダマビ","ミヤコギツネ"],boss:"言霊鬼コトダマオニ",
+   color:"#d67ba8",tag:"みやこと言葉の国"},
+ kyushu:{name:"九州",subject:"英語",sub:"eigo",item:"南蛮のコンパス",
+   zako:["ナンバンクラゲ","カザンイモリ","カステライヌ"],boss:"南蛮船長キャプテン・デジマ",
+   color:"#e8894f",tag:"海の向こうへの玄関"},
+ shikoku:{name:"四国",subject:"数学",sub:"sugaku",item:"黄金比の数珠",
+   zako:["ウズマキスライム","オヘンロガエル","サヌキミミズク"],boss:"渦潮の算士ウズマキ",
+   color:"#6fc79a",tag:"渦と巡礼の島"}
+};
+const ORDER=["hokkaido","higashi","nishi","kyushu","shikoku"];
+const PATHS={
+ hokkaido:"M330,44 L402,26 L442,72 L420,112 L378,122 L344,98 L324,70 Z",
+ higashi:"M296,138 L338,124 L354,152 L336,174 L300,188 L262,208 L236,216 L226,198 L258,178 L276,158 Z",
+ nishi:"M226,198 L236,216 L200,234 L160,242 L120,240 L96,230 L104,212 L142,216 L182,208 Z",
+ kyushu:"M96,250 L126,244 L138,270 L124,302 L96,320 L76,296 L84,266 Z",
+ shikoku:"M150,262 L198,254 L208,272 L176,286 L146,276 Z"
+};
+const LABEL={hokkaido:[386,80],higashi:[300,150],nishi:[150,224],kyushu:[104,282],shikoku:[176,272]};
+const TOKYO={x:300,y:190};
+
+/* ============ 実地図データ ============ */
+/* 出典：地球地図日本（国土地理院）を変換した dataofjapan/land */
+const GEO_SOURCES=[
+ "../../lib/japan/japan.topojson",
+ "https://cdn.jsdelivr.net/gh/dataofjapan/land@master/japan.topojson",
+ "https://raw.githubusercontent.com/dataofjapan/land/master/japan.topojson",
+ "https://cdn.jsdelivr.net/gh/dataofjapan/land@master/japan.geojson",
+ "https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson"
+];
+/* 都道府県コード → エリア（1北海道／2-23東日本／24-35西日本／36-39四国／40-47九州） */
+function regionOf(id){
+ if(id===1) return "hokkaido";
+ if(id>=2&&id<=23) return "higashi";
+ if(id>=24&&id<=35) return "nishi";
+ if(id>=36&&id<=39) return "shikoku";
+ if(id>=40&&id<=47) return "kyushu";
+ return null;
+}
+const MAIN={lo:128.0,hi:146.4,la:30.4,lb:45.8};     /* 本土の表示範囲 */
+const OKI={lo:127.2,hi:128.6,la:26.0,lb:27.0};      /* 沖縄インセットの範囲 */
+const BOX={x:16,y:14,w:488,h:400};
+const OBOX={x:398,y:296,w:104,h:92};
+const KX=Math.cos(38*Math.PI/180);
+let GEO=null;
+
+function makeProj(win,box){
+ const w=(win.hi-win.lo)*KX,h=win.lb-win.la;
+ const s=Math.min(box.w/w,box.h/h);
+ const ox=box.x+(box.w-w*s)/2, oy=box.y+(box.h-h*s)/2;
+ return function(lng,lat){ return [ox+(lng-win.lo)*KX*s, oy+(win.lb-lat)*s]; };
+}
+function toFeatures(j){
+ if(j.type==="Topology"){
+   const key=Object.keys(j.objects)[0],o=j.objects[key],tr=j.transform;
+   const arcs=j.arcs.map(arc=>{
+     if(!tr) return arc.map(p=>[p[0],p[1]]);
+     let x=0,y=0;
+     return arc.map(p=>{x+=p[0];y+=p[1];
+       return [x*tr.scale[0]+tr.translate[0], y*tr.scale[1]+tr.translate[1]];});
+   });
+   const ring=idxs=>{
+     let out=[];
+     idxs.forEach(i=>{
+       let a=i<0?arcs[~i].slice().reverse():arcs[i];
+       if(out.length) a=a.slice(1);
+       out=out.concat(a);
+     });
+     return out;
+   };
+   return (o.geometries||[]).map(g=>{
+     let polys=[];
+     if(g.type==="Polygon") polys=[g.arcs.map(ring)];
+     else if(g.type==="MultiPolygon") polys=g.arcs.map(pl=>pl.map(ring));
+     return {id:(g.properties&&g.properties.id)||g.id,polys:polys};
+   });
+ }
+ return (j.features||[]).map(f=>{
+   const gm=f.geometry||{};let polys=[];
+   if(gm.type==="Polygon") polys=[gm.coordinates];
+   else if(gm.type==="MultiPolygon") polys=gm.coordinates;
+   return {id:(f.properties&&f.properties.id)||f.id,polys:polys};
+ });
+}
+function ringPath(ring,proj,win){
+ let lo=180,hi=-180,la=90,lb=-90;
+ for(const p of ring){ if(p[0]<lo)lo=p[0]; if(p[0]>hi)hi=p[0]; if(p[1]<la)la=p[1]; if(p[1]>lb)lb=p[1]; }
+ const cx=(lo+hi)/2, cy=(la+lb)/2;
+ if(cx<win.lo||cx>win.hi||cy<win.la||cy>win.lb) return null;      /* 表示範囲外の島は省く */
+ if((hi-lo)+(lb-la)<0.055) return null;                            /* ごく小さな島は省く */
+ const step=ring.length>1200?6:ring.length>500?3:ring.length>180?2:1;
+ let d="",n=0,bb=[1e9,1e9,-1e9,-1e9];
+ for(let i=0;i<ring.length;i+=step){
+   const q=proj(ring[i][0],ring[i][1]);
+   const x=Math.round(q[0]*10)/10,y=Math.round(q[1]*10)/10;
+   if(x<bb[0])bb[0]=x; if(y<bb[1])bb[1]=y; if(x>bb[2])bb[2]=x; if(y>bb[3])bb[3]=y;
+   d+=(n?"L":"M")+x+","+y; n++;
+ }
+ if(n<4) return null;
+ return {d:d+"Z",bb:bb};
+}
+function buildGeo(items){
+ const projM=makeProj(MAIN,BOX), projO=makeProj(OKI,OBOX);
+ const regions={},cen={},tokyo=[];
+ ORDER.forEach(k=>{regions[k]="";cen[k]=[0,0,0];});
+ const grow=(k,bb)=>{                       /* 面積で重みづけした重心＝エリア名の位置 */
+   const w=Math.max((bb[2]-bb[0])*(bb[3]-bb[1]),1),c=cen[k];
+   c[0]+=(bb[0]+bb[2])/2*w; c[1]+=(bb[1]+bb[3])/2*w; c[2]+=w;};
+ items.forEach(it=>{
+   const id=Number(it.id),k=regionOf(id);
+   if(!k) return;
+   const oki=(id===47);
+   it.polys.forEach(poly=>poly.forEach((ring,ri)=>{
+     if(ri>0) return;                                              /* 外周のみ描く */
+     const r=ringPath(ring,oki?projO:projM,oki?OKI:MAIN);
+     if(!r) return;
+     regions[k]+=r.d;
+     if(!oki) grow(k,r.bb);
+     if(id===13) tokyo.push(r.d);
+   }));
+ });
+ if(!regions.higashi||!regions.nishi) return null;
+ const label={},off={shikoku:[0,30],kyushu:[-4,0],nishi:[0,-4],higashi:[10,-4],hokkaido:[0,0]};
+ ORDER.forEach(k=>{
+   const c=cen[k],o=off[k]||[0,0];
+   label[k]=c[2]?[Math.round(c[0]/c[2])+o[0],Math.round(c[1]/c[2])+o[1]]:LABEL[k];
+ });
+ const t=projM(139.75,35.68);
+ return {regions:regions,label:label,tokyo:tokyo.join(""),
+         tokyoPin:[Math.round(t[0]),Math.round(t[1])]};
+}
+let GEOLOG=[];
+async function loadGeo(){
+ GEOLOG=[];
+ for(const url of GEO_SOURCES){
+   const host=url.split("/")[2];
+   try{
+     const res=await fetch(url,{cache:"force-cache"});
+     if(!res.ok){ GEOLOG.push(host+"：応答 "+res.status); continue; }
+     const g=buildGeo(toFeatures(await res.json()));
+     if(g){ GEO=g; return true; }
+     GEOLOG.push(host+"：データの形式が想定と違う");
+   }catch(e){ GEOLOG.push(host+"："+(e&&e.name?e.name:"エラー")+" "+(e&&e.message?e.message:"")); }
+ }
+ return false;
+}
+function hexA(hex,a){
+ const n=parseInt(hex.slice(1),16);
+ return "rgba("+(n>>16&255)+","+(n>>8&255)+","+(n&255)+","+a+")";
+}
+/* 地図の輪郭をマス目に焼き直す（ドット絵化） */
+let PIX=null,CELL=6;
+function pixelMap(cell){
+ const cv=document.createElement("canvas");cv.width=520;cv.height=430;
+ const ctx=cv.getContext("2d");if(!ctx||!window.Path2D) return null;
+ const scan=d=>{
+  const p=new Path2D(d),rows={};
+  for(let y=0;y<430;y+=cell){const xs=[];
+   for(let x=0;x<520;x+=cell) if(ctx.isPointInPath(p,x+cell/2,y+cell/2)) xs.push(x);
+   if(xs.length) rows[y]=xs;}
+  return rows;};
+ const src=GEO?GEO.regions:PATHS;
+ const out={};
+ ORDER.forEach(k=>{out[k]=scan(src[k]);});
+ const tp=GEO?GEO.tokyo:("M"+(TOKYO.x-5)+","+(TOKYO.y-5)+" h10 v10 h-10 Z");
+ out.tokyo=scan(tp);
+ return out;
+}
+/* 横に連続するマスを1つの矩形にまとめて軽くする */
+function pixRects(rows,cell,fill){
+ let s="";
+ for(const y in rows){const xs=rows[y];let i=0;
+  while(i<xs.length){let j=i;while(j+1<xs.length&&xs[j+1]===xs[j]+cell)j++;
+   s+='<rect x="'+xs[i]+'" y="'+y+'" width="'+((j-i+1)*cell)+'" height="'+cell+
+      '" fill="'+fill+'"/>';i=j+1;}}
+ return s;
+}
+
+/* ============ 状態 ============ */
+let save={cleared:[],best:{},dark:[],tokyo:false,darkTokyo:false,wrong:[]};
+let S=null;
+let soundOn=true;
+let MODE="light";                       /* light=表面 / dark=裏面 */
+const isDark=()=>MODE==="dark";
+/* 裏面：色を反転させる */
+function inv(hex){
+ const n=parseInt(hex.slice(1),16);
+ const r=255-(n>>16&255),g=255-(n>>8&255),b=255-(n&255);
+ return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+const IPAL={};
+function invPal(){
+ if(!IPAL.done){ for(const k in PAL) IPAL[k]=inv(PAL[k]); IPAL.done=true; }
+ return IPAL;
+}
+function darkName(n){ return "闇の"+n; }
+
+/* ============ 保存 ============ */
+async function load(){
+ try{
+   if(window.storage){
+     const r=await window.storage.get("nihon_quest_save");
+     if(r&&r.value) save=JSON.parse(r.value);
+   }
+ }catch(e){/* 記録なし */}
+ if(!save.cleared) save.cleared=[];
+ if(!save.best) save.best={};
+ if(!save.dark) save.dark=[];
+ if(!save.wrong) save.wrong=[];
+}
+async function persist(){
+ try{ if(window.storage) await window.storage.set("nihon_quest_save",JSON.stringify(save)); }catch(e){}
+}
+
+/* ============ 音 ============ */
+let AC=null,bgmTimer=null;
+function ac(){
+ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} }
+ if(AC&&AC.state==="suspended"){ AC.resume().catch(()=>{}); }
+ return AC;
+}
+function tone(f,dur,type,vol,delay){
+ if(!soundOn) return; const c=ac(); if(!c) return;
+ const t=c.currentTime+(delay||0);
+ const o=c.createOscillator(),g=c.createGain();
+ o.type=type||"square"; o.frequency.setValueAtTime(f,t);
+ g.gain.setValueAtTime(0.0001,t);
+ g.gain.exponentialRampToValueAtTime(vol||0.08,t+0.012);
+ g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+ o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.02);
+}
+const SFX={
+ ok(){ [660,880,1320].forEach((f,i)=>tone(f,.14,"square",.07,i*0.06)); },
+ ng(){ tone(220,.18,"sawtooth",.07,0); tone(150,.28,"sawtooth",.06,.12); },
+ hit(){ tone(120,.12,"square",.09,0); },
+ down(){ [520,392,330,262].forEach((f,i)=>tone(f,.2,"triangle",.08,i*0.11)); },
+ clear(){ [523,659,784,1047,784,1047].forEach((f,i)=>tone(f,.24,"square",.07,i*0.16)); },
+ over(){ [392,349,294,196].forEach((f,i)=>tone(f,.4,"triangle",.07,i*0.26)); },
+ sel(){ tone(880,.06,"square",.05,0); }
+};
+const THEMES={
+ map:[523,0,659,0,784,0,659,0,587,0,698,0,880,0],
+ battle:[440,523,440,392,440,523,587,523,349,440,349,330],
+ boss:[294,349,294,392,294,349,440,392,247,294,247,330]
+};
+function bgm(name){
+ stopBgm(); if(!soundOn) return;
+ const seq=THEMES[name]; if(!seq) return;
+ let i=0;
+ bgmTimer=setInterval(()=>{
+   const f=seq[i%seq.length];
+   if(f) tone(f,.16,"triangle",.035,0);
+   if(f&&i%4===0) tone(f/2,.3,"sine",.03,0);
+   i++;
+ },230);
+}
+function stopBgm(){ if(bgmTimer){clearInterval(bgmTimer);bgmTimer=null;} }
+function toggleSound(){
+ soundOn=!soundOn;
+ const b=document.getElementById("sndBtn");
+ if(b) b.textContent="音 ♪ "+(soundOn?"ON":"OFF");
+ ["mSnd","bSnd"].forEach(id=>{
+   const e=document.getElementById(id); if(e) e.textContent=soundOn?"♪":"♪×";
+ });
+ if(!soundOn){ stopBgm(); return; }
+ ac();                                   /* ボタン押下の中で音源を起動（iPad対策） */
+ if(cur==="map") bgm("map");
+ else if(cur==="battle"&&S&&!S.review){
+   const e=S.enemies&&S.enemies[S.ei];
+   bgm(e&&e.boss?"boss":"battle");
+ }
+}
+
+/* ============ 画面切替 ============ */
+let cur="title";
+function show(id){
+ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
+ document.getElementById(id).classList.add("on");
+ cur=id; window.scrollTo(0,0);
+}
+
+/* ============ ドット絵エンジン ============ */
+/* 16×16のマス目に図形を焼き、外周を自動で縁取り、陰にディザをかける */
+const PAL={1:'#c9dbe8',2:'#f6f4ee',3:'#d4523a',4:'#16161a',5:'#8fa9bb',6:'#5fa8cf',
+ 7:'#d8a94a',8:'#c8422e',9:'#a83a26',10:'#2b1f2e',11:'#dff1fb',12:'#ddd7c8',
+ 13:'#2f5d8e',14:'#1b3c60',15:'#4f8f7a',16:'#356c5b',17:'#c9a15a',18:'#a67f3c',
+ 19:'#9c4a2f',20:'#72331e',21:'#7a63b8',22:'#e8913f',23:'#16264a',24:'#6b8fb5'};
+const SHADE={1:5,2:12,3:9,13:14,15:16,17:18,19:20,21:10,23:14};
+
+function grid(ops,R){
+ const b=[];for(let y=0;y<R;y++){b.push([]);for(let x=0;x<R;x++)b[y].push(0);}
+ const put=(x,y,v)=>{if(b[y]&&b[y][x]!==undefined)b[y][x]=v;};
+ const apply=o=>{
+  if(o[0]==='e'){const cx=o[1],cy=o[2],rx=o[3],ry=o[4],v=o[5];
+   for(let y=0;y<R;y++)for(let x=0;x<R;x++){
+    const a=(x+0.5-cx)/rx,c=(y+0.5-cy)/ry;if(a*a+c*c<=1)put(x,y,v);}}
+  else if(o[0]==='b'){for(let y=o[2];y<=o[4];y++)for(let x=o[1];x<=o[3];x++)put(x,y,o[5]);}
+  else if(o[0]==='p'){put(o[1],o[2],o[3]);}
+  else if(o[0]==='^'){const cx=o[1],y0=o[2],hm=o[3],h=o[4],v=o[5];
+   for(let i=0;i<h;i++){const half=Math.round(hm*i/(h-1));
+    for(let x=cx-half;x<=cx+half;x++)put(x,y0+i,v);}}
+ };
+ let i=0;
+ for(;i<ops.length;i++){if(ops[i][0]==='|')break;apply(ops[i]);}
+ const s=b.map(r=>r.slice());
+ for(let y=0;y<R;y++)for(let x=0;x<R;x++){
+  if(!s[y][x])continue;
+  if((y>0&&!s[y-1][x])||(y<R-1&&!s[y+1][x])||(x>0&&!s[y][x-1])||(x<R-1&&!s[y][x+1]))b[y][x]=4;}
+ for(let y=0;y<R;y++)for(let x=0;x<R;x++){
+  const v=s[y][x];if(!SHADE[v])continue;if(b[y][x]===4)continue;
+  if((x*0.7+y)/R>1.02&&(x+y)%2===0)b[y][x]=SHADE[v];}
+ for(i++;i<ops.length;i++)apply(ops[i]);
+ return b;
+}
+function cells(b,R,sc,ox,oy,pal){
+ const P=pal||PAL;
+ const runs=[],map={},out=[];
+ for(let y=0;y<R;y++){let x=0;while(x<R){const v=b[y][x];
+  if(!v){x++;continue;}let w=1;while(x+w<R&&b[y][x+w]===v)w++;
+  runs.push({x:x,y:y,w:w,h:1,v:v});x+=w;}}
+ for(const r of runs){const k=r.x+':'+r.w+':'+r.v,p=map[k];
+  if(p&&p.y+p.h===r.y)p.h++;else{map[k]=r;out.push(r);}}
+ return out.map(r=>'<rect x="'+(ox+r.x*sc)+'" y="'+(oy+r.y*sc)+'" width="'+(r.w*sc)+
+  '" height="'+(r.h*sc)+'" fill="'+P[r.v]+'"/>').join('');
+}
+
+/* ============ キャラ 16×16（| より前が輪郭、後が描き込み） ============ */
+const SPR={
+hokkaido_z0:[['e',8,9,5.4,5,1],['b',2,8,3,9,1],['b',12,8,13,9,1],['|'],
+ ['p',6,8,4],['p',10,8,4],['b',7,11,8,11,4],['p',5,9,8],['p',10,9,8],
+ ['p',8,2,11],['p',7,3,11],['p',9,3,11],['p',8,4,11]],
+hokkaido_z1:[['b',1,9,14,12,13],['b',4,7,12,9,13],['b',5,6,6,6,13],['b',8,6,9,6,13],
+ ['b',11,6,12,6,13],['|'],['p',5,6,11],['p',6,6,11],['p',8,6,11],['p',9,6,11],
+ ['p',11,6,11],['p',12,6,11],['p',9,8,7],['b',2,11,7,11,2],['p',2,9,4],['b',3,10,8,10,4]],
+hokkaido_z2:[['e',8,8,4.6,4.4,1],['b',4,3,5,5,1],['b',10,3,11,5,1],['e',8,12,4,3,1],
+ ['b',11,10,14,11,1],['b',11,12,14,13,1],['|'],['p',6,7,7],['p',10,7,7],
+ ['b',7,10,8,10,4],['p',5,7,8],['p',11,7,8],['p',12,10,11],['p',14,12,11]],
+hokkaido_boss:[['e',8,11,6.2,4.8,1],['e',8,6,4.8,4.4,1],['e',3,3,1.7,1.7,1],['e',13,3,1.7,1.7,1],
+ ['b',1,11,2,13,1],['b',13,11,14,13,1],['|'],['e',8,8,2.6,2,2],['p',8,7,4],
+ ['b',7,9,9,9,4],['p',6,5,6],['p',10,5,6],['p',5,5,8],['p',11,5,8],
+ ['b',6,1,10,2,7],['p',5,2,7],['p',11,2,7],['p',1,14,11],['p',14,14,11]],
+
+higashi_z0:[['b',5,2,10,6,17],['b',4,7,11,14,17],['b',2,8,3,11,17],['b',12,8,13,11,17],['|'],
+ ['p',6,3,4],['p',9,3,4],['p',6,4,4],['p',9,4,4],['b',7,5,8,5,4],
+ ['b',4,11,11,11,18],['b',5,13,10,13,18]],
+higashi_z1:[['e',8,7,5,4.6,23],['b',2,7,3,9,23],['b',12,7,13,9,23],['b',4,10,11,14,24],['|'],
+ ['b',6,2,9,2,7],['p',5,3,7],['p',10,3,7],['p',6,7,8],['p',10,7,8],
+ ['b',4,9,11,9,7],['p',6,12,2],['p',9,13,2]],
+higashi_z2:[['e',8,8,4,4,10],['b',1,6,4,9,10],['b',11,6,14,9,10],['b',6,12,9,14,10],['|'],
+ ['p',4,8,7],['p',3,8,7],['p',7,7,7],['p',10,7,7],['p',7,8,4],['p',10,8,4],
+ ['p',13,1,7],['p',12,2,7],['p',13,3,7],['p',12,4,7]],
+higashi_boss:[['b',3,8,12,14,23],['e',8,5,4.8,4.4,23],['b',1,8,2,11,23],['b',13,8,14,11,23],['|'],
+ ['b',5,1,10,2,7],['p',4,2,7],['p',11,2,7],['b',6,6,9,7,3],['b',6,7,9,7,2],
+ ['p',6,5,7],['p',9,5,7],['b',6,10,9,12,7],['p',7,11,23],['p',8,11,23]],
+
+nishi_z0:[['b',4,5,11,14,2],['b',3,3,12,4,7],['e',8,1,2.2,1.8,15],['|'],
+ ['b',6,7,9,7,4],['b',6,9,9,9,4],['b',6,11,7,11,4],['p',7,1,7],['p',9,1,7],
+ ['p',8,3,8],['b',3,3,12,3,7],['p',4,14,12]],
+nishi_z1:[['b',5,4,10,14,3],['b',3,7,12,14,3],['b',7,2,9,3,3],['|'],
+ ['b',6,8,9,13,22],['b',7,10,8,12,7],['p',6,9,4],['p',9,9,4],
+ ['b',1,10,2,13,2],['b',13,10,14,13,2],['b',1,10,2,10,8],['b',13,10,14,10,8]],
+nishi_z2:[['e',8,6,4.6,4.2,2],['b',4,2,5,4,2],['b',10,2,11,4,2],['b',5,10,10,14,21],
+ ['b',11,11,14,13,2],['|'],['b',5,5,6,5,8],['b',9,5,10,5,8],['p',6,7,7],['p',9,7,7],
+ ['p',8,8,4],['b',7,9,8,9,8],['b',5,10,10,10,2],['p',13,12,8]],
+nishi_boss:[['e',8,7,5,4.6,3],['b',3,2,4,4,2],['b',11,2,12,4,2],['b',4,12,11,14,3],['|'],
+ ['b',4,3,11,4,10],['b',4,6,6,6,8],['b',9,6,11,6,8],['p',5,7,7],['p',10,7,7],
+ ['b',5,9,10,9,4],['p',6,10,2],['p',9,10,2],['b',3,12,12,12,7],['p',3,2,7],['p',12,2,7]],
+
+kyushu_z0:[['e',8,8,5.2,3.6,13],['b',4,10,5,14,13],['b',7,10,8,14,13],['b',10,10,11,14,13],
+ ['b',3,3,12,4,10],['b',5,1,10,3,10],['|'],['b',5,3,10,3,7],['p',6,8,7],['p',10,8,7],
+ ['b',7,9,8,9,4],['p',4,7,24],['p',11,7,24]],
+kyushu_z1:[['b',2,8,13,12,19],['b',0,9,3,11,19],['b',2,13,3,13,19],['b',11,13,13,13,19],['|'],
+ ['b',3,12,12,12,22],['p',1,9,7],['p',4,9,7],['p',8,9,7],['p',11,10,7],
+ ['p',7,7,8],['p',6,6,2],['p',7,5,2],['p',6,4,2]],
+kyushu_z2:[['b',3,8,12,14,17],['e',8,5,4.4,4,2],['b',2,3,3,7,17],['b',12,3,13,7,17],['|'],
+ ['b',3,13,12,14,20],['p',6,4,4],['p',10,4,4],['b',7,6,8,6,4],['p',8,7,8],
+ ['b',5,10,9,10,18],['p',5,4,8],['p',11,4,8]],
+kyushu_boss:[['b',3,9,12,14,23],['e',8,6,4,3.6,2],['b',1,2,14,3,10],['b',4,1,11,2,10],['|'],
+ ['b',2,3,13,3,7],['b',5,8,10,10,12],['p',6,6,4],['p',10,6,4],
+ ['b',1,10,3,12,7],['p',2,11,8],['p',8,11,7],['p',8,13,7]],
+
+shikoku_z0:[['e',8,9,5.4,4.6,15],['|'],['b',5,7,10,7,7],['p',10,8,7],['b',7,9,10,9,7],
+ ['p',7,10,7],['p',8,10,7],['p',6,7,4],['p',10,11,4],['p',5,11,4]],
+shikoku_z1:[['e',8,10,4.6,4,15],['b',2,5,13,6,17],['b',5,4,10,4,17],['b',3,12,4,13,15],
+ ['b',11,12,12,13,15],['|'],['p',6,8,7],['p',10,8,7],['b',6,10,9,10,4],
+ ['b',6,12,9,13,2],['b',14,6,14,14,18],['p',14,5,7]],
+shikoku_z2:[['e',8,8,4.6,5,17],['b',3,2,4,4,17],['b',11,2,12,4,17],['|'],
+ ['b',5,6,6,7,7],['b',9,6,10,7,7],['p',5,7,4],['p',10,7,4],['p',8,9,7],
+ ['b',4,11,11,12,20],['p',5,11,7],['p',8,11,7],['p',10,12,7]],
+shikoku_boss:[['b',1,11,14,14,13],['b',3,10,12,10,13],['e',8,6,4.2,4.6,23],['|'],
+ ['b',5,6,10,8,2],['p',6,7,4],['p',9,7,4],['b',5,1,10,2,7],['p',4,2,7],['p',11,2,7],
+ ['b',0,7,2,7,7],['b',0,9,2,9,7],['b',13,7,15,7,7],['b',13,9,15,9,7],['b',5,12,10,12,11]],
+
+tokyo_final:[['^',8,2,6,12,3],['b',2,14,13,14,9],['|'],
+ ['b',6,5,10,7,23],['p',7,6,7],['p',9,6,7],['b',6,8,10,8,7],['b',5,10,11,10,7],
+ ['b',4,12,12,12,7],['p',8,1,7],['p',8,2,7],['p',0,7,22],['p',15,7,15],
+ ['p',1,12,21],['p',14,12,13],['p',8,15,17]]
+};
+
+/* ============ 背景（ステージ）ドット絵 ============ */
+const STAGE={
+ hokkaido:{sky:['#0e1b33','#16294a','#22406b'],sun:'#dff1fb',ground:'#e8f2f8',
+  ground2:'#b7cfe0',mts:'#1d3557',mts2:'#274a72',deco:'ice'},
+ higashi:{sky:['#151428','#2a2140','#4a3352'],sun:'#f0d79a',ground:'#3a3a2a',
+  ground2:'#4d4a33',mts:'#20202f',mts2:'#33334a',deco:'tree'},
+ nishi:{sky:['#1a1026','#3a1b34','#6b2e42'],sun:'#f6c96a',ground:'#2e2436',
+  ground2:'#41334c',mts:'#241a2e',mts2:'#3b2b46',deco:'torii'},
+ kyushu:{sky:['#101d33','#1c3a52','#2f6274'],sun:'#e8913f',ground:'#26323f',
+  ground2:'#37485a',mts:'#1a222e',mts2:'#2b3a4a',deco:'volcano'},
+ shikoku:{sky:['#0d1e2e','#153348','#20536b'],sun:'#bfe6f5',ground:'#153b52',
+  ground2:'#1e5470',mts:'#122636',mts2:'#1d3c52',deco:'wave'},
+ tokyo:{sky:['#08080f','#141026','#241a3a'],sun:'#d8a94a',ground:'#12121c',
+  ground2:'#1d1d2c',mts:'#0c0c14',mts2:'#191926',deco:'city'}
+};
+function stageSVG(key,W,H,sc,dark){
+ let s=STAGE[key]||STAGE.hokkaido;
+ if(dark){const o={};for(const k in s)
+  o[k]=(typeof s[k]==='string'&&s[k][0]==='#')?inv(s[k]):(Array.isArray(s[k])?s[k].map(inv):s[k]);
+  s=o;}
+ const g=[];
+ for(let y=0;y<H;y++){g.push([]);for(let x=0;x<W;x++)g[y].push(null);}
+ const hz=Math.floor(H*0.62);
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  if(y<hz){const t=y/hz;g[y][x]=t<0.34?s.sky[0]:t<0.68?s.sky[1]:s.sky[2];}
+  else g[y][x]=((x+y)%2===0&&y>hz+1)?s.ground2:s.ground;}
+ let sd=key.length*97+13;const rnd=()=>{sd=(sd*1103515245+12345)%2147483648;return sd/2147483648;};
+ for(let i=0;i<26;i++){const x=Math.floor(rnd()*W),y=Math.floor(rnd()*(hz-3));
+  if(g[y]&&rnd()>0.35)g[y][x]=dark?inv('#f6f4ee'):'#f6f4ee';}
+ const sx=Math.floor(W*0.72),sy=Math.floor(hz*0.3),r=Math.floor(H*0.11);
+ for(let y=sy-r;y<=sy+r;y++)for(let x=sx-r;x<=sx+r;x++){
+  if(!g[y]||g[y][x]===undefined)continue;
+  if((x-sx)*(x-sx)+(y-sy)*(y-sy)<=r*r)g[y][x]=s.sun;}
+ const peak=(cx,w,h,col)=>{for(let i=0;i<h;i++){const half=Math.round(w*(1-i/h));
+  for(let x=cx-half;x<=cx+half;x++){const y=hz-i;if(g[y]&&g[y][x]!==undefined)g[y][x]=col;}}};
+ peak(Math.floor(W*0.22),Math.floor(W*0.2),Math.floor(H*0.3),s.mts2);
+ peak(Math.floor(W*0.5),Math.floor(W*0.16),Math.floor(H*0.22),s.mts);
+ if(s.deco==='torii'){const bx=Math.floor(W*0.78),by=hz;
+  for(let i=0;i<8;i++){if(g[by-i]){g[by-i][bx]=dark?inv('#c8422e'):'#c8422e';g[by-i][bx+7]=dark?inv('#c8422e'):'#c8422e';}}
+  for(let x=bx-2;x<=bx+9;x++)if(g[by-8])g[by-8][x]=dark?inv('#c8422e'):'#c8422e';
+  for(let x=bx-1;x<=bx+8;x++)if(g[by-6])g[by-6][x]=dark?inv('#c8422e'):'#c8422e';}
+ if(s.deco==='volcano'){const cx=Math.floor(W*0.5);
+  for(let i=0;i<5;i++){const y=hz-Math.floor(H*0.22)-i;
+   if(g[y])for(let x=cx-1+((i%2)?1:0);x<=cx+1;x++)g[y][x]=dark?inv('#e8913f'):'#e8913f';}}
+ if(s.deco==='ice'){for(let i=0;i<4;i++){const x=4+i*Math.floor(W/4),y=H-3;
+  if(g[y]){g[y][x]='#f6f4ee';g[y][x+1]='#f6f4ee';}if(g[y-1])g[y-1][x]='#f6f4ee';}}
+ if(s.deco==='wave'){for(let x=0;x<W;x++){const y=hz+2+(x%4<2?0:1);
+  if(g[y])g[y][x]=dark?inv('#7fc0dc'):'#7fc0dc';}}
+ if(s.deco==='tree'){for(let i=0;i<3;i++){const cx=3+i*Math.floor(W/3);
+  for(let k=0;k<5;k++){const half=3-Math.floor(k*0.6),y=hz-6+k;
+   if(g[y])for(let x=cx-half;x<=cx+half;x++)if(g[y][x]!==undefined)g[y][x]=dark?inv('#24402f'):'#24402f';}
+  if(g[hz-1])g[hz-1][cx]=dark?inv('#3a2a1a'):'#3a2a1a';}}
+ if(s.deco==='city'){for(let i=0;i<7;i++){const x=1+i*Math.floor(W/7),
+   h=3+((i*7)%6),w=Math.floor(W/9);
+  for(let y=hz-h;y<hz;y++)for(let xx=x;xx<x+w;xx++)
+   if(g[y]&&g[y][xx]!==undefined)g[y][xx]=((xx+y)%3===0)?(dark?inv('#d8a94a'):'#d8a94a'):(dark?inv('#1a1a2c'):'#1a1a2c');}}
+ const runs=[],map={},out=[];
+ for(let y=0;y<H;y++){let x=0;while(x<W){const v=g[y][x];let w=1;
+  while(x+w<W&&g[y][x+w]===v)w++;runs.push({x:x,y:y,w:w,h:1,v:v});x+=w;}}
+ for(const r of runs){const k=r.x+':'+r.w+':'+r.v,p=map[k];
+  if(p&&p.y+p.h===r.y)p.h++;else{map[k]=r;out.push(r);}}
+ return out.map(r=>'<rect x="'+(r.x*sc)+'" y="'+(r.y*sc)+'" width="'+(r.w*sc)+
+  '" height="'+(r.h*sc)+'" fill="'+r.v+'"/>').join('');
+}
+
+function drawArt(key,isBoss,dark){
+ const ops=SPR[key]||SPR.shikoku_z0,sc=8,R=16;
+ const body=cells(grid(ops,R),R,sc,0,0,dark?invPal():null);
+ const halo=isBoss?'<rect x="0" y="0" width="128" height="128" fill="'+
+   (dark?"#5fbf8f":"#c8422e")+'" opacity=".12"/>':'';
+ return '<svg viewBox="0 0 128 136" shape-rendering="crispEdges" style="width:100%;overflow:visible">'+
+  halo+'<rect x="24" y="126" width="80" height="6" fill="rgba(0,0,0,.45)"/>'+body+'</svg>';
+}
+
+/* ============ マップ描画 ============ */
+function cleared(){ return isDark()?save.dark:save.cleared; }
+function unlockedTokyo(){ return cleared().length>=3; }
+function darkOpen(){ return !!save.tokyo; }
+function drawMap(){
+ const g=document.getElementById("isles"),lb=document.getElementById("labels"),
+       st=document.getElementById("stamps");
+ g.innerHTML="";lb.innerHTML="";st.innerHTML="";
+ const geo=GEO;
+ ORDER.forEach(k=>{
+   const a=AREAS[k],done=cleared().includes(k);
+   if(PIX&&PIX[k]){
+    g.insertAdjacentHTML("beforeend",
+      '<g shape-rendering="crispEdges" style="pointer-events:none">'+
+      pixRects(PIX[k],CELL,isDark()?(done?a.color:"#23232c"):(done?"#8c3222":a.color))+'</g>');
+   }
+   const p=document.createElementNS("http://www.w3.org/2000/svg","path");
+   p.setAttribute("d",geo?geo.regions[k]:PATHS[k]);
+   p.setAttribute("class","isle"+(done?" done":""));
+   p.setAttribute("fill-rule","evenodd");
+   if(PIX&&PIX[k]){
+    p.style.setProperty("--f","transparent");
+    p.style.setProperty("--fh",hexA("#f3ede0",.22));
+    p.setAttribute("stroke","none");
+   }else{
+    p.style.setProperty("--f",done?hexA("#c8422e",.34):hexA(a.color,.20));
+    p.style.setProperty("--fh",done?hexA("#c8422e",.52):hexA(a.color,.42));
+   }
+   p.setAttribute("tabindex","0"); p.setAttribute("role","button");
+   p.setAttribute("aria-label",a.name+" "+a.subject);
+   p.addEventListener("click",()=>enter(k));
+   p.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" ") enter(k); });
+   g.appendChild(p);
+   const [lx,ly]=geo?geo.label[k]:LABEL[k];
+   lb.insertAdjacentHTML("beforeend",
+     '<text class="pin-label" x="'+lx+'" y="'+ly+'" text-anchor="middle">'+a.name+'</text>'+
+     '<text class="pin-sub" x="'+lx+'" y="'+(ly+13)+'" text-anchor="middle">'+a.subject+'</text>');
+   if(done){
+     st.insertAdjacentHTML("beforeend",
+       '<g class="stamp" transform="translate('+(lx+34)+','+(ly-24)+') rotate(-12)">'+
+       '<rect x="-15" y="-15" width="30" height="30" rx="3"/>'+
+       '<text x="0" y="5" font-size="13" text-anchor="middle">済</text></g>');
+   }
+ });
+ const open=unlockedTokyo();
+ if(geo){
+   lb.insertAdjacentHTML("beforeend",
+     '<rect class="inset-frame" x="'+OBOX.x+'" y="'+OBOX.y+'" width="'+OBOX.w+'" height="'+OBOX.h+'" rx="0"/>'+
+     '<text class="inset-label" x="'+(OBOX.x+5)+'" y="'+(OBOX.y+13)+'">沖縄（九州エリア）</text>');
+ }
+ if(PIX&&PIX.tokyo){
+   g.insertAdjacentHTML("beforeend",'<g shape-rendering="crispEdges" style="pointer-events:none">'+
+     pixRects(PIX.tokyo,CELL,open?(isDark()?"#8fe0c4":"#e05a3f"):"#3a3a46")+'</g>');
+ }
+ if(geo){
+   const t=document.createElementNS("http://www.w3.org/2000/svg","path");
+   t.setAttribute("d",geo.tokyo); t.setAttribute("class","isle tokyo");
+   t.style.setProperty("--f",PIX?"transparent":(open?hexA("#c8422e",.85):hexA("#8892a8",.5)));
+   t.style.setProperty("--fh",hexA("#c8422e",1));
+   t.style.pointerEvents=open?"auto":"none";
+   if(open) t.addEventListener("click",()=>enter("tokyo"));
+   g.appendChild(t);
+ }
+ const tp=geo?geo.tokyoPin:[TOKYO.x,TOKYO.y];
+ lb.insertAdjacentHTML("beforeend",
+  '<circle id="tokyoPin" cx="'+tp[0]+'" cy="'+tp[1]+'" r="7" fill="none" stroke="'+(open?"#f3ede0":"#5a6377")+'" stroke-width="2" style="cursor:'+(open?"pointer":"not-allowed")+';pointer-events:auto"/>'+
+  '<text class="pin-label" x="'+(tp[0]+14)+'" y="'+(tp[1]+4)+'" fill="'+(open?"#f0907c":"#78839c")+'">東京'+(open?" ★":" 鍵")+'</text>');
+ const pin=document.getElementById("tokyoPin");
+ if(open) pin.addEventListener("click",()=>enter("tokyo"));
+
+ const leg=document.getElementById("legend");
+ leg.innerHTML=ORDER.map(k=>{
+   const a=AREAS[k],done=cleared().includes(k);
+   const b=save.best[(isDark()?'d_':'')+k];
+   return '<div class="lg'+(done?" done":"")+'"><b>'+a.name+' ／ '+a.subject+'</b><span>'+a.tag+'<br>'+
+     (done?(isDark()?"光を取り戻した":"御朱印 "+a.item):(b?"最高 "+b+"%":isDark()?"闇の中":"未踏"))+'</span></div>';
+ }).join("")+
+ '<div class="lg'+(unlockedTokyo()?" done":"")+'"><b>東京 ／ 五教科</b><span>'+
+ (unlockedTokyo()?(isDark()?"闇王トウキョウ、待つ":"学王トウキョウ、待つ"):(isDark()?"光 ":"御朱印 ")+cleared().length+"／3 で解放")+'</span></div>';
+}
+
+/* ============ バトル ============ */
+/* ===== 復習用：まちがえた問題の記録 ===== */
+function wrongKey(sub,mode,q){ return sub+"|"+mode+"|"+q.q; }
+function addWrong(sub,mode,q){
+ const k=wrongKey(sub,mode,q);
+ if(save.wrong.indexOf(k)<0){ save.wrong.push(k); if(save.wrong.length>300) save.wrong.shift(); }
+}
+function removeWrong(k){
+ const i=save.wrong.indexOf(k); if(i>=0) save.wrong.splice(i,1);
+}
+/* 記録された鍵から、いまの問題データを引き当てる（問題を書きかえた場合は自動で消える） */
+function reviewList(){
+ const out=[];
+ for(const k of save.wrong.slice()){
+  const p=k.split("|"); if(p.length<3) continue;
+  const sub=p[0],mode=p[1],text=p.slice(2).join("|");
+  const src=sub==="tokyo"?tokyoPool(mode):pool(sub,mode);
+  const q=src.find(x=>x.q===text);
+  if(q) out.push({key:k,sub:sub,mode:mode,q:q}); else removeWrong(k);
+ }
+ return out;
+}
+function pick(arr,n){
+ const a=arr.slice();
+ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+ return a.slice(0,n);
+}
+function enter(key){
+ SFX.sel();
+ const dark=isDark();
+ if(key==="tokyo"){
+   const src=tokyoPool(MODE);
+   if(!src.length){ alert("問題データ（questions.js）が読み込めていません。"); return; }
+   S={key:"tokyo",area:{name:(dark?"裏 東京":"東京"),subject:dark?"五教科・発展":"五教科",
+        item:dark?"夜明けの証":"日本一の証"},
+      enemies:[{name:dark?"闇王トウキョウ":"学王トウキョウ",hp:8,boss:true,final:true,art:"tokyo_final"}],
+      qs:pick(src,Math.min(src.length,24)),qi:0,ei:0,hp:5,
+      omamori:(dark?save.dark.length:save.cleared.length),
+      wrong:[],asked:0,correct:0,dark:dark};
+   bgm("boss");
+ }else{
+   const a=AREAS[key],src=pool(a.sub,MODE);
+   if(!src.length){ alert("この教科の問題が読み込めていません。"); return; }
+   S={key:key,area:a,
+      enemies:[{name:dark?darkName(a.zako[0]):a.zako[0],hp:2,art:key+"_z0"},
+               {name:dark?darkName(a.zako[1]):a.zako[1],hp:2,art:key+"_z1"},
+               {name:dark?darkName(a.zako[2]):a.zako[2],hp:2,art:key+"_z2"},
+               {name:dark?darkName(a.boss):a.boss,hp:3,boss:true,art:key+"_boss"}],
+      qs:pick(src,src.length),qi:0,ei:0,hp:5,omamori:0,
+      wrong:[],asked:0,correct:0,dark:dark};
+   bgm("battle");
+ }
+ document.getElementById("areaTitle").textContent=
+   (dark?"裏 ":"")+S.area.name+" ／ "+S.area.subject;
+ show("battle");
+ renderEnemy();
+ msg(S.enemies[0].name+" が あらわれた！");
+ ask();
+}
+function enterReview(){
+ const list=reviewList();
+ if(!list.length){ alert("まちがえた問題はまだない。"); return; }
+ SFX.sel(); stopBgm();
+ S={key:"review",review:true,dark:isDark(),
+    area:{name:"復習",subject:"まちがえた問題"},
+    items:pick(list,list.length),qs:[],qi:0,hp:99,omamori:0,
+    wrong:[],asked:0,correct:0,fixed:0};
+ S.qs=S.items.map(x=>x.q);
+ document.getElementById("areaTitle").textContent="復習 ／ まちがえた問題 "+list.length+"問";
+ document.querySelector(".field").style.display="none";
+ show("battle");
+ msg("まちがえた問題をもう一度。正解できたら記録から消える。");
+ ask();
+}
+function renderEnemy(){
+ const e=S.enemies[S.ei];
+ document.getElementById("ename").textContent=e.name;
+ const st=document.getElementById("stage");
+ const skey=S.key+(S.dark?"_d":"");
+ if(st&&st.dataset.key!==skey){
+  st.dataset.key=skey;
+  st.innerHTML='<svg viewBox="0 0 320 192" preserveAspectRatio="xMidYMid slice" '+
+   'shape-rendering="crispEdges">'+stageSVG(S.key,40,24,8,S.dark)+'</svg>';
+ }
+ const box=document.getElementById("enemy");
+ box.className=e.boss?"boss":"";
+ box.innerHTML=drawArt(e.art,!!e.boss,S.dark);
+ const bar=document.getElementById("ehp");
+ bar.innerHTML=Array.from({length:e.hp0||e.hp},(_,i)=>'<i class="'+(i<e.hp?"":"off")+'"></i>').join("");
+ if(!e.hp0) e.hp0=e.hp;
+ if(e.boss&&!S.bossBgm){ S.bossBgm=true; bgm(e.final?"boss":"boss"); }
+}
+function updHud(){
+ document.getElementById("hearts").innerHTML=
+   Array.from({length:5},(_,i)=>'<i class="'+(i<S.hp?"":"off")+'"></i>').join("");
+ document.getElementById("omamori").textContent=S.omamori>0?"お守り ×"+S.omamori+"（まちがい1回を打ち消す）":"";
+ document.getElementById("progress").textContent="敵 "+(S.ei+1)+" / "+S.enemies.length+"　正答 "+S.correct+"／"+S.asked;
+}
+function msg(t){ document.getElementById("msg").innerHTML=t; }
+function ask(){
+ updHud();
+ if(S.qi>=S.qs.length){ // 問題が尽きたら再シャッフル
+   const src=S.key==="tokyo"?tokyoPool(S.dark?"dark":"light"):pool(S.area.sub,S.dark?"dark":"light");
+   S.qs=S.qs.concat(pick(src,src.length));
+ }
+ const q=S.qs[S.qi];
+ document.getElementById("qtext").textContent=q.q;
+ const box=document.getElementById("choices");
+ box.innerHTML="";
+ const marks=["ア","イ","ウ","エ"];
+ const order=pick(q.c.map((t,i)=>({t:t,i:i})),q.c.length);
+ order.forEach((o,n)=>{
+   const b=document.createElement("button");
+   b.className="ch"; b.innerHTML="<b>"+marks[n]+"</b>"+o.t;
+   b.addEventListener("click",()=>answer(o.i===q.a,q,b,order,marks));
+   box.appendChild(b);
+ });
+ document.getElementById("nextRow").style.display="none";
+}
+function answer(right,q,btn,order,marks){
+ const btns=[...document.querySelectorAll(".ch")];
+ btns.forEach((b,n)=>{ b.disabled=true; if(order[n].i===q.a) b.classList.add("right"); });
+ S.asked++;
+ if(S.review){
+   if(right){
+     S.correct++; S.fixed++; btn.classList.add("right"); SFX.ok();
+     removeWrong(S.items[S.qi].key); persist();
+     msg('<span class="ok">せいかい！</span> この問題は記録から消えた。<br><span class="note">'+q.e+'</span>');
+   }else{
+     btn.classList.add("wrong"); SFX.ng();
+     msg('<span class="ng">まだ苦手。</span>記録に残しておく。<br><span class="note">正解は「'+q.c[q.a]+'」。'+q.e+'</span>');
+     S.wrong.push(q);
+   }
+   S.qi++;
+   document.getElementById("nextRow").style.display="flex";
+   document.getElementById("nextBtn").focus();
+   return;
+ }
+ const e=S.enemies[S.ei];
+ if(right){
+   S.correct++; btn.classList.add("right"); SFX.ok(); SFX.hit();
+   e.hp--;
+   renderEnemy();
+   const el=document.getElementById("enemy"); el.classList.add("hit");
+   setTimeout(()=>el.classList.remove("hit"),320);
+   msg('<span class="ok">せいかい！</span> '+e.name+' に こうげき！<br><span class="note">'+q.e+'</span>');
+ }else{
+   btn.classList.add("wrong");
+   if(S.omamori>0){
+     S.omamori--; SFX.ng();
+     msg('<span class="ng">ざんねん。</span>お守りが身代わりになった！<br><span class="note">正解は「'+q.c[q.a]+'」。'+q.e+'</span>');
+   }else{
+     S.hp--; SFX.ng();
+     msg('<span class="ng">ざんねん。</span>'+e.name+' の こうげき！<br><span class="note">正解は「'+q.c[q.a]+'」。'+q.e+'</span>');
+   }
+   S.wrong.push(q);
+   addWrong(S.key==="tokyo"?"tokyo":S.area.sub,S.dark?"dark":"light",q);
+   persist();
+ }
+ S.qi++; updHud();
+ document.getElementById("nextRow").style.display="flex";
+ document.getElementById("nextBtn").focus();
+}
+function next(){
+ if(S.review){
+   if(S.qi>=S.qs.length){ finish(true); return; }
+   ask(); return;
+ }
+ const e=S.enemies[S.ei];
+ if(S.hp<=0){ finish(false); return; }
+ if(e.hp<=0){
+   SFX.down();
+   const el=document.getElementById("enemy"); el.classList.add("dead");
+   if(S.ei>=S.enemies.length-1){ setTimeout(()=>finish(true),520); return; }
+   setTimeout(()=>{
+     S.ei++; renderEnemy(); msg(S.enemies[S.ei].name+" が あらわれた！");
+     if(S.enemies[S.ei].boss) bgm("boss");
+     ask();
+   },520);
+   document.getElementById("nextRow").style.display="none";
+   return;
+ }
+ ask();
+}
+async function finish(win){
+ stopBgm();
+ const rate=S.asked?Math.round(S.correct/S.asked*100):0;
+ if(S.review){
+   document.querySelector(".field").style.display="";
+   SFX.clear(); await persist();
+   document.getElementById("rTitle").textContent="復習おわり";
+   document.getElementById("rSub").textContent=
+     S.fixed+"問を記録から消した。残り "+save.wrong.length+"問。正答率 "+rate+"％。";
+   document.getElementById("rStamps").innerHTML="";
+   const rv=document.getElementById("rReview");
+   rv.innerHTML=S.wrong.length
+     ?'<h3>まだ残っている問題（'+S.wrong.length+'問）</h3><ul style="padding-left:18px;margin:0">'+
+      S.wrong.map(q=>'<li>'+q.q+'<br><em>正解：'+q.c[q.a]+'</em><br><span class="note">'+q.e+'</span></li>').join("")+'</ul>'
+     :'<h3>復習</h3><p class="note" style="margin:0">今回の問題はすべて正解。</p>';
+   show("result");
+   return;
+ }
+ if(win){
+   SFX.clear();
+   const dk=S.dark;
+   const list=dk?save.dark:save.cleared;
+   if(S.key!=="tokyo"&&!list.includes(S.key)) list.push(S.key);
+   const bk=(dk?"d_":"")+S.key, b=save.best[bk]||0; if(rate>b) save.best[bk]=rate;
+   if(S.key==="tokyo"){ if(dk) save.darkTokyo=true; else save.tokyo=true; }
+   await persist();
+ }else SFX.over();
+
+ document.getElementById("rTitle").textContent=
+   win?(S.key==="tokyo"?"日本一周、成る":S.area.name+" 制覇！"):"力つきた…";
+ document.getElementById("rSub").textContent=
+   win?(S.key==="tokyo"
+      ?"学王トウキョウを倒した。五教科の御朱印がすべてそろった。"
+      :"「"+S.area.item+"」を手に入れた。正答率 "+rate+"％。")
+     :"HPが0になった。同じ地に、いつでも挑み直せる。正答率 "+rate+"％。";
+
+ const stp=document.getElementById("rStamps");
+ stp.innerHTML=ORDER.map(k=>{
+   const a=AREAS[k],got=save.cleared.includes(k);
+   return '<div class="st'+(got?" got":"")+'"><b class="mincho">'+(got?"印":"未")+'</b>'+a.name+'<br>'+(got?a.item:a.subject)+'</div>';
+ }).join("");
+
+ const rv=document.getElementById("rReview");
+ if(S.wrong.length){
+   rv.innerHTML='<h3>まちがえた問題の復習（'+S.wrong.length+'問）</h3><ul style="padding-left:18px;margin:0">'+
+     S.wrong.map(q=>'<li>'+q.q+'<br><em>正解：'+q.c[q.a]+'</em><br><span class="note">'+q.e+'</span></li>').join("")+'</ul>';
+ }else{
+   rv.innerHTML='<h3>復習</h3><p class="note" style="margin:0">全問正解。まちがえた問題はありません。</p>';
+ }
+ show("result");
+}
+
+/* ============ 起動 ============ */
+function drawZukan(){
+ const g=document.getElementById("zgrid");
+ let h="";
+ ORDER.forEach(k=>{
+   const a=AREAS[k];
+   a.zako.forEach((n,i)=>{
+     h+='<div class="zcard">'+drawArt(k+"_z"+i,false)+'<b>'+n+'</b><span>'+a.name+'／'+a.subject+'</span></div>';
+   });
+   h+='<div class="zcard boss">'+drawArt(k+"_boss",false)+'<b>'+a.boss+'</b><span>'+a.name+' ボス</span></div>';
+ });
+ h+='<div class="zcard boss">'+drawArt("tokyo_final",false)+'<b>学王トウキョウ</b><span>東京 ラスボス</span></div>';
+ if(darkOpen()){
+   ORDER.forEach(k=>{
+     const a=AREAS[k];
+     a.zako.forEach((n,i)=>{
+       h+='<div class="zcard">'+drawArt(k+"_z"+i,false,true)+'<b>'+darkName(n)+'</b><span>裏 '+a.name+'</span></div>';
+     });
+     h+='<div class="zcard boss">'+drawArt(k+"_boss",false,true)+'<b>'+darkName(a.boss)+'</b><span>裏 '+a.name+' ボス</span></div>';
+   });
+   h+='<div class="zcard boss">'+drawArt("tokyo_final",false,true)+'<b>闇王トウキョウ</b><span>裏 東京</span></div>';
+ }
+ g.innerHTML=h;
+}
+document.getElementById("zukanBtn").addEventListener("click",()=>{ drawZukan(); show("zukan"); });
+document.getElementById("zBack").addEventListener("click",()=>show("title"));
+function setSide(mode){
+ MODE=mode;
+ document.body.classList.toggle("dark",isDark());
+ const b=document.getElementById("mSide");
+ if(b) b.textContent=isDark()?"表へ":"裏へ";
+ const h=document.querySelector("#map .bar h2");
+ if(h) h.textContent=isDark()?"裏 日本列島マップ":"日本列島マップ";
+}
+function toMap(){
+ const f=document.querySelector(".field"); if(f) f.style.display="";
+ setSide(MODE); drawMap(); show("map"); bgm("map");
+ const rb=document.getElementById("mReview");
+ if(rb) rb.textContent="復習 "+save.wrong.length;
+}
+document.getElementById("startBtn").addEventListener("click",()=>{ ac(); toMap(); });
+document.getElementById("mTitle").addEventListener("click",()=>{ stopBgm(); show("title"); });
+document.getElementById("mReview").addEventListener("click",enterReview);
+document.getElementById("mSide").addEventListener("click",()=>{
+ if(!isDark()&&!darkOpen()){
+   alert("裏面は、表面で東京の学王トウキョウを倒すと開かれる。");
+   return;
+ }
+ SFX.sel(); setSide(isDark()?"light":"dark"); drawMap();
+});
+document.getElementById("rBack").addEventListener("click",toMap);
+document.getElementById("bBack").addEventListener("click",()=>{ stopBgm(); toMap(); });
+document.getElementById("nextBtn").addEventListener("click",next);
+document.getElementById("sndBtn").addEventListener("click",toggleSound);
+document.getElementById("mSnd").addEventListener("click",toggleSound);
+document.getElementById("bSnd").addEventListener("click",toggleSound);
+function fs(){
+ if(!document.fullscreenElement){ document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); }
+ else document.exitFullscreen();
+}
+document.getElementById("fsBtn").addEventListener("click",fs);
+document.getElementById("mFs").addEventListener("click",fs);
+document.getElementById("updBtn").addEventListener("click",async()=>{
+ const b=document.getElementById("updBtn");
+ b.textContent="更新中…";
+ try{
+   if(window.caches){
+     const keys=await caches.keys();
+     await Promise.all(keys.map(k=>caches.delete(k)));
+   }
+   if(navigator.serviceWorker){
+     const rs=await navigator.serviceWorker.getRegistrations();
+     await Promise.all(rs.map(r=>r.unregister()));
+   }
+ }catch(e){}
+ location.replace(location.pathname+"?fresh="+Date.now());
+});
+document.getElementById("resetBtn").addEventListener("click",async()=>{
+ save={cleared:[],best:{},dark:[],tokyo:false,darkTokyo:false,wrong:[]}; MODE="light"; await persist(); drawMap();
+ document.getElementById("resetBtn").textContent="記録を消しました";
+ setTimeout(()=>document.getElementById("resetBtn").textContent="記録を消す",1600);
+});
+document.addEventListener("keydown",e=>{
+ if(cur==="battle"&&e.key==="Enter"&&document.getElementById("nextRow").style.display!=="none") next();
+});
+function buildPix(){ try{ PIX=pixelMap(CELL); }catch(e){ PIX=null; } }
+if("serviceWorker" in navigator){
+ window.addEventListener("load",()=>{
+   navigator.serviceWorker.register("sw.js").catch(()=>{ /* 未対応環境では何もしない */ });
+ });
+}
+load().then(()=>{
+ buildPix();
+ drawMap();
+ loadGeo().then(ok=>{
+   document.getElementById("loading").classList.add("off");
+   const cr=document.getElementById("credit");
+   if(ok){ buildPix(); drawMap(); }
+   else cr.innerHTML="地図データを取得できないため、内蔵の簡易マップをドット化して表示しています。<br>"+
+     "取得できなかった理由： "+(GEOLOG.length?GEOLOG.join(" ／ "):"不明")+
+     "<br>（この表示が出るのは、プレビュー枠やネットワーク制限で外部通信が遮断されている場合です）";
+ });
+});
+</script>
+
+
+</body>
+</html>

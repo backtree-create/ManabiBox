@@ -15,6 +15,8 @@
   var LOCK_MS = 30000;                   // 誤答後、同じ国に再挑戦できるまで
   var QUIZ_SEC = 20;                     // 1問の制限時間
   var MAP_URLS = [
+    '../lib/world-atlas/countries-50m.json',
+    '../lib/world-atlas/countries-110m.json',
     'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json',
     'https://unpkg.com/world-atlas@2/countries-50m.json',
     'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'

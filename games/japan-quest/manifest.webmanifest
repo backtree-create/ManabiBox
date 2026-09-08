@@ -1,0 +1,32 @@
+{
+  "name": "日本一周クエスト 〜五教科の御朱印〜",
+  "short_name": "日本一周クエスト",
+  "description": "中学5教科を日本一周しながら学ぶドット絵RPG。基本500問・発展250問を収録。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1020",
+  "theme_color": "#101a33",
+  "icons": [
+    {
+      "src": "./icon-192-v2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512-maskable-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

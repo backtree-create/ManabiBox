@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<script src="../../config.js"></script>
+<script src="../../hub-progress.js"></script>
+<script src="../../manabi-connect.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>熟語の迷宮 ｜ 中学英熟語のダンジョンRPG</title>
+<meta name="description" content="動詞の石と前置詞の宝珠を組み合わせて英熟語を作り、扉を開いて迷宮を進む。中学範囲の熟語164語を収録。">
+<meta name="theme-color" content="#12101A">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="熟語の迷宮">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="mobile-web-app-capable" content="yes">
+<meta property="og:title" content="熟語の迷宮">
+<meta property="og:description" content="英熟語をパーツから合成して扉を開く、中学生向けダンジョンRPG。">
+<meta property="og:image" content="icon-512.png">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+  /* 高さは％の連鎖でつなぐ（vh / dvh は端末により当てにならない） */
+  html, body { height:100%; margin:0; padding:0; background:#0C0A12; }
+  body {
+    font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    color:#D6CDE6; -webkit-text-size-adjust:100%;
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+    overscroll-behavior-y:contain;
+  }
+  #root { min-height:100%; }
+  html.is-app body { overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  html.is-app #root {
+    padding:env(safe-area-inset-top) env(safe-area-inset-right)
+            env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  /* 明朝はゲーム側の指定に Noto Serif JP を足す */
+  .lab { --mi:"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif !important; }
+
+  #fsbtn {
+    position:fixed; right:10px; top:calc(10px + env(safe-area-inset-top)); z-index:60;
+    width:38px; height:38px; line-height:1; font-size:17px; cursor:pointer;
+    color:#D9A94A; background:#1B1626D9; border:1px solid #39304A; border-radius:3px;
+  }
+  #fsbtn:hover { border-color:#D9A94A; }
+  html.is-app #fsbtn { display:none; }
+
+  #boot { display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:16px; min-height:70vh; text-align:center; }
+  #boot img { width:92px; height:92px; border-radius:20px; }
+  #boot p { font-size:13px; letter-spacing:.22em; color:#8A7FA3; margin:0; }
+  #boot .bar { width:180px; height:2px; background:#241F2E; overflow:hidden; }
+  #boot .bar i { display:block; height:100%; width:38%; background:#D9A94A;
+    animation:load 1.2s ease-in-out infinite alternate; }
+  @keyframes load { from{transform:translateX(-60%)} to{transform:translateX(220%)} }
+  #err { display:none; max-width:620px; margin:40px auto; padding:16px 20px; line-height:1.9;
+    background:#1B1626; border:1px solid #D9A94A; font-size:13px; }
+</style>
+</head>
+<body>
+
+<button id="fsbtn" title="全画面表示">⛶</button>
+
+<div id="root">
+  <div id="boot">
+    <img src="icon-192.png" alt="">
+    <p>迷宮の扉をひらいています…</p>
+    <div class="bar"><i></i></div>
+  </div>
+</div>
+
+<div id="err">
+  <b>読みこみに失敗しました。</b><br>
+  ネットワークにつながっているか確認してください。パソコンのフォルダから直接
+  <code>index.html</code> を開いた場合は動きません。GitHub Pages の URL から開いてください。
+</div>
+
+<script>
+  /* ホーム画面から起動 / 全画面中かどうか */
+  function isAppMode() {
+    if (navigator.standalone === true) return true;
+    if (document.fullscreenElement || document.webkitFullscreenElement) return true;
+    if (window.matchMedia) {
+      var m = ["standalone", "fullscreen", "minimal-ui"];
+      for (var i = 0; i < m.length; i++) {
+        try { if (matchMedia("(display-mode: " + m[i] + ")").matches) return true; } catch (e) {}
+      }
+    }
+    return false;
+  }
+  function mark() { document.documentElement.classList.toggle("is-app", isAppMode()); }
+  mark();
+  window.addEventListener("resize", mark);
+  window.addEventListener("pageshow", mark);
+  window.addEventListener("orientationchange", function () { setTimeout(mark, 300); });
+  document.addEventListener("fullscreenchange", mark);
+  document.addEventListener("webkitfullscreenchange", mark);
+
+  var fs = document.getElementById("fsbtn");
+  if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) fs.style.display = "none";
+  fs.addEventListener("click", function () {
+    var el = document.documentElement;
+    try {
+      if (!(document.fullscreenElement || document.webkitFullscreenElement)) {
+        (el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen).call(el);
+      } else {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      }
+    } catch (e) {}
+  });
+
+  setTimeout(function () {
+    var boot = document.getElementById("boot");
+    if (boot && document.body.contains(boot)) document.getElementById("err").style.display = "block";
+  }, 10000);
+</script>
+
+<script src="../../lib/react/react.production.min.js" crossorigin></script>
+<script src="../../lib/react/react-dom.production.min.js" crossorigin></script>
+<script src="../../lib/babel/babel.min.js" crossorigin></script>
+<script type="text/babel" src="app.jsx" data-presets="react"></script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
+</script>
+
+</body>
+</html>

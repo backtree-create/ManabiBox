@@ -1,8 +1,13 @@
 /* まなびの基板 — 接続スクリプト
 
    各ゲームの <head> に、この3行をこの順で入れます。
-   （URL の「ManabiBox」の部分は、ハブを置いたリポジトリ名に直してください）
 
+   ・ManabiBox の games/○○/ に置いたゲーム（相対パス。リポジトリ名を変えても直さなくてよい）
+     <script src="../../config.js"></script>
+     <script src="../../hub-progress.js"></script>
+     <script src="../../manabi-connect.js"></script>
+
+   ・別リポジトリで公開しているゲーム（絶対URL。「ManabiBox」はハブのリポジトリ名）
      <script src="https://backtree-create.github.io/ManabiBox/config.js"></script>
      <script src="https://backtree-create.github.io/ManabiBox/hub-progress.js"></script>
      <script src="https://backtree-create.github.io/ManabiBox/manabi-connect.js"></script>

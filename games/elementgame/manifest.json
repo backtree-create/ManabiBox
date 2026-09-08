@@ -1,0 +1,32 @@
+{
+  "name": "化学モデル対戦 エレメントマスター3D",
+  "short_name": "エレメントマスター3D",
+  "description": "原子やイオンを集めて分子や塩を合成し、高得点を目指す化学対戦ゲーム",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0c1220",
+  "theme_color": "#0c1220",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

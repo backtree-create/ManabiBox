@@ -1,0 +1,18 @@
+{
+  "name": "熟語の迷宮",
+  "short_name": "熟語の迷宮",
+  "description": "動詞の石と前置詞の宝珠を組み合わせて英熟語を作り、扉を開いて迷宮を進む中学生向けRPG。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0C0A12",
+  "theme_color": "#12101A",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

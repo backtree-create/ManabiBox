@@ -1,0 +1,20 @@
+{
+  "name": "サイエンスクエスト ― 観測塔",
+  "short_name": "サイエンスクエスト",
+  "description": "中学理科を武器に観測塔の五層を踏破する、ブラウザだけで遊べる学習RPG。物理・化学・生物・地学の全1500問。",
+  "lang": "ja",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#080611",
+  "theme_color": "#080611",
+  "categories": ["education", "games"],
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

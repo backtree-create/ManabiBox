@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<script src="../../config.js"></script>
+<script src="../../hub-progress.js"></script>
+<script src="../../manabi-connect.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>英語でGO! ｜ 小中学校の英単語スペリングゲーム</title>
+<meta name="description" content="日本語の意味を見て英単語のつづりを制限時間内に打ちこむ、小中学校向けの英単語ゲームです。">
+<meta name="theme-color" content="#150C2B">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!-- iPad / iPhone をホーム画面から起動したときにブラウザのバーを消す -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="英語でGO!">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="mobile-web-app-capable" content="yes">
+<meta property="og:title" content="英語でGO!">
+<meta property="og:description" content="小中学校の英単語2300語からランダム出題。制限時間内につづりを打ちこもう。">
+<meta property="og:image" content="icon-512.png">
+<meta property="og:type" content="website">
+<style>
+  /* 高さは「％の連鎖」でつなぐ。vh / dvh は端末によって当てにならないため使わない */
+  html, body { height:100%; margin:0; padding:0; background:#150C2B; }
+  body {
+    font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Yu Gothic UI","Noto Sans JP",sans-serif;
+    color:#fff; -webkit-text-size-adjust:100%; overscroll-behavior:none;
+  }
+  #root {
+    box-sizing:border-box; max-width:1000px; margin:0 auto; padding:12px;
+    min-height:100%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  /* ホーム画面から起動したとき（アプリ表示）は余白ゼロ・画面いっぱい */
+  html.is-app body { overflow:hidden; position:fixed; width:100%; }
+  html.is-app #root {
+    max-width:none; width:100%; height:100%; min-height:0;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right)
+            env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  #boot {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; min-height:60vh; text-align:center;
+  }
+  #boot img { width:96px; height:96px; border-radius:22px; }
+  #boot p { font-weight:800; font-size:14px; color:#C9BEEA; margin:0; }
+  #boot .bar { width:180px; height:8px; border-radius:999px; background:#2A1B45; overflow:hidden; }
+  #boot .bar i { display:block; height:100%; width:40%; background:#FFD43B; border-radius:999px;
+    animation:load 1.1s ease-in-out infinite alternate; }
+  @keyframes load { from{transform:translateX(-60%)} to{transform:translateX(220%)} }
+  #err { display:none; max-width:640px; margin:40px auto; padding:16px 20px; line-height:1.9;
+    background:#2A1B45; border:3px solid #FFD43B; border-radius:14px; font-size:13px; }
+</style>
+</head>
+<body>
+
+<div id="root">
+  <div id="boot">
+    <img src="icon-192.png" alt="">
+    <p>読みこみ中…</p>
+    <div class="bar"><i></i></div>
+  </div>
+</div>
+
+<div id="err">
+  <b>読みこみに失敗しました。</b><br>
+  ネットワークにつながっているか確認してください。パソコンのフォルダから直接
+  <code>index.html</code> を開いた場合は動きません。GitHub Pages の URL から開いてください。
+</div>
+
+<script>
+  /* --- アプリ表示（ホーム画面から起動 / 全画面API）かどうかを判定 --- */
+  function isAppMode() {
+    if (navigator.standalone === true) return true;                 // iOS ホーム画面
+    if (document.fullscreenElement || document.webkitFullscreenElement) return true;
+    if (window.matchMedia) {
+      var m = ["standalone", "fullscreen", "minimal-ui"];
+      for (var i = 0; i < m.length; i++) {
+        try { if (matchMedia("(display-mode: " + m[i] + ")").matches) return true; } catch (e) {}
+      }
+    }
+    return false;
+  }
+  function markAppMode() {
+    document.documentElement.classList.toggle("is-app", isAppMode());
+  }
+  /* 画面の実寸。0 や極端に小さい値が返ることがあるので必ず下限を設ける */
+  function setViewportHeight() {
+    var h = window.innerHeight;
+    if (window.visualViewport && window.visualViewport.height > 0) h = window.visualViewport.height;
+    if (!h || h < 240) h = window.innerHeight || document.documentElement.clientHeight || 480;
+    document.documentElement.style.setProperty("--appvh", Math.round(h) + "px");
+  }
+  function refresh() { markAppMode(); setViewportHeight(); }
+  refresh();
+  window.addEventListener("resize", refresh);
+  window.addEventListener("pageshow", refresh);
+  window.addEventListener("orientationchange", function () { setTimeout(refresh, 300); });
+  document.addEventListener("fullscreenchange", refresh);
+  document.addEventListener("webkitfullscreenchange", refresh);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", setViewportHeight);
+
+  /* iOS のホーム画面起動では上下スワイプでページごと動くのを止める */
+  document.addEventListener("touchmove", function (e) {
+    if (document.documentElement.classList.contains("is-app") && e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+
+  /* 10秒たっても起動しなければ案内を出す */
+  setTimeout(function () {
+    var boot = document.getElementById("boot");
+    if (boot && document.body.contains(boot)) {
+      document.getElementById("err").style.display = "block";
+    }
+  }, 10000);
+</script>
+
+<script src="../../lib/react/react.production.min.js" crossorigin></script>
+<script src="../../lib/react/react-dom.production.min.js" crossorigin></script>
+<script src="../../lib/babel/babel.min.js" crossorigin></script>
+<script type="text/babel" src="app.jsx" data-presets="react"></script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
+</script>
+  
+</body>
+</html>

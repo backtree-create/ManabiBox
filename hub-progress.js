@@ -85,11 +85,39 @@
 
   /* ---- ゲーム一覧 ------------------------------------------ */
 
+  /* 別リポジトリで公開していたころの URL → ManabiBox 内の置き場所。
+     スプレッドシートや控えに古い URL が残っていても、新しい場所へ案内します。
+     （manage.html で一覧を保存し直せば、この表は使われなくなります） */
+  var MOVED = {
+    'Resque_Japn':          'games/japan-quest/',
+    'Science_Quest':        'games/science-quest/',
+    'elementgame':          'games/elementgame/',
+    'RealMoneySurvival.Web':'games/money-survival/',
+    'English_de_GO':        'games/english-go/',
+    'Idiom_Labyrinth':      'games/idiom-dungeon/',
+    'stone-quest':          'games/stone-quest/',
+    'fitness_dungeon':      'games/fitness-dungeon/'
+  };
+  function hubBase() {
+    try {
+      var list = document.getElementsByTagName('script');
+      for (var i = list.length - 1; i >= 0; i--) {
+        if ((list[i].src || '').indexOf('hub-progress.js') >= 0) return list[i].src.replace(/[^\/]*$/, '');
+      }
+    } catch (e) {}
+    return '';
+  }
+  function migrateFile(file) {
+    var m = /^https?:\/\/backtree-create\.github\.io\/([^\/?#]+)\/?(?:index\.html)?(?:[?#].*)?$/.exec(String(file || ''));
+    if (!m || !MOVED[m[1]]) return file;
+    return (hubBase() || 'https://backtree-create.github.io/ManabiBox/') + MOVED[m[1]];
+  }
+
   function normalize(list) {
     return (list || []).filter(function (a) { return a && a.key && a.name; }).map(function (a) {
       return {
         key: String(a.key), name: String(a.name),
-        subject: a.subject || '', file: a.file || '',
+        subject: a.subject || '', file: migrateFile(a.file || ''),
         desc: a.desc || '', unit: a.unit || 'ステージ',
         total: num(a.total, 1) || 1,
         color: a.color || '#8B7CFF', icon: a.icon || 'star'
