@@ -55,6 +55,8 @@
       padding: 0;
       font-family: var(--main-font);
       user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
 
     body {
@@ -65,9 +67,18 @@
       background-attachment: fixed;
       color: #2c3e50;
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
+      overscroll-behavior: none;
     }
+
+    /* iOS Safari: ダブルタップ拡大を抑止し、タップ操作を即時に反応させる */
+    button, .model-chip, .tab-btn, .difficulty-card, .online-choice-card, .modal-overlay {
+      touch-action: manipulation;
+    }
+    /* オンライン対戦の合言葉入力はテキスト選択を許可 */
+    input { user-select: text; -webkit-user-select: text; }
 
     /* ==================== 共通アニメーション定義 ==================== */
     @keyframes fadeInUp {
@@ -222,9 +233,11 @@
       top: 2px;
     }
 
-    .tab-btn:hover {
-      background: #cddaea;
-      transform: translateY(-2px);
+    @media (hover: hover) {
+      .tab-btn:hover {
+        background: #cddaea;
+        transform: translateY(-2px);
+      }
     }
 
     .tab-btn.active {
@@ -266,10 +279,12 @@
       background: #f8fafc;
     }
 
-    .difficulty-card:hover {
-      border-color: #3498db;
-      transform: translateY(-3px) scale(1.015);
-      box-shadow: 0 10px 20px rgba(52, 152, 219, 0.18);
+    @media (hover: hover) {
+      .difficulty-card:hover {
+        border-color: #3498db;
+        transform: translateY(-3px) scale(1.015);
+        box-shadow: 0 10px 20px rgba(52, 152, 219, 0.18);
+      }
     }
 
     .difficulty-card.selected {
@@ -318,10 +333,12 @@
       transition: all 0.2s;
       background: #f8fafc;
     }
-    .online-choice-card:hover {
-      border-color: #3498db;
-      transform: translateY(-3px) scale(1.015);
-      box-shadow: 0 10px 20px rgba(52, 152, 219, 0.18);
+    @media (hover: hover) {
+      .online-choice-card:hover {
+        border-color: #3498db;
+        transform: translateY(-3px) scale(1.015);
+        box-shadow: 0 10px 20px rgba(52, 152, 219, 0.18);
+      }
     }
     .online-choice-card.selected {
       border-color: #16a085;
@@ -392,10 +409,12 @@
       transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
       animation: fadeInUp 0.3s ease both;
     }
-    .recipe-card:hover {
-      transform: translateY(-3px);
-      border-color: #3498db;
-      box-shadow: 0 8px 16px rgba(52, 152, 219, 0.15);
+    @media (hover: hover) {
+      .recipe-card:hover {
+        transform: translateY(-3px);
+        border-color: #3498db;
+        box-shadow: 0 8px 16px rgba(52, 152, 219, 0.15);
+      }
     }
 
     .recipe-card-header {
@@ -438,6 +457,7 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      min-height: 100dvh;
       position: relative;
       background:
         radial-gradient(circle at 12% 8%, rgba(90, 222, 255, 0.10) 0%, transparent 40%),
@@ -487,10 +507,12 @@
       box-shadow: 0 4px 16px rgba(0,0,0,0.35);
       transition: transform 0.18s var(--ease-game), background 0.18s, box-shadow 0.18s;
     }
-    #global-home-btn:hover {
-      transform: translateY(-2px);
-      background: rgba(30, 36, 58, 0.88);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.45), 0 0 0 1px var(--neon-cyan) inset;
+    @media (hover: hover) {
+      #global-home-btn:hover {
+        transform: translateY(-2px);
+        background: rgba(30, 36, 58, 0.88);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.45), 0 0 0 1px var(--neon-cyan) inset;
+      }
     }
     #global-home-btn:active { transform: translateY(0) scale(0.97); }
     #global-home-btn.show { display: inline-flex; animation: fadeInUp 0.3s ease both; }
@@ -501,7 +523,8 @@
       -webkit-backdrop-filter: blur(14px);
       color: white;
       padding: 14px 22px;
-      padding-right: 200px; /* 常時表示のホームボタン(position:fixed)と重ならないよう余白を確保 */
+      padding-right: 180px; /* 常時表示のホームボタン(position:fixed)と重ならないよう余白を確保 */
+      padding-left: 120px; /* 左上のハブ復帰ボタン（まなびの基板, position:fixed）とタイトルが重ならないよう余白を確保 */
       display: flex;
       flex-wrap: wrap;
       row-gap: 10px;
@@ -606,6 +629,8 @@
       overflow-x: auto;
       border: 1px solid var(--glass-border);
     }
+    .used-recipes-bar strong,
+    .used-recipes-bar #used-recipes-list { flex-shrink: 0; white-space: nowrap; }
     .used-tag {
       background: linear-gradient(135deg, #e74c3c, #c0392b);
       color: white;
@@ -702,10 +727,12 @@
       outline: none;
       animation: chipPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
-    .model-chip:hover, .model-chip:focus {
-      transform: scale(1.12) translateY(-2px);
-      box-shadow: 0 10px 18px rgba(0,0,0,0.45), inset -2px -2px 6px rgba(0,0,0,0.5), inset 2px 2px 8px rgba(255,255,255,0.9);
-      z-index: 1000; /* ホバー時に他のチップより前面に出す */
+    @media (hover: hover) {
+      .model-chip:hover, .model-chip:focus {
+        transform: scale(1.12) translateY(-2px);
+        box-shadow: 0 10px 18px rgba(0,0,0,0.45), inset -2px -2px 6px rgba(0,0,0,0.5), inset 2px 2px 8px rgba(255,255,255,0.9);
+        z-index: 1000; /* ホバー時に他のチップより前面に出す */
+      }
     }
     .model-chip:active {
       transform: scale(0.94);
@@ -738,7 +765,8 @@
     }
 
     .model-chip.hide-name:hover::after,
-    .model-chip.hide-name:focus::after {
+    .model-chip.hide-name:focus::after,
+    .model-chip.hide-name.show-tip::after {
       opacity: 1;
     }
 
@@ -827,7 +855,9 @@
       box-shadow: 0 4px 0 rgba(0,0,0,0.15);
       position: relative;
     }
-    .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 6px 14px rgba(0,0,0,0.25); }
+    @media (hover: hover) {
+      .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 6px 14px rgba(0,0,0,0.25); }
+    }
     .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.15); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.3); }
     .btn-primary { background: linear-gradient(135deg, #4aa8e8, #2980b9); color: white; }
@@ -835,7 +865,7 @@
     .btn-warning { background: linear-gradient(135deg, #f9d423, #f1c40f); color: #3a2e00; }
     .btn-info { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; }
     .btn-secondary { background: linear-gradient(135deg, #aab3bd, #8b95a3); color: white; }
-    .btn-3d { background: linear-gradient(135deg, #a569c8, #8e44ad); color: white; padding: 4px 10px; font-size: 0.8rem; border-radius: 6px; box-shadow: none; }
+    .btn-3d { background: linear-gradient(135deg, #a569c8, #8e44ad); color: white; padding: 8px 16px; min-height: 40px; font-size: 0.85rem; border-radius: 8px; box-shadow: none; }
 
     .btn-battle {
       background: linear-gradient(135deg, #ff9d4d, #d35400);
@@ -857,7 +887,7 @@
     /* モーダルオーバーレイ共通 */
     .modal-overlay {
       position: fixed;
-      top: 0; left: 0; width: 100vw; height: 100vh;
+      top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
       background: rgba(4, 6, 14, 0.6);
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
@@ -1103,6 +1133,19 @@
       transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
     }
 
+    /* 高さが低い画面（タブレット横向き等）では余白を詰めて1画面に収める */
+    @media (max-height: 860px) {
+      main { padding: 10px 15px; gap: 10px; }
+      .status-bar { padding: 10px; }
+      .player-panel { padding: 14px 18px; gap: 8px; }
+      .created-list { max-height: 120px; }
+    }
+
+    /* タブレット縦向き程度の幅ではヘッダーのタイトルを少し小さくして折り返しを減らす */
+    @media (max-width: 900px) {
+      header h2 { font-size: 1.2rem; }
+    }
+
     /* ==================== スマートフォン向けレイアウト ==================== */
     @media (max-width: 760px) {
       body {
@@ -1127,6 +1170,7 @@
         gap: 8px;
         padding: 10px 14px;
         padding-top: calc(10px + env(safe-area-inset-top));
+        padding-left: 120px;
       }
       header h2 { font-size: 0.95rem; }
       .game-info { gap: 8px; flex-wrap: wrap; }
@@ -1188,8 +1232,8 @@
     }
   </style>
   <script src="../../config.js"></script>
-　<script src="../../hub-progress.js"></script>
-　<script src="../../manabi-connect.js"></script>
+  <script src="../../hub-progress.js"></script>
+  <script src="../../manabi-connect.js"></script>
 </head>
 <body>
 
@@ -1247,7 +1291,8 @@
 
         <div id="online-join-input-area" style="display:none; text-align:center; margin-bottom:15px;">
           <input type="text" id="online-room-code-input" maxlength="5" placeholder="コードを入力 (例: A3F9K)"
-            style="font-size:1.3rem; letter-spacing:3px; text-align:center; text-transform:uppercase; padding:12px 16px; border-radius:12px; border:2px solid #cbd5e0; width:220px; max-width:80%;">
+            autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+            style="font-size:1.3rem; letter-spacing:3px; text-align:center; text-transform:uppercase; padding:12px 16px; border-radius:12px; border:2px solid #cbd5e0; width:300px; max-width:90%;">
         </div>
 
         <div style="text-align: center;">
@@ -2086,6 +2131,28 @@
       updateHighScoreDisplay();
     };
 
+    // --- タッチ端末向け: 名前非表示チップを長押しするとツールチップを表示（選択は発生させない） ---
+    function attachLongPressTip(chip) {
+      let timer = null;
+      chip.addEventListener('touchstart', () => {
+        chip.tipHeld = false;
+        clearTimeout(timer);
+        timer = setTimeout(() => { chip.tipHeld = true; chip.classList.add('show-tip'); }, 450);
+      }, { passive: true });
+      const end = () => {
+        clearTimeout(timer);
+        if (chip.tipHeld) setTimeout(() => { chip.classList.remove('show-tip'); chip.tipHeld = false; }, 900);
+      };
+      chip.addEventListener('touchend', end, { passive: true });
+      chip.addEventListener('touchcancel', end, { passive: true });
+      chip.addEventListener('touchmove', () => clearTimeout(timer), { passive: true });
+    }
+    // 長押し表示の直後に発生する click は選択操作として扱わない
+    document.addEventListener('click', (e) => {
+      const chip = e.target && e.target.closest ? e.target.closest('.model-chip') : null;
+      if (chip && chip.tipHeld) { e.stopImmediatePropagation(); e.preventDefault(); }
+    }, true);
+
     // --- 立体球UIエレメント生成関数 ---
     function createModelChipElem(model) {
       const chip = document.createElement('div');
@@ -2099,6 +2166,7 @@
       if (isHideMode && (model.type === 'ion' || model.type === 'poly')) {
         chip.classList.add('hide-name');
         chip.setAttribute('data-name', `${model.name} (${model.symbol})`);
+        attachLongPressTip(chip); // タッチ端末はホバーできないため、長押しで名前を表示する
       }
 
       const badge = document.createElement('div');
@@ -2402,6 +2470,9 @@ function checkAndSaveHighScore(score) {
       }));
     }
 
+    // タッチ端末（ホバー不可）でのみ表示する操作ヒント
+    const TOUCH_TIP_HINT = (window.matchMedia && window.matchMedia('(hover: none)').matches) ? '　※ 長押しで名前を表示' : '';
+
     function openBoxModal() {
       const grid = document.getElementById('box-grid');
       grid.innerHTML = '';
@@ -2418,13 +2489,13 @@ function checkAndSaveHighScore(score) {
 
       if (state.gameMode === 'scoreAttack') {
         const border = STAGE_BORDERS[state.stage - 1];
-        subText.innerText = `STAGE ${state.stage} / 10：サプライ箱(イオンのみ)から12個選択してください (目標ボーダー: ${border}pt)`;
+        subText.innerText = `STAGE ${state.stage} / 10：サプライ箱(イオンのみ)から12個選択してください (目標ボーダー: ${border}pt)` + TOUCH_TIP_HINT;
         btnHand.style.display = 'none';
         boxP2.style.display = 'none';
         document.getElementById('draft-title-p1').innerText = "獲得済みモデル";
       } else {
         const modeNotice = state.difficulty === 'hard' ? "（イオンのみ出現中）" : "（原子のみ出現中）";
-        subText.innerText = `交互に1つずつ選択して手元に12個集めましょう ${modeNotice}`;
+        subText.innerText = `交互に1つずつ選択して手元に12個集めましょう ${modeNotice}` + (state.difficulty === 'hard' ? TOUCH_TIP_HINT : '');
         btnHand.style.display = 'block';
         boxP2.style.display = 'flex';
         document.getElementById('draft-title-p1').innerText = "Player 1 獲得済み";

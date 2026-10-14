@@ -1,4 +1,4 @@
-const CACHE_NAME = 'element-master-3d-v7'; // ManabiBox の games/ に統合。ハブ共通スクリプトを通信優先に変更
+const CACHE_NAME = 'element-master-3d-v8'; // ManabiBox の games/ に統合。ハブ共通スクリプトを通信優先に変更
 // v6: // 2人対戦モード(同一端末)を廃止しオンライン対戦に一本化したためバージョンを上げる
 
 // 事前キャッシュするのは「同一オリジン（自分のリポジトリ内）」のファイルのみに限定する。
