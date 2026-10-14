@@ -5,7 +5,7 @@
 <script src="../../hub-progress.js"></script>
 <script src="../../manabi-connect.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>日本一周クエスト 〜五教科の御朱印〜</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#101a33">
@@ -31,6 +31,9 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%}
+body{overscroll-behavior:none}
+/* タッチ操作部：ダブルタップ拡大・長押し選択を抑止 */
+.btn,.icobtn,.ch,#japan,#tokyoPin,.isle{touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body{
   background:var(--sumi);
   color:var(--kinari);
@@ -42,6 +45,11 @@ body{
 }
 svg{shape-rendering:crispEdges}
 #app{width:100%;max-width:760px;padding:14px 14px 40px;position:relative}
+/* ハブの「もどる」ボタン（左上固定）と見出しが重ならないように（左余白が狭いときだけ） */
+@media (max-width:1009px){
+  #map .bar,#battle .bar,#zukan .bar{padding-top:34px}
+  #result .win{padding-top:40px}
+}
 .screen{display:none}
 .screen.on{display:block}
 .mincho{font-family:var(--dot)}
@@ -72,9 +80,10 @@ h1{font-size:clamp(26px,7.6vw,44px);margin:0 0 6px;line-height:1.2;font-weight:4
   color:var(--kinari);font-family:var(--dot);font-size:16px;padding:11px 22px;
   cursor:pointer;letter-spacing:.1em;box-shadow:4px 4px 0 var(--sumi2);
 }
-.btn:hover,.btn:focus-visible{background:var(--kin);color:var(--sumi2);outline:none}
+.btn:focus-visible{background:var(--kin);color:var(--sumi2);outline:none}
+@media (hover:hover){.btn:hover{background:var(--kin);color:var(--sumi2)}}
 .btn:active{transform:translate(4px,4px);box-shadow:none}
-.btn.sm{font-size:13px;padding:8px 14px;border-width:2px;box-shadow:3px 3px 0 var(--sumi2)}
+.btn.sm{font-size:13px;padding:8px 14px;min-height:44px;border-width:2px;box-shadow:3px 3px 0 var(--sumi2)}
 .btn.ghost{background:var(--ai)}
 .btnrow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px}
 
@@ -83,16 +92,17 @@ h1{font-size:clamp(26px,7.6vw,44px);margin:0 0 6px;line-height:1.2;font-weight:4
 .bar h2{font-size:15px;margin:0;letter-spacing:.14em;color:var(--kin);font-weight:400}
 .tools{display:flex;gap:6px}
 .icobtn{border:2px solid var(--kin);background:var(--ai);color:var(--kinari);
-  padding:5px 9px;font-size:12px;cursor:pointer;font-family:var(--dot);
+  padding:5px 10px;min-height:44px;min-width:44px;font-size:13px;cursor:pointer;font-family:var(--dot);
   box-shadow:2px 2px 0 var(--sumi2)}
-.icobtn:hover{background:var(--kin);color:var(--sumi2)}
+@media (hover:hover){.icobtn:hover{background:var(--kin);color:var(--sumi2)}}
 .icobtn:active{transform:translate(2px,2px);box-shadow:none}
 
 /* ── マップ ── */
 #mapwrap{position:relative}
 svg#japan{width:100%;height:auto;display:block;touch-action:manipulation}
 .isle{fill:var(--f,#14264a);stroke:none;cursor:pointer}
-.isle:hover,.isle:focus{fill:var(--fh,rgba(243,237,224,.22));outline:none}
+.isle:focus{outline:none}
+@media (hover:hover){.isle:hover{fill:var(--fh,rgba(243,237,224,.22))}}
 .isle.locked{cursor:not-allowed}
 .pin-label{font-size:11px;fill:var(--kinari);pointer-events:none;font-family:var(--dot)}
 .pin-sub{font-size:10px;fill:#9fb0d0;pointer-events:none;font-family:var(--dot)}
@@ -110,7 +120,7 @@ body.dark{background:#05060c}
 body.dark .win,body.dark .lg,body.dark .zcard,body.dark .icobtn,body.dark .ch{border-color:#5fbf8f}
 body.dark .bar h2,body.dark .lg b,body.dark .ch b{color:#5fbf8f}
 body.dark .btn{border-color:#5fbf8f}
-body.dark .btn:hover{background:#5fbf8f;color:#05060c}
+@media (hover:hover){body.dark .btn:hover{background:#5fbf8f;color:#05060c}}
 body.dark .field{border-color:#5fbf8f}
 body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
 
@@ -158,7 +168,7 @@ body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
 .ch{text-align:left;border:2px solid var(--kin);background:var(--kon);color:var(--kinari);
   padding:11px 12px;font-size:14px;cursor:pointer;font-family:var(--dot);line-height:1.6;
   box-shadow:3px 3px 0 var(--sumi2)}
-.ch:hover:not(:disabled){background:var(--kin);color:var(--sumi2)}
+@media (hover:hover){.ch:hover:not(:disabled){background:var(--kin);color:var(--sumi2)}}
 .ch:active:not(:disabled){transform:translate(3px,3px);box-shadow:none}
 .ch:disabled{cursor:default;opacity:.6;box-shadow:none}
 .ch.right{background:#1f6b4d;border-color:var(--wakatake);color:var(--kinari);opacity:1}
@@ -186,6 +196,21 @@ body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
 .zcard svg{width:78%;height:auto}
 .zcard b{display:block;font-size:11px;margin-top:4px;font-weight:400}
 .zcard span{font-size:10px;color:#93a3c2}
+/* iPad 横向きなど背の低い画面：1画面に収める */
+@media (orientation:landscape) and (max-height:860px){
+  #app{padding-bottom:14px}
+  #mapwrap{width:fit-content;max-width:100%;margin:0 auto 2px}
+  svg#japan{height:52vh;width:calc(52vh*520/430);max-width:100%}
+  .legend{gap:6px;margin-top:8px;grid-template-columns:repeat(3,1fr)}
+  .lg{padding:5px 8px}
+  .field{height:min(30vh,290px)}
+  .hud{margin:6px 0}
+  .msg{min-height:40px;margin-bottom:6px}
+  .q{margin-bottom:8px}
+  .choices{gap:6px;grid-template-columns:1fr 1fr}
+  .ch{padding:8px 12px}
+  .btnrow{margin-top:8px}
+}
 </style>
 </head>
 <body>
@@ -1012,7 +1037,7 @@ function answer(right,q,btn,order,marks){
    }
    S.qi++;
    document.getElementById("nextRow").style.display="flex";
-   document.getElementById("nextBtn").focus();
+   document.getElementById("nextBtn").focus({preventScroll:true});
    return;
  }
  const e=S.enemies[S.ei];
@@ -1038,7 +1063,7 @@ function answer(right,q,btn,order,marks){
  }
  S.qi++; updHud();
  document.getElementById("nextRow").style.display="flex";
- document.getElementById("nextBtn").focus();
+ document.getElementById("nextBtn").focus({preventScroll:true});
 }
 function next(){
  if(S.review){
