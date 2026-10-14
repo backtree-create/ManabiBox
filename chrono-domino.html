@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>CHRONO DOMINO — クロノ・ドミノ</title>
 <style>
   :root{
@@ -22,13 +22,15 @@
       linear-gradient(180deg, #f1e8d3, var(--paper) 45%, var(--paper2));
     height:100dvh; display:flex; flex-direction:column; overflow:hidden;
     touch-action:manipulation; user-select:none; -webkit-user-select:none;
+    -webkit-touch-callout:none; overscroll-behavior:none;
   }
   .min{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;}
   button{font:inherit;}
   button:focus-visible{outline:2px solid var(--shu); outline-offset:2px;}
   .manabiBar{position:relative;z-index:200;height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(4px + env(safe-area-inset-top)) 12px 4px;background:rgba(44,36,22,.96);color:#f8ecd4;border-bottom:1px solid var(--gold);font-size:10px;letter-spacing:.08em;box-shadow:0 2px 10px rgba(40,30,15,.25);}
   .manabiBar a{color:#fff8ec;text-decoration:none;font-weight:800;min-height:24px;display:inline-flex;align-items:center;padding:3px 9px;border:1px solid rgba(255,248,236,.45);border-radius:999px;}
-  .manabiBar a:hover,.manabiBar a:focus-visible{background:var(--shu);outline:2px solid #fff8ec;outline-offset:2px;}
+  .manabiBar a:focus-visible{background:var(--shu);outline:2px solid #fff8ec;outline-offset:2px;}
+  @media (hover:hover){ .manabiBar a:hover{background:var(--shu);outline:2px solid #fff8ec;outline-offset:2px;} }
   .manabiBar span{color:var(--goldL);}
 
   /* ---- 朱印 ---- */
@@ -311,17 +313,21 @@
   .atkScroll small{font-size:10px; color:#ffe3b8; font-variant-numeric:tabular-nums; font-weight:800; flex:none;}
   .backLink{
     background:none; border:none; color:var(--dim); font-size:clamp(11px,3.2vw,13px);
-    cursor:pointer; padding:10px; letter-spacing:.1em; text-decoration:underline;
+    cursor:pointer; padding:10px; min-height:44px; letter-spacing:.1em; text-decoration:underline;
   }
   /* ---- UI polish / accessibility ---- */
   header{padding-top:calc(10px + env(safe-area-inset-top));}
   .overlay{backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);}
-  .panel{border-radius:10px; box-shadow:0 18px 55px rgba(40,30,15,.42); scrollbar-width:thin; scrollbar-color:var(--gold) transparent;}
+  .panel{border-radius:10px; box-shadow:0 18px 55px rgba(40,30,15,.42); scrollbar-width:thin; scrollbar-color:var(--gold) transparent; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;}
   .volCard,.eraBtn,.reviewMini,.atkScroll,.bigBtn,.btn,.backLink{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease,background-color .16s ease;}
-  .volCard:hover,.eraBtn:hover,.atkScroll:hover,.bigBtn:hover:not(:disabled),.btn:hover:not(:disabled){filter:brightness(1.045);}
+  @media (hover:hover){ .volCard:hover,.eraBtn:hover,.atkScroll:hover,.bigBtn:hover:not(:disabled),.btn:hover:not(:disabled){filter:brightness(1.045);} }
   .volCard:focus-visible{outline:3px solid var(--shu); outline-offset:4px;}
   .cardD{cursor:pointer;}
   .cardD:focus-visible,.slot:focus-visible{outline:3px solid var(--shu); outline-offset:2px;}
+  @media (min-width:760px){
+    #ovSelect .panel{max-width:760px;}
+    #eraList{display:grid; grid-template-columns:1fr 1fr; gap:0 12px;}
+  }
   @media (min-width:900px){
     #pipeWrap{padding-inline:24px;}
     #pipeline{max-width:700px;}
@@ -476,7 +482,7 @@ var store={
   set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} mem[k]=v;}
 };
 var AC=null;
-function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=t||"square";o.frequency.value=f;g.gain.value=v||0.06;g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.12));o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+(d||0.12));}catch(e){}}
+function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();var o=AC.createOscillator(),g=AC.createGain();o.type=t||"square";o.frequency.value=f;g.gain.value=v||0.06;g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.12));o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+(d||0.12));}catch(e){}}
 function $(id){return document.getElementById(id);}
 function kan(n){
   var d=["","一","二","三","四","五","六","七","八","九"];

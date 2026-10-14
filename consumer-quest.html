@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>消費者クエスト 調査ファイル | 家庭科</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,8 +19,8 @@
 html,body{background:#2A2620;color:var(--ink);
   font-family:'Noto Sans JP',sans-serif;line-height:1.8;
   -webkit-user-select:none;user-select:none}
-body{min-height:100svh}
-#app{max-width:760px;margin:0 auto;min-height:100svh;background:var(--paper);
+body{min-height:100vh;min-height:100svh;overscroll-behavior:none}
+#app{max-width:760px;margin:0 auto;height:100vh;height:100svh;height:100dvh;background:var(--paper);
   box-shadow:0 0 60px rgba(0,0,0,.5);position:relative;overflow:hidden;
   display:flex;flex-direction:column}
 #app::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
@@ -34,8 +34,11 @@ header#hd{background:var(--band);color:var(--paper);padding:10px 16px;
 #hd .t b{color:var(--warn)}
 #hd .ep{font-size:clamp(10px,2.6vw,12px);color:#C9C2B0;font-weight:700}
 #score{font-family:'Noto Serif JP',serif;font-weight:900;color:var(--warn);font-size:clamp(13px,3.4vw,17px);white-space:nowrap}
-main#mn{flex:1;padding:18px 16px calc(130px + env(safe-area-inset-bottom));overflow-y:auto;
-  -webkit-overflow-scrolling:touch}
+main#mn{flex:1;min-height:0;padding:18px 16px calc(130px + env(safe-area-inset-bottom));overflow-y:auto;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+/* ハブ側の「まなびの基板」ボタンと重ならないようにする */
+body:has(#manabi-back) #homeBtn{display:none}
+body:has(#manabi-back) header#hd{padding-left:calc(132px + env(safe-area-inset-left))}
 
 .serif{font-family:'Noto Serif JP',serif}
 h1.big{font-family:'Noto Serif JP',serif;font-weight:900;line-height:1.4;
@@ -44,7 +47,7 @@ h1.big .sub{display:block;font-size:.42em;color:var(--shu);letter-spacing:.3em;f
 h2.sec{font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(17px,4.6vw,23px);
   border-left:6px solid var(--shu);padding-left:.5em;margin:1.2em 0 .6em;letter-spacing:.04em}
 p.lead{color:var(--ink2);font-size:clamp(13px,3.4vw,15px)}
-.btn{display:inline-block;border:none;cursor:pointer;
+.btn{display:inline-block;border:none;cursor:pointer;touch-action:manipulation;-webkit-touch-callout:none;
   font-family:'Noto Serif JP',serif;font-weight:900;letter-spacing:.12em;
   font-size:clamp(14px,3.8vw,17px);padding:.75em 2em;margin:.4em .2em;
   background:var(--ink);color:var(--paper);border-radius:3px;
@@ -59,7 +62,7 @@ p.lead{color:var(--ink2);font-size:clamp(13px,3.4vw,15px)}
 .note b{color:var(--shu)}
 .note.gray{background:#EEECE4;border-color:var(--line)}
 
-#telop{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(760px,100%);
+#telop{position:fixed;left:50%;touch-action:manipulation;transform:translateX(-50%);bottom:0;width:min(760px,100%);
   z-index:30;background:var(--band);border-top:4px solid var(--warn);
   padding:10px 14px calc(14px + env(safe-area-inset-bottom));display:none}
 #telop .who{display:inline-block;background:var(--warn);color:var(--ink);
@@ -132,7 +135,7 @@ p.lead{color:var(--ink2);font-size:clamp(13px,3.4vw,15px)}
 .cards{display:grid;grid-template-columns:1fr;gap:10px;margin:12px 0}
 @media(min-width:560px){.cards{grid-template-columns:repeat(3,1fr)}}
 .card{background:#fff;border:2px solid var(--ink);border-radius:4px;padding:.9em .9em;
-  cursor:pointer;box-shadow:4px 4px 0 rgba(26,23,18,.2);transition:transform .1s}
+  cursor:pointer;touch-action:manipulation;box-shadow:4px 4px 0 rgba(26,23,18,.2);transition:transform .1s}
 .card:active{transform:translate(2px,2px);box-shadow:2px 2px 0 rgba(26,23,18,.2)}
 .card .cn{font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(14px,3.8vw,16px);
   border-bottom:2px solid var(--warn);padding-bottom:.25em;margin-bottom:.35em}
@@ -170,7 +173,7 @@ p.lead{color:var(--ink2);font-size:clamp(13px,3.4vw,15px)}
   max-height:46svh;overflow-y:auto}
 .choicebar .q{color:var(--warn);font-weight:900;font-size:clamp(12px,3.2vw,14px);margin-bottom:8px}
 .choicebar .opts{display:flex;flex-wrap:wrap;gap:8px}
-.copt{background:var(--paper);border:none;border-radius:3px;cursor:pointer;
+.copt{background:var(--paper);border:none;border-radius:3px;cursor:pointer;touch-action:manipulation;min-height:44px;
   font-weight:700;font-size:clamp(12px,3.4vw,14px);padding:.5em 1em}
 .copt:active{background:var(--warn)}
 .stamp{position:absolute;right:18px;bottom:14px;width:86px;height:86px;border:5px solid var(--shu);
@@ -184,7 +187,7 @@ p.lead{color:var(--ink2);font-size:clamp(13px,3.4vw,15px)}
 .cal h4{text-align:center;font-family:'Noto Serif JP',serif;font-weight:900;letter-spacing:.2em;margin-bottom:6px}
 .cal .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:clamp(12px,3.4vw,15px)}
 .cal .dow{font-weight:900;color:var(--ink2);font-size:.8em;padding:.2em 0}
-.cal .d{padding:.45em 0;border:1px solid transparent;border-radius:3px;cursor:pointer;font-weight:700}
+.cal .d{padding:.45em 0;min-height:44px;display:flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:3px;cursor:pointer;font-weight:700;touch-action:manipulation}
 .cal .d:active{background:var(--marker)}
 .cal .d.base{background:var(--warn);color:var(--ink);cursor:default}
 .cal .d.pick{background:var(--ok);color:#fff}
@@ -195,7 +198,7 @@ p.lead{color:var(--ink2);font-size:clamp(13px,3.4vw,15px)}
 .sortItem{background:#fff;border:2px solid var(--ink);border-radius:4px;padding:.7em .9em;margin:.5em 0;
   font-weight:700;font-size:clamp(13px,3.5vw,15px);display:flex;justify-content:space-between;align-items:center;gap:8px}
 .sortItem .sbs{display:flex;gap:6px;flex-shrink:0}
-.sbtn{border:2px solid var(--ink);background:var(--paper);border-radius:3px;cursor:pointer;
+.sbtn{border:2px solid var(--ink);background:var(--paper);border-radius:3px;cursor:pointer;touch-action:manipulation;min-height:44px;
   font-weight:900;font-size:clamp(11px,3vw,13px);padding:.35em .7em}
 .sbtn.do{border-color:var(--ok);color:var(--ok)}
 .sbtn.dont{border-color:var(--shu);color:var(--shu)}
@@ -221,7 +224,7 @@ table.res td:last-child{text-align:right;font-family:'Noto Serif JP',serif;font-
 /* エピソード選択 */
 .epGrid{display:grid;grid-template-columns:1fr;gap:10px;margin:14px 0}
 @media(min-width:560px){.epGrid{grid-template-columns:1fr 1fr}}
-.epCard{background:#fff;border:2px solid var(--ink);border-radius:4px;padding:.9em 1em;cursor:pointer;
+.epCard{background:#fff;border:2px solid var(--ink);border-radius:4px;padding:.9em 1em;cursor:pointer;touch-action:manipulation;
   box-shadow:4px 4px 0 rgba(26,23,18,.2);text-align:left;position:relative}
 .epCard:active{transform:translate(2px,2px);box-shadow:2px 2px 0 rgba(26,23,18,.2)}
 .epCard .no{font-family:'Noto Serif JP',serif;font-weight:900;color:var(--shu);font-size:clamp(11px,3vw,13px);letter-spacing:.2em}

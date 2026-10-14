@@ -20,7 +20,7 @@
 <style>
   html,body{margin:0;padding:0;background:#0b0604;height:100%;overflow:hidden;
     font-family:'Zen Kaku Gothic New',sans-serif;-webkit-user-select:none;user-select:none;
-    touch-action:manipulation;}
+    -webkit-touch-callout:none;overscroll-behavior:none;touch-action:manipulation;}
   #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
   canvas{display:block;background:#0b0604;border-radius:6px;}
   /* 自前の「もどる」ボタン(ManabiBox配下に置くと manabi-connect が設置しないため) */
@@ -1152,6 +1152,9 @@ cv.addEventListener('touchstart',e=>{
   if(!window.PointerEvent&&e.changedTouches&&e.changedTouches[0]) handleTap(e.changedTouches[0]);
 },{passive:false});
 cv.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+// iOS Safari は touchstart/pointerdown をユーザー操作と見なさない場合があるため、指を離した時にも AudioContext を起動/再開する
+cv.addEventListener('touchend',()=>auInit(),{passive:true});
+cv.addEventListener('pointerup',()=>auInit());
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('gesturestart',e=>e.preventDefault());
 window.addEventListener('keydown',e=>{

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>EQUATION BALANCE — 数式ラボ</title>
 <style>
   :root{
@@ -27,13 +27,15 @@
       linear-gradient(180deg, var(--bg1), var(--bg0) 60%);
     height:100dvh; display:flex; flex-direction:column; overflow:hidden;
     touch-action:manipulation; user-select:none; -webkit-user-select:none;
+    -webkit-touch-callout:none; overscroll-behavior:none;
   }
   .disp{font-family:"Didot","Bodoni 72","Georgia","Times New Roman",serif;}
   button{font:inherit;}
   button:focus-visible{outline:2px solid var(--acc); outline-offset:2px;}
   .manabiBar{position:relative;z-index:200;height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(4px + env(safe-area-inset-top)) 12px 4px;background:rgba(7,11,20,.98);color:var(--paper);border-bottom:1px solid #33465f;font-size:10px;letter-spacing:.08em;box-shadow:0 2px 12px rgba(0,0,0,.35);}
   .manabiBar a{color:var(--paper);text-decoration:none;font-weight:800;min-height:24px;display:inline-flex;align-items:center;padding:3px 9px;border:1px solid #54657f;border-radius:999px;}
-  .manabiBar a:hover,.manabiBar a:focus-visible{background:var(--acc);color:var(--accInk);outline:2px solid var(--acc);outline-offset:2px;}
+  .manabiBar a:focus-visible{background:var(--acc);color:var(--accInk);outline:2px solid var(--acc);outline-offset:2px;}
+  @media (hover:hover){ .manabiBar a:hover{background:var(--acc);color:var(--accInk);outline:2px solid var(--acc);outline-offset:2px;} }
   .manabiBar span{color:var(--acc);}
   svg.ic{width:1.25em; height:1.25em; vertical-align:-0.28em; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;}
 
@@ -95,7 +97,7 @@
   .panLabel{position:absolute; bottom:5px; left:50%; transform:translateX(-50%); font-size:8px; color:var(--faint); letter-spacing:.42em; white-space:nowrap;}
 
   .chip{
-    min-width:42px; height:42px; padding:0 9px;
+    min-width:44px; height:44px; padding:0 9px;
     display:flex; align-items:center; justify-content:center;
     font-weight:800; font-size:clamp(15px,4vw,19px);
     border-radius:8px; cursor:grab; position:relative;
@@ -366,7 +368,7 @@
   }
   .backLink{
     background:none; border:none; color:var(--faint); font-size:clamp(11px,3.2vw,13px);
-    cursor:pointer; padding:10px; margin-top:8px; letter-spacing:.1em;
+    cursor:pointer; padding:10px; min-height:44px; margin-top:8px; letter-spacing:.1em;
   }
   .backLink:active{color:var(--paper);}
 
@@ -397,11 +399,14 @@
   /* ============ UI polish / accessibility ============ */
   header{padding-top:calc(10px + env(safe-area-inset-top));}
   .overlay{backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);}
-  .panelBox{border-radius:12px; box-shadow:0 22px 70px rgba(0,0,0,.55); scrollbar-width:thin; scrollbar-color:var(--acc) transparent;}
+  .panelBox{border-radius:12px; box-shadow:0 22px 70px rgba(0,0,0,.55); scrollbar-width:thin; scrollbar-color:var(--acc) transparent; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;}
   .modeCard,.mixBtn,.atkBtn,.stBtn,.opBtn,.bigBtn,.backLink{transition:transform .16s ease,filter .16s ease,background-color .16s ease,box-shadow .16s ease;}
-  .modeCard:hover,.mixBtn:hover,.atkBtn:hover,.stBtn:hover,.opBtn:hover:not(:disabled),.bigBtn:hover:not(:disabled){filter:brightness(1.12);}
+  @media (hover:hover){ .modeCard:hover,.mixBtn:hover,.atkBtn:hover,.stBtn:hover,.opBtn:hover:not(:disabled),.bigBtn:hover:not(:disabled){filter:brightness(1.12);} }
   .modeCard:focus-visible,.mixBtn:focus-visible,.atkBtn:focus-visible,.stBtn:focus-visible{outline:3px solid var(--acc);outline-offset:3px;}
   #controls{padding-bottom:calc(8px + env(safe-area-inset-bottom));}
+  @media (min-width:700px){
+    .stageGrid{grid-template-columns:repeat(8,1fr);}
+  }
   @media (min-width:900px){
     #playWrap{max-width:980px;width:100%;margin-inline:auto;}
     #controls{max-width:980px;width:100%;margin-inline:auto;border-inline:1px solid #26364e;}
@@ -606,7 +611,7 @@ var store={
   set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} mem[k]=v;}
 };
 var AC=null;
-function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=t||"triangle";o.frequency.value=f;g.gain.value=v||0.08;g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.15));o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+(d||0.15));}catch(e){}}
+function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();var o=AC.createOscillator(),g=AC.createGain();o.type=t||"triangle";o.frequency.value=f;g.gain.value=v||0.08;g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.15));o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+(d||0.15));}catch(e){}}
 function $(id){return document.getElementById(id);}
 function fmtN(v){ return v<0 ? "−"+(-v) : ""+v; }
 

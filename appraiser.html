@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>贋作鑑定士 -THE APPRAISER-</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Shippori+Mincho+B1:wght@600;800&display=swap" rel="stylesheet">
@@ -13,8 +13,9 @@
   --serif:"DotGothic16","Shippori Mincho B1","Hiragino Mincho ProN",serif;
   --sans:"DotGothic16","Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",sans-serif;
 }
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--parchment);font-family:var(--sans)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--parchment);font-family:var(--sans);
+  touch-action:manipulation;overscroll-behavior:none}
 #c3d{position:fixed;inset:0;display:block;touch-action:none;width:100vw;height:100vh;height:100dvh;
   image-rendering:pixelated;image-rendering:crisp-edges}
 #vignette{position:fixed;inset:0;pointer-events:none;z-index:6;
@@ -31,7 +32,7 @@ button{font-family:inherit}
   box-shadow:0 4px 0 #3a2c08,inset 0 3px 0 rgba(255,250,225,.45),inset 0 -3px 0 rgba(60,40,5,.35);
   transition:transform .08s;
 }
-.btn:hover{filter:brightness(1.07)}
+@media(hover:hover){.btn:hover{filter:brightness(1.07)}}
 .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #3a2c08,inset 0 3px 0 rgba(255,250,225,.45),inset 0 -3px 0 rgba(60,40,5,.35)}
 .btn.ghost{background:#1a100d;color:var(--gold-light);border:3px solid var(--gold);
   box-shadow:0 4px 0 #0c0806,inset 0 0 0 1px rgba(0,0,0,.4)}
@@ -78,7 +79,7 @@ button{font-family:inherit}
 }
 
 /* ---------- ホームに戻る ---------- */
-#homeBtn{position:fixed;top:10px;left:10px;z-index:35;display:flex;align-items:center;gap:6px;
+#homeBtn{position:fixed;top:calc(10px + env(safe-area-inset-top));left:calc(10px + env(safe-area-inset-left));z-index:35;display:flex;align-items:center;gap:6px;
   font-family:var(--serif);font-size:.78rem;letter-spacing:.08em;text-decoration:none;
   background:#1a100d;color:var(--gold-light);border:3px solid var(--gold);
   padding:7px 12px;box-shadow:0 3px 0 #0c0806}
@@ -105,7 +106,7 @@ button{font-family:inherit}
 
 /* ---------- バーチャルパッド ---------- */
 #joy{position:fixed;left:calc(18px + env(safe-area-inset-left));bottom:calc(18px + env(safe-area-inset-bottom));width:118px;height:118px;z-index:21;display:none;
-  border:1px solid rgba(201,162,39,.55);border-radius:50%;
+  touch-action:none;border:1px solid rgba(201,162,39,.55);border-radius:50%;
   background:radial-gradient(circle,rgba(20,12,9,.5),rgba(20,12,9,.2))}
 #joyKnob{position:absolute;left:50%;top:50%;width:50px;height:50px;border-radius:50%;
   transform:translate(-50%,-50%);background:radial-gradient(circle at 35% 30%,var(--gold-hi),#a8842a);
@@ -145,8 +146,8 @@ button{font-family:inherit}
 .p-arrow{background:#1a100d;border:3px solid var(--gold);color:var(--gold-light);
   border-radius:0;width:46px;height:46px;font-size:1.2rem;cursor:pointer;box-shadow:0 3px 0 #0c0806}
 .p-arrow:active{transform:translateY(2px);box-shadow:0 1px 0 #0c0806}
-#pClose{position:absolute;top:14px;right:18px;background:none;border:none;color:var(--parchment);
-  font-size:1.8rem;cursor:pointer;opacity:.75}
+#pClose{position:absolute;top:calc(6px + env(safe-area-inset-top));right:calc(8px + env(safe-area-inset-right));background:none;border:none;color:var(--parchment);
+  font-size:1.8rem;cursor:pointer;opacity:.75;min-width:48px;min-height:48px;line-height:1}
 #pConfirm{display:none;flex-direction:column;gap:12px;margin-top:16px;align-items:center}
 #pConfirm .q{font-family:var(--serif);font-size:.95rem;letter-spacing:.1em}
 #pConfirm .row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
@@ -557,6 +558,15 @@ function gavel(){
   }catch(e){}
 }
 function gavelDouble(){gavel();setTimeout(gavel,190);}
+/* iOS Safari: 最初のタップ(指を離した時)で AudioContext を作成/再開しておく(setTimeout 内の gavel() が鳴るように) */
+function unlockAudio(){
+  try{
+    const ac=gavel.ac||(gavel.ac=new (window.AudioContext||window.webkitAudioContext)());
+    if(ac.state==="suspended")ac.resume();
+  }catch(e){}
+}
+addEventListener("pointerup",unlockAudio,{passive:true});
+addEventListener("touchend",unlockAudio,{passive:true});
 
 /* ==================== 画像処理 ==================== */
 /* Commons公式APIでファイルの実在確認+CORS対応の直リンク(upload.wikimedia.org)を取得 */
@@ -1134,7 +1144,7 @@ joyEl.addEventListener("pointerup",joyEnd);joyEl.addEventListener("pointercancel
 
 const tap={x:0,y:0,moved:0,down:false};
 canvas.addEventListener("pointerdown",e=>{tap.down=true;tap.x=e.clientX;tap.y=e.clientY;tap.moved=0;});
-canvas.addEventListener("pointermove",e=>{if(tap.down)tap.moved+=Math.abs(e.movementX||0)+Math.abs(e.movementY||0);});
+canvas.addEventListener("pointermove",e=>{if(tap.down)tap.moved=Math.max(tap.moved,Math.abs(e.clientX-tap.x)+Math.abs(e.clientY-tap.y));});
 canvas.addEventListener("pointerup",e=>{
   if(tap.down&&tap.moved<10&&mode==="explore")tapPick(e.clientX,e.clientY);
   tap.down=false;
@@ -1486,6 +1496,8 @@ function loop(){
   renderer.render(scene,camera);
 }
 loop();
+/* manabi-connect.js が「まなびの基板」ボタンを置いた場合は自前のホームボタンを隠す(重なり防止) */
+addEventListener("load",()=>{if(document.getElementById("manabi-back"))$("homeBtn").style.display="none";});
 loadArtImage(STAGES[0]).then(img=>{if(!img)$("imgWarn").style.display="block";});
 </script>
 </body>

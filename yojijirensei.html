@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>四字錬成 ─ 熟語クラフトRPG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,6 +28,7 @@ body{
   font-family:"DotGothic16","MS Gothic",monospace;
   font-size:15px; line-height:1.5; letter-spacing:.02em;
   -webkit-text-size-adjust:100%; image-rendering:pixelated; overscroll-behavior:none;
+  -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
 }
 /* 麻の葉くずしの地紋 */
 body::after{
@@ -41,7 +42,7 @@ body::before{
   content:"";position:fixed;inset:0;z-index:2;pointer-events:none;
   background:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px);
 }
-#app{position:relative;z-index:1;height:100dvh;max-width:560px;margin:0 auto;
+#app{position:relative;z-index:1;height:100vh;height:100dvh;max-width:560px;margin:0 auto;
   padding:6px 10px 8px;display:flex;flex-direction:column;min-height:0}
 .screen{flex:1;display:flex;flex-direction:column;min-height:0;gap:7px}
 .scr-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:7px}
@@ -60,6 +61,8 @@ body::before{
 .hud .t{font-size:17px;color:var(--kin);text-shadow:2px 2px 0 #000}
 .hud .t::before{content:"◆";color:var(--shu);margin-right:6px;font-size:12px}
 .hud .spacer{flex:1}
+/* ハブ側の「まなびの基板」ボタン（左上固定）と見出しが重ならないようにする */
+body:has(#manabi-back) .hud{padding-left:118px}
 .tag{border:2px solid var(--ai2);background:#0f1724;color:var(--gray);font-size:11.5px;padding:0 7px}
 .label{font-size:12px;color:var(--kin)}
 .muted{color:var(--gray);font-size:12.5px}
@@ -68,12 +71,12 @@ body::before{
 
 .btn{appearance:none;font-family:inherit;font-size:15px;color:var(--kinari);
   background:var(--ai);border:4px solid var(--ai2);clip-path:var(--notch);
-  padding:9px 10px;width:100%;cursor:pointer;box-shadow:inset 0 -4px 0 rgba(0,0,0,.3)}
-.btn:hover{background:#24557f}
+  padding:9px 10px;width:100%;cursor:pointer;box-shadow:inset 0 -4px 0 rgba(0,0,0,.3);touch-action:manipulation}
+@media (hover:hover){.btn:hover{background:#24557f}}
 .btn:active{transform:translateY(2px);box-shadow:none}
 .btn.primary{background:var(--shu);border-color:var(--kin);color:#fff4e0;
   box-shadow:inset 0 -4px 0 rgba(0,0,0,.28),inset 0 0 0 2px rgba(255,255,255,.12)}
-.btn.primary:hover{background:#dd5641}
+@media (hover:hover){.btn.primary:hover{background:#dd5641}}
 .btn.ghost{background:#0f1724;border-color:var(--ai);color:var(--gray);font-size:13px;padding:6px 9px}
 .btn.snd{width:auto;padding:4px 8px;font-size:12px}
 .btn:disabled{opacity:.35;cursor:default;transform:none}
@@ -142,7 +145,7 @@ body::before{
 #s-map .col-b{flex:0 0 auto;padding:8px 10px}
 #s-map .route{margin:14px 0 4px}
 #s-map .tile .box{width:38px;height:38px}
-.seal{flex:0 0 auto;width:58px;height:72px;cursor:pointer;position:relative;
+.seal{flex:0 0 auto;width:58px;height:72px;cursor:pointer;position:relative;touch-action:manipulation;
   background:#e7dcc0;border:4px solid #6b4f27;clip-path:var(--notch);
   color:#1d1a12;font-family:inherit;font-size:30px;line-height:1;
   display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2)}
@@ -150,13 +153,13 @@ body::before{
 .seal.sel{transform:translateY(-8px);border-color:var(--kin);box-shadow:inset 0 0 0 3px rgba(217,164,65,.5)}
 .seal .ord{position:absolute;top:3px;right:3px;width:18px;height:18px;background:var(--shu);
   color:#fff;font-size:12px;line-height:18px;text-align:center}
-.card{flex:0 0 auto;width:128px;min-height:72px;cursor:pointer;text-align:left;
+.card{flex:0 0 auto;width:128px;min-height:72px;cursor:pointer;text-align:left;touch-action:manipulation;
   background:#16233a;border:4px solid var(--ai2);clip-path:var(--notch);
   color:var(--kinari);font-family:inherit;padding:7px 8px;
   display:flex;flex-direction:column;justify-content:space-between;gap:3px}
 .card.sel{transform:translateY(-8px);border-color:var(--kin)}
 .card .name{font-size:16px;color:var(--kin)}
-.card .fx{font-size:11px;line-height:1.3;color:var(--aijiro)}
+.card .fx{font-size:12px;line-height:1.3;color:var(--aijiro)}
 .cardtop{display:flex;justify-content:space-between;align-items:center;gap:4px}
 .cost-badge{font-size:11px;color:#1d1a12;background:var(--kin);padding:0 5px}
 .el-badge{font-size:11px;padding:0 5px;color:#0c1119}
@@ -187,7 +190,7 @@ body::before{
   border:4px solid var(--ai2);clip-path:var(--notch)}
 .circle.ok{border-color:var(--kin);animation:glow .8s steps(2,end) infinite}
 @keyframes glow{0%,49%{box-shadow:inset 0 0 0 4px rgba(217,164,65,.4)}50%,100%{box-shadow:none}}
-.slot{aspect-ratio:1/1.1;background:#080d15;border:3px dashed #2a5580;cursor:pointer;
+.slot{aspect-ratio:1/1.1;background:#080d15;border:3px dashed #2a5580;cursor:pointer;touch-action:manipulation;
   display:flex;align-items:center;justify-content:center;font-size:30px;color:#2a5580}
 .slot.filled{background:#e7dcc0;border:3px solid #6b4f27;color:#1d1a12}
 .k .u{position:absolute;top:5px;left:2px;font-size:10px;font-weight:700;line-height:1}
@@ -197,7 +200,7 @@ body::before{
 .sortrow{display:flex;gap:6px;flex:0 0 auto}
 .sortrow .btn{flex:1;padding:5px 6px;font-size:12px}
 .inv{display:grid;grid-template-columns:repeat(auto-fill,minmax(48px,1fr));gap:6px}
-.k{aspect-ratio:1/1.06;position:relative;cursor:pointer;font-family:inherit;font-size:23px;
+.k{aspect-ratio:1/1.06;position:relative;cursor:pointer;font-family:inherit;font-size:23px;touch-action:manipulation;
   background:#e7dcc0;border:3px solid #6b4f27;color:#1d1a12;
   display:flex;align-items:center;justify-content:center}
 .k .n{position:absolute;bottom:0;right:2px;font-size:10px;color:#6b5236}
@@ -280,6 +283,7 @@ body::before{
 @media (min-width:600px) and (max-width:1023px){
   body{font-size:16px}
   #app{max-width:720px;padding:10px 16px 12px}
+  body:has(#manabi-back) .hud{padding-left:clamp(0px,472px - 50vw,118px)}
   .stage .foe{width:clamp(120px,24vh,210px);height:clamp(120px,24vh,210px)}
   .seal{width:66px;height:82px;font-size:34px}
   .card{width:150px}
@@ -290,6 +294,7 @@ body::before{
 @media (min-width:1024px){
   body{font-size:16px}
   #app{max-width:1080px;padding:12px 22px 14px}
+  body:has(#manabi-back) .hud{padding-left:clamp(0px,646px - 50vw,106px)}
   .stage .foe{width:clamp(140px,26vh,240px);height:clamp(140px,26vh,240px)}
   .seal{width:64px;height:80px;font-size:33px}
   .card{width:158px}

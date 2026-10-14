@@ -26,7 +26,8 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--navy);overflow:hidden;
   font-family:'Zen Kaku Gothic New',sans-serif;color:var(--white);
-  touch-action:manipulation;user-select:none;-webkit-user-select:none}
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;
+  -webkit-touch-callout:none;overscroll-behavior:none}
 #wrap{height:100%;height:100svh;display:flex;align-items:center;justify-content:center;
   background:radial-gradient(120% 90% at 50% 0%, #2A1830 0%, #120A16 60%)}
 #stage{position:relative;width:min(100vw,177.7vh,177.7svh);aspect-ratio:16/9;max-height:100svh;
@@ -80,8 +81,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .hidden{display:none !important}
 
 /* ---------- オーバーレイ共通 ---------- */
-#ovl{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;
-  pointer-events:none}   /* 空のときにタッチを吸わない（スマホ・タブレット対応） */
+#ovl{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;
+  pointer-events:none}   /* ステージ外(上下の余白)も使えるよう画面全体に配置 */   /* 空のときにタッチを吸わない（スマホ・タブレット対応） */
 #ovl>*{pointer-events:auto}
 .panel{background:linear-gradient(180deg,rgba(13,18,35,.96),rgba(9,13,26,.96));
   border:2px solid var(--board-line);border-radius:14px;padding:3.5% 4.5%;
@@ -143,7 +144,7 @@ table.res tr.total td{border-top:2px solid var(--amber-dim);border-bottom:none;
   color:var(--amber);text-shadow:0 0 30px rgba(255,197,61,.6)}
 .rankMsg{font-weight:900;font-size:clamp(14px,3vmin,22px);margin-top:.3em}
 
-#homeBtn{position:fixed;left:10px;top:10px;z-index:60;
+#homeBtn{position:fixed;left:calc(10px + env(safe-area-inset-left));top:calc(10px + env(safe-area-inset-top));z-index:60;
   font-family:'DotGothic16',monospace;font-size:clamp(11px,2.2vmin,15px);
   background:rgba(18,10,22,.86);color:#FFC53D;border:2px solid #6B4A26;
   border-radius:4px;padding:.35em .9em;cursor:pointer;letter-spacing:.06em;
@@ -295,6 +296,8 @@ function hubReport(doneEvents, totalPt, note){
   const url=cfg.hubUrl||'index.html';
   if(cfg.backLink===false) return;
   if(!window.LearnHub && !cfg.hubUrl) return;   // 単体で開いたときは表示しない
+  // manabi-connect.js が「まなびの基板」ボタンを置く場合は二重表示しない
+  addEventListener('load', ()=>{ if(document.getElementById('manabi-back')) btn.hidden=true; });
   btn.hidden=false;
   btn.onclick=()=>{ location.href=url; };
 })();

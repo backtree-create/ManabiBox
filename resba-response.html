@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>RESBA RESPONSE — レスバ・レスポンス</title>
 <style>
   :root{
@@ -27,13 +27,15 @@
       linear-gradient(180deg, var(--bg2), var(--bg) 55%);
     height:100dvh; display:flex; flex-direction:column; overflow:hidden;
     touch-action:manipulation; user-select:none; -webkit-user-select:none;
+    -webkit-touch-callout:none; overscroll-behavior:none;
   }
   .min{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;}
   button{font:inherit;}
   button:focus-visible{outline:2px solid var(--brassL); outline-offset:2px;}
   .manabiBar{position:relative;z-index:200;height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(4px + env(safe-area-inset-top)) 12px 4px;background:rgba(12,7,4,.98);color:var(--txt);border-bottom:1px solid var(--brassD);font-size:10px;letter-spacing:.08em;box-shadow:0 2px 12px rgba(0,0,0,.4);}
   .manabiBar a{color:var(--txt);text-decoration:none;font-weight:800;min-height:24px;display:inline-flex;align-items:center;padding:3px 9px;border:1px solid var(--brass);border-radius:999px;}
-  .manabiBar a:hover,.manabiBar a:focus-visible{background:var(--crim);color:#fff5e8;outline:2px solid var(--brassL);outline-offset:2px;}
+  .manabiBar a:focus-visible{background:var(--crim);color:#fff5e8;outline:2px solid var(--brassL);outline-offset:2px;}
+  @media (hover:hover){ .manabiBar a:hover{background:var(--crim);color:#fff5e8;outline:2px solid var(--brassL);outline-offset:2px;} }
   .manabiBar span{color:var(--brassL);}
 
   /* ---- 真鍮プレート章票 ---- */
@@ -108,7 +110,7 @@
     padding:3px 10px 2px 13px; line-height:1;
   }
   .seg{
-    padding:3px 1px; cursor:pointer;
+    padding:9px 1px; cursor:pointer;
     border-bottom:2px dotted #a5967a;
     transition:background .15s;
   }
@@ -172,7 +174,7 @@
   footer b{font-variant-numeric:tabular-nums; font-size:clamp(14px,4vw,18px);}
   #fCombo b{color:var(--brassL);}
   #fCombo.hot b{color:#ff8a70;}
-  .quitBtn{min-height:40px;padding:6px 10px;border:1px solid #65543c;background:transparent;color:var(--dim);font-weight:800;cursor:pointer;letter-spacing:.08em;}
+  .quitBtn{min-height:44px;padding:6px 10px;border:1px solid #65543c;background:transparent;color:var(--dim);font-weight:800;cursor:pointer;letter-spacing:.08em;}
   .quitBtn.armed{color:#fff0dc;border-color:var(--crim);background:var(--crim2);}
 
   /* ---- 異議あり演出 ---- */
@@ -269,10 +271,13 @@
   /* ---- UI polish / accessibility ---- */
   header{padding-top:calc(10px + env(safe-area-inset-top));}
   .overlay{backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);}
-  .panel{border-radius:9px;box-shadow:0 22px 70px rgba(0,0,0,.68);scrollbar-width:thin;scrollbar-color:var(--brass) transparent;}
+  .panel{border-radius:9px;box-shadow:0 22px 70px rgba(0,0,0,.68);scrollbar-width:thin;scrollbar-color:var(--brass) transparent;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+  #stage{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
   .seg,.keyBtn,.bigBtn,.quitBtn,#explain button{transition:transform .15s ease,filter .15s ease,background-color .15s ease;}
-  .seg:hover:not(.locked){background:rgba(176,42,55,.1);}
-  .keyBtn:hover,.bigBtn:hover,#explain button:hover{filter:brightness(1.1);}
+  @media (hover:hover){
+    .seg:hover:not(.locked){background:rgba(176,42,55,.1);}
+    .keyBtn:hover,.bigBtn:hover,#explain button:hover{filter:brightness(1.1);}
+  }
   .seg:focus-visible{outline:3px solid var(--crim);outline-offset:3px;border-radius:3px;}
   .keyBtn:focus-visible,.quitBtn:focus-visible{outline:3px solid var(--brassL);outline-offset:2px;}
   @media (min-width:900px){
@@ -423,7 +428,7 @@ var store={
   set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} mem[k]=v;}
 };
 var AC=null;
-function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=t||"square";o.frequency.value=f;g.gain.value=v||0.06;g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.12));o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+(d||0.12));}catch(e){}}
+function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();var o=AC.createOscillator(),g=AC.createGain();o.type=t||"square";o.frequency.value=f;g.gain.value=v||0.06;g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.12));o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+(d||0.12));}catch(e){}}
 function el(id){return document.getElementById(id);}
 
 /* ---------- 問題データ 73問 ---------- */
