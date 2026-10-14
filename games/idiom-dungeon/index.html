@@ -5,7 +5,7 @@
 <script src="../../hub-progress.js"></script>
 <script src="../../manabi-connect.js"></script>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>熟語の迷宮 ｜ 中学英熟語のダンジョンRPG</title>
 <meta name="description" content="動詞の石と前置詞の宝珠を組み合わせて英熟語を作り、扉を開いて迷宮を進む。中学範囲の熟語164語を収録。">
 <meta name="theme-color" content="#12101A">
@@ -33,9 +33,12 @@
     font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
     color:#D6CDE6; -webkit-text-size-adjust:100%;
     touch-action:manipulation; -webkit-tap-highlight-color:transparent;
-    overscroll-behavior-y:contain;
+    overscroll-behavior:none;
   }
-  #root { min-height:100%; }
+  button { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:manipulation; }
+  /* .lab の背景を画面の下端まで届かせる（min-height:100% の連鎖が切れないように） */
+  #root { min-height:100%; display:flex; flex-direction:column; }
+  #root > .lab { flex:1 0 auto; }
   html.is-app body { overflow-y:auto; -webkit-overflow-scrolling:touch; }
   html.is-app #root {
     padding:env(safe-area-inset-top) env(safe-area-inset-right)
@@ -46,10 +49,10 @@
 
   #fsbtn {
     position:fixed; right:10px; top:calc(10px + env(safe-area-inset-top)); z-index:60;
-    width:38px; height:38px; line-height:1; font-size:17px; cursor:pointer;
+    width:44px; height:44px; line-height:1; font-size:18px; cursor:pointer;
     color:#D9A94A; background:#1B1626D9; border:1px solid #39304A; border-radius:3px;
   }
-  #fsbtn:hover { border-color:#D9A94A; }
+  @media (hover:hover) { #fsbtn:hover { border-color:#D9A94A; } }
   html.is-app #fsbtn { display:none; }
 
   #boot { display:flex; flex-direction:column; align-items:center; justify-content:center;
