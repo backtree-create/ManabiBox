@@ -5,7 +5,7 @@
  <script src="../../hub-progress.js"></script>
  <script src="../../manabi-connect.js"></script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>サイエンスクエスト ― 観測塔</title>
 <meta name="description" content="中学理科を武器に観測塔の五層を踏破する学習RPG。物理・化学・生物・地学の全1500問、難易度3段階。ブラウザだけで動きます。">
 <meta name="theme-color" content="#080611">
@@ -294,7 +294,8 @@ button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipul
 
 /* ---------- BATTLE ---------- */
 #screen-battle{gap:clamp(6px,1.2vh,12px);}
-.hud-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-shrink:0;}
+/* ハブの「もどる」ボタン(左上固定)と全画面ボタンの下に HUD を置く */
+.hud-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-shrink:0;padding-top:28px;}
 .floor-tag{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:clamp(10px,1.4vh,12px);letter-spacing:.14em;}
 .floor-tag .sigil{filter:drop-shadow(0 0 6px var(--elem));}
 #progressDots{display:flex;gap:6px;}
@@ -480,7 +481,7 @@ button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipul
   font-family:'Shippori Mincho B1',serif;font-weight:600;letter-spacing:.12em;
   font-size:clamp(11px,1.5vh,13px);color:var(--brass-lt);
   background:linear-gradient(rgba(214,178,106,.1),rgba(214,178,106,.02));
-  border:1px solid var(--hair);border-radius:1px;padding:7px 14px;
+  border:1px solid var(--hair);border-radius:1px;padding:7px 14px;min-height:40px;
   transition:all .3s var(--ease);
 }
 .hint-btn:hover:not(:disabled){border-color:var(--brass);color:#fff;box-shadow:0 0 22px rgba(214,178,106,.22);}
@@ -663,10 +664,10 @@ button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipul
 
 #fullscreenBtn{
   position:absolute;top:10px;right:12px;z-index:45;
-  font-family:'Cinzel',serif;font-size:9.5px;letter-spacing:.2em;
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:.2em;
   background:rgba(14,10,29,.7);color:var(--muted);
   border:1px solid var(--hair-soft);border-radius:1px;
-  padding:5px 10px;cursor:pointer;transition:all .3s;
+  padding:9px 12px;min-height:36px;cursor:pointer;transition:all .3s;
 }
 #fullscreenBtn:hover{color:var(--brass-lt);border-color:var(--brass);}
 
