@@ -1319,12 +1319,41 @@ function Scene({ theme }) {
   );
 }
 
+const IS_TOUCH = (typeof window !== "undefined") &&
+  ((window.matchMedia && window.matchMedia("(pointer:coarse)").matches) || navigator.maxTouchPoints > 0);
+
+/* 画面上のタップキーボード（タッチ端末用） */
+const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm'-"];
+function TapKeyboard({ onChar, onBack, onEnter, onGiveUp }) {
+  const press = (fn) => (e) => { e.preventDefault(); fn(); };
+  return (
+    <div className="tapkb" role="group" aria-label="文字キー">
+      {KEY_ROWS.map((row, i) => (
+        <div className="tapkb-row" key={i}>
+          {i === 2 && <button type="button" className="tapkb-key tapkb-wide tapkb-giveup" onPointerDown={press(onGiveUp)}>ギブアップ</button>}
+          {row.split("").map((c) => (
+            <button type="button" className="tapkb-key" key={c} onPointerDown={press(() => onChar(c))}>{c}</button>
+          ))}
+          {i === 2 && <button type="button" className="tapkb-key tapkb-wide tapkb-back" onPointerDown={press(onBack)} aria-label="1文字消す">消す</button>}
+        </div>
+      ))}
+      <div className="tapkb-row">
+        <button type="button" className="tapkb-key tapkb-space" onPointerDown={press(() => onChar(" "))}>スペース</button>
+        <button type="button" className="tapkb-key tapkb-wide tapkb-enter" onPointerDown={press(onEnter)}>決定</button>
+      </div>
+    </div>
+  );
+}
+
 function EnglishDeGo() {
   const [screen, setScreen] = useState("title");
   const [showSlots, setShowSlots] = useState(true);
   const [sound, setSound] = useState(true);
   const [bgmOn, setBgmOn] = useState(true);
   const [imeWarn, setImeWarn] = useState(false);
+  /* タッチ端末ではソフトキーボードで画面が隠れるため、画面上のタップキーで入力する。
+     外部キーボードをつないでいる場合はそのまま打てる（keydown を拾う）。 */
+  const [tapKeys, setTapKeys] = useState(IS_TOUCH);
   const [isFs, setIsFs] = useState(false);
 
   const [lvIndex, setLvIndex] = useState(0);
@@ -1461,7 +1490,7 @@ useEffect(() => {
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
-    const f = setTimeout(() => inputRef.current && inputRef.current.focus(), 30);
+    const f = setTimeout(() => { if (!tapKeys && inputRef.current) inputRef.current.focus(); }, 30);
     return () => { cancelAnimationFrame(rafRef.current); clearTimeout(f); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, qid]);
@@ -1524,6 +1553,25 @@ useEffect(() => {
 
   const onKeyDown = (e) => { if (e.key === "Enter") { e.preventDefault(); if (typed.trim()) submit(); } };
 
+  /* タップ入力モード：画面上のキーと、外部キーボードの両方を受け付ける */
+  const tapChar = (c) => { if (lockRef.current) return; setTyped((v) => (v.length < 24 ? v + c : v)); };
+  const tapBack = () => { if (lockRef.current) return; setTyped((v) => v.slice(0, -1)); };
+  const tapEnter = () => { if (lockRef.current) return; if (typed.trim()) submit(); };
+  const tapGiveUp = () => { if (lockRef.current) return; finishMiss(true); };
+  useEffect(() => {
+    if (!tapKeys || screen !== "play") return;
+    const h = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+      if (e.key === "Enter") { e.preventDefault(); tapEnter(); }
+      else if (e.key === "Backspace") { e.preventDefault(); tapBack(); }
+      else if (/^[A-Za-z'\- ]$/.test(e.key)) { e.preventDefault(); tapChar(e.key); }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tapKeys, screen, typed, current]);
+
   const ratio = limit > 0 ? Math.max(0, Math.min(1, left / limit)) : 0;
   const barColor = ratio > 0.5 ? "#4BE07A" : ratio > 0.25 ? "#FFD43B" : "#FF4D62";
   const life = MAX_LIFE - timeouts;
@@ -1573,7 +1621,7 @@ useEffect(() => {
 
       {/* ================= プレイ ================= */}
       {screen === "play" && current && (
-        <div className="stage" style={{ "--accent": theme.accent, "--accent2": theme.accent2 }}>
+        <div className={"stage" + (tapKeys ? " tapmode" : "")} style={{ "--accent": theme.accent, "--accent2": theme.accent2 }}>
           <Scene theme={theme} />
           <div className="layer play">
 
@@ -1588,9 +1636,14 @@ useEffect(() => {
                   ))}
                 </div>
                 <div className="pills">
-                  <button className={"pill" + (showSlots ? " pill-on" : "")} onClick={() => { setShowSlots(!showSlots); inputRef.current?.focus(); }}>マスひょうじ</button>
-                  <button className={"pill" + (sound ? " pill-on" : "")} onClick={() => { setSound(!sound); inputRef.current?.focus(); }}>効果音</button>
-                  <button className={"pill" + (bgmOn ? " pill-on" : "")} onClick={() => { setBgmOn(!bgmOn); inputRef.current?.focus(); }}>BGM</button>
+                  <button className={"pill" + (showSlots ? " pill-on" : "")} onClick={() => { setShowSlots(!showSlots); if (!tapKeys) inputRef.current?.focus(); }}>マスひょうじ</button>
+                  {IS_TOUCH && (
+                    <button className={"pill" + (tapKeys ? " pill-on" : "")} onClick={() => setTapKeys(!tapKeys)}>
+                      {tapKeys ? "タップ入力" : "キーボード入力"}
+                    </button>
+                  )}
+                  <button className={"pill" + (sound ? " pill-on" : "")} onClick={() => { setSound(!sound); if (!tapKeys) inputRef.current?.focus(); }}>効果音</button>
+                  <button className={"pill" + (bgmOn ? " pill-on" : "")} onClick={() => { setBgmOn(!bgmOn); if (!tapKeys) inputRef.current?.focus(); }}>BGM</button>
                 </div>
               </div>
               <div className="hud-tr">
@@ -1643,19 +1696,32 @@ useEffect(() => {
                 </div>
               )}
               {imeWarn && <div className="imewarn">半角英数で入力してください（半角/全角キー）</div>}
-              <div className={"inputwrap" + (shake ? " shake" : "")}>
-                <input ref={inputRef} className="inputbox" value={typed}
-                  onChange={handleInput}
-                  onCompositionEnd={handleInput}
-                  onKeyDown={onKeyDown}
-                  type="text" inputMode="latin" lang="en" enterKeyHint="done"
-                  autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"
-                  style={{ imeMode: "disabled" }}
-                  placeholder="英語のつづりを入力"
-                  aria-label="英単語を入力" />
-                <button className="enterchip" onClick={() => typed.trim() && submit()}>決定</button>
-              </div>
-              <div className="giveup">『q』と入力するとギブアップ</div>
+              {tapKeys ? (
+                <>
+                  <div className={"inputwrap" + (shake ? " shake" : "")}>
+                    <div className={"inputbox typedbox" + (typed ? "" : " empty")} aria-live="polite">{typed || "下のキーをタップ"}</div>
+                    <button className="enterchip" onClick={tapEnter}>決定</button>
+                  </div>
+                  <TapKeyboard onChar={tapChar} onBack={tapBack} onEnter={tapEnter} onGiveUp={tapGiveUp} />
+                </>
+              ) : (
+                <>
+                  {IS_TOUCH && <div className="kbnote">画面のキーボードで下が隠れることがあります。外部キーボードをつなぐか「タップ入力」にもどしてください。</div>}
+                  <div className={"inputwrap" + (shake ? " shake" : "")}>
+                    <input ref={inputRef} className="inputbox" value={typed}
+                      onChange={handleInput}
+                      onCompositionEnd={handleInput}
+                      onKeyDown={onKeyDown}
+                      type="text" inputMode="latin" lang="en" enterKeyHint="done"
+                      autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"
+                      style={{ imeMode: "disabled" }}
+                      placeholder="英語のつづりを入力"
+                      aria-label="英単語を入力" />
+                    <button className="enterchip" onClick={() => typed.trim() && submit()}>決定</button>
+                  </div>
+                  <div className="giveup">『q』と入力するとギブアップ</div>
+                </>
+              )}
             </div>
 
             {/* --- 判定 --- */}
@@ -1768,6 +1834,8 @@ const CSS = `
 @media (max-aspect-ratio:1/1){
   .stage{aspect-ratio:auto; height:calc(var(--appvh, 100vh) - 24px); max-height:none;}
 }
+/* タップ入力中は画面上キーボードの分だけ縦が要るので、横向きでも高さいっぱいに */
+.stage.tapmode{aspect-ratio:auto; height:calc(var(--appvh, 100vh) - 24px); max-height:none; max-width:1100px;}
 /* ホーム画面から起動したとき（アプリ表示）＝親の高さいっぱい。vh は使わない */
 .is-app .stage{max-width:none; width:100%; height:100%; max-height:none; aspect-ratio:auto;
   border-radius:0; border:none; box-shadow:none; margin:0;}
@@ -1934,6 +2002,22 @@ const CSS = `
   padding:4px 14px; box-shadow:0 4px 0 var(--out); animation:popin .2s;}
 .shake{animation:shake .3s;}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+.typedbox{display:flex; align-items:center; justify-content:center; min-height:56px; padding-right:72px;}
+.typedbox.empty{color:#B6A9C9; font-size:15px; letter-spacing:0;}
+.kbnote{margin:0 auto 6px; width:fit-content; max-width:100%; background:#FFF3C4; color:#5A4300; border:2px solid #E5B800;
+  border-radius:10px; padding:5px 10px; font-size:12px; font-weight:800; line-height:1.4;}
+.tapkb{margin-top:8px; display:flex; flex-direction:column; gap:6px; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+.tapkb-row{display:flex; justify-content:center; gap:6px;}
+.tapkb-key{flex:0 0 auto; width:min(8.6vw,52px); height:46px; border-radius:10px; border:3px solid var(--out);
+  background:var(--paper); color:var(--out); box-shadow:0 4px 0 var(--out); font-family:var(--round);
+  font-size:20px; font-weight:900; line-height:1; padding:0; touch-action:manipulation; cursor:pointer;}
+.tapkb-key:active{transform:translateY(3px); box-shadow:0 1px 0 var(--out);}
+.tapkb-wide{width:auto; min-width:min(15vw,96px); padding:0 10px; font-size:14px;}
+.tapkb-giveup{background:#FFE1E6; color:#B0002A;}
+.tapkb-back{background:#EEE9F6;}
+.tapkb-space{width:min(40vw,300px); font-size:14px;}
+.tapkb-enter{background:var(--accent); color:#fff; min-width:min(24vw,160px);}
+@media (max-height:720px){ .tapkb-key{height:40px; font-size:18px;} .tapkb{gap:4px;} .tapkb-row{gap:4px;} }
 .giveup{text-align:right; font-size:11px; font-weight:800; color:#ffffffD0; margin-top:4px; text-shadow:0 2px 3px #00000070;}
 .note{font-size:11px; font-weight:700; color:#ffffffC0; margin:0; z-index:2; text-shadow:0 1px 2px #00000060;}
 
