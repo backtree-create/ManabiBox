@@ -16,8 +16,9 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:#050302;overflow:hidden;
   font-family:'Zen Kaku Gothic New',sans-serif;color:var(--white);
-  touch-action:manipulation;user-select:none;-webkit-user-select:none}
-#wrap{height:100%;height:100svh;display:flex;align-items:center;justify-content:center;
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+  overscroll-behavior:none}
+#wrap{height:100%;height:100svh;height:100dvh;display:flex;align-items:center;justify-content:center;
   background:radial-gradient(120% 90% at 50% 0%, #1A1008 0%, #050302 60%)}
 #stage{position:relative;width:min(100vw,177.7vh,177.7svh);aspect-ratio:16/9;max-height:100svh;
   background:#050302;overflow:hidden;box-shadow:0 0 60px rgba(0,0,0,.8);display:flex}
@@ -110,14 +111,15 @@ html,body{height:100%;background:#050302;overflow:hidden;
   font-family:'DotGothic16',monospace;color:var(--torch);font-size:clamp(18px,4vmin,36px);
   text-shadow:2px 2px 0 #140c04}
 
-#practiceBar{position:absolute;left:50%;bottom:15%;transform:translateX(-50%);z-index:6;display:none;gap:8px;
+#practiceBar{position:absolute;left:50%;bottom:21%;transform:translateX(-50%);z-index:6;display:none;gap:8px;
   flex-wrap:wrap;justify-content:center;max-width:92%}
 .pBtn{border:3px solid #4a351e;background:rgba(10,7,3,.85);color:var(--white);
   border-radius:4px;font-family:'DotGothic16',monospace;
-  font-size:clamp(11px,2.2vmin,18px);padding:.5em .9em;cursor:pointer;white-space:nowrap}
+  font-size:clamp(11px,2.2vmin,18px);padding:.6em 1em;min-height:44px;cursor:pointer;white-space:nowrap;touch-action:none}
 .pBtn:active{background:rgba(255,197,61,.3);border-color:var(--amber)}
 
-#ovl{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center}
+/* 表紙などの重ね画面は画面全体を使う（iPadの4:3画面では16:9ステージの上下に余白ができ、パネルが収まらないため） */
+#ovl{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:0 0 env(safe-area-inset-bottom)}
 .panel{background:linear-gradient(180deg,rgba(12,8,4,.97),rgba(5,3,2,.97));
   border:3px solid #4a351e;border-radius:6px;padding:3% 4.5%;
   width:min(92%,780px);max-height:94%;overflow-y:auto;text-align:center;
@@ -129,7 +131,7 @@ h1{font-family:'DotGothic16',monospace;font-weight:400;font-size:clamp(24px,5.6v
 h1 .en{display:block;font-family:'Anton',sans-serif;color:var(--amber);
   font-size:clamp(13px,2.6vmin,22px);letter-spacing:.28em;margin-top:.35em;text-shadow:0 0 12px rgba(255,197,61,.4)}
 h2{font-family:'DotGothic16',monospace;font-weight:400;font-size:clamp(19px,4.4vmin,36px);margin-bottom:.4em;text-shadow:2px 2px 0 #140c04}
-p.sub{color:#C9BFA8;font-size:clamp(12px,2.2vmin,16px);line-height:1.9;margin:.9em 0}
+p.sub{color:#C9BFA8;font-size:clamp(12px,2.2vmin,16px);line-height:1.8;margin:.6em 0}
 .btn{display:inline-block;border:3px solid #A67C1B;cursor:pointer;border-radius:4px;
   font-family:'DotGothic16',monospace;letter-spacing:.08em;
   font-size:clamp(14px,2.8vmin,20px);padding:.65em 1.7em;margin:.35em;
@@ -140,12 +142,16 @@ p.sub{color:#C9BFA8;font-size:clamp(12px,2.2vmin,16px);line-height:1.9;margin:.9
 .safety{background:rgba(229,83,60,.08);border:2px solid rgba(229,83,60,.5);border-radius:4px;
   padding:2.5% 4%;margin:1em 0;text-align:left;font-size:clamp(11px,2.1vmin,15px);line-height:2}
 .safety b{color:var(--red)}
-.moveList{display:grid;grid-template-columns:repeat(3,1fr);gap:2%;margin:1.2em 0}
+.safeties{display:grid;grid-template-columns:1fr;gap:0 2%}
+@media (min-width:700px){.safeties{grid-template-columns:1fr 1fr}.safeties .safety{margin:.6em 0}}
+/* iPad横向きなど、ステージが低いときは表紙を横に広げてスクロールなしで収める */
+@media (max-height:700px){.panel{padding:1.6% 3.5%;width:min(96%,1040px)}.moveList{margin:.6em 0}.moveCard{padding:2.5% 3%}p.sub{margin:.45em 0;line-height:1.65}.safeties .safety{line-height:1.7;padding:1.5% 3%}.btn{margin:.25em .3em}.trivia{margin-top:.6em;padding-top:.5em;line-height:1.6}.eyebrow{margin-bottom:.3em}}
+.moveList{display:grid;grid-template-columns:repeat(3,1fr);gap:2%;margin:.9em 0}
 .moveCard{background:rgba(255,197,61,.06);border:2px solid #4a351e;border-radius:4px;padding:4% 3%}
 .moveCard .mv{font-family:'DotGothic16',monospace;color:var(--amber);font-size:clamp(12px,2.3vmin,18px)}
 .moveCard .fx{font-size:clamp(10px,1.9vmin,14px);color:#C9BFA8;margin-top:.4em;line-height:1.6}
 .trivia{font-size:clamp(11px,2vmin,14px);color:#8FB79E;border-top:1px solid #2a1f10;
-  margin-top:1.2em;padding-top:1em;line-height:1.8;text-align:left}
+  margin-top:.8em;padding-top:.7em;line-height:1.7;text-align:left}
 .trivia b{color:var(--good)}
 table.res{width:100%;border-collapse:collapse;margin:1em 0;font-size:clamp(12px,2.4vmin,18px)}
 table.res td{padding:.5em .4em;border-bottom:1px solid #2a1f10;text-align:left;font-weight:700}
@@ -173,6 +179,8 @@ table.res td:last-child{text-align:right;font-family:'DotGothic16',monospace;col
   background:rgba(10,7,3,.9);color:var(--amber);border:3px solid #4a351e;
   border-radius:4px;padding:.35em .9em;cursor:pointer;letter-spacing:.06em}
 #homeBtn:active{transform:translateY(2px)}
+/* ハブ側の「まなびの基板」ボタンがある時は自前のボタンを出さない（重なるため） */
+body:has(#manabi-back) #homeBtn{display:none}
 #rotateHint{position:fixed;inset:0;background:#050302;z-index:99;display:none;
   align-items:center;justify-content:center;text-align:center;font-weight:900;
   font-size:clamp(16px,4.5vw,24px);line-height:2;padding:8%}
@@ -489,6 +497,14 @@ function fitCam(){
 }
 async function initPose(){
   const stat=$('#camStatus');
+  /* 先にカメラの許可を取る（iPad Safari はタップ直後に許可ダイアログが出る。拒否なら重いモデル読み込みの前に分かる） */
+  stat.textContent='カメラを起動中…';
+  const want=(S.np>1)
+    ? {facingMode:'user',width:{ideal:1280},height:{ideal:960},aspectRatio:{ideal:4/3}}
+    : {facingMode:'user',width:{ideal:960},height:{ideal:720},aspectRatio:{ideal:4/3}};
+  let stream;
+  try{ stream=await navigator.mediaDevices.getUserMedia({video:want,audio:false}); }
+  catch(e){ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false}); }
   stat.textContent='AIモデルを読み込み中…（初回は少し時間がかかります）';
   const url=new URL('../../lib/mediapipe',location.href).href;
   const vision=await import(url+'/vision_bundle.mjs');
@@ -506,13 +522,6 @@ async function initPose(){
       delegate:d},runningMode:'VIDEO',numPoses:2});
   try{POSE.landmarker=await vision.PoseLandmarker.createFromOptions(files,opts('GPU'));}
   catch(e){POSE.landmarker=await vision.PoseLandmarker.createFromOptions(files,opts('CPU'));}
-  stat.textContent='カメラを起動中…';
-  const want=(S.np>1)
-    ? {facingMode:'user',width:{ideal:1280},height:{ideal:960},aspectRatio:{ideal:4/3}}
-    : {facingMode:'user',width:{ideal:960},height:{ideal:720},aspectRatio:{ideal:4/3}};
-  let stream;
-  try{ stream=await navigator.mediaDevices.getUserMedia({video:want,audio:false}); }
-  catch(e){ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false}); }
   POSE.video.srcObject=stream;
   await new Promise(r=>POSE.video.onloadedmetadata=r);
   await POSE.video.play();
@@ -1051,10 +1060,12 @@ function screenMenu(){
      </div>
      <p class="sub">きみの目がカメラだ。しゃがめば視点が下がり、跳べば視界が浮く。<br>
      落石はカウントダウン、モンスターは「！」のあと本当に襲ってくる。ハート3つで挑め。</p>
+     <div class="safeties">
      <div class="safety"><b>安全のために：</b>周囲2歩ぶんのスペース確保／すべらない床で／準備運動をしてから／息が上がったら休む・水分補給。<b>痛みを感じたらすぐ中止。</b></div>
      <div class="safety" style="background:rgba(255,197,61,.07);border-color:rgba(255,197,61,.5)">
        <b style="color:var(--amber)">2人で対戦するときは：</b>カメラから<b>2.5m</b>ほど離れ、2人が<b>1m</b>間隔で並べる場所で。
        立ち位置に床テープを貼ると取り違えが起きません。</div>
+     </div>
      <button class="btn" id="goCam">1人でプレイ（カメラ）</button>
      <button class="btn" id="goVs">2人で対戦（カメラ）</button>
      <button class="btn ghost" id="goPractice">練習モード（カメラなし）</button>
@@ -1071,8 +1082,9 @@ function screenMenu(){
       S.mode='camera';screenCalib();   // キャリブ完了後に面セレクトへ
     }catch(e){
       console.error(e);
+      try{ const st=POSE.video.srcObject; if(st){ st.getTracks().forEach(t=>t.stop()); POSE.video.srcObject=null; } }catch(_){}
       $('#goCam').disabled=false;$('#goVs').disabled=false;
-      $('#err').textContent='カメラまたはAIモデルの準備に失敗しました（'+(e.name||'error')+'）。カメラの許可・通信環境を確認するか、練習モードをどうぞ。';
+      $('#err').textContent=camErrorText(e);
     }
   };
   $('#goCam').onclick=()=>startCam(1);
@@ -1084,6 +1096,19 @@ function screenMenu(){
   $('#goFull').onclick=()=>{const el=document.documentElement;
     if(!document.fullscreenElement){(el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el);}
     else{(document.exitFullscreen||function(){}).call(document);}};
+}
+/* 失敗の種類ごとに、次に何をすればよいかを示す */
+function camErrorText(e){
+  const n=(e&&e.name)||'';
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)
+    return 'このブラウザではカメラが使えません。Safari（iPad）または Chrome で開くか、練習モードをどうぞ。';
+  if(n==='NotAllowedError'||n==='PermissionDeniedError'||n==='SecurityError')
+    return 'カメラの使用が許可されませんでした。iPadのSafariなら、アドレスバー左の「ぁあ」→「Webサイトの設定」→「カメラ」を「許可」にして、ページを再読み込みしてください。カメラなしで遊ぶなら練習モードをどうぞ。';
+  if(n==='NotFoundError'||n==='OverconstrainedError'||n==='DevicesNotFoundError')
+    return 'カメラが見つかりませんでした。カメラ付きの端末で開くか、練習モードをどうぞ。';
+  if(n==='NotReadableError'||n==='TrackStartError'||n==='AbortError')
+    return 'カメラを起動できませんでした。ほかのアプリやタブがカメラを使っていないか確認して、もう一度おしてください。';
+  return 'AIモデル（姿勢推定）を読み込めませんでした（'+(n||'error')+'）。通信環境を確認して、もう一度おすか、練習モードをどうぞ。';
 }
 function screenCalib(){
   S.scene='calib';
