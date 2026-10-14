@@ -68,6 +68,7 @@ function ensureAudio(){
   if(actx && actx.state === "suspended") actx.resume();
 }
 document.addEventListener("pointerdown", ensureAudio);
+document.addEventListener("touchend", ensureAudio);   /* iOS Safari はタップ(ユーザー操作)内で resume が必要 */
 document.addEventListener("keydown", ensureAudio);
 
 function tone(freq, dur, opt){

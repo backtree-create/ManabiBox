@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>STONE QUEST ―科学で文明を取りもどせ―</title>
 <link rel="icon" href="../../icon-192.png" type="image/png">
 <style>
@@ -22,8 +22,19 @@
     font-family:"DotGothic16","MS Gothic","ＭＳ ゴシック","Meiryo",monospace;
     display:flex; justify-content:center; padding:10px;
     min-height:100vh;
+    /* iOS Safari: アドレスバー分のずれを防ぎ、ページ全体はスクロールさせない(サイドバー・オーバーレイ内で縦スクロール) */
+    height:100vh; height:100dvh; overflow:hidden;
+    overscroll-behavior:none;
+    padding-left:calc(10px + env(safe-area-inset-left)); padding-right:calc(10px + env(safe-area-inset-right));
+    padding-bottom:calc(10px + env(safe-area-inset-bottom));
   }
-  #app{ width:1280px; max-width:100%; }
+  html{ height:100%; }
+  #app{ width:1280px; max-width:100%; display:flex; flex-direction:column; height:100%; }
+  /* タッチ端末: ダブルタップ拡大・長押しの文字選択を抑止 */
+  button, a{ touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  body.touch #cvWrap, body.touch #keyHint, body.touch header{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  /* まなびの基板の「もどる」ボタン(左上固定)とタイトルが重ならないようにする */
+  body:has(#manabi-back) header{ padding-left:128px; }
 
   /* ---- ヘッダー ---- */
   header{
@@ -64,7 +75,9 @@
     background:var(--panel3); border:2px solid var(--edge); border-radius:4px;
     color:var(--text); cursor:pointer;
   }
-  #muteBtn:hover, #hubBtn:hover{ border-color:var(--accent); color:var(--accent); }
+  @media (hover:hover){
+    #muteBtn:hover, #hubBtn:hover{ border-color:var(--accent); color:var(--accent); }
+  }
   #hubBtn{
     font-size:12px; text-decoration:none;
     display:none; align-items:center; gap:5px; padding:6px 10px;
@@ -73,7 +86,7 @@
   #hubBtn.show{ display:flex; }
 
   /* ---- メイン ---- */
-  #main{ display:flex; gap:8px; }
+  #main{ display:flex; gap:8px; flex:1; min-height:0; }
   #cvWrap{
     position:relative; flex:0 0 auto; border-radius:4px; overflow:hidden;
     border:2px solid var(--edge); box-shadow:0 6px 0 rgba(0,0,0,.4);
@@ -90,7 +103,8 @@
     border-radius:3px; padding:1px 6px; font-weight:normal; }
 
   /* ---- サイドバー ---- */
-  aside{ flex:1; min-width:280px; display:flex; flex-direction:column; gap:8px; font-size:13px; }
+  aside{ flex:1; min-width:280px; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:8px; font-size:13px; -webkit-overflow-scrolling:touch; }
+  aside .panel{ flex-shrink:0; }
   .panel{
     background:linear-gradient(180deg, var(--panel2), var(--panel));
     border:2px solid var(--edge); border-radius:4px; padding:10px;
@@ -123,15 +137,23 @@
     box-shadow:0 3px 0 rgba(0,0,0,.45);
     transition:border-color .12s, color .12s, transform .05s;
   }
-  button:hover{ border-color:var(--accent); color:var(--accent); }
+  @media (hover:hover){
+    button:hover{ border-color:var(--accent); color:var(--accent); }
+    button:disabled:hover{ border-color:var(--edge); color:var(--text); }
+  }
   button:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.45); }
   button:disabled{ opacity:.4; cursor:default; transform:none; }
-  button:disabled:hover{ border-color:var(--edge); color:var(--text); }
   button.primary{
     border-color:var(--gold); color:var(--gold);
     box-shadow:0 3px 0 rgba(0,0,0,.45), 0 0 10px rgba(240,195,78,.15);
   }
-  button.primary:hover{ background:linear-gradient(180deg,#2e3a2a,#243020); color:#ffe08a; }
+  @media (hover:hover){
+    button.primary:hover{ background:linear-gradient(180deg,#2e3a2a,#243020); color:#ffe08a; }
+  }
+  /* タッチ端末ではボタンのタップ領域を確保し、小さな説明文を少し大きくする */
+  body.touch button:not(#padWrap button){ min-height:44px; }
+  body.touch #keyHint, body.touch .areaCard .adesc, body.touch .techCard .tname .topic,
+  body.touch #obox h2 .tag, body.touch header .sub{ font-size:12px; }
 
   #matList{ display:grid; grid-template-columns:1fr 1fr; gap:3px 12px; font-size:12px; }
   .matRow{ display:flex; justify-content:space-between; border-bottom:1px dashed #2a3a4a55; padding-bottom:2px; }
@@ -150,7 +172,8 @@
   }
   #overlay.hidden{ display:none; }
   #obox{
-    width:740px; max-width:94vw; max-height:92vh; overflow-y:auto;
+    width:740px; max-width:94vw; max-height:92vh; max-height:92dvh; overflow-y:auto;
+    -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
     background:linear-gradient(180deg, #1a2530, #141c25);
     border:2px solid var(--edge); border-radius:6px; padding:22px;
     box-shadow:0 10px 0 rgba(0,0,0,.4), 0 0 40px rgba(0,0,0,.6);
@@ -183,7 +206,7 @@
     border-radius:4px; padding:11px 12px; margin-bottom:9px;
     transition:border-color .15s, transform .1s;
   }
-  .techCard:hover{ border-color:#4a6a86; }
+  @media (hover:hover){ .techCard:hover{ border-color:#4a6a86; } }
   .techCard.done{ border-left-color:#3f8f4f; }
   .techCard.locked{ opacity:.6; border-left-color:#2a3644; }
   .techCard.mystery{ opacity:.75; border-left-color:#3a3050; background:linear-gradient(180deg,#20283a,#1a2130); }
@@ -202,7 +225,7 @@
   .qChoice{
     display:block; width:100%; text-align:left; margin-bottom:9px; padding:11px 14px; font-size:13px;
   }
-  .qChoice:hover{ background:linear-gradient(180deg,#254050,#1d3240); }
+  @media (hover:hover){ .qChoice:hover{ background:linear-gradient(180deg,#254050,#1d3240); } }
   .qResult{ font-size:16px; margin:12px 0; letter-spacing:1px; }
   .qResult.good{ color:var(--good); text-shadow:0 0 10px rgba(127,208,143,.4); }
   .qResult.bad{ color:var(--bad); }
@@ -224,7 +247,7 @@
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     transition:border-color .15s;
   }
-  .areaCard:hover{ border-color:#4a6a86; }
+  @media (hover:hover){ .areaCard:hover{ border-color:#4a6a86; } }
   .areaCard.locked{ opacity:.5; }
   .areaCard .aname{ font-size:14px; }
   .areaCard .adesc{ font-size:11px; color:var(--dim); margin-top:4px; line-height:1.6; }
@@ -256,8 +279,16 @@
   #sideBtns .mini{ width:48px; height:48px; border-radius:50%; font-size:18px; }
   #atkBtn{ width:74px; height:74px; border-radius:50%; font-size:28px; border-color:var(--gold); }
 
+  /* 横幅がキャンバス+サイドバーに足りない場合(タブレット横向き等)はキャンバスを縮める */
+  @media (max-width:1300px){
+    #cvWrap{ flex:1 1 auto; min-width:0; }
+    canvas{ width:100%; height:auto; }
+    aside{ flex:0 0 280px; }
+  }
   @media (max-width:1000px){
     #main{ flex-direction:column; }
+    #main > div:first-child{ flex-shrink:0; }
+    aside{ flex:1 1 auto; }
     canvas{ width:100%; height:auto; }
     header{ flex-wrap:wrap; row-gap:8px; padding:8px 10px; }
     header h1{ font-size:18px; }
