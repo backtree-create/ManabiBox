@@ -2945,16 +2945,21 @@ function reviewHTML(list,head){
     `<div class="review-item"><div class="q">Q. ${w.q}</div><div class="a">A. ${w.correctText}</div><div class="exp">${w.exp}</div></div>`).join("");
 }
 /* ============ まなびの基板へ送る ============ */
+/* 古い hub-progress.js がキャッシュされている端末のためのフォールバック */
+function hubScale(r,o){ return (window.LearnHub&&LearnHub.scale)?LearnHub.scale(r,o):Math.round(Math.max(0,Math.min(1,r))*10000); }
 function sendToHub(done,note){
   if(!window.manabiReport) return;
-  /* 正答率を1000点満点に換算して送る */
-  const pts=score.total?Math.round(score.correct/score.total*1000):0;
+  /* 出来ばえ = (クリア層数/5) × 正答率。難易度係数はハブ側で掛ける */
+  const rate=score.total?score.correct/score.total:0;
+  const ratio=Math.max(0,Math.min(1,done/FLOORS.length))*rate;
+  const diff=(DIFF[diffKey]&&DIFF[diffKey].tier)||"normal";
   window.manabiReport({
     app:"science-quest",
     done:done,
     total:FLOORS.length,
-    best:pts,
-    note:note
+    best:hubScale(ratio,{diff:diff}),
+    raw:score.correct,
+    note:"正解 "+score.correct+"/"+score.total+"・"+note
   });
 }
 /* ============ 敗北 ============ */
