@@ -52,6 +52,7 @@
   function beep(freqs, dur, type, gain) {
     try {
       if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state === 'suspended') AC.resume();   // iOS Safari: タップのたびに再開しないと鳴らない
       var t = AC.currentTime;
       freqs.forEach(function (f, i) {
         var o = AC.createOscillator(), g = AC.createGain();
@@ -932,6 +933,8 @@
       if (set.indexOf(cid) < 0) { set.push(cid); store('captured', JSON.stringify(set)); }
     } catch (e) { }
   }
+  /* ハブ配点換算（古い hub-progress.js 向けフォールバック付き） */
+  function hubScale(r, o) { return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0, Math.min(1, r)) * 10000); }
   var lastReportSig = '';
   function maybeReport(force) {
     var cum = [];
@@ -941,11 +944,14 @@
     var sig = cum.length + '/' + acc + '/' + score;
     if (sig === lastReportSig) return;
     lastReportSig = sig;
+    /* 出来ばえ = 累計占領国数/180 の半分 + 正答率の半分 */
+    var ratio = Math.min(1, cum.length / 180) * 0.5 + Math.max(0, Math.min(1, acc / 100)) * 0.5;
     var payload = {
       app: 'world-conquest',
       done: cum.length,
       total: mapIds.length || Object.keys(COUNTRIES).length,
-      best: acc,
+      best: hubScale(ratio),
+      raw: score,
       note: '今回' + sessionCaptures + 'か国・合計' + score + 'pt（正答率' + acc + '%）'
     };
     try {
