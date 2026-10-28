@@ -938,13 +938,21 @@ var atkScore=0, atkChains=0, atkNoMiss=0, atkEnd=0, atkPrev=-1, atkOver=false, a
 
 var pipeline=$("pipeline"), handEl=$("hand"), caption=$("caption"), guide=$("guide");
 
+function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
+function hubEndless(r){ return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0,Math.min(1,r))*30000); }
 function reportChrono(score,note){
   if(typeof manabiReport!=="function") return;
-  var chapterBest=store.get("chrono_best4",{}), done=0, bestScore=Number(score)||0;
-  Object.keys(chapterBest).forEach(function(k){done++;bestScore=Math.max(bestScore,Number(chapterBest[k].score)||0);});
+  var chapterBest=store.get("chrono_best4",{}), done=0, sum=0;
+  Object.keys(chapterBest).forEach(function(k){done++;sum+=Math.min(1,(Number(chapterBest[k].score)||0)/2500);});
   var attackBest=store.get("chrono_atk1",null);
-  if(attackBest) bestScore=Math.max(bestScore,Number(attackBest.score)||0);
-  manabiReport({app:"chrono-domino",done:Math.min(done,ERAS.length),total:ERAS.length,best:bestScore,note:String(note||"").slice(0,40)});
+  var atkMax=attackBest?(Number(attackBest.score)||0):0;
+  var raw=Math.round(Number(score)||0);
+  var hubNote=("素点 "+raw.toLocaleString()+" / "+String(note||"")).slice(0,40);
+  manabiReport({app:"chrono-domino",done:Math.min(done,ERAS.length),total:ERAS.length,
+    best:hubScale(sum/ERAS.length),
+    endless:hubEndless(Math.min(1,atkMax/12000)),
+    raw:raw,
+    note:hubNote});
 }
 $('manabi-back').addEventListener('click',function(){reportChrono(mode==="attack"?atkScore:0,"ManabiBoxへ戻る");});
 

@@ -279,18 +279,20 @@ function hubBoot(){
   const rec=hubLoad();
   if(rec.ranks) G.clear=Object.assign({},rec.ranks);
 }
-function hubReport(epIdx, ratio, rank, epNo){
+/* 配点換算: ratio = Σ(話ごとの最高得点率)/6 をハブの満点(学年別)に換算。raw = 直近の得点 */
+function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
+function hubReport(epIdx, ratio, rank, epNo, rawScore){
   const rec=hubLoad();
   const ratios=rec.ratios||{};
   ratios[epIdx]=Math.max(ratios[epIdx]||0, Math.max(0,Math.min(1,ratio)));
   const ranks=Object.assign({},rec.ranks||{},G.clear);
   const done=Object.keys(ratios).length;
   let sum=0; for(const k in ratios) sum+=ratios[k];
-  const best=Math.round(sum/HUB.total*1000);
+  const best=hubScale(sum/HUB.total);
   hubSaveLocal({done,best,ratios,ranks});
   if(window.LearnHub && typeof LearnHub.report==='function'){
-    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best,
-      note:`FILE ${epNo} ランク${rank}`}); }catch(e){}
+    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best, raw:Math.round(rawScore||0),
+      note:`素点 ${Math.round(rawScore||0)} / FILE ${epNo} ランク${rank}`.slice(0,40)}); }catch(e){}
   }
 }
 (function(){
@@ -1362,7 +1364,7 @@ function scResult(){
   const[rk,msg]=rankOf(G.score,ep);
   const prev=G.clear[G.epIdx];
   if(!prev||'SABC'.indexOf(rk)<'SABC'.indexOf(prev))G.clear[G.epIdx]=rk;
-  hubReport(G.epIdx, G.score/epMax(ep), G.clear[G.epIdx], ep.no);
+  hubReport(G.epIdx, G.score/epMax(ep), G.clear[G.epIdx], ep.no, G.score);
   const sm=ep.summary.map(s=>`<li>${s}</li>`).join('');
   const nextIdx=G.epIdx+1;
   const nextBtn=nextIdx<EPIS.length

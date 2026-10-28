@@ -4,6 +4,12 @@
 
      LearnHub.report({ app:'english-go', done:3, total:4, best:820, note:'S3クリア' });
 
+   best は LearnHub.scale(出来ばえ0〜1, { diff:'hard' }) で換算した値を入れます
+   （満点は学年と難易度で変わる: 中1 10,000 / 中2 12,000 / 中3 15,000、難易度 ×1.0/×1.2/×1.5）。
+   エンドレス系は endless: LearnHub.scaleEndless(到達度0〜1) を足すと到達度ランキングに出ます。
+   grade を省略すると、ハブで選んだ学年（LearnHub.grade()）が付きます。
+   raw には素点（ゲーム内スコア）をそのまま入れられます。
+
    端末に保存し、スプレッドシートへ送ります。
    通信できなかったぶんは貯めておき、次に開いたときにまとめて送ります。
 
@@ -17,7 +23,48 @@
   var KEY_PLAYER   = 'manabi-board:player:v1';
   var KEY_QUEUE    = 'manabi-board:queue:v1';
   var KEY_APPS     = 'manabi-board:apps:v1';
+  var KEY_GRADE    = 'manabi-board:grade:v1';
   var cfg = global.MANABI_CONFIG || {};
+
+  /* ---- 学年と満点 ------------------------------------------
+     学年は 1/2/3（中1〜中3）。未設定は 3（全範囲）。
+     ハブへ送る best は「満点 10,000 × 学年係数 × 難易度係数」で換算する。
+     エンドレス系（乱世流し・無限回廊など）は別枠 ENDLESS_MAX を上限に
+     report({ endless: 値 }) で送り、到達度ランキングに出る。 */
+  var GRADE_MULT   = { 1: 1.0, 2: 1.2, 3: 1.5 };
+  var DIFF_MULT    = { normal: 1.0, hard: 1.2, expert: 1.5 };
+  var BASE_MAX     = 10000;
+  var ENDLESS_MAX  = 30000;
+
+  function grade() {
+    var g = Number(global.localStorage ? global.localStorage.getItem(KEY_GRADE) : 0);
+    return (g === 1 || g === 2 || g === 3) ? g : 3;
+  }
+  function setGrade(g) {
+    g = Number(g);
+    if (g !== 1 && g !== 2 && g !== 3) return grade();
+    try { global.localStorage.setItem(KEY_GRADE, String(g)); } catch (e) {}
+    return g;
+  }
+  function gradeLabel(g) { return '中' + (g || grade()); }
+
+  /* その学年・難易度での満点 */
+  function maxFor(g, diff) {
+    var gm = GRADE_MULT[Number(g) || grade()] || 1;
+    var dm = diff == null ? 1 : (typeof diff === 'number' ? diff : (DIFF_MULT[String(diff)] || 1));
+    return Math.round(BASE_MAX * gm * dm);
+  }
+  /* 0〜1 の出来ばえを、その学年・難易度の満点に換算する */
+  function scale(ratio, opt) {
+    opt = opt || {};
+    var r = Math.max(0, Math.min(1, Number(ratio) || 0));
+    return Math.round(r * maxFor(opt.grade, opt.diff));
+  }
+  /* エンドレス系の到達度（0〜1）を別枠の満点に換算する */
+  function scaleEndless(ratio) {
+    var r = Math.max(0, Math.min(1, Number(ratio) || 0));
+    return Math.round(r * ENDLESS_MAX);
+  }
 
   function read(key, fallback) {
     try { return JSON.parse(global.localStorage.getItem(key)) || fallback; }
@@ -160,10 +207,11 @@
 
   /* ---- ランキング ------------------------------------------ */
 
-  function ranking(app, limit) {
+  function ranking(app, limit, kind) {
     if (!cfg.endpoint) return Promise.resolve({ ok: false, error: 'offline', list: [] });
     return getJSON(cfg.endpoint + '?mode=ranking&app=' + encodeURIComponent(app || 'total')
-      + '&limit=' + (limit || cfg.rankLimit || 20))
+      + '&limit=' + (limit || cfg.rankLimit || 20)
+      + (kind === 'endless' ? '&kind=endless' : ''))
       .catch(function () { return { ok: false, error: 'offline', list: [] }; });
   }
 
@@ -225,6 +273,14 @@
     setNickname: setNickname,
     flush: flush,
     ranking: ranking,
+    grade: grade,
+    setGrade: setGrade,
+    gradeLabel: gradeLabel,
+    maxFor: maxFor,
+    scale: scale,
+    scaleEndless: scaleEndless,
+    BASE_MAX: BASE_MAX,
+    ENDLESS_MAX: ENDLESS_MAX,
     apps: apps,
     appsCached: appsCached,
     saveApps: saveApps,
@@ -238,11 +294,17 @@
       if (!result || !result.app) return null;
 
       var data = read(KEY_PROGRESS, {});
-      var prev = data[result.app] || { done: 0, total: 0, best: 0, plays: 0 };
+      var prev = data[result.app] || { done: 0, total: 0, best: 0, plays: 0, endless: 0 };
+      var g = Number(result.grade);
+      if (g !== 1 && g !== 2 && g !== 3) g = grade();
+      var best = Math.min(num(result.best, 0), maxFor(3, 'expert'));
+      var endless = Math.min(num(result.endless, 0), ENDLESS_MAX);
       var entry = {
         done:  Math.max(num(prev.done, 0), num(result.done, 0)),
         total: num(result.total, num(prev.total, 0)),
-        best:  Math.max(num(prev.best, 0), num(result.best, 0)),
+        best:  Math.max(num(prev.best, 0), best),
+        endless: Math.max(num(prev.endless, 0), endless),
+        grade: best >= num(prev.best, 0) ? g : (prev.grade || g),
         plays: num(prev.plays, 0) + 1,
         note:  result.note != null ? String(result.note).slice(0, 40) : (prev.note || ''),
         updated: Date.now()
@@ -256,7 +318,8 @@
       q.push({
         playerId: me.id, nickname: me.nickname || 'ななし', app: result.app,
         done: num(result.done, entry.done), total: entry.total,
-        best: num(result.best, 0), note: entry.note, at: Date.now()
+        best: best, note: entry.note, at: Date.now(),
+        grade: g, endless: endless, raw: num(result.raw, 0)
       });
       write(KEY_QUEUE, q.slice(-200));
       flush();

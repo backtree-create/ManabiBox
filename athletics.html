@@ -276,17 +276,19 @@ const QUIZ = [
 ];
 
 /* ---------------- まなびの基板 連携 ---------------- */
-const HUB={key:'athletics', total:4, maxPt:10000, store:'manabi-athletics'};
+const HUB={key:'athletics', total:4, maxPt:4700, store:'manabi-athletics'};
+/* 配点換算: ratio = 合計pt/4700 をハブの満点(学年別)に換算。raw = 合計pt */
+function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
 function hubLoad(){ try{ return JSON.parse(localStorage.getItem(HUB.store)||'{}'); }catch(e){ return {}; } }
 function hubSaveLocal(o){ try{ localStorage.setItem(HUB.store, JSON.stringify(o)); }catch(e){} }
 function hubReport(doneEvents, totalPt, note){
   const rec=hubLoad();
   const done=Math.max(rec.done||0, doneEvents);
-  const score=Math.max(0, Math.min(10000, Math.round(totalPt/HUB.maxPt*10000)));
+  const score=hubScale(Math.min(1, totalPt/HUB.maxPt));
   const best=Math.max(rec.best||0, score);
   hubSaveLocal({done,best});
   if(window.LearnHub && typeof LearnHub.report==='function'){
-    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best, note}); }catch(e){}
+    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best, raw:Math.round(totalPt), note:String(note).slice(0,40)}); }catch(e){}
   }
 }
 /* ホーム（ハブ）へ戻るボタン。ハブ配下で開いたときだけ出す */
@@ -342,7 +344,7 @@ function runTap(side){
   const stRatio = R.stamina/ S.staminaMax;
   const fatigue = stRatio > .3 ? 1 : (.45 + .55*stRatio/.3);
   const power = (side !== input.lastSide) ? 0.62 : 0.12;
-  R.v += power * fatigue;
+  R.v = Math.min(12, R.v + power * fatigue);   // 走速度の上限（スコア発散対策）
   R.stamina = Math.max(0, R.stamina - 0.55);
   input.lastSide = side;
   if(R.onTap) R.onTap();
@@ -583,7 +585,7 @@ function screenEventResult(ev, recordStr, pts, note){
   S.results.push({name:ev.name, record:recordStr, pts});
   hubReport(S.results.length,
     S.results.reduce((a,r)=>a+r.pts,0)+S.quizGood*100,
-    `${ev.name}まで ${S.results.length}/4種目`);
+    `素点 ${S.results.reduce((a,r)=>a+r.pts,0)+S.quizGood*100} / ${ev.name}まで ${S.results.length}/4種目`);
   ovl.innerHTML = `
    <div class="panel">
      <div class="eyebrow">${ev.no} RESULT</div>
@@ -638,7 +640,7 @@ function screenFinal(){
   const bonus = S.quizGood*100;
   const total = S.results.reduce((s,r)=>s+r.pts,0) + bonus;
   const [rk,msg] = rankOf(total);
-  hubReport(4, total, `RANK ${rk}／${total}pt`);
+  hubReport(4, total, `素点 ${total} / RANK ${rk}`);
   SFX.fanfare(); SFX.cheer();
   ovl.innerHTML = `
    <div class="panel">
@@ -906,7 +908,7 @@ function updateLJ(dt){
       if(R.attempt===1){ R.attempt=2; R.reset(); }
       else{
         const ev=R.ev;
-        const pts=Math.round(R.best*165);
+        const pts=Math.min(1100, Math.round(R.best*165));
         const note = R.best<=0 ? '2回ともファウル…次は板の手前で跳ぼう。'
           : R.best>5.4 ? '大ジャンプ！ 助走と角度が完璧！'
           : 'いい跳躍！ 角度40度前後を極めよう。';
@@ -1067,7 +1069,7 @@ function updateShot(dt){
       if(R.attempt===1){ R.attempt=2; R.reset(); R.acceptRun=true; }
       else{
         const ev=R.ev;
-        const pts=Math.round(R.best*82);
+        const pts=Math.min(1100, Math.round(R.best*82));
         const note=R.best>10?'ミートポイント完璧の大遠投！':R.best>7?'力強い一投！':'パワーゲージを満タン近くまで！';
         screenEventResult(ev, R.best.toFixed(2)+' m', pts, note);
       }

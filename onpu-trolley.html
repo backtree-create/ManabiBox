@@ -747,19 +747,28 @@ function finishStage(cleared){
 }
 /*
   送信仕様:
-  - ゴールモード(キー onpu-trolley): done=クリア数/3, best=3ステージ正答率の平均を1000点満点に換算(未挑戦は0%扱い, 0-1000)
-  - エンドレス(キー onpu-trolley-endless): best=そのプレイのスコアをそのまま(ハブ側で自己最高を保持)
+  - done=クリア数/3
+  - best=3坑道(ト音・ヘ音・ミックス)の「最高スコア/理論最高{2900,2900,4500}」の平均を
+    ハブの満点(学年別)に換算した値
+  - endless=はてなき坑道の最高正解数/40 をエンドレス枠(30,000)に換算した値
+  - raw=今回のスコア(素点)
 */
+function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
+function hubEndless(r){ return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0,Math.min(1,r))*30000); }
+const STAGE_MAX_PTS={treble:2550, bass:2550, mixed:4050};
 function sendReport(cleared,acc){
   try{
     if(typeof manabiReport!=='function') return;
-    const recs=['treble','bass','mixed'].map(k=>save.stages[k]);
+    const keys=['treble','bass','mixed'];
+    const recs=keys.map(k=>save.stages[k]);
     const clearedCount=recs.filter(r=>r.cleared).length;
-    const avgPts=Math.round(recs.reduce((s,r)=>s+(r.acc||0),0)/3*10);
+    const ratio=keys.reduce((s,k)=>s+Math.min(1,(save.stages[k].best||0)/STAGE_MAX_PTS[k]),0)/keys.length;
+    const best=hubScale(ratio);
+    const endless=hubEndless(Math.min(1,(save.endless.best||0)/40));
     const note = G.endless
-      ? ('はてなき坑道 '+G.correct+'問 スコア'+G.score)
-      : (G.stage.name+(cleared?' クリア':' 挑戦')+' 正答'+acc+'%');
-    manabiReport({app:APP_KEY, done:clearedCount, total:3, best:avgPts,
+      ? ('はてなき坑道 '+G.correct+'問 素点 '+G.score)
+      : (G.stage.name+(cleared?' クリア':' 挑戦')+' 素点 '+G.score+' 正答'+acc+'%');
+    manabiReport({app:APP_KEY, done:clearedCount, total:3, best:best, endless:endless, raw:G.score,
       note:note.slice(0,40)});
   }catch(e){}
 }

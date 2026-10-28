@@ -102,6 +102,19 @@ body.namelock .card .cta{color:var(--muted);}
 .namecard p{margin:0 0 14px;font-size:13.5px;color:var(--muted);}
 .namerow{display:flex;gap:10px;flex-wrap:wrap;}
 .namerow input{flex:1;min-width:160px;}
+.graderow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;}
+.graderow .lbl{font-size:13px;color:var(--muted);margin-right:4px;}
+.gpill{border:1px solid var(--edge);background:none;color:var(--muted);cursor:pointer;
+  border-radius:99px;padding:7px 16px;font-family:inherit;font-size:14px;font-weight:700;
+  min-height:40px;transition:.15s;touch-action:manipulation;}
+.gpill[aria-pressed="true"]{background:var(--c-teal);border-color:var(--c-teal);color:#0A0E17;}
+.gradehint{margin:8px 0 0;font-size:12.5px;color:var(--muted);}
+.who .gchip{display:inline-block;border:1px solid var(--c-teal);color:var(--c-teal);border-radius:99px;
+  padding:2px 9px;font-size:11px;font-weight:700;margin-left:2px;}
+.kinds{display:flex;gap:8px;margin-bottom:12px;}
+.kind{border:1px solid var(--edge);background:none;color:var(--muted);cursor:pointer;border-radius:10px;
+  padding:8px 14px;font-family:inherit;font-size:13px;font-weight:700;min-height:40px;touch-action:manipulation;}
+.kind[aria-selected="true"]{background:rgba(53,224,210,.14);border-color:var(--c-teal);color:#fff;}
 
 /* ── ランキング ─────────────────────────── */
 .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
@@ -138,8 +151,8 @@ body.namelock .card .cta{color:var(--muted);}
 
   <div class="eyebrow">
     <span>Manabi Box</span>
-    <span class="who"><b id="whoName"></b>
-      <button class="linkbtn" id="editName" type="button">名前をかえる</button></span>
+    <span class="who"><b id="whoName"></b><span class="gchip" id="whoGrade"></span>
+      <button class="linkbtn" id="editName" type="button">名前と学年をかえる</button></span>
   </div>
 
   <h1>今日は、<span class="hl">どれを進める</span></h1>
@@ -153,6 +166,13 @@ body.namelock .card .cta{color:var(--muted);}
       <input id="nameInput" type="text" maxlength="10" placeholder="10文字まで" autocomplete="off">
       <button class="btn" id="saveName" type="button">きめる</button>
     </div>
+    <div class="graderow" id="gradeRow">
+      <span class="lbl">学年</span>
+      <button class="gpill" type="button" data-grade="1">中1</button>
+      <button class="gpill" type="button" data-grade="2">中2</button>
+      <button class="gpill" type="button" data-grade="3">中3</button>
+    </div>
+    <p class="gradehint">学年を選ぶと、どのゲームもその学年までに習う内容で出題されます（中3は全範囲）。満点は 中1 10,000 / 中2 12,000 / 中3 15,000 です。</p>
   </section>
 
   <section class="sheet hero">
@@ -168,6 +188,10 @@ body.namelock .card .cta{color:var(--muted);}
   <div class="grid" id="grid"></div>
 
   <div class="rule"><h2>Ranking</h2></div>
+  <div class="kinds" id="kinds" role="tablist">
+    <button class="kind" type="button" data-kind="best" aria-selected="true">総合ランキング</button>
+    <button class="kind" type="button" data-kind="endless" aria-selected="false">到達度ランキング</button>
+  </div>
   <div class="tabs" id="tabs" role="tablist"></div>
   <ul class="ranklist" id="ranklist"></ul>
   <p class="msg" id="rankNote"></p>
@@ -259,6 +283,7 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g,
 
 let APPS = LearnHub.appsCached() || DEFAULT_APPS;
 let currentTab = 'total';
+let currentKind = 'best';
 
 /* ---- ニックネーム ---------------------------------------- */
 function paintWho(){
@@ -292,6 +317,17 @@ $('saveName').addEventListener('click', () => {
   if (!v){ $('nameInput').focus(); return; }
   LearnHub.setNickname(v); paintWho(); render();
 });
+/* 学年 */
+function paintGrade(){
+  const g = LearnHub.grade ? LearnHub.grade() : 3;
+  document.querySelectorAll('#gradeRow .gpill').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.grade) === g)));
+  const chip = $('whoGrade'); if (chip) chip.textContent = '中' + g;
+}
+document.querySelectorAll('#gradeRow .gpill').forEach(b => b.addEventListener('click', () => {
+  if (LearnHub.setGrade) LearnHub.setGrade(Number(b.dataset.grade));
+  paintGrade();
+}));
+paintGrade();
 $('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('saveName').click(); });
 $('editName').addEventListener('click', () => {
   $('nameCard').classList.remove('hidden');
@@ -375,7 +411,7 @@ function renderLog(saved){
       return `<tr><td class="head">${esc(app.name)}${r.note
           ? '<br><small style="color:var(--muted)">' + esc(r.note) + '</small>' : ''}</td>
         <td class="num">${Math.min(r.done || 0, app.total)}/${app.total}</td>
-        <td class="num">${r.best || '—'}</td>
+        <td class="num">${r.best ? r.best + (r.grade ? '<small style="color:var(--muted)"> 中' + r.grade + '</small>' : '') : '—'}</td>
         <td class="num">${r.plays}</td>
         <td class="num">${(d.getMonth()+1)}/${d.getDate()}</td></tr>`;
     }).join('')}</tbody></table>`;
@@ -395,6 +431,12 @@ function buildTabs(){
   });
 }
 
+document.querySelectorAll('#kinds .kind').forEach(b => b.addEventListener('click', () => {
+  currentKind = b.dataset.kind;
+  document.querySelectorAll('#kinds .kind').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+  loadRanking();
+}));
+
 function loadRanking(){
   const box = $('ranklist'), note = $('rankNote');
   if (!LearnHub.online()){
@@ -405,11 +447,13 @@ function loadRanking(){
   box.innerHTML = ''; note.textContent = 'よみこみ中';
   const myId = LearnHub.player().id;
 
-  LearnHub.ranking(currentTab).then(data => {
+  LearnHub.ranking(currentTab, 0, currentKind).then(data => {
     if (!data.ok || !data.list || !data.list.length){
       box.innerHTML = '';
       note.textContent = data.ok
-        ? 'まだ誰も記録を出していません。いちばん乗りをねらおう。'
+        ? (currentKind === 'endless'
+            ? 'エンドレス系のモード（乱世流し・無限回廊など）で遊ぶと、ここに到達度が出ます。'
+            : 'まだ誰も記録を出していません。いちばん乗りをねらおう。')
         : 'いまつながりません。あとでもう一度ひらいてください。';
       return;
     }

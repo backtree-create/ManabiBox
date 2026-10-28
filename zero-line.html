@@ -667,6 +667,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     tone(660, .16, .03, .08);
   }
 
+  function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
   function endGame() {
     if (!state.playing) return;
     state.playing = false;
@@ -690,8 +691,9 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
         app: "zero-line",
         done: Math.min(20, state.cleared),
         total: 20,
-        best: state.score,
-        note: `${state.cleared}ライン・最大${state.maxCombo}連鎖`
+        best: hubScale(Math.min(1, state.score / 15000)),
+        raw: state.score,
+        note: `素点 ${state.score} / ${state.cleared}ライン・最大${state.maxCombo}連鎖`.slice(0, 40)
       });
     }
     tone(260, .18, .035);

@@ -2001,20 +2001,32 @@ function hubNote(){
   return "通常"+G.bestN+"章 修羅道"+G.bestH+"章"+
     (G.depth?" 無限"+G.depth+"層":"")+" 錬成"+dexCount()+"語"+(plusTotal()?"+"+plusTotal():"")+(rankLv()?"("+rankName()+")":"");
 }
+/* ハブ配点換算（古い hub-progress.js 向けフォールバック付き） */
+function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
+function hubEndless(r){ return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0,Math.min(1,r))*30000); }
+/* 出来ばえ 0〜1： 通常章×250 + 修羅道章×500 + 図鑑語数×20 + 位×250 を 10000 で割る */
+function hubRatio(){
+  return Math.min(1, (250*G.bestN + 500*G.bestH + 20*dexCount() + 250*rankLv()) / 10000);
+}
+function hubDepth(){ return Math.max(G.depth|0, LEG.depth|0); }
 function report(){
   try{ legSave(); }catch(e){}
   try{
     const H = window.LearnHub;
     if(!H || typeof H.report !== "function") return;
     const sc = hubScore();
-    /* まなびの基板の仕様： {app, done, total, best, note} 。noteは40字まで */
-    H.report({
+    const depth = hubDepth();
+    /* まなびの基板の仕様： {app, done, total, best, note, endless, raw} 。noteは40字まで */
+    const payload = {
       app: HUB_KEY,
       done: Math.min(STORY_LEN*2, G.bestN + G.bestH),
       total: STORY_LEN*2,
-      best: sc,
+      best: hubScale(hubRatio()),
+      raw: sc,
       note: hubNote()
-    });
+    };
+    if(depth > 0) payload.endless = hubEndless(Math.min(1, depth/20));
+    H.report(payload);
   }catch(e){}
 }
 function goHub(){

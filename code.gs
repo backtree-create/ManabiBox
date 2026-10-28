@@ -17,8 +17,14 @@ var WRITE_TOKEN = 'manabi-write-2026';
 /* 先生用。ダッシュボードとゲーム追加に使います。生徒に配るファイルには書かないこと */
 var ADMIN_TOKEN = 'manabi-admin-2026';
 
-/* 1ゲームあたりの記録できる点数の上限（素点をそのまま送るゲームがあるため大きめ） */
-var MAX_SCORE = 9999;
+/* 生徒がハブに入るときのクラスコード（index.html の合言葉）。空なら誰でも入れます */
+var CLASS_CODE = '';
+
+/* 1ゲームあたりの記録できる点数の上限。
+   best は「満点 10,000 × 学年係数(〜1.5) × 難易度係数(〜1.5)」で換算して送られるので最大 22,500。
+   endless（到達度ランキング用）は別枠で最大 30,000 */
+var MAX_SCORE = 22500;
+var MAX_ENDLESS = 30000;
 
 /* ---------------------------------------------------------- */
 
@@ -35,10 +41,19 @@ function sheet_(name, header) {
 }
 
 function records_() {
-  return sheet_('records', ['日時', '生徒ID', 'ニックネーム', 'ゲーム', '到達', '全体', 'スコア', 'メモ']);
+  /* 既存のシートには 9〜11 列目（学年・到達度・素点）が無いことがあるので、無ければ見出しを足す */
+  var sh = sheet_('records', ['日時', '生徒ID', 'ニックネーム', 'ゲーム', '到達', '全体', 'スコア', 'メモ', '学年', '到達度', '素点']);
+  if (sh.getLastColumn() < 11) {
+    sh.getRange(1, 9, 1, 3).setValues([['学年', '到達度', '素点']]).setFontWeight('bold');
+  }
+  return sh;
 }
 function best_() {
   return sheet_('best', ['生徒ID', 'ニックネーム', 'ゲーム', '最高スコア', '到達', '全体', '回数', '最終プレイ']);
+}
+/* エンドレス系（乱世流し・無限回廊など）の到達度。総合ランキングとは別に集計する */
+function endless_() {
+  return sheet_('endless', ['生徒ID', 'ニックネーム', 'ゲーム', '到達度', '回数', '最終プレイ']);
 }
 function apps_() {
   return sheet_('apps', ['順番', 'キー', '名前', '教科', 'ファイル', 'せつめい', '単位', '全体数', '色', 'アイコン']);
@@ -99,8 +114,28 @@ function save_(item) {
   var score = int_(item.best, 0, MAX_SCORE);
   var note  = clean_(item.note, 40);
   var when  = item.at ? new Date(Number(item.at)) : new Date();
+  var grade = int_(item.grade, 0, 3);
+  var endless = int_(item.endless, 0, MAX_ENDLESS);
+  var raw   = int_(item.raw, 0, 99999999);
 
-  records_().appendRow([when, playerId, nickname, app, done, total, score, note]);
+  records_().appendRow([when, playerId, nickname, app, done, total, score, note, grade || '', endless || '', raw || '']);
+
+  if (endless > 0) {
+    var es = endless_();
+    var erows = es.getDataRange().getValues();
+    var hit = false;
+    for (var k = 1; k < erows.length; k++) {
+      if (erows[k][0] === playerId && erows[k][2] === app) {
+        es.getRange(k + 1, 1, 1, 6).setValues([[
+          playerId, nickname, app,
+          Math.max(Number(erows[k][3]) || 0, endless),
+          (Number(erows[k][4]) || 0) + 1, when
+        ]]);
+        hit = true; break;
+      }
+    }
+    if (!hit) es.appendRow([playerId, nickname, app, endless, 1, when]);
+  }
 
   var sh = best_();
   var rows = sh.getDataRange().getValues();
@@ -176,7 +211,11 @@ function doGet(e) {
   try {
     if (p.mode === 'ping') return json_({ ok: true, message: 'つながっています' });
     if (p.mode === 'apps') return json_(listApps_());
-    if (p.mode === 'ranking') return json_(ranking_(p.app || 'total', int_(p.limit || 20, 1, 100)));
+    if (p.mode === 'ranking') return json_(ranking_(p.app || 'total', int_(p.limit || 20, 1, 100), p.kind === 'endless' ? 'endless' : 'best'));
+    if (p.mode === 'gate') {
+      var code = clean_(p.code, 24);
+      return json_({ ok: !CLASS_CODE || code === CLASS_CODE });
+    }
     if (p.mode === 'dashboard') {
       if (p.token !== ADMIN_TOKEN) return json_({ ok: false, error: 'bad-token' });
       return json_(dashboard_());
@@ -189,18 +228,19 @@ function doGet(e) {
 
 function clearCache_() {
   var cache = CacheService.getScriptCache();
-  var keys = ['rank:total:20'];
-  listApps_().list.forEach(function (a) { keys.push('rank:' + a.key + ':20'); });
+  var keys = ['rank:total:20', 'rank:total:20:endless'];
+  listApps_().list.forEach(function (a) { keys.push('rank:' + a.key + ':20'); keys.push('rank:' + a.key + ':20:endless'); });
   cache.removeAll(keys);
 }
 
-function ranking_(app, limit) {
+function ranking_(app, limit, kind) {
+  kind = kind === 'endless' ? 'endless' : 'best';
   var cache = CacheService.getScriptCache();
-  var key = 'rank:' + app + ':' + limit;
+  var key = 'rank:' + app + ':' + limit + (kind === 'endless' ? ':endless' : '');
   var hit = cache.get(key);
   if (hit) return JSON.parse(hit);
 
-  var rows = best_().getDataRange().getValues().slice(1);
+  var rows = (kind === 'endless' ? endless_() : best_()).getDataRange().getValues().slice(1);
   var bucket = {};
 
   rows.forEach(function (r) {
@@ -222,7 +262,7 @@ function ranking_(app, limit) {
     row.rank = rank;
   });
 
-  var out = { ok: true, app: app, list: list, at: Date.now() };
+  var out = { ok: true, app: app, kind: kind, list: list, at: Date.now() };
   cache.put(key, JSON.stringify(out), 60);
   return out;
 }
@@ -286,6 +326,6 @@ function dashboard_() {
 
 /** エディタから1回実行して、シートの土台を作っておく用 */
 function セットアップ() {
-  records_(); best_(); apps_();
-  SpreadsheetApp.getUi().alert('records / best / apps のシートを用意しました。');
+  records_(); best_(); apps_(); endless_();
+  SpreadsheetApp.getUi().alert('records / best / apps / endless のシートを用意しました。');
 }

@@ -615,12 +615,21 @@ function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioCo
 function $(id){return document.getElementById(id);}
 function fmtN(v){ return v<0 ? "−"+(-v) : ""+v; }
 
+function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
+function hubEndless(r){ return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0,Math.min(1,r))*30000); }
 function reportEquation(score,note){
   if(typeof manabiReport!=="function") return;
-  var stageBest=store.get("eqb_best3",{}), done=Object.keys(stageBest).length, bestScore=Number(score)||0;
-  Object.keys(stageBest).forEach(function(k){bestScore=Math.max(bestScore,Number(stageBest[k].score)||0);});
-  ["mix","m1","hard","m2","m3"].forEach(function(k){var r=store.get("eqb_atk4_"+k,null);if(r)bestScore=Math.max(bestScore,Number(r.score)||0);});
-  manabiReport({app:"equation-balance",done:Math.min(done,64),total:64,best:bestScore,note:String(note||"").slice(0,40)});
+  var stageBest=store.get("eqb_best3",{}), done=Object.keys(stageBest).length, stageSum=0, atkMax=0;
+  Object.keys(stageBest).forEach(function(k){stageSum+=Math.min(1,(Number(stageBest[k].score)||0)/2000);});
+  ["mix","m1","hard","m2","m3"].forEach(function(k){var r=store.get("eqb_atk4_"+k,null);if(r)atkMax=Math.max(atkMax,Number(r.score)||0);});
+  var ratio=(stageSum/64)*0.7 + Math.min(1,atkMax/6000)*0.3;
+  var raw=Math.round(Number(score)||0);
+  var hubNote=("素点 "+raw.toLocaleString()+" / "+String(note||"")).slice(0,40);
+  manabiReport({app:"equation-balance",done:Math.min(done,64),total:64,
+    best:hubScale(ratio),
+    endless:hubEndless(Math.min(1,atkMax/8000)),
+    raw:raw,
+    note:hubNote});
 }
 $('manabi-back').addEventListener('click',function(){reportEquation(mode==="attack"?atkScore:0,"ManabiBoxへ戻る");});
 var ICONS={
@@ -1357,7 +1366,7 @@ function clearAttack(answerText){
   var tier=curProblem._tier||4;
   var wasted=Math.max(0,moves-curPar)+waste;
   atkWasteTotal+=wasted;
-  var pts=Math.max(50, Math.round((80+tier*70) + Math.max(0,(20-t))*10 - wasted*25));
+  var pts=Math.max(50, Math.round((80+tier*40) + Math.max(0,(20-t))*10 - wasted*25));
   atkScore+=pts; atkSolved++; atkIdx++;
   $("hudSolved").textContent=atkSolved;
   beep(880,0.08); setTimeout(function(){beep(1320,0.1);},80);

@@ -248,21 +248,35 @@
 
   /* ---- 5. リアル人生サバイバルのアダプター ------------------ */
   /* zustand が oshi-life-survival-save に状態をまるごと保存している。
-     章(chapter 1〜3)の進みと、人生が終わったときの最終ランクを送る。
-     ランク→点数(1000点満点): SSS=1000, S=800, A=600, B=400, C=200, D=100 */
+     章(chapter 1〜3)の進みと、人生が終わったときの最終スコアを送る。
+     best はハブの配点換算（出来ばえ 0〜1 → LearnHub.scale）:
+       出来ばえ = min(1, 最終スコア / 3,000,000)。ゲームオーバーは 0.1。
+       章クリアごとに最低 0.1 × クリア章数 を保証する。
+     raw は最終スコア（素点）。 */
   var RM = { key: 'oshi-life-survival-save', app: 'money-survival', total: 3, cards: 10, sig: null };
-  var RM_RANK_PTS = { SSS: 1000, S: 800, A: 600, B: 400, C: 200, D: 100 };
+  var RM_FULL_SCORE = 3000000;
 
-  /* ゲーム本体と同じ計算で最終ランクを出す
-     (最終スコア = 推し活支出 × 知識ボーナス(最大×2)。ゲームオーバーはD) */
-  function rmRank(st) {
+  /* 古い hub-progress.js がキャッシュされている端末向けのフォールバック */
+  function rmScale(r) {
+    return (global.LearnHub && global.LearnHub.scale)
+      ? global.LearnHub.scale(r)
+      : Math.round(Math.max(0, Math.min(1, r)) * 10000);
+  }
+
+  /* ゲーム本体と同じ計算で最終スコアを出す
+     (最終スコア = 推し活支出 × 知識ボーナス(最大×2)) */
+  function rmScore(st) {
     var rec = st.records || {};
-    if (rec.gameOver || st.gameOver) return 'D';
     var spend = Math.max(Number(rec.totalOshiSpending) || 0,
                          st.finalMissionPurchased ? 1500000 : 0);
     var use = Math.max(Number(rec.knowledgeUseCount) || 0,
                        Number(st.knowledgeUseCount) || 0);
-    var score = Math.round(spend * Math.min(2, 1 + use * 0.1));
+    return Math.round(spend * Math.min(2, 1 + use * 0.1));
+  }
+  /* 最終ランク（ゲームオーバーはD） */
+  function rmRank(st, score) {
+    var rec = st.records || {};
+    if (rec.gameOver || st.gameOver) return 'D';
     return score >= 3000000 ? 'SSS'
          : score >= 2500000 ? 'S'
          : score >= 1500000 ? 'A'
@@ -279,25 +293,31 @@
     /* 章の途中はまだクリアしていないので、結果画面に着いたぶんだけ数える */
     var done = st.screen === 'result' ? st.chapter : st.chapter - 1;
     if (done < 0) done = 0;
+    if (done > RM.total) done = RM.total;
 
-    /* 最終ランクは、人生が終わった(全章クリア or ゲームオーバー)ときだけ点数にする */
-    var finished = !!(rec.gameOver || st.gameOver || st.finalMissionResolved ||
+    /* 最終スコアは、人生が終わった(全章クリア or ゲームオーバー)ときだけ出来ばえにする */
+    var over = !!(rec.gameOver || st.gameOver);
+    var finished = !!(over || st.finalMissionResolved ||
                       (st.screen === 'result' && st.chapter >= RM.total));
-    var rank = finished ? rmRank(st) : null;
-    var best = rank ? (RM_RANK_PTS[rank] || 0) : 0;
+    var score = rmScore(st);
+    var rank = finished ? rmRank(st, score) : null;
+    var ratio = 0;
+    if (finished) ratio = over ? 0.1 : Math.min(1, score / RM_FULL_SCORE);
+    ratio = Math.max(ratio, 0.1 * done);          /* 章クリアぶんの最低保証 */
+    var best = rmScale(ratio);
 
-    var sig = done + '/' + best;
+    var sig = done + '/' + best + '/' + score;
     if (sig === RM.sig) return;
     RM.sig = sig;
 
     var note = '第' + st.chapter + '章';
     if (rank) {
-      note = '最終ランク' + rank + '（' + best + 'pt）';
+      note = '最終ランク' + rank + ' 素点' + score;
     } else if (st.screen === 'result') {
       note = '第' + st.chapter + '章 終了';
     }
     global.manabiReport({
-      app: RM.app, done: done, total: RM.total, best: best,
+      app: RM.app, done: done, total: RM.total, best: best, raw: score,
       note: note + '・知識 ' + got + '/' + RM.cards
     });
   });
@@ -305,6 +325,14 @@
   /* ---- 6. 日本一周クエストのアダプター ---------------------- */
   /* 表：5エリア＋東京　裏：5エリア＋東京　= ぜんぶで12 */
   var JQ = { key: 'nihon_quest_save', app: 'japan-quest', total: 12, sig: null };
+  /* 表6エリアは重み1.0、裏6エリア(d_)は重み1.2。未クリアは0 */
+  var JQ_AREAS = ['hokkaido', 'higashi', 'nishi', 'kyushu', 'shikoku', 'tokyo'];
+
+  /* 古い hub-progress.js がキャッシュされている端末のためのフォールバック */
+  function hubScale(r, o) {
+    return (global.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o)
+      : Math.round(Math.max(0, Math.min(1, r)) * 10000);
+  }
 
   function jqSend(raw) {
     var s;
@@ -314,19 +342,26 @@
     var omote = (s.cleared || []).length, ura = (s.dark || []).length;
     var done = omote + (s.tokyo ? 1 : 0) + ura + (s.darkTokyo ? 1 : 0);
 
-    var vals = [];
-    for (var k in (s.best || {})) vals.push(Number(s.best[k]) || 0);
-    /* エリアごとの成績(0〜100)の平均を、1000点満点に換算して送る */
-    var best = vals.length
-      ? Math.round(vals.reduce(function (a, b) { return a + b; }, 0) / vals.length * 10) : 0;
+    /* 出来ばえ = Σ(エリアごとの最高正答率/100 × 重み) / Σ重み
+       素点 raw = 最高正答率の合計（最大 1200） */
+    var bestMap = s.best || {}, sum = 0, wsum = 0, rawPt = 0;
+    for (var i = 0; i < JQ_AREAS.length; i++) {
+      var o = Math.max(0, Math.min(100, Number(bestMap[JQ_AREAS[i]]) || 0));
+      var u = Math.max(0, Math.min(100, Number(bestMap['d_' + JQ_AREAS[i]]) || 0));
+      sum += o / 100 * 1.0 + u / 100 * 1.2;
+      wsum += 1.0 + 1.2;
+      rawPt += o + u;
+    }
+    var best = hubScale(wsum ? sum / wsum : 0);
+    rawPt = Math.round(rawPt);
 
-    var sig = done + '/' + best;
+    var sig = done + '/' + best + '/' + rawPt;
     if (sig === JQ.sig) return;          /* 変わっていなければ送らない */
     JQ.sig = sig;
 
     global.manabiReport({
-      app: JQ.app, done: done, total: JQ.total, best: best,
-      note: '御朱印 ' + omote + '/5' + (ura ? '・裏 ' + ura + '/5' : '')
+      app: JQ.app, done: done, total: JQ.total, best: best, raw: rawPt,
+      note: '素点 ' + rawPt + '・御朱印 ' + omote + '/5' + (ura ? '・裏 ' + ura + '/5' : '')
     });
   }
 

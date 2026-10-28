@@ -697,13 +697,22 @@ function danOf(kos){ return DAN[Math.min(kos,DAN.length-1)]; }
 
 /* ---------- 状態 ---------- */
 var lv=0, enemy=null, enemyHp=0, myHp=100;
-var score=0, combo=0, maxCombo=0, wins=0, kos=0, perfects=0, fastest=null;
+var score=0, combo=0, maxCombo=0, wins=0, kos=0, perfects=0, fastest=null, misses=0;
 var qPool=[], curQ=null, qStart=0, timerRaf=null, limitMs=0, locked=false;
 
+function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
+function hubEndless(r){ return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0,Math.min(1,r))*30000); }
 function reportResba(note){
   if(typeof manabiReport!=="function") return;
-  var saved=store.get("resba_best2",null), bestScore=Math.max(score,saved?Number(saved.score)||0:0);
-  manabiReport({app:"resba-response",done:Math.min(kos,6),total:6,best:bestScore,note:String(note||"").slice(0,40)});
+  var asked=wins+misses, acc=asked>0?wins/asked:0;
+  var ratio=Math.min(1,kos/10)*acc;
+  var raw=Math.round(score);
+  var hubNote=("素点 "+raw.toLocaleString()+" / "+String(note||"")).slice(0,40);
+  manabiReport({app:"resba-response",done:Math.min(kos,6),total:6,
+    best:hubScale(ratio),
+    endless:hubEndless(Math.min(1,kos/16)),
+    raw:raw,
+    note:hubNote});
 }
 el("manabi-back").addEventListener("click",function(){reportResba("ManabiBoxへ戻る");});
 
@@ -801,7 +810,7 @@ function answer(i,sp){
     var dmg=15+Math.round(leftRatio*15);
     combo++; maxCombo=Math.max(maxCombo,combo); wins++;
     if(fastest===null||t<fastest) fastest=t;
-    var gain=Math.round(100*(lv+1)*(1+leftRatio)*(1+(combo-1)*0.2)*(curQ.tier*0.5+0.5));
+    var gain=Math.round(100*(Math.min(lv,5)+1)*(1+leftRatio)*Math.min(3,1+(combo-1)*0.2)*(curQ.tier*0.5+0.5));
     score+=gain;
     enemyHp-=dmg;
     flash(t<1.5?"電光の異議!!":"異議あり!!");
@@ -856,7 +865,7 @@ function markAnswer(){
   if(segs[curQ.f]) segs[curQ.f].classList.add("answer");
 }
 function selfDamage(msg){
-  combo=0; myHp-=20;
+  combo=0; misses++; myHp-=20;
   flash("異議棄却","self");
   beep(150,0.3,"sawtooth",0.09);
   refreshHud();
@@ -867,6 +876,7 @@ function selfDamage(msg){
 /* ---------- 進行 ---------- */
 function koEnemy(){
   myHp=Math.min(100,myHp+20);
+  combo=Math.floor(combo/2);
   lv++;
   showVs();
 }
@@ -908,7 +918,7 @@ var ovTitle=el("ovTitle"),ovVs=el("ovVs"),ovResult=el("ovResult");
 function show(o){o.classList.remove("hidden");} function hide(o){o.classList.add("hidden");}
 
 function newRun(){
-  lv=0; myHp=100; score=0; combo=0; maxCombo=0; wins=0; kos=0; perfects=0; fastest=null; qPool=[];
+  lv=0; myHp=100; score=0; combo=0; maxCombo=0; wins=0; kos=0; perfects=0; fastest=null; misses=0; qPool=[];
   hide(ovTitle); hide(ovResult);
   showVs();
 }

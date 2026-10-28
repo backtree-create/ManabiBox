@@ -1095,6 +1095,28 @@ let stage=0,total=0,usedHint=false,startT=0,runList=[],points=0;
 const STORE_KEY="manabi-appraiser";
 function loadRec(){try{return JSON.parse(localStorage.getItem(STORE_KEY))||{best:0,lifetime:0}}catch(e){return{best:0,lifetime:0}}}
 function saveRec(r){try{localStorage.setItem(STORE_KEY,JSON.stringify(r))}catch(e){}}
+/* ---- ハブ送信(配点換算) ----
+   ratio = (到達ステージ/6) × (0.7 + 0.3×落札総額率)
+   落札総額率 = 落札総額 / (Σbase×1.2) を最大1。贋作出品1回ごとに −0.1(下限0)
+   エキスパートモードは diff 'expert'。raw = pt */
+let fakeCount=0;
+function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
+function hubRatio(clearedStages){
+  const maxTotal=runList.reduce((s,x)=>s+x.base*1.2,0)||1;
+  let priceRate=Math.min(1,total/maxTotal);
+  priceRate=Math.max(0,priceRate-0.1*fakeCount);
+  return (clearedStages/RUN_LENGTH)*(0.7+0.3*priceRate);
+}
+function sendHub(clearedStages,note){
+  try{
+    if(window.LearnHub)LearnHub.report({
+      app:"appraiser", done:points, total:21000,
+      best:hubScale(hubRatio(clearedStages),{diff:expertMode?'expert':'normal'}),
+      raw:points,
+      note:String(note).slice(0,40)
+    });
+  }catch(e){}
+}
 function awardPoints(pts){
   points+=pts;
   const rec=loadRec();
@@ -1103,12 +1125,7 @@ function awardPoints(pts){
   saveRec(rec);
   $("hudPts").textContent=points.toLocaleString();
   /* まなびの基板へ報告(ハブ経由で開いたときだけ有効) */
-  try{
-    if(window.LearnHub)LearnHub.report({
-      app:"appraiser", done:points, total:21000, best:points,
-      note:`STAGE${stage+1}『${runList[stage].name}』落札`
-    });
-  }catch(e){}
+  sendHub(stage+1,`素点 ${points.toLocaleString()} / STAGE${stage+1}『${runList[stage].name}』落札`);
   try{
     if(window.parent&&window.parent!==window)
       window.parent.postMessage({type:"manabi-progress",key:"appraiser",points:points,earned:pts,total:21000},"*");
@@ -1334,6 +1351,8 @@ function aucTick(){
         $("goReal").textContent=`本物は No.${realNo+1} だった——`;
         try{$("goImg").src=stageCanvases[realNo].toDataURL("image/jpeg",.9);}catch(e){}
         mode="result";openOv("goOv");
+        fakeCount++;
+        sendHub(stage,`素点 ${points.toLocaleString()} / STAGE${stage+1} 贋作出品`);
         hallSpot.color.set(0xffe2b0);
         hallAudience.forEach(p=>p.userData.stand=false);
       },1700);
@@ -1389,7 +1408,7 @@ function showEnding(){
 }
 
 /* ==================== 画面遷移 ==================== */
-function beginRun(ex){expertMode=ex;closeOv("titleOv");stage=0;total=0;points=0;
+function beginRun(ex){expertMode=ex;closeOv("titleOv");stage=0;total=0;points=0;fakeCount=0;
   $("hudPts").textContent="0";
   runList=[...ARTWORKS].sort(()=>Math.random()-.5).slice(0,RUN_LENGTH);
   prepareStage();}
