@@ -2203,15 +2203,24 @@
     }
 
      
-function checkAndSaveHighScore(score) {
+/* ハブ配点換算（古い hub-progress.js 向けフォールバック付き） */
+function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
+const HUB_BORDER_SUM = 910;   // STAGE_BORDERS の合計（全10面ボーダーちょうどの累計点）
+function checkAndSaveHighScore(score, cleared) {
   try {
+    const stage = (state && state.stage) || 0;
+    /* クリア数：全面クリア時は stage、失敗時は stage-1 */
+    const done = Math.max(0, Math.min(10, cleared ? stage : stage - 1));
+    /* 出来ばえ = クリア面数/10 × 0.6 + min(1, 累計点/910) × 0.4 */
+    const ratio = (done / 10) * 0.6 + Math.min(1, score / HUB_BORDER_SUM) * 0.4;
     if (window.LearnHub && typeof LearnHub.report === 'function') {
       LearnHub.report({
         app: 'elementgame',
-        done: Math.min(10, (state && state.stage) || 0),
+        done: done,
         total: 10,
-        best: score,
-        note: 'スコアアタック STAGE' + ((state && state.stage) || 0)
+        best: hubScale(ratio),
+        raw: score,
+        note: 'スコアアタック STAGE' + stage + ' 素点 ' + score + (cleared ? ' 完全制覇' : '')
       });
     } else {
       console.warn('[hub] LearnHub が読み込まれていません');
@@ -2767,7 +2776,7 @@ function checkAndSaveHighScore(score) {
             nextBtn.innerText = `次のステージへ (Stage ${state.stage + 1})`;
             nextBtn.onclick = () => proceedNextStage();
           } else {
-            const isNewRecord = checkAndSaveHighScore(state.scores[1]);
+            const isNewRecord = checkAndSaveHighScore(state.scores[1], true);
             banner.innerText = "ALL STAGES CLEARED!";
             banner.className = "result-banner banner-score";
             subTitle.innerText = "全10ステージ見事完全制覇！";
@@ -2778,7 +2787,7 @@ function checkAndSaveHighScore(score) {
             nextBtn.onclick = () => returnToHome();
           }
         } else {
-          const isNewRecord = checkAndSaveHighScore(state.scores[1]);
+          const isNewRecord = checkAndSaveHighScore(state.scores[1], false);
           banner.innerText = "STAGE FAILED";
           banner.className = "result-banner banner-draw";
           subTitle.innerText = `目標ボーダー (${border}pt) に届きませんでした...`;
