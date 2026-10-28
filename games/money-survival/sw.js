@@ -1,4 +1,4 @@
-const CACHE_NAME = 'oshi-life-survival-v1'
+const CACHE_NAME = 'oshi-life-survival-v2'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

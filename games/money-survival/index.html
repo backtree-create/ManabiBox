@@ -5,7 +5,7 @@
     <script src="../../hub-progress.js"></script>
     <script src="../../manabi-connect.js"></script>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#e64283" />
     <meta name="description" content="推し活を楽しみながら、お金・税金・期待値を学べる人生シミュレーションゲーム。" />
     <link rel="icon" href="./assets/favicon-DQxCqez1.ico" sizes="any" />
@@ -15,6 +15,45 @@
     <title>リアル人生サバイバル：推し活と税金と私</title>
     <script type="module" crossorigin src="./assets/index-BaeNsBsC.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-DHnVDzOo.css">
+    <style>
+      /* iPad Safari 向けの上書き（ビルド済み CSS の後に読む） */
+      html { -webkit-text-size-adjust: 100%; }
+      body { overscroll-behavior: none; }
+      .app button, .app [role=button] {
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+      }
+      /* 100vh は iOS のアドレスバー分だけ大きくなるので dvh を優先する */
+      body, .app, .screen, .game-shell { min-height: 100dvh; }
+      .ending-stage { min-height: 100dvh; }
+      .modal { max-height: calc(100dvh - 32px); -webkit-overflow-scrolling: touch; }
+      /* 左上のハブ「まなびの基板」ボタンと章見出しが重ならないようにする */
+      .game-shell { padding-top: calc(48px + env(safe-area-inset-top)); }
+      .screen { padding-top: calc(52px + env(safe-area-inset-top)); }
+      /* 画面下の小さな「タイトルへ」を指で押せる大きさにする */
+      .game-footer { font-size: .8rem; align-items: center; }
+      .game-footer button { min-height: 44px; padding: 10px 14px; font-size: .8rem; }
+      /* 横向きの iPad（高さ 810px 前後）では第1章の盤面を1画面に収める */
+      @media (orientation: landscape) and (max-height: 860px) {
+        .game-shell { padding-top: calc(46px + env(safe-area-inset-top)); padding-bottom: 8px; }
+        .game-header { padding-bottom: 8px; }
+        .status-panel { margin: 10px 0; }
+        .status-panel > div { padding: 9px 14px; }
+        .game-stage { gap: 10px; }
+        .oshi-stage { min-height: 230px; }
+        .goal-card { padding: 14px 20px; }
+        .actions-section { margin-top: 10px; padding: 12px 16px; }
+        .action-grid { margin-top: 8px; gap: 8px; }
+        .action-grid button { padding: 8px 12px; }
+        .game-footer { padding: 4px 4px 0; }
+        .game-footer button { min-height: 40px; padding: 8px 14px; }
+      }
+      /* タッチでは hover が残留するので持ち上げ効果を切る */
+      @media (hover: none) {
+        .button:hover:not(:disabled),
+        .action-grid button:hover:not(:disabled) { transform: none; }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
