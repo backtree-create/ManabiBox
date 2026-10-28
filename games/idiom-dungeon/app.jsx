@@ -231,6 +231,9 @@ const COURSES = [
 ];
 
 /* 果てなき坑道：2層ごとに層の主、深いほど手強い */
+/* 古い hub-progress.js がキャッシュされている端末のためのフォールバック */
+function hubScale(r, o) { return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0, Math.min(1, r)) * 10000); }
+function hubEndless(r) { return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0, Math.min(1, r)) * 30000); }
 const hasMid = (c, f) => (c.endless ? (f + 1) % 2 === 0 : c.midAt.includes(f + 1));
 const midCount = (c, f) => (c.endless ? Math.min(3, 1 + Math.floor(f / 4)) : c.midTargets);
 const DEEP_NAMES = ["石碑の回廊", "水没した書庫", "崩れた鐘楼", "封印の坑道", "王の前室",
@@ -1044,7 +1047,7 @@ function IdiomLabyrinth() {
   const [showDex, setShowDex] = useState(false);
   const [bgmOn, setBgmOn] = useState(true);
   const [bossStep, setBossStep] = useState(0);
-  const [stat, setStat] = useState({ fails: 0, rests: 0, spent: 0, route: [] });
+  const [stat, setStat] = useState({ fails: 0, tries: 0, rests: 0, spent: 0, route: [] });
 
   const bgm = useBgm();
   const sfx = useSfx(bgmOn);
@@ -1068,26 +1071,29 @@ function IdiomLabyrinth() {
   }, [screen, room && room.kind, bgmOn, gaveOut]);
    
 /* --- まなびの基板へ送る --- */
-  /* コースごとの上限点(1000点満点) × 潜った深さ で採点 */
-  const CAP = { novice: 400, adventurer: 700, king: 1000, endless: 1000 };
+  /* 出来ばえ = 到達深さ × コース係数 × (1 − 不発率×0.5)。果てなき坑道は到達度(endless)だけ送る */
+  const COEF = { novice: 0.5, adventurer: 0.75, king: 1.0 };
   const RANK = { novice: 1, adventurer: 2, king: 3 };
   useEffect(() => {
     if (!window.manabiReport) return;
     if (screen !== "floorclear" && screen !== "end") return;
-    const deep = course.endless
-      ? Math.min(1, (fi + 1) / 9)
-      : Math.min(1, (fi + 1) / course.floors);
     const won = screen === "end" && !gaveOut && !course.endless;
     const done = won ? (RANK[course.key] || 0)
       : (course.endless && fi + 1 >= 5) ? 3 : 0;
-    window.manabiReport({
+    const failRate = stat.tries > 0 ? Math.min(1, stat.fails / stat.tries) : 0;
+    const deep = course.endless ? 0 : Math.min(1, (fi + 1) / course.floors);
+    const ratio = deep * (COEF[course.key] || 0) * (1 - failRate * 0.5);
+    const rep = {
       app: "idiom-dungeon",
       done,
       total: 3,
-      best: Math.round((CAP[course.key] || 400) * deep),
+      best: course.endless ? 0 : hubScale(ratio),
+      raw: fi + 1,
       note: won ? `${course.name}コース 制覇（熟語${dex.length}語）`
         : `${course.name} B${fi + 1}F 到達（熟語${dex.length}語）`,
-    });
+    };
+    if (course.endless) rep.endless = hubEndless(Math.min(1, (fi + 1) / 15));
+    window.manabiReport(rep);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, fi]);
    
@@ -1193,7 +1199,7 @@ function IdiomLabyrinth() {
     owned.current = { v: new Set(), s: new Set(), p: new Set() };
     setCourse(c); setFi(0); setMp(c.mp); setTorches(c.torches);
     setStones([]); setCards([]); setOrbs([]); setDex([]);
-    setStat({ fails: 0, rests: 0, spent: 0, route: [] });
+    setStat({ fails: 0, tries: 0, rests: 0, spent: 0, route: [] });
     beginFloor(c, 0);
   };
 
@@ -1211,6 +1217,7 @@ function IdiomLabyrinth() {
   const answerQuiz = (choice) => {
     if (solved) return;
     const right = room.idiom.meanings.join("／");
+    setStat((s) => ({ ...s, tries: s.tries + 1 }));
     if (choice === right) {
       grantParts(room.idiom); learn(room.idiom.en);
       sfx("chest");
@@ -1233,7 +1240,7 @@ function IdiomLabyrinth() {
     const cost = fromDex ? MP_DEX : MP_COST;
     if (mp < cost) { setMsg("魔力が足りない。灯火が残っていれば祭壇で休める。"); return; }
     setMp((m) => m - cost);
-    setStat((s) => ({ ...s, spent: s.spent + cost }));
+    setStat((s) => ({ ...s, spent: s.spent + cost, tries: s.tries + 1 }));
 
     if (en === target.en) {
       setMp((m) => Math.min(course.mp, m - 0 + MP_BACK));
