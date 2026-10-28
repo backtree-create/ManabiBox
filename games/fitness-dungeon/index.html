@@ -291,16 +291,23 @@ const SFX={
 const HUB={key:'fitness-dungeon', total:8, store:'manabi-fitness-dungeon'};
 function hubLoad(){ try{ return JSON.parse(localStorage.getItem(HUB.store)||'{}'); }catch(e){ return {}; } }
 function hubSaveLocal(o){ try{ localStorage.setItem(HUB.store, JSON.stringify(o)); }catch(e){} }
+/* ハブ配点換算（古い hub-progress.js 向けフォールバック付き） */
+function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
+const RANK_PT={S:1.0,A:0.8,B:0.6,C:0.4};
+function rankPt(r){ return RANK_PT[r]||0; }
 function hubReport(stage, rank, score){
   const rec=hubLoad();
   const stages=rec.stages||{};
-  stages[stage]=rank;
+  /* 面ごとに最高ランクを保持する */
+  if(rankPt(rank)>=rankPt(stages[stage])) stages[stage]=rank;
   const done=Object.keys(stages).length;
-  const best=Math.round(done/HUB.total*1000);
+  /* 出来ばえ = Σ(面ごとのランク点 S:1.0 A:0.8 B:0.6 C:0.4) / 8面 */
+  let sum=0; for(const k in stages) sum+=rankPt(stages[k]);
+  const best=hubScale(Math.min(1, sum/HUB.total));
   hubSaveLocal({done,best,stages,topScore:Math.max(rec.topScore||0,score)});
   if(window.LearnHub && typeof LearnHub.report==='function'){
-    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best,
-      note:`${stage}面 ランク${rank}`}); }catch(e){}
+    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best, raw:score,
+      note:`${stage}面 ランク${rank} 素点 ${score}`}); }catch(e){}
   }
 }
 (function(){
