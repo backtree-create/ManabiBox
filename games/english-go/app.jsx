@@ -845,6 +845,8 @@ const LEVELS = [
 ];
 
 const TOTAL_Q = LEVELS.reduce((s, l) => s + l.count, 0);
+/* 古い hub-progress.js がキャッシュされている端末のためのフォールバック */
+function hubScale(r, o) { return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0, Math.min(1, r)) * 10000); }
 const CELL_COLORS = ["#2E86FF", "#12A9E8", "#0FC4B0", "#2FD061", "#7ED321", "#A9DC1B", "#D9DC12", "#F5B912", "#FF8A1E", "#FF3B4E"];
 const timeFor = (level, word) => (level.base + word.length * 0.5) * 2;
 const shuffle = (a) => {
@@ -1385,6 +1387,8 @@ function EnglishDeGo() {
   const moodTimer = useRef(null);
   const imeTimer = useRef(null);
   const rootRef = useRef(null);
+  /* 正解した問題の「残り秒/制限秒」の合計（ハブへ送る速さ率に使う） */
+  const speedRef = useRef(0);
   const bgm = useBgm();
   const beep = useBeeps(sound);
   const level = LEVELS[lvIndex];
@@ -1406,14 +1410,19 @@ useEffect(() => {
   if (screen !== "clear" && screen !== "result" && screen !== "over") return;
   const done = screen === "result" ? LEVELS.length
              : screen === "clear" ? lvIndex + 1 : lvIndex;
+  /* 出来ばえ = (正解数/10) × (0.6 + 0.4×速さ率)。速さ率 = 正解した問題の平均(残り秒/制限秒) */
+  const speed = clearedQ > 0 ? Math.max(0, Math.min(1, speedRef.current / clearedQ)) : 0;
+  const ratio = (clearedQ / TOTAL_Q) * (0.6 + 0.4 * speed);
   window.manabiReport({
     app: "english-go",
     done,
     total: LEVELS.length,
-    best: Math.round((clearedQ / TOTAL_Q) * 1000), // クリアした問題の割合を1000点満点で
-    note: screen === "result" ? `全ステージ制覇 ${score.toLocaleString()}点`
+    best: hubScale(ratio),
+    raw: score,
+    note: `素点 ${score.toLocaleString()}・` + (
+          screen === "result" ? `全ステージ制覇`
         : screen === "clear"  ? `STAGE ${lvIndex + 1} クリア`
-        : `STAGE ${lvIndex + 1} でゲームオーバー`,
+        : `STAGE ${lvIndex + 1} でゲームオーバー`),
   });
 }, [screen]);
    
@@ -1473,6 +1482,7 @@ useEffect(() => {
   const startGame = () => {
     setTimeouts(0); setTypos(0); setScore(0); setCombo(0);
     setMissedList([]); setClearedQ(0); setNotice({ text: "", tone: "" });
+    speedRef.current = 0;
     startLevel(0);
   };
 
@@ -1523,6 +1533,7 @@ useEffect(() => {
     lockRef.current = true;
     cancelAnimationFrame(rafRef.current);
     const rest = Math.max(0, (endAtRef.current - performance.now()) / 1000);
+    speedRef.current += limit > 0 ? Math.min(1, rest / limit) : 0;
     setScore((s) => s + 100 * level.lv + Math.round(rest * 10) + combo * 30);
     setCombo((c) => c + 1);
     setClearedQ((n) => n + 1);
