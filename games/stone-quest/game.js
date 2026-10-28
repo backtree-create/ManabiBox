@@ -15,16 +15,23 @@ function quizTotals(){
   return { total, correct, rate: total ? Math.round(correct/total*100) : 0 };
 }
 
+/* 古い hub-progress.js がキャッシュされている端末のためのフォールバック */
+function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
+
 function reportToHub(){
   try{
     if(!window.LearnHub || !S) return;
     const qt = quizTotals();
+    /* 出来ばえ = (研究数/14) × (0.5 + 0.5×累計正答率) */
+    const rate  = qt.total ? qt.correct / qt.total : 0;
+    const ratio = (S.techs.length / TECHS.length) * (0.5 + 0.5 * rate);
     window.LearnHub.report({
       app:  MANABI_APP_KEY,
       done: S.techs.length,
       total: TECHS.length,
-      best: Math.round(S.techs.length / TECHS.length * 1000), // 文明の進捗率を1000点満点で
-      note: qt.total ? `正答率${qt.rate}% 仲間${S.statues}人` : "",
+      best: hubScale(ratio),
+      raw:  qt.correct,
+      note: qt.total ? `正解${qt.correct}/${qt.total} 正答率${qt.rate}% 仲間${S.statues}人` : "",
     });
   }catch(e){}
 }
