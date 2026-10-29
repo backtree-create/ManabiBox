@@ -127,6 +127,35 @@ const STAGES=[
   range:{treble:[26,42], bass:[14,30]}, endless:true, showClefName:false},
 ];
 
+/* ================= 段階モード（初級/中級/上級） =================
+   坑道は増やさず、各坑道の clefs / range を段階で変える。
+     初級: どの坑道もト音記号のみ・加線なし（五線の中 D4〜G5 = idx 29〜39）
+     中級: 現状どおり（ト音の坑道・ヘ音の坑道は五線の中、ふかまる・はてなきは加線2本まで）
+     上級: ふかまる・はてなき坑道を「加線3本まで」に広げる（ト音 F3〜E6 = 24〜44、ヘ音 A1〜G4 = 12〜32）
+   idx は C0=0 の音階番号（ト音の上線 F5=38、ヘ音の上線 A3=26）。
+   初期値はハブ（まなびの基板）の学年（中1→初級、中2→中級、中3→上級）。
+   ゲーム内で変えた値は localStorage 'manabi-grade:onpu-trolley' に残し、次回はそれを優先する。 */
+const LEVELS={
+  1:{name:'初級', all:{clefs:['treble'], range:{treble:[29,39]}, ledger:0},
+     sub:{treble:'ト音記号 / 五線の中', bass:'ト音記号 / 五線の中', mixed:'ト音記号 / 五線の中', endless:'エンドレス / ト音・五線の中'}},
+  2:{name:'中級', all:null, sub:{}},
+  3:{name:'上級', wide:{range:{treble:[24,44], bass:[12,32]}, ledger:3},
+     sub:{mixed:'ミックス / 加線3本まで', endless:'エンドレス / 加線3本まで'}}
+};
+const LV_KEY='manabi-grade:onpu-trolley';
+const hubGrade=()=>(window.LearnHub&&LearnHub.grade)?LearnHub.grade():3;
+let level=(()=>{ let g=0; try{ g=Number(localStorage.getItem(LV_KEY)); }catch(e){} return (g===1||g===2||g===3)?g:hubGrade(); })();
+function setLevel(lv){ lv=Number(lv); if(lv!==1&&lv!==2&&lv!==3) return; level=lv; try{ localStorage.setItem(LV_KEY,String(lv)); }catch(e){} }
+/* いまの段階で実際に使う坑道設定（元の STAGES は書きかえない） */
+function stageFor(st){
+  const L=LEVELS[level];
+  const eff=Object.assign({ledger:(st.key==='mixed'||st.key==='endless')?2:0}, st);
+  if(L.all) Object.assign(eff, L.all);
+  else if(L.wide && (st.key==='mixed'||st.key==='endless')) Object.assign(eff, L.wide);
+  if(L.sub[st.key]) eff.sub=L.sub[st.key];
+  return eff;
+}
+
 /* ================= オーディオ ================= */
 const AU={ctx:null, master:null, bgm:null, lead:null, started:false, noiseBuf:null, intensity:0,
   step:0, nextT:0, timer:null};
@@ -631,7 +660,7 @@ function drawSign(sx,sy,sw,sh,clef,idx,opt){
   ctx.strokeStyle='#33200f'; ctx.lineWidth=4; rr(sx,sy,sw,sh,10); ctx.stroke();
   ctx.fillStyle='#f2e6c8'; rr(sx+9,sy+9,sw-18,sh-18,6); ctx.fill();
   if(opt.dim){ ctx.globalAlpha=0.45; }
-  const u=13, staffW=sw-96, staffX=sx+30, staffY=sy+(sh-4*u)/2;
+  const u=opt.u||13, staffW=sw-96, staffX=sx+30, staffY=sy+(sh-4*u)/2;
   drawStaffNote(staffX,staffY,staffW,u,clef,idx);
   if(opt.clefName){
     txt(clef==='treble'?'ト音記号':'ヘ音記号', sx+sw-46, sy+18, 12, '#8a7350','center');
@@ -658,6 +687,7 @@ let toast=null;
 let pressFx=null; // タップ時のリップル/押し込みアニメーション
 
 function startStage(stage){
+  stage=stageFor(stage);
   G={stage:stage, endless:!!stage.endless, qIndex:0, asked:0, correct:0, score:0, combo:0,
      maxCombo:0, lives:3, misses:[], phase:'run', phaseT:0, scroll:0, speed:900,
      q:null, zB:0, goalZ:0, shake:0, flash:0, fade:0, sparks:[], lastTarget:-99, done:false};
@@ -763,13 +793,13 @@ function sendReport(cleared,acc){
     const recs=keys.map(k=>save.stages[k]);
     const clearedCount=recs.filter(r=>r.cleared).length;
     const ratio=keys.reduce((s,k)=>s+Math.min(1,(save.stages[k].best||0)/STAGE_MAX_PTS[k]),0)/keys.length;
-    const best=hubScale(ratio);
+    const best=hubScale(ratio,{grade:level});
     const endless=hubEndless(Math.min(1,(save.endless.best||0)/40));
     const note = G.endless
       ? ('はてなき坑道 '+G.correct+'問 素点 '+G.score)
       : (G.stage.name+(cleared?' クリア':' 挑戦')+' 素点 '+G.score+' 正答'+acc+'%');
     manabiReport({app:APP_KEY, done:clearedCount, total:3, best:best, endless:endless, raw:G.score,
-      note:note.slice(0,40)});
+      grade:level, note:note.slice(0,40)});
   }catch(e){}
 }
 
@@ -915,7 +945,14 @@ function renderTitle(dt){
   button(W/2-225,352,210,42,nlabel,()=>{ save.notation=(save.notation==='doremi')?'abc':'doremi'; persist(); sfxClick(); },{bg:'#4a3a26',border:'#a8905e',size:15});
   const slabel='サウンド: '+(save.sound?'ON':'OFF');
   button(W/2+15,352,210,42,slabel,()=>{ setSound(!save.sound); sfxClick(); },{bg:'#4a3a26',border:'#a8905e',size:15});
-  txt('ManabiBox れんけい / きろくは じどうそうしん',W/2,420,13,'#8d7a5c');
+  // 段階ピル（初級/中級/上級）
+  txt('段階',W/2-200,426,15,'#d9c9a8','right');
+  [1,2,3].forEach((lv,i)=>{
+    const on=(lv===level);
+    button(W/2-184+i*128,404,120,44,LEVELS[lv].name,()=>{ setLevel(lv); sfxClick(); },
+      on?{bg:'#c8781e',border:'#ffd98a',size:16}:{bg:'#4a3a26',border:'#a8905e',size:16,color:'#d9c9a8'});
+  });
+  txt('ManabiBox れんけい / きろくは じどうそうしん',W/2,478,13,'#8d7a5c');
 }
 /* ステージ選択 */
 function renderSelect(dt){
@@ -939,7 +976,7 @@ function renderSelect(dt){
     ctx.strokeStyle='#5d3f22'; ctx.lineWidth=5; ctx.beginPath(); ctx.arc(tx,ty,34,Math.PI,0); ctx.stroke();
     flame(tx-48,ty+4,7,gt*9+i*3); flame(tx+48,ty+4,7,gt*9+i*5);
     head(st.name,tx,y0+140,17,'#ffe6b0');
-    txt(st.sub,tx,y0+166,12,'#c7ae83');
+    txt(stageFor(st).sub,tx,y0+166,12,'#c7ae83');
     if(!st.endless){
       const rec=save.stages[st.key];
       let stStr=''; for(let k=0;k<3;k++) stStr+=(k<rec.stars?'★':'☆');
@@ -996,8 +1033,9 @@ function drawQuestionUI(t){
   const rNote=(q.correctSide===1)?q.target:q.other;
   const revealed=(q.chosen!==null);
   const stName=G.stage.showClefName;
+  const su=(G.stage.ledger>=3)?12:13;   // 加線3本のときは少し小さく描いて看板に収める
   drawSign(lX,syy,swd,shh,q.clef,lNote,{
-    clefName:stName,
+    clefName:stName, u:su,
     reveal:revealed?noteName(lNote):null,
     correct:revealed&&q.correctSide===0,
     dim:revealed&&q.correctSide!==0,
@@ -1005,7 +1043,7 @@ function drawQuestionUI(t){
     glow:(!revealed)?'rgba(255,180,80,0.25)':null
   });
   drawSign(rXx,syy,swd,shh,q.clef,rNote,{
-    clefName:stName,
+    clefName:stName, u:su,
     reveal:revealed?noteName(rNote):null,
     correct:revealed&&q.correctSide===1,
     dim:revealed&&q.correctSide!==1,
@@ -1059,6 +1097,11 @@ function drawHUD(){
   rr(14,12,220,46,12); ctx.fill();
   ctx.strokeStyle='rgba(200,120,30,0.5)'; ctx.lineWidth=1.5; rr(14,12,220,46,12); ctx.stroke();
   head(G.stage.name,124,28,14,'#ffd98a');
+  if(level!==3){   // 上級以外は段階を小さく出す
+    ctx.fillStyle='rgba(20,12,6,0.82)'; rr(242,12,64,24,12); ctx.fill();
+    ctx.strokeStyle='rgba(200,120,30,0.5)'; rr(242,12,64,24,12); ctx.stroke();
+    head(LEVELS[level].name,274,25,12,'#ffd98a');
+  }
   const qs=G.endless?('第'+G.qIndex+'問'):( '第'+G.qIndex+'問 / 全'+G.stage.n+'問');
   txt(qs,124,46,12,'#d9c9a8');
   ctx.fillStyle='rgba(20,12,6,0.82)';
@@ -1222,7 +1265,11 @@ window.__ONPU={
     G.misses=[{clef:'treble',idx:31},{clef:'treble',idx:36}];
     finishStage(true);
   },
-  state:function(){ return {screen:screen,G:G}; }
+  state:function(){ return {screen:screen,G:G}; },
+  /* 段階モードの確認用 */
+  level:function(){ return level; }, setLevel:setLevel, stageFor:stageFor, STAGES:STAGES, CLEF_TOP:CLEF_TOP,
+  pick:function(){ pickQuestion(); return G.q; }, clickables:function(){ return clickables; },
+  report:function(){ sendReport(true,90); }
 };
 })();
 </script>

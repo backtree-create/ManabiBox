@@ -294,6 +294,18 @@
     footer .k{font-size:7px;letter-spacing:.18em;}
     .quitBtn{padding-inline:7px;font-size:11px;}
   }
+  /* ---- 学年モード（ピルとラベル） ---- */
+  .gradeRow{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:12px;}
+  .gradeBtn{
+    display:flex; align-items:center; justify-content:center; min-height:44px; min-width:76px;
+    color:var(--dim); background:rgba(14,9,6,.6);
+    border:1.5px solid #4a3a26; border-bottom:4px solid #4a3a26; border-radius:6px;
+    padding:8px 14px; cursor:pointer; touch-action:manipulation;
+    font-weight:800; font-size:clamp(12px,3.5vw,14px); letter-spacing:.14em;
+    transition:transform .15s ease,filter .15s ease,background-color .15s ease;
+  }
+  .gradeBtn:active{transform:translateY(2px); border-bottom-width:2px;}
+  .gradeBtn.on{color:var(--pInk); background:linear-gradient(180deg,#f5edd9,var(--parch2)); border-color:#574733;}
   @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
 </style>
 <script src="config.js"></script>
@@ -315,6 +327,7 @@
   </div>
   <div class="hud">
     <div class="pill"><span class="k">証人攻略</span><b id="hudKO">0</b></div>
+    <div class="pill" id="pillGrade" style="display:none"><span class="k">学年</span><b id="hudGrade">中1</b></div>
   </div>
 </header>
 <div id="ruleBar"></div>
@@ -382,6 +395,11 @@
       <span>主語と述語のねじれ</span><span>接続詞の誤用</span><span>呼応の乱れ</span>
       <span>重複表現</span><span>敬語の誤り</span><span>論理の飛躍</span><span>ずるい論法</span>
     </div>
+    <div class="gradeRow" id="gradeRow" role="group" aria-label="学年">
+      <button class="gradeBtn" type="button" data-grade="1">中1</button>
+      <button class="gradeBtn" type="button" data-grade="2">中2</button>
+      <button class="gradeBtn" type="button" data-grade="3">中3</button>
+    </div>
     <button class="bigBtn" id="btnStart">開廷する</button>
     <p id="bestLine" style="font-size:10px;color:var(--faint);letter-spacing:.1em;margin-top:12px"></p>
   </div>
@@ -431,7 +449,24 @@ var AC=null;
 function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();var o=AC.createOscillator(),g=AC.createGain();o.type=t||"square";o.frequency.value=f;g.gain.value=v||0.06;g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.12));o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+(d||0.12));}catch(e){}}
 function el(id){return document.getElementById(id);}
 
-/* ---------- 問題データ 73問 ---------- */
+/* ---------- 学年モード ----------
+   問題の種類（type の「（」より前）ごとの学年。1=中1, 2=中2, 3=中3。
+   選んだ学年「まで」の問題が出る（中3＝全問）。先生はここを書きかえれば調整できる。
+   Q の各要素に g を直接書いた場合はそちらが優先される。 */
+var GRADE_OF_CAT={
+  "主語と述語のねじれ":1,
+  "接続詞の誤用":1,
+  "呼応の乱れ":2,
+  "重複表現":1,
+  "敬語の誤り":2,
+  "論理の飛躍":2,
+  "ずるい論法":3
+};
+var GRADE_KEY="manabi-grade:resba-response";
+var hubGrade=function(){ return (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3; };
+var curGrade=(function(){ var g=Number(store.get(GRADE_KEY,0)); return (g===1||g===2||g===3)?g:hubGrade(); })();
+
+/* ---------- 問題データ 218問 ---------- */
 var Q=[
  // 主語と述語のねじれ
  {tier:1,type:"主語と述語のねじれ",segs:["ぼくの将来の夢は、","医者になって","多くの人を助けたいです。"],f:2,fix:"「夢は」で始めたら「〜助けることです」で受ける。「夢は…助けたい」は主語と述語がかみ合っていない。"},
@@ -506,7 +541,7 @@ var Q=[
  {tier:3,type:"ずるい論法（循環論法）",segs:["この参考書を使えば","必ず合格できる。","なぜなら絶対に落ちないからだ。"],f:2,fix:"理由が主張の言い換えになっているだけ（循環論法）。別の根拠が必要。"},
  {tier:3,type:"ずるい論法（反論封じ）",segs:["この案に反対するなら、","完ぺきな代案を","出してから言うべきだ。"],f:1,fix:"代案がなくても、問題点の指摘には意味がある。「完ぺきな代案」を要求して反論を封じるのはずるい。"},
  {tier:3,type:"ずるい論法（極端なすり替え）",segs:["ゲームを少し許すなら、","勉強を全部やめても","いいと言っているのと同じだ。"],f:2,fix:"「少し許す」を「全部やめてもいい」に極端化してすり替えている（わら人形論法）。"},
- {tier:3,type:"ずるい論法（関係ない指摘）",segs:["あの人は字が下手だ。","だから","言っていることも間違っている。"],f:2,fix:"字の上手下手と主張の正しさは無関係。中身で判断すべき。"},
+ {tier:3,type:"ずるい論法（人格攻撃）",segs:["あの人は字が下手だ。","だから","言っていることも間違っている。"],f:2,fix:"字の上手下手と主張の正しさは無関係。中身で判断すべき。"},
  {tier:3,type:"ずるい論法（多数派への訴え）",segs:["みんなが塾に通っているのだから、","塾に行かないという選択は","まちがいだと言える。"],f:2,fix:"「みんながそうだから」は正しさの根拠にならない。必要かどうかは本人の状況で決まる。"},
  {tier:3,type:"ずるい論法（偽の二択）",segs:["この案に賛成しないなら、","君は私の敵だと","いうことになる。"],f:1,fix:"賛成か敵かの二択に見せかけている。中立や別の意見もありうる。"},
  {tier:3,type:"ずるい論法（感情への訴え）",segs:["私はこんなに","がんばったのだから、","この答えは正解にすべきだ。"],f:2,fix:"努力したかどうかと、答えの正誤は別の問題。"},
@@ -573,7 +608,7 @@ var Q=[
  {tier:2,type:"呼応の乱れ",segs:["今日は","少しも","つかれている。"],f:2,fix:"「少しも」は打ち消しと呼応する。「つかれていない」。"},
  {tier:2,type:"呼応の乱れ",segs:["よもや彼が","負けるとは","思っていた。"],f:2,fix:"「よもや」は「〜まい」「〜とは思わなかった」と呼応する。"},
  {tier:2,type:"呼応の乱れ",segs:["ぜひ今度の発表会に","来て","くれました。"],f:2,fix:"「ぜひ」はお願いや意志と呼応する。「来てください」。"},
- {tier:2,type:"呼応の乱れ",segs:["彼女の手は","まるで氷のように","温かい。"],f:2,fix:"「氷のように」とたとえたなら「冷たい」と続くはず。たとえと結びが合っていない。"},
+ {tier:2,type:"呼応の乱れ",segs:["ぼくは決して","この約束を","忘れるつもりだ。"],f:2,fix:"「決して」は「〜ない」と呼応する副詞。「決して忘れないつもりだ」のように打消しで結ぶ。"},
  {tier:3,type:"呼応の乱れ",segs:["おそらく彼も","参加する","はずがない。"],f:2,fix:"「おそらく」は推量「〜だろう」と呼応する。強い否定とはかみ合わない。"},
  {tier:3,type:"呼応の乱れ",segs:["まさに彼こそ","リーダーに","ふさわしくない。"],f:2,fix:"「まさに〜こそ」は強調。打ち消しで受けるとちぐはぐになる。"},
  {tier:2,type:"呼応の乱れ",segs:["決して二度と","同じ失敗を","くり返す。"],f:2,fix:"「決して」は打ち消しと呼応する。「くり返さない」。"},
@@ -639,7 +674,6 @@ var Q=[
  {tier:3,type:"ずるい論法（人格攻撃）",segs:["君は字がきたないのだから、","作文の中身だって","たいしたことないはずだ。"],f:2,fix:"字のきれいさと内容は無関係。人格や見た目への攻撃で中身の評価から逃げている。"},
  {tier:3,type:"ずるい論法（人格攻撃）",segs:["遅刻ばかりしている君に、","この計画の欠点を指摘する","資格などない。"],f:2,fix:"指摘が正しいかどうかと、指摘した人の生活態度は別問題。"},
  {tier:3,type:"ずるい論法（多数派への訴え）",segs:["クラス全員が面白いと言っている。","だからつまらないと言う君の方が","まちがっている。"],f:1,fix:"感想は多数決で決まらない。人数を理由に個人の意見を否定している。"},
- {tier:3,type:"ずるい論法（多数派への訴え）",segs:["これだけ行列ができているのだから、","この店の味は","日本一に決まっている。"],f:0,fix:"人気と味の順位は別。人数の多さを正しさの証拠にしている。"},
  {tier:3,type:"ずるい論法（権威への訴え）",segs:["テレビで博士が言っていたのだから、","この情報を疑う必要は","まったくない。"],f:1,fix:"専門家の発言でも検証は必要。「えらい人が言った」は証拠にならない。"},
  {tier:3,type:"ずるい論法（権威への訴え）",segs:["先輩の言うことなのだから、","後輩は理由を聞かずに","従うべきだ。"],f:1,fix:"立場が上でも、理由を確かめるのは当然のこと。"},
  {tier:3,type:"ずるい論法（論点のすり替え）",segs:["ぼくのゲーム時間の話をしているのに、","でも兄さんだって","昨日夜ふかししていたよね。"],f:1,fix:"「お前だって」と相手の話にすり替え、自分の問題への答えから逃げている。"},
@@ -676,6 +710,20 @@ var CATS=(function(){
   return out;
 })();
 function catOf(q){ return q.type.split("（")[0]; }
+Q.forEach(function(q){ if(q.g!==1&&q.g!==2&&q.g!==3) q.g=GRADE_OF_CAT[catOf(q)]||3; });
+function gradeOK(q){ return q.g<=curGrade; }
+function setGrade(g){
+  g=Number(g); if(g!==1&&g!==2&&g!==3) return;
+  curGrade=g; store.set(GRADE_KEY,g); paintGrade();
+}
+function paintGrade(){
+  Array.prototype.slice.call(document.querySelectorAll(".gradeBtn")).forEach(function(b){
+    var on=Number(b.dataset.grade)===curGrade;
+    b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false");
+  });
+  el("pillGrade").style.display = curGrade<3 ? "block" : "none";
+  el("hudGrade").textContent = "中"+curGrade;
+}
 
 /* ---------- 対戦相手 ---------- */
 var ENEMIES=[
@@ -709,9 +757,10 @@ function reportResba(note){
   var raw=Math.round(score);
   var hubNote=("素点 "+raw.toLocaleString()+" / "+String(note||"")).slice(0,40);
   manabiReport({app:"resba-response",done:Math.min(kos,6),total:6,
-    best:hubScale(ratio),
+    best:hubScale(ratio,{grade:curGrade}),
     endless:hubEndless(Math.min(1,kos/16)),
     raw:raw,
+    grade:curGrade,
     note:hubNote});
 }
 el("manabi-back").addEventListener("click",function(){reportResba("ManabiBoxへ戻る");});
@@ -743,7 +792,8 @@ function flash(text,cls){
 /* ---------- 出題 ---------- */
 function pickQ(){
   if(qPool.length===0){
-    qPool=Q.filter(function(q){return enemy.tiers.indexOf(q.tier)>=0;}).slice();
+    qPool=Q.filter(function(q){return enemy.tiers.indexOf(q.tier)>=0 && gradeOK(q);});
+    if(!qPool.length) qPool=Q.filter(gradeOK);
     for(var i=qPool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=qPool[i];qPool[i]=qPool[j];qPool[j]=t;}
   }
   return qPool.pop();
@@ -827,7 +877,8 @@ function answer(i,sp){
 }
 function showTypeQuiz(baseGain){
   var correct=catOf(curQ);
-  var others=CATS.filter(function(c){return c!==correct;});
+  var others=CATS.filter(function(c){return c!==correct && (GRADE_OF_CAT[c]||3)<=curGrade;});
+  if(others.length<2) others=CATS.filter(function(c){return c!==correct;});
   for(var i=others.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=others[i];others[i]=others[j];others[j]=t;}
   var opts=[correct,others[0],others[1]];
   for(var i2=opts.length-1;i2>0;i2--){var j2=Math.floor(Math.random()*(i2+1));var t2=opts[i2];opts[i2]=opts[j2];opts[j2]=t2;}
@@ -942,8 +993,11 @@ el("btnQuit").addEventListener("click",function(){
   b.textContent="退廷"; b.classList.remove("armed"); hide(ovVs); hide(ovResult); refreshBestLine(); show(ovTitle);
 });
 
+Array.prototype.slice.call(document.querySelectorAll(".gradeBtn")).forEach(function(b){
+  b.addEventListener("click",function(){ setGrade(b.dataset.grade); });
+});
 (function initTitle(){
-  refreshBestLine();
+  refreshBestLine(); paintGrade();
 })();
 })();
 </script>

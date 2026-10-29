@@ -186,6 +186,19 @@ main { flex: 1; display: flex; flex-direction: column; position: relative; z-ind
 .tick.is-zero::before { width: 13px; height: 13px; margin-top: 0; margin-bottom: 9px; border-radius: 1px; transform: rotate(45deg); border-color: var(--cyan); background: #0a2736; box-shadow: 0 0 15px rgba(101, 233, 255, .6); }
 .tick.is-zero span { color: var(--cyan); }
 .tick.is-active::before { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+/* 学年モード: 0.5刻み・0.1刻みの補助目盛（minor は数字なし、mid は 0.5 の位置） */
+.tick.minor::before { width: 3px; height: 3px; margin: 5px auto 14px; border-color: #4a6478; background: #2a3f52; }
+.tick.mid::before { width: 5px; height: 5px; margin: 4px auto 13px; }
+.tick.minor span { display: none; }
+.tick.minor.is-active::before { width: 7px; height: 7px; margin: 3px auto 12px; }
+.hud-item[hidden], .equation [hidden] { display: none; }
+.grade-hud strong { color: #b7c8d6; font-size: 14px; }
+.grade-tag { display: none; font-style: normal; }
+.grade-tag b { color: #b7c8d6; }
+.grade-row { display: flex; justify-content: center; align-items: center; gap: 8px; margin: -8px 0 22px; }
+.grade-row-label { margin-right: 6px; color: #62788c; font: 500 9px "IBM Plex Mono", monospace; letter-spacing: .16em; }
+.grade-pill { min-width: 72px; font: 600 14px "Manrope", sans-serif; letter-spacing: .04em; }
+.grade-pill.is-on { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-soft); box-shadow: 0 0 14px rgba(101, 233, 255, .14); }
 
 .zero-beam { position: absolute; top: -28px; bottom: 9px; left: 50%; width: 1px; transform: translateX(-50%); background: linear-gradient(transparent, rgba(101, 233, 255, .28), transparent); opacity: .6; }
 .zero-beam.pulse { animation: zeroPulse .5s ease-out; }
@@ -263,7 +276,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
   .game-panel { min-height: 270px; }
   .number-line-wrap { padding-left: 24px; padding-right: 24px; overflow-x: clip; }
   .tick span { font-size: 12px; }
-  .tick:nth-child(even):not(.is-zero) span { visibility: hidden; }
+  .tick.alt:not(.is-zero) span { visibility: hidden; }
   .zone-labels { left: 24px; right: 24px; }
   .controls { grid-template-columns: 1fr auto 1fr; gap: 12px; }
 }
@@ -274,6 +287,8 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
   .brand-mark { width: 18px; height: 18px; }
   .hud-item strong { font-size: 14px; }
   .time-hud { display: none; }
+  .grade-hud { display: none; }
+  .app-shell.grade-on .grade-tag { display: inline; }
   .lives { gap: 3px; }
   .lives i { width: 6px; height: 15px; }
   .mission { padding-bottom: 30px; }
@@ -307,6 +322,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
         <div class="hud-item time-hud"><span>TIME</span><strong id="time">60.0</strong></div>
         <div class="hud-item"><span>SCORE</span><strong id="score">0000</strong></div>
         <div class="hud-item"><span>CHAIN</span><strong id="combo">00</strong></div>
+        <div class="hud-item grade-hud" id="gradeHud" hidden><span>GRADE</span><strong id="gradeHudValue">中1</strong></div>
         <div class="lives" id="lives" aria-label="残りエネルギー3"><i></i><i></i><i></i></div>
         <button class="reset-button" id="resetButton" type="button">RESET</button>
       </div>
@@ -314,7 +330,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
 
     <main>
       <section class="mission" aria-labelledby="missionLabel">
-        <p class="eyebrow" id="missionLabel"><span></span> <b id="rankLabel">CALIBRATION</b> / LINE <b id="missionNumber">01</b></p>
+        <p class="eyebrow" id="missionLabel"><span></span> <b id="rankLabel">CALIBRATION</b> / LINE <b id="missionNumber">01</b><em class="grade-tag" id="gradeTag"> / <b>中1</b></em></p>
         <div class="equation" aria-live="polite">
           <span id="startValue">−4</span>
           <span id="operator">+</span>
@@ -371,6 +387,12 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
           <div><b>02</b><span>コアを動かす</span></div>
           <div><b>03</b><span>位置を決める</span></div>
         </div>
+        <div class="grade-row" id="gradeRow" role="group" aria-label="学年">
+          <span class="grade-row-label">GRADE</span>
+          <button class="reset-button grade-pill" type="button" data-grade="1">中1</button>
+          <button class="reset-button grade-pill" type="button" data-grade="2">中2</button>
+          <button class="reset-button grade-pill" type="button" data-grade="3">中3</button>
+        </div>
         <button class="launch-button" id="startButton" type="button">START ZERO RUSH</button>
         <p class="best-label">HIGH SCORE <strong id="bestScore">0000</strong></p>
       </div>
@@ -394,9 +416,46 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
 (() => {
   "use strict";
 
-  const MIN = -10;
-  const MAX = 10;
+  /* ---- 学年モード ------------------------------------------
+     中1 = 整数の加減＋絶対値（どちらも中1「正負の数」の内容）
+     中2 = さらに 小数（0.5刻み）の加減を混ぜる（中1内容の発展）
+     中3 = さらに 平方根の位置（√2≈1.4, √3≈1.7, √5≈2.2 を 0.1 刻みの目盛で）
+     初期値はハブの学年。ゲーム内で変えた値は localStorage に保存する。 */
+  const APP = "zero-line";
+  const GRADE_KEY = "manabi-grade:" + APP;
+  const GRADE_LABEL = { 1: "中1", 2: "中2", 3: "中3" };
+  const hubGrade = () => (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3;
+  function loadGrade() {
+    try { const v = Number(localStorage.getItem(GRADE_KEY)); if (v === 1 || v === 2 || v === 3) return v; } catch { /* unavailable */ }
+    return hubGrade();
+  }
+  function saveGrade(g) { try { localStorage.setItem(GRADE_KEY, String(g)); } catch { /* unavailable */ } }
+  let GRADE = loadGrade();
+
+  /* 出題の種類ごとの数直線（範囲と刻み） */
+  const LINES = {
+    int:   { min: -10, max: 10, step: 1 },
+    half:  { min: -10, max: 10, step: 0.5 },
+    tenth: { min: -3,  max: 3,  step: 0.1 }
+  };
+  /* 中3: 平方根の位置（0.1刻み）。近似値は √2≈1.4, √3≈1.7, √5≈2.2 */
+  const ROOTS = [
+    { expr: "√2", value: 1.4 }, { expr: "√3", value: 1.7 }, { expr: "√5", value: 2.2 },
+    { expr: "−√2", value: -1.4 }, { expr: "−√3", value: -1.7 }, { expr: "−√5", value: -2.2 },
+    { expr: "1 + √2", value: 2.4 }, { expr: "1 + √3", value: 2.7 }, { expr: "√5 − 1", value: 1.2 },
+    { expr: "2 − √2", value: 0.6 }, { expr: "1 − √3", value: -0.7 }, { expr: "2 − √5", value: -0.2 },
+    { expr: "−1 − √2", value: -2.4 }, { expr: "√2 − 3", value: -1.6 }, { expr: "√3 − 2", value: -0.3 }
+  ];
+  /* 学年ごとの出題の種類と割合 */
+  const MIX = {
+    1: [["int", .8], ["abs", .2]],
+    2: [["int", .5], ["abs", .15], ["half", .35]],
+    3: [["int", .35], ["abs", .15], ["half", .25], ["root", .25]]
+  };
+
   const ROUND_SECONDS = 60;
+  let line = LINES.int;
+  let lineKey = "";
   const app = document.querySelector(".app-shell");
   const timerTrack = document.querySelector(".timer-track");
   const el = Object.fromEntries([
@@ -405,21 +464,29 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     "numberLine", "ticks", "trail", "zeroBeam", "startMarker", "core",
     "dragDirection", "stepCount", "feedback", "scorePop", "multiplier", "timerBar",
     "resetButton", "startScreen", "startButton", "bestScore", "resultScreen",
-    "finalScore", "clearedCount", "maxCombo", "newRecord", "retryButton"
+    "finalScore", "clearedCount", "maxCombo", "newRecord", "retryButton",
+    "gradeHud", "gradeHudValue", "gradeRow", "gradeTag"
   ].map(id => [id, document.getElementById(id)]));
 
   const state = {
     score: 0, combo: 0, maxCombo: 0, cleared: 0, mission: 0, lives: 3,
     time: ROUND_SECONDS, rank: 1, start: 0, move: 0, target: 0, current: 0,
+    kind: "int", expr: "",
     dragging: false, resolved: true, playing: false, crossedZero: false,
     lastProblem: "", frame: 0, lastTick: 0, problemStarted: 0,
     transitionTimer: 0, audio: null
   };
 
-  function signed(n) { return n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : "0"; }
-  function spoken(n) { return n < 0 ? `マイナス${Math.abs(n)}` : n > 0 ? `プラス${n}` : "ゼロ"; }
-  function percent(n) { return ((n - MIN) / (MAX - MIN)) * 100; }
+  function r1(n) { return Math.round(n * 10) / 10; }
+  function eq(a, b) { return Math.abs(a - b) < 1e-9; }
+  function fmt(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1); }
+  function signed(n) { return n > 0 ? `+${fmt(n)}` : n < 0 ? `−${fmt(Math.abs(n))}` : "0"; }
+  function spoken(n) { return n < 0 ? `マイナス${fmt(Math.abs(n))}` : n > 0 ? `プラス${fmt(n)}` : "ゼロ"; }
+  function percent(n) { return ((n - line.min) / (line.max - line.min)) * 100; }
+  function snap(v) { return r1(Math.round(v / line.step) * line.step); }
+  function clampLine(v) { return Math.max(line.min, Math.min(line.max, v)); }
   function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
   function pad(n, width = 4) { return String(n).padStart(width, "0"); }
   function readBest() { try { return Number(localStorage.getItem("zeroLineBest")) || 0; } catch { return 0; } }
   function saveBest(value) { try { localStorage.setItem("zeroLineBest", String(value)); } catch { /* unavailable */ } }
@@ -439,19 +506,33 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     oscillator.stop(start + duration + .02);
   }
 
-  function buildTicks() {
+  /* 数直線の目盛を、出題の種類に合わせて組み直す */
+  function setLine(key) {
+    if (key === lineKey) return;
+    lineKey = key;
+    line = LINES[key];
+    el.ticks.innerHTML = "";
     const fragment = document.createDocumentFragment();
-    for (let n = MIN; n <= MAX; n++) {
+    const count = Math.round((line.max - line.min) / line.step);
+    for (let i = 0; i <= count; i++) {
+      const n = r1(line.min + i * line.step);
+      const whole = Number.isInteger(n);
       const tick = document.createElement("div");
-      tick.className = `tick${n === 0 ? " is-zero" : ""}`;
-      tick.dataset.value = n;
+      let cls = "tick";
+      if (n === 0) cls += " is-zero";
+      if (!whole) cls += Math.abs(Math.round(n * 10)) % 5 === 0 ? " minor mid" : " minor";
+      if (whole && line.step >= .5 && Math.abs(n) % 2 === 1) cls += " alt";
+      tick.className = cls;
+      tick.dataset.value = String(n);
       tick.style.left = `${percent(n)}%`;
       const label = document.createElement("span");
-      label.textContent = String(n);
+      label.textContent = whole ? String(n) : "";
       tick.append(label);
       fragment.append(tick);
     }
     el.ticks.append(fragment);
+    el.numberLine.setAttribute("aria-valuemin", String(line.min));
+    el.numberLine.setAttribute("aria-valuemax", String(line.max));
   }
 
   function updateRank() {
@@ -462,12 +543,22 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
   }
 
   function setExpression() {
+    const plain = state.kind === "int" || state.kind === "half";
+    el.operator.hidden = !plain;
+    el.moveValue.hidden = !plain;
+    if (!plain) {
+      el.startValue.textContent = state.expr;
+      el.operator.textContent = "";
+      el.moveValue.textContent = "";
+      el.answer.textContent = "?";
+      return;
+    }
     const magnitude = Math.abs(state.move);
     let operator = "+";
-    let operand = magnitude;
+    let operand = fmt(magnitude);
     if (state.rank === 3 && Math.random() < .55) {
       operator = "−";
-      operand = state.move > 0 ? `(${signed(-magnitude)})` : String(magnitude);
+      operand = state.move > 0 ? `(${signed(-magnitude)})` : fmt(magnitude);
     } else if (state.move < 0) {
       operand = `(${signed(state.move)})`;
     }
@@ -477,34 +568,74 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     el.answer.textContent = "?";
   }
 
-  function createProblem(preview = false) {
-    let start, move, target, key;
+  /* ---- 出題の生成（学年で切り替え） ---- */
+  function pickKind() {
+    const mix = MIX[GRADE] || MIX[3];
+    let r = Math.random();
+    for (const [kind, weight] of mix) { r -= weight; if (r < 0) return kind; }
+    return mix[0][0];
+  }
+  function genInt() {
     const maxMove = state.rank === 1 ? 7 : 9;
+    const start = randomInt(-8, 8);
+    const move = randomInt(-maxMove, maxMove);
+    return { kind: "int", line: "int", start, move, target: start + move, key: `i${start}:${move}` };
+  }
+  function genHalf() {
+    const maxMove = state.rank === 1 ? 7 : 9;
+    const start = randomInt(-16, 16) / 2;
+    const move = randomInt(-maxMove * 2, maxMove * 2) / 2;
+    return { kind: "half", line: "half", start, move, target: r1(start + move), key: `h${start}:${move}`,
+      ok: !Number.isInteger(start) || !Number.isInteger(move) };
+  }
+  function genAbs() {
+    let n = randomInt(1, 9);
+    if (Math.random() < .7) n = -n;
+    return { kind: "abs", line: "int", start: 0, move: Math.abs(n), target: Math.abs(n), key: `a${n}`,
+      expr: `|${n < 0 ? signed(n) : String(n)}|` };
+  }
+  function genRoot() {
+    const root = pick(ROOTS);
+    return { kind: "root", line: "tenth", start: 0, move: root.value, target: root.value, key: `r${root.expr}`, expr: root.expr };
+  }
+  function generate() {
+    let p, guard = 0;
     do {
-      start = randomInt(-8, 8);
-      move = randomInt(-maxMove, maxMove);
-      target = start + move;
-      key = `${start}:${move}`;
-    } while (move === 0 || target < MIN || target > MAX || key === state.lastProblem);
+      const kind = pickKind();
+      p = kind === "abs" ? genAbs() : kind === "root" ? genRoot() : kind === "half" ? genHalf() : genInt();
+      guard += 1;
+    } while (guard < 200 && (p.ok === false || p.move === 0 || p.target < LINES[p.line].min || p.target > LINES[p.line].max || p.key === state.lastProblem));
+    return p;
+  }
+  function targetHint() {
+    if (state.kind === "abs") return `0からの距離 ${fmt(state.target)} の位置へ`;
+    if (state.kind === "root") return `${state.expr} ≈ ${fmt(state.target)} の位置へ`;
+    return `コアを${state.move > 0 ? "右" : "左"}へ ${fmt(Math.abs(state.move))} マス動かそう`;
+  }
 
-    state.lastProblem = key;
-    state.start = start;
-    state.move = move;
-    state.target = target;
-    state.current = start;
+  function createProblem(preview = false) {
+    updateRank();
+    const p = generate();
+    setLine(p.line);
+    state.lastProblem = p.key;
+    state.kind = p.kind;
+    state.expr = p.expr || "";
+    state.start = p.start;
+    state.move = p.move;
+    state.target = p.target;
+    state.current = p.start;
     state.resolved = preview || !state.playing;
     state.crossedZero = false;
     state.mission += 1;
     state.problemStarted = performance.now();
-    updateRank();
     setExpression();
     el.missionNumber.textContent = pad(state.mission, 2);
     if (state.rank === 1) {
-      el.moveInstruction.textContent = `MOVE ${signed(move)}`;
-      el.hint.textContent = `コアを${move > 0 ? "右" : "左"}へ ${Math.abs(move)} マス動かそう`;
+      el.moveInstruction.textContent = state.kind === "abs" ? "ABSOLUTE VALUE" : state.kind === "root" ? `ROOT ≈ ${fmt(state.target)}` : `MOVE ${signed(state.move)}`;
+      el.hint.textContent = targetHint();
     } else if (state.rank === 2) {
-      el.moveInstruction.textContent = `VECTOR ${signed(move)}`;
-      el.hint.textContent = "符号から移動方向を判断しよう";
+      el.moveInstruction.textContent = state.kind === "abs" ? "ABSOLUTE VALUE" : state.kind === "root" ? "SQUARE ROOT" : `VECTOR ${signed(state.move)}`;
+      el.hint.textContent = state.kind === "abs" ? "絶対値は 0 からの距離" : state.kind === "root" ? "√2≈1.4  √3≈1.7  √5≈2.2 を使って位置を決めよう" : "符号から移動方向を判断しよう";
     } else {
       el.moveInstruction.textContent = "NO GUIDANCE";
       el.hint.textContent = "式を読み、着地点を決めよう";
@@ -517,16 +648,16 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
   function renderPosition(announce = true) {
     const p = percent(state.current);
     const startP = percent(state.start);
-    const moved = Math.abs(state.current - state.start);
+    const moved = r1(Math.abs(state.current - state.start));
     el.core.style.left = `${p}%`;
     el.startMarker.style.left = `${startP}%`;
     el.trail.style.left = `${Math.min(p, startP)}%`;
     el.trail.style.width = `${Math.abs(p - startP)}%`;
-    el.dragDirection.textContent = state.current === state.start ? "READY" : state.current > state.start ? "RIGHT" : "LEFT";
-    el.stepCount.textContent = state.rank === 1 ? `${moved} / ${Math.abs(state.move)}` : `${moved} STEPS`;
+    el.dragDirection.textContent = eq(state.current, state.start) ? "READY" : state.current > state.start ? "RIGHT" : "LEFT";
+    el.stepCount.textContent = state.rank === 1 ? `${fmt(moved)} / ${fmt(Math.abs(state.move))}` : `${fmt(moved)} STEPS`;
     el.numberLine.setAttribute("aria-valuenow", String(state.current));
     el.numberLine.setAttribute("aria-valuetext", spoken(state.current));
-    document.querySelectorAll(".tick").forEach(tick => tick.classList.toggle("is-active", Number(tick.dataset.value) === state.current));
+    document.querySelectorAll(".tick").forEach(tick => tick.classList.toggle("is-active", eq(Number(tick.dataset.value), state.current)));
 
     const crossed = state.start !== 0 && ((state.start < 0 && state.current >= 0) || (state.start > 0 && state.current <= 0));
     if (crossed && !state.crossedZero) {
@@ -545,16 +676,16 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
   function positionFromPointer(clientX) {
     const rect = el.numberLine.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    return Math.max(MIN, Math.min(MAX, Math.round(MIN + ratio * (MAX - MIN))));
+    return clampLine(snap(line.min + ratio * (line.max - line.min)));
   }
 
   function moveTo(value) {
     if (state.resolved || !state.playing) return;
-    const next = Math.max(MIN, Math.min(MAX, value));
-    if (next !== state.current) {
+    const next = clampLine(snap(value));
+    if (!eq(next, state.current)) {
       state.current = next;
       renderPosition();
-      tone(180 + (next - MIN) * 9, .025, .012);
+      tone(180 + ((next - line.min) / (line.max - line.min)) * 180, .025, .012);
       if (navigator.vibrate) navigator.vibrate(7);
     }
   }
@@ -581,10 +712,16 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     el.lives.setAttribute("aria-label", `残りエネルギー${state.lives}`);
   }
 
+  function solvedText() {
+    if (state.kind === "abs") return `${state.expr} = ${fmt(state.target)}`;
+    if (state.kind === "root") return `${state.expr} ≈ ${fmt(state.target)}`;
+    return `${signed(state.start)} ${state.move >= 0 ? "+" : "−"} ${fmt(Math.abs(state.move))} = ${signed(state.target)}`;
+  }
+
   function evaluate() {
-    if (state.resolved || !state.playing || state.current === state.start) return;
+    if (state.resolved || !state.playing || eq(state.current, state.start)) return;
     state.resolved = true;
-    if (state.current === state.target) {
+    if (eq(state.current, state.target)) {
       state.combo += 1;
       state.maxCombo = Math.max(state.maxCombo, state.combo);
       state.cleared += 1;
@@ -594,7 +731,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
       state.score += points;
       if (state.combo % 5 === 0) state.time = Math.min(ROUND_SECONDS, state.time + 1.5);
       el.answer.textContent = signed(state.target);
-      el.hint.textContent = `${signed(state.start)} ${state.move >= 0 ? "+" : "−"} ${Math.abs(state.move)} = ${signed(state.target)}`;
+      el.hint.textContent = solvedText();
       showPoints(points, state.crossedZero ? "  ZERO BONUS" : fast ? "  QUICK" : "");
       showFeedback(true, state.combo >= 3 ? `${state.combo} CHAIN` : "LINE COMPLETE");
       tone(520, .09, .04);
@@ -621,7 +758,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
           state.crossedZero = false;
           state.resolved = false;
           el.gamePanel.classList.remove("zero-crossed", "hit");
-          el.hint.textContent = state.rank === 1 ? `もう一度、${state.move > 0 ? "右" : "左"}へ ${Math.abs(state.move)} マス` : "同じ式にもう一度挑戦しよう";
+          el.hint.textContent = state.rank === 1 ? `もう一度、${targetHint()}` : "同じ式にもう一度挑戦しよう";
           renderPosition(false);
         }, 600);
       }
@@ -688,17 +825,40 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     el.retryButton.focus({ preventScroll: true });
     if (typeof window.manabiReport === "function") {
       window.manabiReport({
-        app: "zero-line",
+        app: APP,
         done: Math.min(20, state.cleared),
         total: 20,
-        best: hubScale(Math.min(1, state.score / 15000)),
+        best: hubScale(Math.min(1, state.score / 15000), { grade: GRADE }),
         raw: state.score,
+        grade: GRADE,
         note: `素点 ${state.score} / ${state.cleared}ライン・最大${state.maxCombo}連鎖`.slice(0, 40)
       });
     }
     tone(260, .18, .035);
     tone(190, .28, .03, .16);
   }
+
+  /* ---- 学年ピルと HUD ラベル ---- */
+  function applyGrade(g, save) {
+    GRADE = g;
+    if (save) saveGrade(g);
+    el.gradeRow.querySelectorAll(".grade-pill").forEach(b => {
+      const on = Number(b.dataset.grade) === g;
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+    el.gradeHud.hidden = g === 3;
+    el.gradeHudValue.textContent = GRADE_LABEL[g];
+    el.gradeTag.querySelector("b").textContent = GRADE_LABEL[g];
+    app.classList.toggle("grade-on", g !== 3);
+    if (!state.playing) { state.lastProblem = ""; createProblem(true); }
+  }
+  el.gradeRow.addEventListener("click", event => {
+    const button = event.target.closest(".grade-pill");
+    if (!button) return;
+    applyGrade(Number(button.dataset.grade), true);
+    tone(440, .05, .02);
+  });
 
   el.numberLine.addEventListener("pointerdown", event => {
     if (state.resolved || !state.playing || event.button > 0) return;
@@ -736,7 +896,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     if (state.resolved || !state.playing) return;
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
-      moveTo(state.current + (event.key === "ArrowRight" ? 1 : -1));
+      moveTo(state.current + (event.key === "ArrowRight" ? line.step : -line.step));
     } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       evaluate();
@@ -747,10 +907,11 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
   el.retryButton.addEventListener("click", startGame);
   el.resetButton.addEventListener("click", startGame);
   window.addEventListener("resize", () => renderPosition(false));
-  buildTicks();
+  setLine("int");
   el.bestScore.textContent = pad(readBest());
-  createProblem(true);
+  applyGrade(GRADE, false);
   updateHud();
+  window.__ZERO = { state, get grade() { return GRADE; }, setGrade: g => applyGrade(g, true), createProblem, evaluate, moveTo, endGame, startGame };
 })();
 
   </script>

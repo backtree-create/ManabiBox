@@ -420,6 +420,18 @@
     #controls{gap:6px;padding-inline:8px;}
     .opBtn{min-height:46px;}
   }
+  /* ============ 学年モード（ピルとラベル） ============ */
+  .gradeRow{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:10px;}
+  .gradeBtn{
+    display:flex; align-items:center; justify-content:center; min-height:44px; min-width:76px;
+    font-size:clamp(12px,3.4vw,14px); font-weight:800; letter-spacing:.12em; color:var(--dim);
+    background:rgba(255,255,255,.03); border:1px solid #26364e; cursor:pointer; touch-action:manipulation;
+    transition:transform .16s ease,filter .16s ease,background-color .16s ease;
+  }
+  .gradeBtn:active{transform:translateY(1px);}
+  .gradeBtn.on{color:var(--accInk); background:var(--acc); border-color:var(--acc); border-bottom:3px solid var(--accDeep);}
+  .modeCard.locked{opacity:.38; filter:grayscale(.8); pointer-events:none;}
+  .modeCard.locked .mProg small{letter-spacing:.2em;}
   @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
 </style>
 <script src="config.js"></script>
@@ -440,6 +452,7 @@
     <div class="pill" id="pillTime"><span class="k">TIME</span><b id="hudTime">0.0</b></div>
     <div class="pill"><span class="k">MOVES</span><b><span id="hudMoves">0</span><span style="color:var(--faint)">/</span><span id="hudPar" style="color:var(--dim)">?</span></b></div>
     <div class="pill" id="pillSolved" style="display:none"><span class="k">SOLVED</span><b id="hudSolved">0</b></div>
+    <div class="pill" id="pillGrade" style="display:none"><span class="k">GRADE</span><b id="hudGrade">中1</b></div>
   </div>
 </header>
 <div id="tapeBar"></div>
@@ -542,6 +555,11 @@
     </div>
     <p style="font-size:clamp(11px,3.3vw,13px);color:var(--dim);line-height:1.9;margin:14px 0 0">
       3つのラボを攻略せよ。<br>最小手数 × スピードでスコアを刻め。</p>
+    <div class="gradeRow" id="gradeRow" role="group" aria-label="学年">
+      <button class="gradeBtn" type="button" data-grade="1">中1</button>
+      <button class="gradeBtn" type="button" data-grade="2">中2</button>
+      <button class="gradeBtn" type="button" data-grade="3">中3</button>
+    </div>
     <button class="bigBtn" id="btnStart">ラボへ入る</button>
   </div>
 </div>
@@ -615,6 +633,28 @@ function beep(f,d,t,v){try{AC=AC||new (window.AudioContext||window.webkitAudioCo
 function $(id){return document.getElementById(id);}
 function fmtN(v){ return v<0 ? "−"+(-v) : ""+v; }
 
+/* ---------- 学年モード ----------
+   ラボ m1=中1・m2=中2・m3=中3。選んだ学年「まで」のラボが遊べる（中3＝全範囲）。
+   MIX ATTACK の出題 tier も学年内に絞る（1〜4=一次方程式, 5=連立, 6=因数分解）。 */
+var LAB_GRADE={ m1:1, m2:2, m3:3 };
+var GRADE_MAX_TIER={ 1:4, 2:5, 3:6 };
+var GRADE_KEY="manabi-grade:equation-balance";
+var hubGrade=function(){ return (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3; };
+var curGrade=(function(){ var g=Number(store.get(GRADE_KEY,0)); return (g===1||g===2||g===3)?g:hubGrade(); })();
+function setGrade(g){
+  g=Number(g); if(g!==1&&g!==2&&g!==3) return;
+  curGrade=g; store.set(GRADE_KEY,g); paintGrade();
+}
+function paintGrade(){
+  Array.prototype.slice.call(document.querySelectorAll(".gradeBtn")).forEach(function(b){
+    var on=Number(b.dataset.grade)===curGrade;
+    b.classList.toggle("on",on); b.setAttribute("aria-pressed",on?"true":"false");
+  });
+  $("pillGrade").style.display = curGrade<3 ? "block" : "none";
+  $("hudGrade").textContent = "中"+curGrade;
+}
+function labOpen(m){ return LAB_GRADE[m]<=curGrade; }
+
 function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
 function hubEndless(r){ return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0,Math.min(1,r))*30000); }
 function reportEquation(score,note){
@@ -626,9 +666,10 @@ function reportEquation(score,note){
   var raw=Math.round(Number(score)||0);
   var hubNote=("素点 "+raw.toLocaleString()+" / "+String(note||"")).slice(0,40);
   manabiReport({app:"equation-balance",done:Math.min(done,64),total:64,
-    best:hubScale(ratio),
+    best:hubScale(ratio,{grade:curGrade}),
     endless:hubEndless(Math.min(1,atkMax/8000)),
     raw:raw,
+    grade:curGrade,
     note:hubNote});
 }
 $('manabi-back').addEventListener('click',function(){reportEquation(mode==="attack"?atkScore:0,"ManabiBoxへ戻る");});
@@ -1345,8 +1386,14 @@ function attackTier(){
   if(atkKind==="m2") return 5;
   if(atkKind==="m3") return 6;
   var seq=ATK_SEQ[atkKind];
+  if(atkKind==="mix"){
+    var maxT=GRADE_MAX_TIER[curGrade]||6;
+    seq=seq.filter(function(t){ return t<=maxT; });
+    if(atkIdx<seq.length) return seq[atkIdx];
+    return pick([3,4,5,6].filter(function(t){ return t<=maxT; }));
+  }
   if(atkIdx<seq.length) return seq[atkIdx];
-  return atkKind==="mix" ? pick([3,4,5,6]) : 4;
+  return 4;
 }
 function nextAttackProblem(){
   var tier=attackTier();
@@ -1430,14 +1477,17 @@ function buildHub(){
   setAccent(null);
   var box=$("hubCards"); box.innerHTML="";
   ["m1","m2","m3"].forEach(function(m){
-    var md=MODES[m], pg=modeProgress(m);
+    var md=MODES[m], pg=modeProgress(m), open=labOpen(m);
     var b=document.createElement("button");
-    b.className="modeCard"; b.style.setProperty("--mc",md.acc);
+    b.className="modeCard"+(open?"":" locked"); b.style.setProperty("--mc",md.acc);
+    if(!open){ b.disabled=true; b.setAttribute("aria-disabled","true"); }
     b.innerHTML=plateHTML(md)+
       '<span><span class="mGrade">'+md.grade+'</span><br><span class="mName">'+md.name+'</span>'+
       '<span class="mSub">'+md.sub+'</span></span>'+
-      '<span class="mProg"><b>'+pg.done+'<span style="color:var(--faint)">/'+pg.total+'</span></b><small>CLEAR</small></span>';
-    b.addEventListener("click",function(){ openMode(m); });
+      (open
+        ? '<span class="mProg"><b>'+pg.done+'<span style="color:var(--faint)">/'+pg.total+'</span></b><small>CLEAR</small></span>'
+        : '<span class="mProg"><b>中'+LAB_GRADE[m]+'</b><small>LOCKED</small></span>');
+    b.addEventListener("click",function(){ if(labOpen(m)) openMode(m); });
     box.appendChild(b);
   });
   var bm=store.get("eqb_atk4_mix",null);
@@ -1481,6 +1531,10 @@ function openMode(m){
   });
   hideAll(); show(ovMode);
 }
+Array.prototype.slice.call(document.querySelectorAll(".gradeBtn")).forEach(function(b){
+  b.addEventListener("click",function(){ setGrade(b.dataset.grade); });
+});
+paintGrade();
 $("btnStart").addEventListener("click",function(){ buildHub(); hideAll(); show(ovHub); });
 $("btnToHub").addEventListener("click",function(){ buildHub(); hideAll(); show(ovHub); });
 $("btnMix").addEventListener("click",function(){ startAttack("mix"); });

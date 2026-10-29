@@ -39,6 +39,12 @@ button{font-family:inherit}
 .btn.ghost:active{box-shadow:0 1px 0 #0c0806,inset 0 0 0 1px rgba(0,0,0,.4)}
 .btn:disabled{opacity:.35;pointer-events:none}
 .btn.sm{padding:9px 16px;font-size:.82rem}
+/* 段階ピル(初級/中級/上級)。既存の .btn を横並びにしたもの */
+.lvrow{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.lvlab{font-family:var(--serif);letter-spacing:.3em;font-size:.72rem;color:var(--gold);margin-right:2px}
+.lvrow .btn{min-height:44px;min-width:76px;touch-action:manipulation}
+.lvrow .btn.on{background:var(--gold);color:var(--ink);border-color:#5c460e}
+#hudLv{color:var(--gold-light)}
 
 /* ---------- 汎用オーバーレイ(小画面でもスクロールで収まる) ---------- */
 .overlay{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;
@@ -191,7 +197,7 @@ button{font-family:inherit}
 <a id="homeBtn" href="https://backtree-create.github.io/ManabiBox/index.html">⌂ ホーム</a>
 
 <div id="hud"><div class="bar">
-  <span id="hudStage"></span><span>⏱ <b id="timer">0</b>秒</span><span>売上 <b id="hudTotal">0円</b></span><span>🏅 <b id="hudPts">0</b>pt</span>
+  <span id="hudStage"></span><span id="hudLv" style="display:none"></span><span>⏱ <b id="timer">0</b>秒</span><span>売上 <b id="hudTotal">0円</b></span><span>🏅 <b id="hudPts">0</b>pt</span>
 </div></div>
 <button class="btn ghost sm" id="hintBtn">専門家に相談(−30%)</button>
 <div id="hintToast"></div>
@@ -216,7 +222,13 @@ button{font-family:inherit}
       スマホ:<b>床をタップ</b>するとその場所へ歩きます(左のパッドでも移動可)。作品タップで検分</div>
   </div>
   <div class="warn" id="imgWarn">⚠ 名画の画像を読み込めませんでした。通信環境をご確認ください。Claudeのプレビュー内では外部画像がブロックされるため、<b>ダウンロードしてブラウザで開くか、GitHub Pagesで公開</b>してください。</div>
-  <div style="margin-top:22px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+  <div class="lvrow" id="lvPills" role="group" aria-label="段階">
+    <span class="lvlab">段階</span>
+    <button type="button" class="btn ghost sm lvpill" data-lv="1">初級</button>
+    <button type="button" class="btn ghost sm lvpill" data-lv="2">中級</button>
+    <button type="button" class="btn ghost sm lvpill" data-lv="3">上級</button>
+  </div>
+  <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
     <button class="btn" id="startBtn">鑑定を始める</button>
     <button class="btn ghost" id="expertBtn">エキスパート</button>
   </div>
@@ -319,44 +331,46 @@ button{font-family:inherit}
 <script src="lib/three/three.r128.min.js"></script>
 <script>
 "use strict";
-/* ==================== 作品データ(史実) ==================== */
+/* ==================== 作品データ(史実) ====================
+   era: 段階モード用の区分。初級=古典＋日本、中級=＋近世・近代、上級=全部
+   （年代の目安: 〜1600年=古典、1600〜1870年=近世・近代、1870年〜=近代以降・抽象、日本美術は年に関係なく「日本」） */
 const STAGES=[
-  { name:"モナ・リザ", artist:"レオナルド・ダ・ヴィンチ", year:"1503〜1519年頃",
+  { name:"モナ・リザ", artist:"レオナルド・ダ・ヴィンチ", year:"1503〜1519年頃", era:"古典",
     medium:"ポプラ板に油彩", museum:"ルーヴル美術館(フランス・パリ)",
     story:"ルネサンスの巨匠が晩年まで手元に置き、加筆を続けたとされる肖像画。輪郭を煙のようにぼかす「スフマート」技法が特徴。",
     trivia:"1911年にルーヴル美術館から盗まれ、2年後にイタリアで発見された。この盗難事件が世界的な知名度を決定づけたと言われる。",
     hint:"本物は落ち着いた黄褐色の色調。色が派手すぎたり不自然に明るいものは贋作だ。",
     files:["Mona Lisa, by Leonardo da Vinci, from C2RMF retouched.jpg","Mona Lisa.jpg","Leonardo da Vinci - Mona Lisa (Louvre, Paris).jpg"],
     candidates:3, base:900e8, pool:"easy" },
-  { name:"冨嶽三十六景 神奈川沖浪裏", artist:"葛飾北斎", year:"1831年頃(天保2年頃)",
+  { name:"冨嶽三十六景 神奈川沖浪裏", artist:"葛飾北斎", year:"1831年頃(天保2年頃)", era:"日本",
     medium:"多色摺木版画(浮世絵)", museum:"メトロポリタン美術館ほか世界各地",
     story:"巨大な波の向こうに富士山を望む、世界で最も有名な日本美術のひとつ。版画のため複数枚が現存する。",
     trivia:"波の藍色には当時輸入されたばかりの化学顔料ベロ藍(プルシアンブルー)が使われている。ドビュッシーの交響詩『海』の楽譜表紙にも採用された。",
     hint:"本物の波は深い藍色。色相がずれて緑や紫に寄っているものは贋作だ。",
     files:["The Great Wave off Kanagawa.jpg","Great Wave off Kanagawa2.jpg","Tsunami by hokusai 19th century.jpg"],
     candidates:3, base:5e8, pool:"easy" },
-  { name:"真珠の耳飾りの少女", artist:"ヨハネス・フェルメール", year:"1665年頃",
+  { name:"真珠の耳飾りの少女", artist:"ヨハネス・フェルメール", year:"1665年頃", era:"近世・近代",
     medium:"カンヴァスに油彩", museum:"マウリッツハイス美術館(オランダ・ハーグ)",
     story:"「北方のモナ・リザ」とも呼ばれる肖像画。ターバンの青には、当時金と同等に高価だったラピスラズリ由来のウルトラマリンが使われた。",
     trivia:"フェルメールの現存作品は30数点のみ。20世紀には画家メーヘレンによるフェルメール贋作事件が世界を揺るがせた——まさに鑑定士の腕が試された画家である。",
     hint:"ターバンの青と唇の赤の対比が生命線。彩度や明るさがわずかに違うものを探せ。",
     files:["Girl with a Pearl Earring.jpg","Johannes Vermeer (1632-1675) - The Girl With The Pearl Earring (1665).jpg","Meisje met de parel.jpg","1665 Girl with a Pearl Earring.jpg"],
     candidates:4, base:300e8, pool:"mid" },
-  { name:"星月夜", artist:"フィンセント・ファン・ゴッホ", year:"1889年",
+  { name:"星月夜", artist:"フィンセント・ファン・ゴッホ", year:"1889年", era:"近代以降・抽象",
     medium:"カンヴァスに油彩", museum:"ニューヨーク近代美術館(MoMA)",
     story:"南フランスの療養院から見た夜空を、渦巻くような筆致で描いた代表作。実景と記憶・想像を組み合わせて描かれた。",
     trivia:"ゴッホが生前に売れた絵はほぼ1枚だけだったとされる。現在は1枚が数百億円で取引される、美術史上もっとも劇的な「死後の逆転」である。",
     hint:"夜空の青の深さと月の黄色のバランスに注目。全体がわずかに明るい・暗いものは贋作だ。",
     files:["Van Gogh - Starry Night - Google Art Project.jpg","VanGogh-starry night ballance1.jpg"],
     candidates:4, base:400e8, pool:"mid" },
-  { name:"叫び", artist:"エドヴァルド・ムンク", year:"1893年",
+  { name:"叫び", artist:"エドヴァルド・ムンク", year:"1893年", era:"近代以降・抽象",
     medium:"厚紙にテンペラ・パステルほか", museum:"オスロ国立美術館(ノルウェー)",
     story:"燃えるような夕焼けの下、橋の上で耳をふさぐ人物を描いた表現主義の代表作。ムンクは同じ主題を複数バージョン制作した。",
     trivia:"パステル版は2012年のオークションで約1億2000万ドル(当時約96億円)で落札され、当時の絵画落札額の世界記録を更新。1994年と2004年には盗難事件も起きた。",
     hint:"空の朱色がわずかにくすんでいたり、色相が数度ずれているものは贋作。最上級の集中力で見比べろ。",
     files:["Edvard Munch, 1893, The Scream, oil, tempera and pastel on cardboard, 91 x 73 cm, National Gallery of Norway.jpg","The Scream.jpg","Edvard Munch - The Scream - Google Art Project.jpg"],
     candidates:5, base:150e8, pool:"hard" },
-  { name:"ヴィーナスの誕生", artist:"サンドロ・ボッティチェッリ", year:"1485年頃",
+  { name:"ヴィーナスの誕生", artist:"サンドロ・ボッティチェッリ", year:"1485年頃", era:"古典",
     medium:"カンヴァスにテンペラ", museum:"ウフィツィ美術館(イタリア・フィレンツェ)",
     story:"海の泡から生まれた女神が貝殻に乗って岸へ運ばれる場面。メディチ家のために描かれたとされるルネサンスの傑作。",
     trivia:"当時カンヴァス(布)に描かれた大作は珍しく、板絵が主流だった。500年以上前の作品ながら保存状態の良さでも知られる。",
@@ -366,133 +380,152 @@ const STAGES=[
 ];
 /* ==================== 追加出題プール(史実データ) ==================== */
 const ARTWORKS_EXTRA=[
- {name:"牛乳を注ぐ女",artist:"ヨハネス・フェルメール",year:"1660年頃",medium:"カンヴァスに油彩",museum:"アムステルダム国立美術館",
+ {name:"牛乳を注ぐ女",artist:"ヨハネス・フェルメール",year:"1660年頃", era:"近世・近代",medium:"カンヴァスに油彩",museum:"アムステルダム国立美術館",
   story:"台所で牛乳を注ぐ女性の静謐な一瞬。窓から差し込む光の描写が見どころ。",
   trivia:"パンの表面は絵具を点々と置く技法で質感が表現されている。オランダ黄金時代の「静けさ」の代表作。",
   hint:"黄色い胴着と青いエプロンの対比が生命線。彩度のわずかな違いに注目。",
   files:["Johannes Vermeer - Het melkmeisje - Google Art Project.jpg","Johannes Vermeer - De melkmeid.jpg"],base:250e8},
- {name:"夜警",artist:"レンブラント・ファン・レイン",year:"1642年",medium:"カンヴァスに油彩",museum:"アムステルダム国立美術館",
+ {name:"夜警",artist:"レンブラント・ファン・レイン",year:"1642年", era:"近世・近代",medium:"カンヴァスに油彩",museum:"アムステルダム国立美術館",
   story:"市民自警団の集団肖像画。光と影の劇的な対比(キアロスクーロ)で人物を浮かび上がらせた。",
   trivia:"実は昼の場面。ニスの黒ずみで夜に見えたことから「夜警」と呼ばれるようになった。過去に刃物で切りつけられる事件も起きている。",
   hint:"闇の深さと、中央に差す光の金色。明るさが不自然なものは贋作だ。",
   files:["The Night Watch - HD.jpg","Rembrandt van Rijn-De Nachtwacht-1642.jpg","La ronda de noche, por Rembrandt van Rijn.jpg"],base:700e8},
- {name:"民衆を導く自由の女神",artist:"ウジェーヌ・ドラクロワ",year:"1830年",medium:"カンヴァスに油彩",museum:"ルーヴル美術館(パリ)",
+ {name:"民衆を導く自由の女神",artist:"ウジェーヌ・ドラクロワ",year:"1830年", era:"近世・近代",medium:"カンヴァスに油彩",museum:"ルーヴル美術館(パリ)",
   story:"1830年の七月革命を主題に、三色旗を掲げる女神が民衆を率いる姿を描いたロマン主義の代表作。",
   trivia:"かつてのフランス100フラン紙幣の図柄にもなった。女神は自由の擬人像「マリアンヌ」とされる。",
   hint:"翻る三色旗の青・白・赤。色相のずれを見逃すな。",
   files:["Eugène Delacroix - Le 28 Juillet. La Liberté guidant le peuple.jpg","Eugène Delacroix - La liberté guidant le peuple.jpg","Liberty Leading the People.jpg"],base:500e8},
- {name:"雲海の上の旅人",artist:"カスパー・ダーヴィト・フリードリヒ",year:"1818年頃",medium:"カンヴァスに油彩",museum:"ハンブルク美術館(ドイツ)",
+ {name:"雲海の上の旅人",artist:"カスパー・ダーヴィト・フリードリヒ",year:"1818年頃", era:"近世・近代",medium:"カンヴァスに油彩",museum:"ハンブルク美術館(ドイツ)",
   story:"霧の海を見下ろす後ろ姿の旅人。ドイツ・ロマン主義を象徴する一枚。",
   trivia:"人物を後ろ姿で描く「リュッケンフィグーア」の代表例。観る者は旅人と同じ視点で風景に向き合うことになる。",
   hint:"霧の白と岩の暗色のコントラスト。全体の明暗バランスを見比べろ。",
   files:["Caspar David Friedrich - Wanderer above the sea of fog.jpg","Caspar David Friedrich 032.jpg"],base:120e8},
- {name:"グランド・ジャット島の日曜日の午後",artist:"ジョルジュ・スーラ",year:"1884〜86年",medium:"カンヴァスに油彩",museum:"シカゴ美術館(アメリカ)",
+ {name:"グランド・ジャット島の日曜日の午後",artist:"ジョルジュ・スーラ",year:"1884〜86年", era:"近代以降・抽象",medium:"カンヴァスに油彩",museum:"シカゴ美術館(アメリカ)",
   story:"セーヌ川の中州で休日を過ごす人々を、無数の色の点で描いた新印象主義の金字塔。",
   trivia:"「点描法」で完成まで約2年を費やした。近くで見ると色の点、離れると混ざって見える視覚の科学を利用している。",
   hint:"点描の色の粒がつくる柔らかい色調。彩度が高すぎるものは怪しい。",
   files:["A Sunday on La Grande Jatte, Georges Seurat, 1884.png","Georges Seurat - A Sunday on La Grande Jatte -- 1884 - Google Art Project.jpg"],base:400e8},
- {name:"接吻",artist:"グスタフ・クリムト",year:"1907〜08年",medium:"カンヴァスに油彩・金箔",museum:"ベルヴェデーレ宮殿(ウィーン)",
+ {name:"接吻",artist:"グスタフ・クリムト",year:"1907〜08年", era:"近代以降・抽象",medium:"カンヴァスに油彩・金箔",museum:"ベルヴェデーレ宮殿(ウィーン)",
   story:"金箔に包まれて抱き合う男女。クリムト「黄金時代」の頂点とされる。",
   trivia:"クリムトの父は金細工師で、金箔の扱いは家業ゆずり。ウィーンから門外不出の国民的絵画である。",
   hint:"金の輝きの色味が命。黄金が緑や赤に転んでいたら贋作だ。",
   files:["The Kiss - Gustav Klimt - Google Cultural Institute.jpg","Gustav Klimt 016.jpg"],base:350e8},
- {name:"ラス・メニーナス",artist:"ディエゴ・ベラスケス",year:"1656年",medium:"カンヴァスに油彩",museum:"プラド美術館(マドリード)",
+ {name:"ラス・メニーナス",artist:"ディエゴ・ベラスケス",year:"1656年", era:"近世・近代",medium:"カンヴァスに油彩",museum:"プラド美術館(マドリード)",
   story:"王女マルガリータと女官たち、そして画家自身まで描き込まれた「絵画の中の絵画」。",
   trivia:"奥の鏡に国王夫妻が映り込む仕掛けが有名。ピカソはこの絵を研究して50点以上の連作を描いた。",
   hint:"落ち着いた褐色の空間と王女の淡いドレス。明暗の階調を見比べろ。",
   files:["Las Meninas, by Diego Velázquez, from Prado in Google Earth.jpg","Las Meninas 01.jpg"],base:600e8},
- {name:"オフィーリア",artist:"ジョン・エヴァレット・ミレイ",year:"1851〜52年",medium:"カンヴァスに油彩",museum:"テート・ブリテン(ロンドン)",
+ {name:"オフィーリア",artist:"ジョン・エヴァレット・ミレイ",year:"1851〜52年", era:"近世・近代",medium:"カンヴァスに油彩",museum:"テート・ブリテン(ロンドン)",
   story:"シェイクスピア『ハムレット』の悲劇のヒロインが川に浮かぶ場面。植物の描写は植物図鑑級の精密さ。",
   trivia:"モデルのエリザベス・シダルは浴槽に浮かんで長時間ポーズを続け、ひどい風邪をこじらせたという逸話が残る。",
   hint:"川面の深い緑と草花の色。緑の色相のずれを探せ。",
   files:["John Everett Millais - Ophelia - Google Art Project.jpg","Millais - Ophelia.jpg"],base:150e8},
- {name:"バベルの塔",artist:"ピーテル・ブリューゲル(父)",year:"1563年",medium:"板に油彩",museum:"ウィーン美術史美術館",
+ {name:"バベルの塔",artist:"ピーテル・ブリューゲル(父)",year:"1563年", era:"古典",medium:"板に油彩",museum:"ウィーン美術史美術館",
   story:"旧約聖書の巨塔を、驚くべき細密描写で描いた一枚。無数の人と建設機械が書き込まれている。",
   trivia:"塔のモデルはローマのコロッセオとされる。よく見ると建設の工程が階層ごとに描き分けられている。",
   hint:"レンガの赤茶と空の青のバランス。全体の色温度を見比べろ。",
   files:["Pieter Bruegel the Elder - The Tower of Babel (Vienna) - Google Art Project - edited.jpg","Pieter Bruegel the Elder - The Tower of Babel (Vienna) - Google Art Project.jpg","Brueghel-tower-of-babel.jpg"],base:300e8},
- {name:"アルノルフィーニ夫妻像",artist:"ヤン・ファン・エイク",year:"1434年",medium:"板に油彩",museum:"ナショナル・ギャラリー(ロンドン)",
+ {name:"アルノルフィーニ夫妻像",artist:"ヤン・ファン・エイク",year:"1434年", era:"古典",medium:"板に油彩",museum:"ナショナル・ギャラリー(ロンドン)",
   story:"商人夫妻の婚礼場面とされる肖像。油彩技法を極めた初期フランドル絵画の傑作。",
   trivia:"奥の凸面鏡には画家自身らしき姿が映り、壁には「ヤン・ファン・エイクここにありき」と署名がある。",
   hint:"緑のドレスと赤い寝台。この2色の彩度が鑑定の決め手。",
   files:["Van Eyck - Arnolfini Portrait.jpg","The Arnolfini portrait (1434).jpg"],base:280e8},
- {name:"印象・日の出",artist:"クロード・モネ",year:"1872年",medium:"カンヴァスに油彩",museum:"マルモッタン・モネ美術館(パリ)",
+ {name:"印象・日の出",artist:"クロード・モネ",year:"1872年", era:"近代以降・抽象",medium:"カンヴァスに油彩",museum:"マルモッタン・モネ美術館(パリ)",
   story:"ル・アーヴルの港の朝焼けを素早い筆致で描いた一枚。「印象派」という言葉の由来になった。",
   trivia:"批評家が「印象しか描いていない」と揶揄した言葉が、そのまま美術史上の一大運動の名前になった。1985年に盗難され5年後に発見された。",
   hint:"朝靄の青灰色に浮かぶ太陽の朱色。この対比が崩れていたら贋作。",
   files:["Monet - Impression, Sunrise.jpg","Claude Monet, Impression, soleil levant.jpg","Claude Monet, Impression, soleil levant, 1872.jpg"],base:250e8},
- {name:"ひまわり",artist:"フィンセント・ファン・ゴッホ",year:"1888年",medium:"カンヴァスに油彩",museum:"ナショナル・ギャラリー(ロンドン)ほか・連作",
+ {name:"ひまわり",artist:"フィンセント・ファン・ゴッホ",year:"1888年", era:"近代以降・抽象",medium:"カンヴァスに油彩",museum:"ナショナル・ギャラリー(ロンドン)ほか・連作",
   story:"アルルの黄色い家を飾るために描かれた連作。黄色に黄色を重ねる大胆な色彩が特徴。",
   trivia:"1987年に日本の保険会社が約58億円で落札して世界を驚かせた。その1点は今も東京で公開されている。",
   hint:"何段階もの黄色の重なり。黄が緑や橙に転んでいるものを弾け。",
   files:["Vincent Willem van Gogh 127.jpg","Vincent van Gogh - Sunflowers - VGM F458.jpg","Van Gogh Vase with Fifteen Sunflowers.jpg"],base:200e8},
- {name:"夜のカフェテラス",artist:"フィンセント・ファン・ゴッホ",year:"1888年",medium:"カンヴァスに油彩",museum:"クレラー・ミュラー美術館(オランダ)",
+ {name:"夜のカフェテラス",artist:"フィンセント・ファン・ゴッホ",year:"1888年", era:"近代以降・抽象",medium:"カンヴァスに油彩",museum:"クレラー・ミュラー美術館(オランダ)",
   story:"アルルの星空の下、ガス灯に照らされたカフェのテラス。夜を黒を使わずに描いた実験作。",
   trivia:"署名はないが真作とされる。ゴッホは「夜は昼よりも色彩豊かだ」と手紙に書いている。",
   hint:"カフェの黄色と夜空の群青の対比。どちらかがくすんでいたら贋作。",
   files:["Vincent Willem van Gogh - Cafe Terrace at Night (Yorck).jpg","Van Gogh - Terrasse des Cafés an der Place du Forum in Arles am Abend1.jpg"],base:220e8},
- {name:"風神雷神図屏風",artist:"俵屋宗達",year:"17世紀前半(江戸時代)",medium:"紙本金地着色・二曲一双",museum:"建仁寺蔵(京都国立博物館寄託)",
+ {name:"風神雷神図屏風",artist:"俵屋宗達",year:"17世紀前半(江戸時代)", era:"日本",medium:"紙本金地着色・二曲一双",museum:"建仁寺蔵(京都国立博物館寄託)",
   story:"金地の余白を大胆に活かし、風神と雷神を左右に配した琳派の原点。",
   trivia:"後に尾形光琳、さらに酒井抱一が模写し、約100年ごとに受け継がれた「琳派のリレー」として知られる。",
   hint:"金地の輝きと、緑の風神・白の雷神の対比。金の色味を見よ。",
   files:["Fujinraijin-tawaraya.jpg","Wind God Fujin (left) and Thunder God Raijin (right) by Tawaraya Sotatsu.jpg"],base:180e8},
- {name:"灰色と黒のアレンジメント第1番(ホイッスラーの母)",artist:"ジェームズ・マクニール・ホイッスラー",year:"1871年",medium:"カンヴァスに油彩",museum:"オルセー美術館(パリ)",
+ {name:"灰色と黒のアレンジメント第1番(ホイッスラーの母)",artist:"ジェームズ・マクニール・ホイッスラー",year:"1871年", era:"近代以降・抽象",medium:"カンヴァスに油彩",museum:"オルセー美術館(パリ)",
   story:"横向きに座る画家の母を、灰と黒の抑えた色調でまとめた肖像画。",
   trivia:"画家自身は人物画ではなく「色彩の配置(アレンジメント)」として題名を付けた。アメリカでは「母の象徴」として切手にもなった。",
   hint:"灰色の階調がすべて。ほんのわずかな明るさの違いを見抜け。",
   files:["Whistlers Mother high res.jpg","James McNeill Whistler - Arrangement in Grey and Black No. 1 (Whistler's Mother) - Google Art Project.jpg","Whistler's Mother.jpg"],base:130e8,mono:true},
- {name:"ウィトルウィウス的人体図",artist:"レオナルド・ダ・ヴィンチ",year:"1490年頃",medium:"紙にペンとインク",museum:"アカデミア美術館(ヴェネツィア)",
+ {name:"ウィトルウィウス的人体図",artist:"レオナルド・ダ・ヴィンチ",year:"1490年頃", era:"古典",medium:"紙にペンとインク",museum:"アカデミア美術館(ヴェネツィア)",
   story:"円と正方形に内接する人体。古代ローマの建築家ウィトルウィウスの比例論を図解した素描。",
   trivia:"光に弱いため常設展示されず、公開は数年に一度きり。芸術と科学を結ぶレオナルドの象徴として知られる。",
   hint:"古い紙の生成り色とインクの茶。紙の色味の違いを探せ。",
   files:["Da Vinci Vitruve Luc Viatour.jpg","Vitruvian Man by Leonardo da Vinci.jpg"],base:160e8},
- {name:"プリマヴェーラ(春)",artist:"サンドロ・ボッティチェッリ",year:"1480年頃",medium:"板にテンペラ",museum:"ウフィツィ美術館(フィレンツェ)",
+ {name:"プリマヴェーラ(春)",artist:"サンドロ・ボッティチェッリ",year:"1480年頃", era:"古典",medium:"板にテンペラ",museum:"ウフィツィ美術館(フィレンツェ)",
   story:"春の訪れを神話の神々で描いた寓意画。ヴィーナスを中央に、三美神や花の女神フローラが並ぶ。",
   trivia:"画面には500種を超える植物が描き分けられていると言われ、植物学的にも研究対象になっている。",
   hint:"深い緑の森と花々の色。緑の深さを見比べるのが近道だ。",
   files:["Botticelli-primavera.jpg","Sandro Botticelli - La Primavera - Google Art Project.jpg"],base:550e8},
- {name:"アテナイの学堂",artist:"ラファエロ・サンティ",year:"1509〜10年",medium:"フレスコ",museum:"ヴァチカン宮殿・署名の間",
+ {name:"アテナイの学堂",artist:"ラファエロ・サンティ",year:"1509〜10年", era:"古典",medium:"フレスコ",museum:"ヴァチカン宮殿・署名の間",
   story:"プラトンとアリストテレスを中心に、古代の賢者たちが一堂に会する壮大な構想画。",
   trivia:"中央のプラトンの顔はレオナルド・ダ・ヴィンチがモデルとも言われる。手前で頬杖をつく人物はミケランジェロがモデルとされる。",
   hint:"建築の白と賢者たちの衣の赤・青。色相のわずかな回転を見抜け。",
   files:["\"The School of Athens\" by Raffaello Sanzio da Urbino.jpg","Sanzio 01.jpg","Raffael 058.jpg"],base:650e8},
- {name:"アダムの創造",artist:"ミケランジェロ・ブオナローティ",year:"1512年頃",medium:"フレスコ",museum:"システィーナ礼拝堂(ヴァチカン)",
+ {name:"アダムの創造",artist:"ミケランジェロ・ブオナローティ",year:"1512年頃", era:"古典",medium:"フレスコ",museum:"システィーナ礼拝堂(ヴァチカン)",
   story:"神がアダムに命を吹き込む瞬間。天井画の中でも最も有名な一場面。",
   trivia:"触れそうで触れない指先の隙間が想像力をかき立てる。神を包む布が人間の脳の形だという説もある。",
   hint:"肌の色と背景の空色。肌が赤すぎたり青ざめていたら贋作だ。",
   files:["Michelangelo - Creation of Adam (cropped).jpg","Creación de Adán.jpg","God2-Sistine Chapel.png"],base:700e8},
- {name:"ムーラン・ド・ラ・ギャレットの舞踏会",artist:"ピエール=オーギュスト・ルノワール",year:"1876年",medium:"カンヴァスに油彩",museum:"オルセー美術館(パリ)",
+ {name:"ムーラン・ド・ラ・ギャレットの舞踏会",artist:"ピエール=オーギュスト・ルノワール",year:"1876年", era:"近代以降・抽象",medium:"カンヴァスに油彩",museum:"オルセー美術館(パリ)",
   story:"モンマルトルの野外ダンスホールの賑わい。木漏れ日が人々の上で踊る印象派の代表作。",
   trivia:"1990年のオークションで約119億円で落札され、当時の絵画取引額の世界記録級となった。",
   hint:"木漏れ日の光の斑点。青みがかった影の色が濁っていたら怪しい。",
   files:["Pierre-Auguste Renoir, Le Moulin de la Galette.jpg","Auguste Renoir - Dance at Le Moulin de la Galette (Musée d'Orsay).jpg","Renoir21.jpg"],base:300e8},
- {name:"コンポジションVII",artist:"ワシリー・カンディンスキー",year:"1913年",medium:"カンヴァスに油彩",museum:"トレチャコフ美術館(モスクワ)",
+ {name:"コンポジションVII",artist:"ワシリー・カンディンスキー",year:"1913年", era:"近代以降・抽象",medium:"カンヴァスに油彩",museum:"トレチャコフ美術館(モスクワ)",
   story:"具体的な形を捨て、色と線の渦だけで感情を描いた抽象絵画の記念碑的大作。",
   trivia:"30点以上の習作を重ねたのに、本番はわずか数日で一気に描き上げたと伝わる。カンディンスキーは音を色として感じる感覚の持ち主で、「絵画で音楽を描こう」とした。",
   hint:"渦巻く色彩の配合そのものが答え。全体の色相がわずかに回っていたら贋作だ。",
   files:["Vassily Kandinsky, 1913 - Composition 7.jpg","Wassily Kandinsky - Composition VII - Google Art Project.jpg","Kandinsky - Composition VII.jpg"],base:350e8},
- {name:"コンポジションVIII",artist:"ワシリー・カンディンスキー",year:"1923年",medium:"カンヴァスに油彩",museum:"グッゲンハイム美術館(ニューヨーク)",
+ {name:"コンポジションVIII",artist:"ワシリー・カンディンスキー",year:"1923年", era:"近代以降・抽象",medium:"カンヴァスに油彩",museum:"グッゲンハイム美術館(ニューヨーク)",
   story:"円・三角・直線が画面を舞う、バウハウス時代の幾何学的抽象の代表作。",
   trivia:"渦巻く初期の抽象から一転、理論的で澄んだ構成へ。カンディンスキー自身が自作の頂点のひとつと考えていた。",
   hint:"大きな円の紫と黒のにじみ、地の生成り色。地色の変化を見逃すな。",
   files:["Vassily Kandinsky, 1923 - Composition 8, huile sur toile, 140 cm x 201 cm, Musée Guggenheim, New York.jpg","Kandinsky Composition VIII.jpg"],base:320e8},
- {name:"赤・青・黄のコンポジション",artist:"ピート・モンドリアン",year:"1930年",medium:"カンヴァスに油彩",museum:"チューリッヒ美術館(スイス)",
+ {name:"赤・青・黄のコンポジション",artist:"ピート・モンドリアン",year:"1930年", era:"近代以降・抽象",medium:"カンヴァスに油彩",museum:"チューリッヒ美術館(スイス)",
   story:"垂直・水平の黒い線と三原色だけに世界を還元した「新造形主義」の到達点。",
   trivia:"このスタイルはデザイン界に絶大な影響を与え、イヴ・サンローランの「モンドリアン・ルック」などファッションにまで波及した。",
   hint:"赤・青・黄の三原色の純度が命。少しでも濁っていたら贋作だ。",
   files:["Piet Mondriaan, 1930 - Mondrian Composition II in Red, Blue, and Yellow.jpg","Mondrian Composition II in Red, Blue, and Yellow.jpg","Mondrian CompRYB.jpg"],base:280e8},
- {name:"セネシオ",artist:"パウル・クレー",year:"1922年",medium:"ガーゼに油彩",museum:"バーゼル市立美術館(スイス)",
+ {name:"セネシオ",artist:"パウル・クレー",year:"1922年", era:"近代以降・抽象",medium:"ガーゼに油彩",museum:"バーゼル市立美術館(スイス)",
   story:"円い顔を色面と幾何学で描いた、クレーの「顔」シリーズの代表作。",
   trivia:"クレーはバウハウスで教壇に立ち、「芸術とは見えるものを再現することではなく、見えるようにすることだ」という言葉を残した。",
   hint:"オレンジがかった肌の暖かさが基準。冷たく転んだ色を弾け。",
   files:["Paul Klee - Senecio (Baldgreis) - Google Art Project.jpg","Senecio2.JPG","Paul Klee, Senecio, 1922.jpg"],base:150e8},
- {name:"黒の正方形",artist:"カジミール・マレーヴィチ",year:"1915年",medium:"カンヴァスに油彩",museum:"トレチャコフ美術館(モスクワ)",
+ {name:"黒の正方形",artist:"カジミール・マレーヴィチ",year:"1915年", era:"近代以降・抽象",medium:"カンヴァスに油彩",museum:"トレチャコフ美術館(モスクワ)",
   story:"白い地に黒い正方形。それだけ。絵画を「何も描かない」極限まで還元した美術史上の事件。",
   trivia:"初展示ではロシアの家庭でイコン(聖像)を飾る「聖なる角」の高い位置に掲げられ、物議を醸した。X線調査では黒の下に別の絵が隠れていることが判明している。",
   hint:"色は封じられた。黒の深さと余白の白、明るさだけが手がかりだ。",
   files:["Kazimir Malevich, 1915, Black Suprematic Square, oil on linen canvas, 79.5 x 79.5 cm, Tretyakov Gallery, Moscow.jpg","Malevich.black-square.jpg","Black Square (Malevich, 1915).jpg"],base:250e8,mono:true}
 ];
 const ARTWORKS=STAGES.concat(ARTWORKS_EXTRA);
+
+/* ==================== 段階モード(初級/中級/上級) ====================
+   初級=古典＋日本、中級=＋近世・近代、上級=全部(era フィールドで判定)。
+   初期値はハブ(まなびの基板)の学年(中1→初級、中2→中級、中3→上級)。
+   ゲーム内で変えた値は localStorage 'manabi-grade:appraiser' に残し、次回はそれを優先する。 */
+const LV_ERAS={1:["古典","日本"],2:["古典","日本","近世・近代"],3:["古典","日本","近世・近代","近代以降・抽象"]};
+const LV_NAME={1:"初級",2:"中級",3:"上級"};
+const LV_KEY="manabi-grade:appraiser";
+const hubGrade=()=>(window.LearnHub&&LearnHub.grade)?LearnHub.grade():3;
+let level=(()=>{let g=0;try{g=Number(localStorage.getItem(LV_KEY))}catch(e){}return(g===1||g===2||g===3)?g:hubGrade();})();
+function levelPool(lv){return ARTWORKS.filter(a=>LV_ERAS[lv].includes(a.era));}
+function setLevel(lv,persist){
+  lv=Number(lv); if(lv!==1&&lv!==2&&lv!==3)return;
+  level=lv; if(persist){try{localStorage.setItem(LV_KEY,String(lv))}catch(e){}}
+  document.querySelectorAll("#lvPills .lvpill").forEach(b=>{const on=Number(b.dataset.lv)===lv;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on?"true":"false");});
+  const h=document.getElementById("hudLv"); if(h){h.textContent=LV_NAME[lv];h.style.display=lv===3?"none":"";}
+}
+document.querySelectorAll("#lvPills .lvpill").forEach(b=>b.addEventListener("click",()=>setLevel(b.dataset.lv,true)));
+setLevel(level);
 const RUN_LENGTH=6;
 const DIFFS=[{candidates:3,pool:"easy"},{candidates:3,pool:"easy"},{candidates:4,pool:"mid"},{candidates:4,pool:"mid"},{candidates:5,pool:"hard"},{candidates:5,pool:"hard"}];
 const POOLS={
@@ -1111,8 +1144,8 @@ function sendHub(clearedStages,note){
   try{
     if(window.LearnHub)LearnHub.report({
       app:"appraiser", done:points, total:21000,
-      best:hubScale(hubRatio(clearedStages),{diff:expertMode?'expert':'normal'}),
-      raw:points,
+      best:hubScale(hubRatio(clearedStages),{grade:level,diff:expertMode?'expert':'normal'}),
+      raw:points, grade:level,
       note:String(note).slice(0,40)
     });
   }catch(e){}
@@ -1410,7 +1443,7 @@ function showEnding(){
 /* ==================== 画面遷移 ==================== */
 function beginRun(ex){expertMode=ex;closeOv("titleOv");stage=0;total=0;points=0;fakeCount=0;
   $("hudPts").textContent="0";
-  runList=[...ARTWORKS].sort(()=>Math.random()-.5).slice(0,RUN_LENGTH);
+  runList=[...levelPool(level)].sort(()=>Math.random()-.5).slice(0,RUN_LENGTH);
   prepareStage();}
 $("startBtn").onclick=()=>beginRun(false);
 $("expertBtn").onclick=()=>beginRun(true);
