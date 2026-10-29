@@ -121,6 +121,13 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
 .btn:active { transform: scale(.97); }
 .btn:disabled { opacity: .4; box-shadow: none; }
 .btn-sub { background: rgba(255,255,255,.08); border: 1px solid var(--line); box-shadow: none; color: var(--sub); }
+/* 学年ピル（既存の .btn を横並びにしたもの） */
+.st-grade { display: flex; gap: 8px; }
+.st-grade .btn { margin-top: 0; min-height: 44px; padding: 10px 6px; font-size: 14.5px; touch-action: manipulation; }
+.st-grade .btn.on {
+  color: #fff; background: linear-gradient(135deg, #2f6fe0, #58b6ff); border: none;
+  box-shadow: 0 6px 20px rgba(47, 111, 224, .4), inset 0 1px 0 rgba(255,255,255,.25);
+}
 .gate-msg { margin-top: 16px; font-size: 12px; line-height: 1.8; color: var(--faint); text-align: center; }
 .gate-msg:empty { display: none; }
 .gate-msg b { color: var(--sub); }
@@ -446,6 +453,13 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
       <div class="st-label"><span>ルーム名（先生が指定。例: 3-2）</span></div>
       <input id="in-room" class="st-input" maxlength="12" placeholder="例: 3-2">
 
+      <div class="st-label"><span>学年（中1はアジア・ヨーロッパ・アフリカ）</span></div>
+      <div class="st-grade" id="grade-pills" role="group" aria-label="学年">
+        <button type="button" class="btn btn-sub gpill" data-g="1">中1</button>
+        <button type="button" class="btn btn-sub gpill" data-g="2">中2</button>
+        <button type="button" class="btn btn-sub gpill" data-g="3">中3</button>
+      </div>
+
       <div id="gate-msg" class="gate-msg"></div>
       <button id="btn-online" class="btn">🌐 みんなで対戦</button>
       <button id="btn-solo" class="btn btn-sub">📴 ひとりで練習</button>
@@ -472,6 +486,7 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
   <div class="hud-stat"><span class="hud-k">りょうち</span><span class="hud-v" id="hud-count">0</span></div>
   <div class="hud-stat"><span class="hud-k">コンボ</span><span class="hud-v" id="hud-combo">-</span></div>
   <div class="hud-stat" id="hud-time-wrap"><span class="hud-k" id="hud-time-k">つかえる</span><span class="hud-v" id="hud-time">--:--</span></div>
+  <div class="hud-stat" id="hud-grade-wrap" style="display:none"><span class="hud-k">がくねん</span><span class="hud-v" id="hud-grade">中1</span></div>
 </div>
 <div id="room-badge"></div>
 

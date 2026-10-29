@@ -47,6 +47,45 @@
   function pad3(id) { return ('000' + String(id)).slice(-3); }
   function store(k, v) { try { if (v === undefined) return localStorage.getItem('cq_' + k); localStorage.setItem('cq_' + k, v); } catch (e) { return null; } }
 
+  /* ---------- 学年モード ----------
+     州で出題範囲を切る。中1=アジア・ヨーロッパ・アフリカ、中2・中3=全部。
+     学年外の国は地図で灰色になり、タップしても占領できない。
+     初期値はハブ（まなびの基盤）で選んだ学年。ゲーム内で変えた値は
+     localStorage 'manabi-grade:world-conquest' に残し、次回はそれを優先する。 */
+  var GRADE_CONT = {
+    1: ['アジア', 'ヨーロッパ', 'アフリカ'],
+    2: ['アジア', 'ヨーロッパ', 'アフリカ', '北アメリカ', '南アメリカ', 'オセアニア'],
+    3: ['アジア', 'ヨーロッパ', 'アフリカ', '北アメリカ', '南アメリカ', 'オセアニア']
+  };
+  var GRADE_KEY = 'manabi-grade:world-conquest';
+  var hubGrade = function () { return (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3; };
+  function loadGrade() {
+    var g = 0;
+    try { g = Number(localStorage.getItem(GRADE_KEY)); } catch (e) { }
+    if (g !== 1 && g !== 2 && g !== 3) g = hubGrade();
+    return g;
+  }
+  var curGrade = loadGrade();
+  function setGrade(g, persist) {
+    g = Number(g);
+    if (g !== 1 && g !== 2 && g !== 3) return;
+    curGrade = g;
+    if (persist) { try { localStorage.setItem(GRADE_KEY, String(g)); } catch (e) { } }
+    var pills = document.querySelectorAll('#grade-pills .gpill');
+    for (var i = 0; i < pills.length; i++) {
+      var on = Number(pills[i].getAttribute('data-g')) === g;
+      pills[i].classList.toggle('on', on);
+      pills[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    var lab = $('hud-grade-wrap');
+    if (lab) { lab.style.display = g === 3 ? 'none' : ''; $('hud-grade').textContent = '中' + g; }
+  }
+  /* その国がいまの学年の範囲内か */
+  function gradeOK(cid) {
+    var d = COUNTRIES[cid];
+    return !!d && GRADE_CONT[curGrade].indexOf(d[2]) >= 0;
+  }
+
   /* ---------- 効果音（WebAudio・外部ファイルなし） ---------- */
   var AC = null;
   function beep(freqs, dur, type, gain) {
@@ -350,7 +389,7 @@
   function colorOf(cid) {
     var c = claims[cid];
     if (c) tmpColor.set(c[1]);
-    else tmpColor.copy(COUNTRIES[cid] ? COL.base : COL.gray);
+    else tmpColor.copy(gradeOK(cid) ? COL.base : COL.gray);
     if (cid === selectedCid) tmpColor.lerp(new THREE.Color(0xffffff), 0.28);
     else if (cid === hoverCid) tmpColor.lerp(new THREE.Color(0xffffff), 0.16);
     return tmpColor;
@@ -410,7 +449,7 @@
           var prev = hoverCid; hoverCid = cid;
           if (prev) paintOne(prev);
           if (cid) paintOne(cid);
-          el.style.cursor = (ud && ud.known) ? 'pointer' : '';
+          el.style.cursor = (ud && ud.known && gradeOK(ud.cid)) ? 'pointer' : '';
         }
         return;
       }
@@ -491,6 +530,15 @@
         '<div class="i-head"><div class="i-flagbox i-flag-secret">–</div>' +
         '<div><div class="i-name">' + esc(ud.en || '不明な地域') + '</div></div></div>' +
         '<div class="i-sub">この地域は今回の対象外です</div>';
+      card.classList.add('show');
+      return;
+    }
+    if (!gradeOK(cid)) {
+      card.innerHTML =
+        '<div class="i-head"><div class="i-flagbox i-flag-secret">–</div>' +
+        '<div><div class="i-name">' + esc(d[0]) + '</div>' +
+        '<span class="i-cont">' + esc(d[2]) + '州</span></div></div>' +
+        '<div class="i-sub">この国は中' + curGrade + 'の範囲外です（中2以上にすると出ます）</div>';
       card.classList.add('show');
       return;
     }
@@ -585,7 +633,7 @@
   var quizCid = null, quizSteal = false, quizQ = null, answered = false;
 
   function startQuiz(cid, isSteal) {
-    if (timeUp) return;
+    if (timeUp || !gradeOK(cid)) return;
     hideInfo();
     quizCid = cid; quizSteal = isSteal; answered = false;
     quizQ = makeQuestion(cid, isSteal);
@@ -950,8 +998,9 @@
       app: 'world-conquest',
       done: cum.length,
       total: mapIds.length || Object.keys(COUNTRIES).length,
-      best: hubScale(ratio),
+      best: hubScale(ratio, { grade: curGrade }),
       raw: score,
+      grade: curGrade,
       note: '今回' + sessionCaptures + 'か国・合計' + score + 'pt（正答率' + acc + '%）'
     };
     try {
@@ -1029,6 +1078,13 @@
     updPreview();
 
     $('r-close').addEventListener('click', function () { $('result').classList.remove('show'); });
+
+    /* 学年ピル（中1／中2／中3） */
+    var pills = document.querySelectorAll('#grade-pills .gpill');
+    for (var gi = 0; gi < pills.length; gi++) {
+      pills[gi].addEventListener('click', function () { setGrade(this.getAttribute('data-g'), true); SND.tap(); if (started) paintAll(); });
+    }
+    setGrade(curGrade);
 
     /* 使えない時間帯なら、スタート画面で止める。
        時間をまたいだときに自動で切りかわるよう、ときどき見なおす */
@@ -1197,6 +1253,8 @@
           neighborsSample: neighborsOf['392'] };
       },
       tap: tapAt, quiz: startQuiz, claims: function () { return claims; },
+      grade: function () { return curGrade; }, setGrade: setGrade, gradeOK: gradeOK,
+      mapIds: function () { return mapIds.slice(); },
       correctIndex: function () { return quizQ ? quizQ.correct : -1; },
       question: function () { return quizQ; },
       three: function () { return { scene: scene, camera: camera, raycaster: raycaster, mapGroup: mapGroup, meshes: meshes }; },
