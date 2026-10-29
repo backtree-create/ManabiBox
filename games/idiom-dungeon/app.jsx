@@ -255,26 +255,26 @@ const COURSES = [
     key: "novice", name: "見習い", floors: 2, grades: [1], triples: false,
     mp: 64, torches: 2, midAt: [], midTargets: 1,
     finalName: "石扉の守り手", finalTargets: 1,
-    desc: "中1の熟語だけ。最後に守り手が1体。12分ほど。",
+    desc: "中1の二字熟語60語だけ。最後に守り手が1体。12分ほど。",
   },
   {
     key: "adventurer", name: "冒険者", floors: 4, grades: [1, 2], triples: false,
     mp: 84, torches: 3, midAt: [2], midTargets: 2,
     finalName: "書庫の主", finalTargets: 2,
-    desc: "中1〜中2。B2Fに中ボス、最後に書庫の主。25分ほど。",
+    desc: "中1〜中2の二字熟語152語。B2Fに中ボス、最後に書庫の主。25分ほど。",
   },
   {
     key: "king", name: "熟語の王", floors: 5, grades: [1, 2, 3], triples: true, tripleFrom: 2,
     mp: 104, torches: 3, midAt: [2, 4], midTargets: 2,
     finalName: "熟語の王", finalTargets: 3,
-    desc: "中学全範囲＋3語熟語。中ボス2体と王。35分〜。",
+    desc: "中1〜中3の全212語。B2Fから三字熟語も出る。中ボス2体と王。35分〜。",
   },
   {
     key: "endless", name: "果てなき坑道", floors: Infinity, grades: [1, 2, 3],
     triples: true, tripleFrom: 4, endless: true,
     mp: 90, torches: 2, midAt: [], midTargets: 1,
     finalName: "—", finalTargets: 0,
-    desc: "終わりはない。もぐるほど熟語が難しくなる。灯が尽きるまで。",
+    desc: "終わりはない。中1〜中3の全212語、もぐるほど熟語が難しくなる。灯が尽きるまで。",
   },
 ];
 
@@ -282,19 +282,18 @@ const COURSES = [
 /* 古い hub-progress.js がキャッシュされている端末のためのフォールバック */
 function hubScale(r, o) { return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0, Math.min(1, r)) * 10000); }
 function hubEndless(r) { return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0, Math.min(1, r)) * 30000); }
-/* ---- 学年モード ----
-   学年 1=中1 / 2=中2 / 3=中3(全範囲)。ハブ（まなびの基板）で選んだ学年が初期値。
-   ゲーム内で変えた学年は localStorage "manabi-grade:idiom-dungeon" に残り、次回はそれを優先する。
-   出題は「熟語の学年 <= 選んだ学年」に絞る（コースごとの学年の進み方はそのまま）。
-   3語熟語は中2以上にしかないので、中1では3語の部屋（呪われた道・3語の宝物庫）は出ない。 */
-const GRADE_KEY = "manabi-grade:idiom-dungeon";
-const GRADE_LABEL = { 1: "中1", 2: "中2", 3: "中3" };
+/* ---- 学年とコース ----
+   このゲームでは「コース＝学年」。見習い=中1 / 冒険者=中1〜中2 / 熟語の王・果てなき坑道=中1〜中3。
+   学年ピルは置かない。ハブ（まなびの基板）の学年は、タイトル画面で「おすすめ」のコースを
+   示すためだけに使う（中1→見習い、中2→冒険者、中3→熟語の王）。
+   配点の学年係数はコースの最高学年（見習い×1.0 / 冒険者×1.2 / 熟語の王×1.5）。
+   3語熟語は中2以上にしかないので、見習いでは3語の部屋（呪われた道・3語の宝物庫）は出ない。 */
 const hubGrade = () => (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3;
-const loadGrade = () => {
-  try { const g = Number(localStorage.getItem(GRADE_KEY)); if (g === 1 || g === 2 || g === 3) return g; } catch (e) {}
-  return hubGrade();
+const courseGrade = (c) => c.grades[c.grades.length - 1];
+const defaultCourse = () => {
+  const g = hubGrade();
+  return COURSES.find((c) => !c.endless && courseGrade(c) === g) || COURSES[2];
 };
-const saveGrade = (g) => { try { localStorage.setItem(GRADE_KEY, String(g)); } catch (e) {} };
 const hasMid = (c, f) => (c.endless ? (f + 1) % 2 === 0 : c.midAt.includes(f + 1));
 const midCount = (c, f) => (c.endless ? Math.min(3, 1 + Math.floor(f / 4)) : c.midTargets);
 const DEEP_NAMES = ["石碑の回廊", "水没した書庫", "崩れた鐘楼", "封印の坑道", "王の前室",
@@ -1089,9 +1088,9 @@ function Scene({ kind, name, solved }) {
 /* ============================================================ */
 function IdiomLabyrinth() {
   const [screen, setScreen] = useState("title");
-  const [course, setCourse] = useState(COURSES[1]);
-  const [grade, setGradeState] = useState(loadGrade);
-  const setGrade = (g) => { setGradeState(g); saveGrade(g); };
+  const [course, setCourse] = useState(defaultCourse);
+  const grade = hubGrade();            // 表示用（ハブの学年）
+  const recommended = defaultCourse(); // タイトル画面で「おすすめ」を付けるコース
   const [fi, setFi] = useState(0);
   const [queue, setQueue] = useState([]);
   const [room, setRoom] = useState(null);
@@ -1150,7 +1149,7 @@ function IdiomLabyrinth() {
       app: "idiom-dungeon",
       done,
       total: 3,
-      best: course.endless ? 0 : hubScale(ratio, { grade }),
+      best: course.endless ? 0 : hubScale(ratio, { grade: courseGrade(course) }),
       grade,
       raw: fi + 1,
       note: won ? `${course.name}コース 制覇（熟語${dex.length}語）`
@@ -1162,12 +1161,13 @@ function IdiomLabyrinth() {
   }, [screen, fi]);
    
   const floorName = DEEP_NAMES[fi] || `深層 ${fi + 1 - DEEP_NAMES.length}`;
+  /* 出題学年はコースの grades だけで決まる（層が進むほど上の学年へ） */
   const gradeOKFor = (c, f) => {
-    const g = Math.min(grade, c.grades[Math.min(c.grades.length - 1, Math.floor(f / 2))]);
+    const g = c.grades[Math.min(c.grades.length - 1, Math.floor(f / 2))];
     return (x) => x.grade <= g && c.grades.includes(x.grade);
   };
-  /* 3語熟語を出せるか（コースが3語ありで、選んだ学年に3語熟語があるとき） */
-  const triplesOK = (c) => !!c.triples && IDIOMS.some((x) => x.tokens.length === 3 && x.grade <= grade);
+  /* 3語熟語を出せるか（コースが3語ありで、コースの学年に3語熟語があるとき） */
+  const triplesOK = (c) => !!c.triples && IDIOMS.some((x) => x.tokens.length === 3 && c.grades.includes(x.grade));
   const haveAll = (x) =>
     owned.current.v.has(x.verb) &&
     x.extra.every((t) => owned.current.s.has(t)) &&
@@ -1276,7 +1276,7 @@ function IdiomLabyrinth() {
   const quizChoices = useMemo(() => {
     if (!room || room.kind !== "treasure") return [];
     const right = room.idiom.meanings.join("／");
-    let cand = IDIOMS.filter((x) => x.id !== room.idiom.id && x.grade <= grade);
+    let cand = IDIOMS.filter((x) => x.id !== room.idiom.id && course.grades.includes(x.grade));
     if (cand.length < 2) cand = IDIOMS.filter((x) => x.id !== room.idiom.id);
     const others = shuffle(cand).slice(0, 2).map((x) => x.meanings.join("／"));
     return shuffle([right, ...others]);
@@ -1402,16 +1402,11 @@ function IdiomLabyrinth() {
           </p>
           <div className="toprow">
             <button className={"bgmtoggle" + (bgmOn ? "" : " off")} onClick={() => setBgmOn(!bgmOn)}>♪ 音 {bgmOn ? "ON" : "OFF"}</button>
-            <div className="gradepills" role="group" aria-label="学年">
-              {[1, 2, 3].map((g) => (
-                <button key={g} className={"bgmtoggle gradepill" + (grade === g ? " on" : "")} aria-pressed={grade === g} onClick={() => setGrade(g)}>{GRADE_LABEL[g]}</button>
-              ))}
-            </div>
           </div>
           <div className="courses">
             {COURSES.map((c) => (
-              <button key={c.key} className="course" onClick={() => start(c)}>
-                <span className="cname mincho">{c.name}</span>
+              <button key={c.key} className={"course" + (c.key === recommended.key ? " rec" : "")} onClick={() => start(c)}>
+                <span className="cname mincho">{c.name}{c.key === recommended.key && <span className="rectag">おすすめ</span>}</span>
                 <span className="cfloor">{c.endless ? "果てしなく" : `地下${c.floors}層`}／灯火{c.torches}／魔力{c.mp}</span>
                 <span className="cdesc">{c.desc}</span>
               </button>
@@ -1509,7 +1504,7 @@ function IdiomLabyrinth() {
           <div className="place">
             <span className="bf">B{fi + 1}F</span>
             <span className="mincho">{floorName}</span>
-            {grade !== 3 && <span className="gradetag">{GRADE_LABEL[grade]}</span>}
+            {!course.endless && <span className="gradetag">{course.grades.length === 1 ? "中1" : `中1〜中${courseGrade(course)}`}</span>}
           </div>
           <div className="gauges">
             <div className="mp">
@@ -1999,10 +1994,10 @@ const CSS = `
 .bgmtoggle.off{opacity:.5; text-decoration:line-through;}
 .toprow{display:flex; gap:18px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:14px;}
 .toprow .bgmtoggle{margin-bottom:0;}
-.gradepills{display:flex; gap:8px; justify-content:center;}
-.bgmtoggle.gradepill{min-width:72px; font-size:14px; touch-action:manipulation;}
-@media (max-width:560px){ .toprow{gap:10px;} .bgmtoggle.gradepill{min-width:52px; padding:5px 8px;} }
-.bgmtoggle.gradepill.on{border-color:var(--gold); color:var(--ink); background:var(--gold); font-weight:700;}
+@media (max-width:560px){ .toprow{gap:10px;} }
+.course.rec{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset;}
+.rectag{display:inline-block; margin-left:8px; vertical-align:middle; font-family:var(--mo); font-size:10px; letter-spacing:.12em;
+  color:var(--ink); background:var(--gold); padding:1px 6px;}
 .gradetag{font-family:var(--mo); font-size:11px; color:var(--gold); border:1px solid var(--gold); padding:1px 7px; letter-spacing:.1em;}
 .dexbtn.off{opacity:.45; text-decoration:line-through;}
 
