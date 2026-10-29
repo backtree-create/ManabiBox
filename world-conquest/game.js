@@ -47,28 +47,30 @@
   function pad3(id) { return ('000' + String(id)).slice(-3); }
   function store(k, v) { try { if (v === undefined) return localStorage.getItem('cq_' + k); localStorage.setItem('cq_' + k, v); } catch (e) { return null; } }
 
-  /* ---------- 学年モード ----------
-     州で出題範囲を切る。中1=アジア・ヨーロッパ・アフリカ、中2・中3=全部。
-     学年外の国は地図で灰色になり、タップしても占領できない。
+  /* ---------- 学年モード（2択） ----------
+     州で出題範囲を切る。中1=アジア・ヨーロッパ・アフリカ、中2以上=全州。
+     （地理は中3で扱わないので「中2以上」でひとまとめ。ハブ学年 3 は 2 に丸める）
+     範囲外の国は地図で灰色になり、タップしても占領できない。
      初期値はハブ（まなびの基盤）で選んだ学年。ゲーム内で変えた値は
-     localStorage 'manabi-grade:world-conquest' に残し、次回はそれを優先する。 */
+     localStorage 'manabi-grade:world-conquest' に 1 か 2 で残し、次回はそれを優先する。 */
   var GRADE_CONT = {
     1: ['アジア', 'ヨーロッパ', 'アフリカ'],
-    2: ['アジア', 'ヨーロッパ', 'アフリカ', '北アメリカ', '南アメリカ', 'オセアニア'],
-    3: ['アジア', 'ヨーロッパ', 'アフリカ', '北アメリカ', '南アメリカ', 'オセアニア']
+    2: ['アジア', 'ヨーロッパ', 'アフリカ', '北アメリカ', '南アメリカ', 'オセアニア']
   };
   var GRADE_KEY = 'manabi-grade:world-conquest';
   var hubGrade = function () { return (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3; };
+  /* 1/2/3 → 1/2（3 は「中2以上」扱い） */
+  function normGrade(g) { g = Number(g); return g === 1 ? 1 : (g === 2 || g === 3) ? 2 : 0; }
   function loadGrade() {
     var g = 0;
-    try { g = Number(localStorage.getItem(GRADE_KEY)); } catch (e) { }
-    if (g !== 1 && g !== 2 && g !== 3) g = hubGrade();
+    try { g = normGrade(localStorage.getItem(GRADE_KEY)); } catch (e) { }
+    if (!g) g = normGrade(hubGrade()) || 2;
     return g;
   }
   var curGrade = loadGrade();
   function setGrade(g, persist) {
-    g = Number(g);
-    if (g !== 1 && g !== 2 && g !== 3) return;
+    g = normGrade(g);
+    if (!g) return;
     curGrade = g;
     if (persist) { try { localStorage.setItem(GRADE_KEY, String(g)); } catch (e) { } }
     var pills = document.querySelectorAll('#grade-pills .gpill');
@@ -78,12 +80,19 @@
       pills[i].setAttribute('aria-pressed', on ? 'true' : 'false');
     }
     var lab = $('hud-grade-wrap');
-    if (lab) { lab.style.display = g === 3 ? 'none' : ''; $('hud-grade').textContent = '中' + g; }
+    if (lab) { lab.style.display = g === 2 ? 'none' : ''; $('hud-grade').textContent = g === 1 ? '中1' : '中2以上'; }
   }
   /* その国がいまの学年の範囲内か */
   function gradeOK(cid) {
     var d = COUNTRIES[cid];
     return !!d && GRADE_CONT[curGrade].indexOf(d[2]) >= 0;
+  }
+  /* いまの学年範囲にある国の数（配点の分母）。地図に描画済みなら mapIds、未描画なら COUNTRIES から数える */
+  function gradeCount() {
+    var ids = mapIds.length ? mapIds : Object.keys(COUNTRIES);
+    var n = 0;
+    for (var i = 0; i < ids.length; i++) if (gradeOK(ids[i])) n++;
+    return n || 1;
   }
 
   /* ---------- 効果音（WebAudio・外部ファイルなし） ---------- */
@@ -538,7 +547,7 @@
         '<div class="i-head"><div class="i-flagbox i-flag-secret">–</div>' +
         '<div><div class="i-name">' + esc(d[0]) + '</div>' +
         '<span class="i-cont">' + esc(d[2]) + '州</span></div></div>' +
-        '<div class="i-sub">この国は中' + curGrade + 'の範囲外です（中2以上にすると出ます）</div>';
+        '<div class="i-sub">この国は中1の範囲外です（中2以上にすると出ます）</div>';
       card.classList.add('show');
       return;
     }
@@ -992,13 +1001,15 @@
     var sig = cum.length + '/' + acc + '/' + score;
     if (sig === lastReportSig) return;
     lastReportSig = sig;
-    /* 出来ばえ = 累計占領国数/180 の半分 + 正答率の半分 */
-    var ratio = Math.min(1, cum.length / 180) * 0.5 + Math.max(0, Math.min(1, acc / 100)) * 0.5;
+    /* 出来ばえ = 累計占領国数/範囲内の国数 の半分 + 正答率の半分（分母は選んだ学年範囲で正規化） */
+    var rangeN = gradeCount();
+    var cumIn = cum.filter(function (id) { return gradeOK(id); }).length;
+    var ratio = Math.min(1, cumIn / rangeN) * 0.5 + Math.max(0, Math.min(1, acc / 100)) * 0.5;
     var payload = {
       app: 'world-conquest',
-      done: cum.length,
-      total: mapIds.length || Object.keys(COUNTRIES).length,
-      best: hubScale(ratio, { grade: curGrade }),
+      done: Math.min(cumIn, rangeN),
+      total: rangeN,
+      best: hubScale(ratio, { grade: curGrade }),   // 中1: ×1.0 / 中2以上: ×1.2
       raw: score,
       grade: curGrade,
       note: '今回' + sessionCaptures + 'か国・合計' + score + 'pt（正答率' + acc + '%）'
