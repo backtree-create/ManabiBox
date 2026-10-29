@@ -10,7 +10,7 @@ const MAX_LIFE = 3;
 
 const LEVELS = [
   {
-    lv: 1, title: "小学校＋中1", tag: "カンタン", stage: "あさの草原", count: 3, base: 10,
+    lv: 1, g: 1, title: "小学校＋中1", tag: "カンタン", stage: "あさの草原", count: 3, base: 10,
     theme: { sky1: "#B7ECFF", sky2: "#63C6F0", floor: "#3FA6DE", glow: "#FFF6C0", accent: "#2FB3E8", accent2: "#12809E" },
     char: {
       key: "chick", name: "ピヨすけ",
@@ -264,7 +264,7 @@ const LEVELS = [
     ],
   },
   {
-    lv: 2, title: "中2のことば", tag: "ふつう", stage: "ゆうやけ商店街", count: 3, base: 9,
+    lv: 2, g: 2, title: "中2のことば", tag: "ふつう", stage: "ゆうやけ商店街", count: 3, base: 9,
     theme: { sky1: "#FFD6A0", sky2: "#FF8FA8", floor: "#D9536F", glow: "#FFEFB8", accent: "#FF7A59", accent2: "#B03A55" },
     char: {
       key: "cat", name: "スペルにゃん",
@@ -490,7 +490,7 @@ const LEVELS = [
     ],
   },
   {
-    lv: 3, title: "中3のことば", tag: "ムズカシイ", stage: "深夜のラボ", count: 3, base: 8,
+    lv: 3, g: 3, title: "中3のことば", tag: "ムズカシイ", stage: "深夜のラボ", count: 3, base: 8,
     theme: { sky1: "#5570D8", sky2: "#232F6E", floor: "#33459C", glow: "#9FD8FF", accent: "#4FD8E8", accent2: "#1B2A66" },
     char: {
       key: "robot", name: "スペルロボ",
@@ -770,7 +770,7 @@ const LEVELS = [
     ],
   },
   {
-    lv: 4, title: "最終問題", tag: "ゲキムズ", stage: "つづりの魔王城", count: 1, base: 7,
+    lv: 4, g: 3, title: "最終問題", tag: "ゲキムズ", stage: "つづりの魔王城", count: 1, base: 7,
     theme: { sky1: "#7A34A0", sky2: "#2A0E3E", floor: "#5A1F73", glow: "#FF9AD0", accent: "#FF3B6B", accent2: "#3E1152" },
     char: {
       key: "dragon", name: "つづりの魔王",
@@ -847,6 +847,30 @@ const LEVELS = [
 const TOTAL_Q = LEVELS.reduce((s, l) => s + l.count, 0);
 /* 古い hub-progress.js がキャッシュされている端末のためのフォールバック */
 function hubScale(r, o) { return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0, Math.min(1, r)) * 10000); }
+
+/* ---- 学年モード ----
+   学年 1=中1 / 2=中2 / 3=中3(全範囲)。ハブ（まなびの基板）で選んだ学年が初期値。
+   ゲーム内で変えた学年は localStorage "manabi-grade:english-go" に残り、次回はそれを優先する。
+   STAGE_POOL[学年] = 各ステージ(STAGE1〜4)で引く単語プール（LEVELS の添字 0〜3）。
+     中1: 全ステージ lv1 の単語 / 中2: STAGE1-2 は lv1、STAGE3-4 は lv2 / 中3: 従来どおり
+   ステージ構成・キャラ・背景・制限時間は学年に関係なく従来のまま。 */
+const GRADE_KEY = "manabi-grade:english-go";
+const GRADE_LABEL = { 1: "中1", 2: "中2", 3: "中3" };
+const STAGE_POOL = { 1: [0, 0, 0, 0], 2: [0, 0, 1, 1], 3: [0, 1, 2, 3] };
+const hubGrade = () => (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3;
+const loadGrade = () => {
+  try { const g = Number(localStorage.getItem(GRADE_KEY)); if (g === 1 || g === 2 || g === 3) return g; } catch (e) {}
+  return hubGrade();
+};
+const saveGrade = (g) => { try { localStorage.setItem(GRADE_KEY, String(g)); } catch (e) {} };
+/* その学年・そのステージで出す単語（g <= 学年 のステージの単語だけ。同じ学年を優先し、足りなければ下の学年） */
+const wordsFor = (grade, stageIdx) => {
+  const want = (STAGE_POOL[grade] || STAGE_POOL[3])[stageIdx] ?? stageIdx;
+  for (let i = Math.min(want, stageIdx); i >= 0; i--) {
+    if (LEVELS[i].g <= grade && LEVELS[i].words.length) return LEVELS[i].words;
+  }
+  return LEVELS[0].words;
+};
 const CELL_COLORS = ["#2E86FF", "#12A9E8", "#0FC4B0", "#2FD061", "#7ED321", "#A9DC1B", "#D9DC12", "#F5B912", "#FF8A1E", "#FF3B4E"];
 const timeFor = (level, word) => (level.base + word.length * 0.5) * 2;
 const shuffle = (a) => {
@@ -1358,6 +1382,8 @@ function EnglishDeGo() {
   const [tapKeys, setTapKeys] = useState(IS_TOUCH);
   const [isFs, setIsFs] = useState(false);
 
+  const [grade, setGradeState] = useState(loadGrade);
+  const setGrade = (g) => { setGradeState(g); saveGrade(g); };
   const [lvIndex, setLvIndex] = useState(0);
   const [pool, setPool] = useState([]);
   const [current, setCurrent] = useState(null);
@@ -1417,7 +1443,8 @@ useEffect(() => {
     app: "english-go",
     done,
     total: LEVELS.length,
-    best: hubScale(ratio),
+    best: hubScale(ratio, { grade }),
+    grade,
     raw: score,
     note: `素点 ${score.toLocaleString()}・` + (
           screen === "result" ? `全ステージ制覇`
@@ -1467,11 +1494,11 @@ useEffect(() => {
 
   const drawFrom = (arr, lv) => {
     if (arr.length > 0) return [arr[0], arr.slice(1)];
-    const fresh = shuffle(LEVELS[lv].words);
+    const fresh = shuffle(wordsFor(grade, lv));
     return [fresh[0], fresh.slice(1)];
   };
   const startLevel = (idx) => {
-    const p = shuffle(LEVELS[idx].words);
+    const p = shuffle(wordsFor(grade, idx));
     setLvIndex(idx); setPool(p.slice(1)); setCurrent(p[0]);
     setSolved(0); setQid((n) => n + 1); setScreen("play");
   };
@@ -1617,6 +1644,12 @@ useEffect(() => {
               <button className={"pill" + (sound ? " pill-on" : "")} onClick={() => setSound(!sound)}>効果音 {sound ? "ON" : "OFF"}</button>
               <button className={"pill" + (bgmOn ? " pill-on" : "")} onClick={() => setBgmOn(!bgmOn)}>BGM {bgmOn ? "ON" : "OFF"}</button>
             </div>
+            <div className="pills gradepills" role="group" aria-label="学年">
+              {[1, 2, 3].map((g) => (
+                <button key={g} className={"pill gradepill" + (grade === g ? " pill-on" : "")} aria-pressed={grade === g}
+                  onClick={() => setGrade(g)}>{GRADE_LABEL[g]}</button>
+              ))}
+            </div>
             <div className="btnrow">
               <button className="gobtn" onClick={startGame}>スタート</button>
               {fsSupported && (
@@ -1659,7 +1692,7 @@ useEffect(() => {
               </div>
               <div className="hud-tr">
                 <div className="diff"><em>STAGE {level.lv}</em>{level.tag}</div>
-                <div className="stagename">{level.stage}</div>
+                <div className="stagename">{level.stage}{grade !== 3 && <span className="gradetag">{GRADE_LABEL[grade]}</span>}</div>
                 <div className="hudrow">
                   <div className="lifebox">
                     {Array.from({ length: MAX_LIFE }).map((_, i) => (
@@ -1943,6 +1976,10 @@ const CSS = `
 .pill-on{background:var(--yellow);}
 .pill:active{transform:translateY(3px); box-shadow:0 1px 0 var(--out);}
 .pill:focus-visible{outline:3px solid #fff; outline-offset:2px;}
+.gradepills{z-index:2; justify-content:center;}
+.pill.gradepill{min-height:44px; min-width:72px; padding:5px 20px; font-size:14px; touch-action:manipulation;}
+.gradetag{display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; background:var(--yellow);
+  color:var(--out); font-size:11px; font-weight:900; text-shadow:none; vertical-align:middle;}
 
 .hud-tr{display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex:none;}
 .hudrow{display:flex; align-items:center; gap:8px;}
