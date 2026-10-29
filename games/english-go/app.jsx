@@ -852,11 +852,13 @@ function hubScale(r, o) { return (window.LearnHub && LearnHub.scale) ? LearnHub.
    学年 1=中1 / 2=中2 / 3=中3(全範囲)。ハブ（まなびの基板）で選んだ学年が初期値。
    ゲーム内で変えた学年は localStorage "manabi-grade:english-go" に残り、次回はそれを優先する。
    STAGE_POOL[学年] = 各ステージ(STAGE1〜4)で引く単語プール（LEVELS の添字 0〜3）。
-     中1: 全ステージ lv1 の単語 / 中2: STAGE1-2 は lv1、STAGE3-4 は lv2 / 中3: 従来どおり
-   ステージ構成・キャラ・背景・制限時間は学年に関係なく従来のまま。 */
+     中1: 全ステージ lv1 の単語 / 中2: STAGE1 は lv1、STAGE2-4 は lv2 / 中3: 従来どおり
+   ステージ構成・キャラ・背景・制限時間は学年に関係なく従来のまま。
+   中1・中2では STAGE の難易度タグ（ムズカシイ等）の代わりに、実際に引くプールの学年を表示する。 */
 const GRADE_KEY = "manabi-grade:english-go";
 const GRADE_LABEL = { 1: "中1", 2: "中2", 3: "中3" };
-const STAGE_POOL = { 1: [0, 0, 0, 0], 2: [0, 0, 1, 1], 3: [0, 1, 2, 3] };
+const STAGE_POOL = { 1: [0, 0, 0, 0], 2: [0, 1, 1, 1], 3: [0, 1, 2, 3] };
+const POOL_TAG = ["中1のことば", "中2のことば", "中3のことば", "最終問題"];
 const hubGrade = () => (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3;
 const loadGrade = () => {
   try { const g = Number(localStorage.getItem(GRADE_KEY)); if (g === 1 || g === 2 || g === 3) return g; } catch (e) {}
@@ -864,13 +866,16 @@ const loadGrade = () => {
 };
 const saveGrade = (g) => { try { localStorage.setItem(GRADE_KEY, String(g)); } catch (e) {} };
 /* その学年・そのステージで出す単語（g <= 学年 のステージの単語だけ。同じ学年を優先し、足りなければ下の学年） */
-const wordsFor = (grade, stageIdx) => {
+const poolIdxFor = (grade, stageIdx) => {
   const want = (STAGE_POOL[grade] || STAGE_POOL[3])[stageIdx] ?? stageIdx;
   for (let i = Math.min(want, stageIdx); i >= 0; i--) {
-    if (LEVELS[i].g <= grade && LEVELS[i].words.length) return LEVELS[i].words;
+    if (LEVELS[i].g <= grade && LEVELS[i].words.length) return i;
   }
-  return LEVELS[0].words;
+  return 0;
 };
+const wordsFor = (grade, stageIdx) => LEVELS[poolIdxFor(grade, stageIdx)].words;
+/* HUD に出す難易度タグ。中3は従来の tag、中1・中2は実際に引くプールの学年 */
+const tagFor = (grade, stageIdx) => (grade >= 3 ? LEVELS[stageIdx].tag : POOL_TAG[poolIdxFor(grade, stageIdx)]);
 const CELL_COLORS = ["#2E86FF", "#12A9E8", "#0FC4B0", "#2FD061", "#7ED321", "#A9DC1B", "#D9DC12", "#F5B912", "#FF8A1E", "#FF3B4E"];
 const timeFor = (level, word) => (level.base + word.length * 0.5) * 2;
 const shuffle = (a) => {
@@ -1691,7 +1696,7 @@ useEffect(() => {
                 </div>
               </div>
               <div className="hud-tr">
-                <div className="diff"><em>STAGE {level.lv}</em>{level.tag}</div>
+                <div className="diff"><em>STAGE {level.lv}</em>{tagFor(grade, lvIndex)}</div>
                 <div className="stagename">{level.stage}{grade !== 3 && <span className="gradetag">{GRADE_LABEL[grade]}</span>}</div>
                 <div className="hudrow">
                   <div className="lifebox">
