@@ -45,6 +45,34 @@ walk around|歩き回る|1
 hurry up|急ぐ|1
 clean up|片づける|1
 help out|手伝う|1
+come in|入る|1
+go home|家に帰る|1
+get home|家に着く|1
+come home|帰ってくる|1
+talk to|に話す|1
+talk with|いっしょに話す|1
+play with|いっしょに遊ぶ|1
+live in|住んでいる|1
+stay with|家に泊まる|1
+ask for|たのむ|1
+go up|上がる|1
+go down|下りる|1
+go into|入っていく|1
+get in|乗り込む|1
+get out|外に出る|1
+come out|出てくる|1
+turn left|左に曲がる|1
+turn right|右に曲がる|1
+go straight|まっすぐ行く|1
+move to|引っこす|1
+lie down|横になる|1
+climb up|登る|1
+look down|見下ろす|1
+look back|ふり返る|1
+come with|いっしょに来る|1
+go with|いっしょに行く|1
+bring back|持ち帰る|1
+turn back|引き返す|1
 find out|見つけ出す|2
 pick up|拾い上げる／車で迎えに行く|2
 hand in|提出する|2
@@ -152,6 +180,15 @@ wipe out|ぬぐい去る|3
 wear out|すり減らす|3
 apologize for|あやまる|3
 hand over|手渡す|3
+figure out|理解する／解き明かす|3
+bring about|引き起こす|3
+carry on|やり続ける|3
+come across|偶然出会う|3
+pass away|亡くなる|3
+pass down|受け継ぐ|3
+take place|行われる|3
+turn out|結局〜になる|3
+get through|切り抜ける|3
 take care of|世話をする|2
 look forward to|楽しみに待つ|2
 take part in|参加する|2
@@ -177,6 +214,17 @@ come up with|思いつく|3
 put up with|我慢する|3
 get rid of|取り除く|3
 look down on|見下す|3
+be known as|として知られている|3
+be made from|原料から作られている|3
+be based on|に基づいている|3
+be worried about|心配している|3
+be tired of|にあきている|3
+be used for|のために使われる|3
+be related to|関係がある|3
+be similar to|に似ている|3
+be responsible for|に責任がある|3
+keep up with|遅れずについていく|3
+look up to|尊敬する|3
 `.trim();
 
 const IDIOMS = RAW.split("\n").map((line, i) => {
@@ -234,6 +282,19 @@ const COURSES = [
 /* 古い hub-progress.js がキャッシュされている端末のためのフォールバック */
 function hubScale(r, o) { return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0, Math.min(1, r)) * 10000); }
 function hubEndless(r) { return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0, Math.min(1, r)) * 30000); }
+/* ---- 学年モード ----
+   学年 1=中1 / 2=中2 / 3=中3(全範囲)。ハブ（まなびの基板）で選んだ学年が初期値。
+   ゲーム内で変えた学年は localStorage "manabi-grade:idiom-dungeon" に残り、次回はそれを優先する。
+   出題は「熟語の学年 <= 選んだ学年」に絞る（コースごとの学年の進み方はそのまま）。
+   3語熟語は中2以上にしかないので、中1では3語の部屋（呪われた道・3語の宝物庫）は出ない。 */
+const GRADE_KEY = "manabi-grade:idiom-dungeon";
+const GRADE_LABEL = { 1: "中1", 2: "中2", 3: "中3" };
+const hubGrade = () => (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3;
+const loadGrade = () => {
+  try { const g = Number(localStorage.getItem(GRADE_KEY)); if (g === 1 || g === 2 || g === 3) return g; } catch (e) {}
+  return hubGrade();
+};
+const saveGrade = (g) => { try { localStorage.setItem(GRADE_KEY, String(g)); } catch (e) {} };
 const hasMid = (c, f) => (c.endless ? (f + 1) % 2 === 0 : c.midAt.includes(f + 1));
 const midCount = (c, f) => (c.endless ? Math.min(3, 1 + Math.floor(f / 4)) : c.midTargets);
 const DEEP_NAMES = ["石碑の回廊", "水没した書庫", "崩れた鐘楼", "封印の坑道", "王の前室",
@@ -1029,6 +1090,8 @@ function Scene({ kind, name, solved }) {
 function IdiomLabyrinth() {
   const [screen, setScreen] = useState("title");
   const [course, setCourse] = useState(COURSES[1]);
+  const [grade, setGradeState] = useState(loadGrade);
+  const setGrade = (g) => { setGradeState(g); saveGrade(g); };
   const [fi, setFi] = useState(0);
   const [queue, setQueue] = useState([]);
   const [room, setRoom] = useState(null);
@@ -1087,7 +1150,8 @@ function IdiomLabyrinth() {
       app: "idiom-dungeon",
       done,
       total: 3,
-      best: course.endless ? 0 : hubScale(ratio),
+      best: course.endless ? 0 : hubScale(ratio, { grade }),
+      grade,
       raw: fi + 1,
       note: won ? `${course.name}コース 制覇（熟語${dex.length}語）`
         : `${course.name} B${fi + 1}F 到達（熟語${dex.length}語）`,
@@ -1099,9 +1163,11 @@ function IdiomLabyrinth() {
    
   const floorName = DEEP_NAMES[fi] || `深層 ${fi + 1 - DEEP_NAMES.length}`;
   const gradeOKFor = (c, f) => {
-    const g = c.grades[Math.min(c.grades.length - 1, Math.floor(f / 2))];
+    const g = Math.min(grade, c.grades[Math.min(c.grades.length - 1, Math.floor(f / 2))]);
     return (x) => x.grade <= g && c.grades.includes(x.grade);
   };
+  /* 3語熟語を出せるか（コースが3語ありで、選んだ学年に3語熟語があるとき） */
+  const triplesOK = (c) => !!c.triples && IDIOMS.some((x) => x.tokens.length === 3 && x.grade <= grade);
   const haveAll = (x) =>
     owned.current.v.has(x.verb) &&
     x.extra.every((t) => owned.current.s.has(t)) &&
@@ -1129,6 +1195,7 @@ function IdiomLabyrinth() {
       pool = IDIOMS.filter((x) => gradeOK(x) && haveAll(x) && !avoid.includes(x.en));
     }
     if (!pool.length) pool = IDIOMS.filter((x) => gradeOK(x) && (triple ? x.tokens.length === 3 : true));
+    if (!pool.length) pool = IDIOMS.filter((x) => gradeOK(x) && x.tokens.length <= 3);
     if (!pool.length) pool = IDIOMS;
     if (preferTwin) {
       const twins = pool.filter((x) => x.meanings.length > 1);
@@ -1149,15 +1216,15 @@ function IdiomLabyrinth() {
   };
 
   const buildRoom = (kind, c = course, f = fi) => {
-    const mixed = !!c.triples && f >= (c.tripleFrom || 2);
+    const mixed = triplesOK(c) && f >= (c.tripleFrom || 2);
     setSel({ v: null, s: null, p: null }); setSolved(false); setMsg(""); setTwinOpen(false); setBossStep(0); setSettled(true);
     if (kind === "fork") {
       const opts = [ROUTES.quiet, ROUTES.guard];
-      if (c.triples && f >= (c.tripleFrom || 2)) opts.push(ROUTES.cursed);
+      if (mixed) opts.push(ROUTES.cursed);
       return { kind, options: opts };
     }
     if (kind === "treasure") return { kind, idiom: pickIdiom({}, c, f) };
-    if (kind === "treasure3") return { kind: "treasure", triple: true, idiom: pickIdiom({ triple: true }, c, f) };
+    if (kind === "treasure3") return { kind: "treasure", triple: mixed, idiom: pickIdiom({ triple: mixed }, c, f) };
     if (kind === "monster") return { kind, name: rnd(GUARDS), idiom: pickIdiom({ craftable: true, mixed }, c, f) };
     if (kind === "door") return { kind, idiom: pickIdiom({ craftable: true, preferTwin: true, mixed }, c, f) };
     if (kind === "midboss") {
@@ -1209,7 +1276,9 @@ function IdiomLabyrinth() {
   const quizChoices = useMemo(() => {
     if (!room || room.kind !== "treasure") return [];
     const right = room.idiom.meanings.join("／");
-    const others = shuffle(IDIOMS.filter((x) => x.id !== room.idiom.id)).slice(0, 2).map((x) => x.meanings.join("／"));
+    let cand = IDIOMS.filter((x) => x.id !== room.idiom.id && x.grade <= grade);
+    if (cand.length < 2) cand = IDIOMS.filter((x) => x.id !== room.idiom.id);
+    const others = shuffle(cand).slice(0, 2).map((x) => x.meanings.join("／"));
     return shuffle([right, ...others]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room]);
@@ -1331,7 +1400,14 @@ function IdiomLabyrinth() {
             扉に浮かぶ日本語を読み、パーツを組み合わせて英熟語を作る。<br />
             道は途中で分かれる。どちらを選ぶかで、手に入るものと消える魔力が変わる。
           </p>
-          <button className={"bgmtoggle" + (bgmOn ? "" : " off")} onClick={() => setBgmOn(!bgmOn)}>♪ 音 {bgmOn ? "ON" : "OFF"}</button>
+          <div className="toprow">
+            <button className={"bgmtoggle" + (bgmOn ? "" : " off")} onClick={() => setBgmOn(!bgmOn)}>♪ 音 {bgmOn ? "ON" : "OFF"}</button>
+            <div className="gradepills" role="group" aria-label="学年">
+              {[1, 2, 3].map((g) => (
+                <button key={g} className={"bgmtoggle gradepill" + (grade === g ? " on" : "")} aria-pressed={grade === g} onClick={() => setGrade(g)}>{GRADE_LABEL[g]}</button>
+              ))}
+            </div>
+          </div>
           <div className="courses">
             {COURSES.map((c) => (
               <button key={c.key} className="course" onClick={() => start(c)}>
@@ -1433,6 +1509,7 @@ function IdiomLabyrinth() {
           <div className="place">
             <span className="bf">B{fi + 1}F</span>
             <span className="mincho">{floorName}</span>
+            {grade !== 3 && <span className="gradetag">{GRADE_LABEL[grade]}</span>}
           </div>
           <div className="gauges">
             <div className="mp">
@@ -1920,6 +1997,13 @@ const CSS = `
   border:1px solid var(--carve); padding:5px 14px; min-height:44px; margin-bottom:14px; cursor:pointer;}
 @media (hover:hover){ .bgmtoggle:hover{border-color:var(--gold); color:var(--gold);} }
 .bgmtoggle.off{opacity:.5; text-decoration:line-through;}
+.toprow{display:flex; gap:18px; justify-content:center; align-items:center; flex-wrap:wrap; margin-bottom:14px;}
+.toprow .bgmtoggle{margin-bottom:0;}
+.gradepills{display:flex; gap:8px; justify-content:center;}
+.bgmtoggle.gradepill{min-width:72px; font-size:14px; touch-action:manipulation;}
+@media (max-width:560px){ .toprow{gap:10px;} .bgmtoggle.gradepill{min-width:52px; padding:5px 8px;} }
+.bgmtoggle.gradepill.on{border-color:var(--gold); color:var(--ink); background:var(--gold); font-weight:700;}
+.gradetag{font-family:var(--mo); font-size:11px; color:var(--gold); border:1px solid var(--gold); padding:1px 7px; letter-spacing:.1em;}
 .dexbtn.off{opacity:.45; text-decoration:line-through;}
 
 @media (max-width:560px){
