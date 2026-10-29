@@ -979,12 +979,13 @@ function reportChrono(score,note){
   var chapterBest=store.get("chrono_best4",{}), done=0, sum=0, inCount=0;
   /* 出来ばえは学年内の章だけで平均する（中3=全60章で従来どおり） */
   ERAS.forEach(function(_,i){ if(inGrade(i)) inCount++; });
-  Object.keys(chapterBest).forEach(function(k){done++; if(inGrade(Number(k))) sum+=Math.min(1,(Number(chapterBest[k].score)||0)/2500);});
+  /* done/total も学年内の章数で数える（中1でも「クリア」に到達できるように） */
+  Object.keys(chapterBest).forEach(function(k){ if(inGrade(Number(k))){ done++; sum+=Math.min(1,(Number(chapterBest[k].score)||0)/2500); } });
   var attackBest=store.get("chrono_atk1",null);
   var atkMax=attackBest?(Number(attackBest.score)||0):0;
   var raw=Math.round(Number(score)||0);
   var hubNote=("素点 "+raw.toLocaleString()+" / "+String(note||"")).slice(0,40);
-  manabiReport({app:"chrono-domino",done:Math.min(done,ERAS.length),total:ERAS.length,
+  manabiReport({app:"chrono-domino",done:Math.min(done,inCount||ERAS.length),total:inCount||ERAS.length,
     best:hubScale(sum/(inCount||ERAS.length),{grade:grade}),
     grade:grade,
     endless:hubEndless(Math.min(1,atkMax/12000)),

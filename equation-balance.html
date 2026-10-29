@@ -430,7 +430,7 @@
   }
   .gradeBtn:active{transform:translateY(1px);}
   .gradeBtn.on{color:var(--accInk); background:var(--acc); border-color:var(--acc); border-bottom:3px solid var(--accDeep);}
-  .modeCard.locked{opacity:.38; filter:grayscale(.8); pointer-events:none;}
+  .modeCard.locked,.mixBtn.locked{opacity:.38; filter:grayscale(.8); pointer-events:none;}
   .modeCard.locked .mProg small{letter-spacing:.2em;}
   @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
 </style>
@@ -571,7 +571,7 @@
     <div id="hubCards"></div>
     <button class="mixBtn" id="btnMix">
       <span class="mixTape"></span>
-      <span>MIX ATTACK ── 150秒<span class="aSub">中1基礎から中3因数分解まで、全学年を横断するスコアアタック</span></span>
+      <span>MIX ATTACK ── 150秒<span class="aSub" id="mixSub">中1基礎から中3因数分解まで、全学年を横断するスコアアタック</span></span>
       <small id="bestMix">BEST —</small>
     </button>
   </div>
@@ -654,18 +654,29 @@ function paintGrade(){
   $("hudGrade").textContent = "中"+curGrade;
 }
 function labOpen(m){ return LAB_GRADE[m]<=curGrade; }
+/* 選択中の学年で遊べる面（ステージ）の集合。配点の分母・done/total はこの範囲に正規化する */
+function openStageKeyMap(){
+  var m={};
+  COURSES.forEach(function(c){ if(labOpen(c.mode)) c.stages.forEach(function(_,i){ m[c.id+"_"+i]=true; }); });
+  return m;
+}
 
 function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
 function hubEndless(r){ return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0,Math.min(1,r))*30000); }
 function reportEquation(score,note){
   if(typeof manabiReport!=="function") return;
-  var stageBest=store.get("eqb_best3",{}), done=Object.keys(stageBest).length, stageSum=0, atkMax=0;
-  Object.keys(stageBest).forEach(function(k){stageSum+=Math.min(1,(Number(stageBest[k].score)||0)/2000);});
+  /* 分母は「選択中の学年で遊べる面数」（中1 32 / 中2 48 / 中3 64）。学年外の面の記録は数えない */
+  var stageBest=store.get("eqb_best3",{}), openMap=openStageKeyMap(), total=Object.keys(openMap).length||1;
+  var done=0, stageSum=0, atkMax=0;
+  Object.keys(stageBest).forEach(function(k){
+    if(!openMap[k]) return;
+    done++; stageSum+=Math.min(1,(Number(stageBest[k].score)||0)/2000);
+  });
   ["mix","m1","hard","m2","m3"].forEach(function(k){var r=store.get("eqb_atk4_"+k,null);if(r)atkMax=Math.max(atkMax,Number(r.score)||0);});
-  var ratio=(stageSum/64)*0.7 + Math.min(1,atkMax/6000)*0.3;
+  var ratio=(stageSum/total)*0.7 + Math.min(1,atkMax/6000)*0.3;
   var raw=Math.round(Number(score)||0);
   var hubNote=("素点 "+raw.toLocaleString()+" / "+String(note||"")).slice(0,40);
-  manabiReport({app:"equation-balance",done:Math.min(done,64),total:64,
+  manabiReport({app:"equation-balance",done:Math.min(done,total),total:total,
     best:hubScale(ratio,{grade:curGrade}),
     endless:hubEndless(Math.min(1,atkMax/8000)),
     raw:raw,
@@ -1492,6 +1503,13 @@ function buildHub(){
   });
   var bm=store.get("eqb_atk4_mix",null);
   $("bestMix").textContent = bm?("BEST "+bm.score):"BEST —";
+  /* 中1では MIX ATTACK（tier1〜4）が SCORE ATTACK と同内容になるため、中2以上で解放 */
+  var mixOpen=curGrade>=2, mixBtn=$("btnMix");
+  mixBtn.classList.toggle("locked",!mixOpen);
+  mixBtn.disabled=!mixOpen; mixBtn.setAttribute("aria-disabled",mixOpen?"false":"true");
+  $("mixSub").textContent = mixOpen
+    ? "中1基礎から中3因数分解まで、全学年を横断するスコアアタック"
+    : "中2以上で解放 ── 連立方程式を含む全学年横断のスコアアタック";
 }
 function openMode(m){
   curMode=m; setAccent(m);
@@ -1537,7 +1555,7 @@ Array.prototype.slice.call(document.querySelectorAll(".gradeBtn")).forEach(funct
 paintGrade();
 $("btnStart").addEventListener("click",function(){ buildHub(); hideAll(); show(ovHub); });
 $("btnToHub").addEventListener("click",function(){ buildHub(); hideAll(); show(ovHub); });
-$("btnMix").addEventListener("click",function(){ startAttack("mix"); });
+$("btnMix").addEventListener("click",function(){ if(curGrade>=2) startAttack("mix"); });
 $("btnMenu").addEventListener("click",function(){
   playing=false; clearInterval(timerId);
   if(mode==="attack" && atkKind==="mix"){ buildHub(); hideAll(); show(ovHub); }

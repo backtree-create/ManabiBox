@@ -230,12 +230,6 @@ table.res td:last-child{text-align:right;font-family:'Noto Serif JP',serif;font-
 .epCard.locked{opacity:.45;pointer-events:none;background:#EEECE4;box-shadow:none}
 .epCard.locked .lk{position:absolute;right:10px;top:10px;font-size:clamp(10px,2.8vw,12px);font-weight:900;
   color:var(--ink2);border:1px solid var(--ink2);border-radius:3px;padding:.1em .6em;letter-spacing:.1em}
-/* 段階ピル（初級/中級/上級）。既存の .btn.ghost を横並びにしたもの */
-.lvrow{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:6px 0 0}
-.lvrow .lb{font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(12px,3.2vw,14px);letter-spacing:.15em;margin-right:4px}
-.lvrow .btn{min-height:44px;padding:.5em 1.3em;margin:0;font-size:clamp(13px,3.6vw,15px)}
-.lvrow .btn.on{background:var(--ink);color:var(--paper);box-shadow:3px 3px 0 rgba(26,23,18,.25)}
-#hdLv{display:inline-block;margin-left:.6em;padding:0 .5em;border:1px solid var(--warn);border-radius:3px;color:var(--warn);font-weight:900}
 .epCard .no{font-family:'Noto Serif JP',serif;font-weight:900;color:var(--shu);font-size:clamp(11px,3vw,13px);letter-spacing:.2em}
 .epCard .tt{font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(15px,4.2vw,18px);margin:.15em 0}
 .epCard .md{font-size:clamp(11px,3vw,12.5px);color:var(--ink2)}
@@ -257,7 +251,7 @@ table.res td:last-child{text-align:right;font-family:'Noto Serif JP',serif;font-
     <button id="homeBtn" type="button" hidden title="まなびの基板へもどる">&#8962;</button>
     <div style="flex:1;min-width:0">
       <div class="t">消費者クエスト<b>█</b>調査ファイル</div>
-      <div class="ep"><span id="hdEp">FILE SELECT</span><span id="hdLv" hidden></span></div>
+      <div class="ep"><span id="hdEp">FILE SELECT</span></div>
     </div>
     <div id="score">SCORE 0</div>
   </header>
@@ -287,22 +281,15 @@ function hubSaveLocal(o){ try{ localStorage.setItem(HUB.store, JSON.stringify(o)
 function hubBoot(){
   const rec=hubLoad();
   if(rec.ranks) G.clear=Object.assign({},rec.ranks);
+  try{ localStorage.removeItem('manabi-grade:consumer-quest'); }catch(e){} /* 旧・段階上書きの掃除 */
 }
-/* ---------------- 段階モード（初級/中級/上級） ----------------
-   初級=FILE01-02、中級=01-05、上級=全部（EPIS の level で判定）。
-   初期値はハブ(まなびの基板)の学年(中1→初級、中2→中級、中3→上級)。
-   ゲーム内で変えた値は localStorage 'manabi-grade:consumer-quest' に残し、次回はそれを優先する。 */
-const LV_NAME={1:'初級',2:'中級',3:'上級'};
-const LV_KEY='manabi-grade:consumer-quest';
+/* ---------------- FILE の順次解放 ----------------
+   消費生活の内容に学年配当はないため学年・段階ピルは置かない。
+   FILE01 は最初から、FILE N+1 は FILE N をクリア（ランク記録あり）すると解放される。
+   クリア記録は G.clear（localStorage 'manabi-consumer-quest' の ranks）を使う。 */
 const hubGrade=()=>(window.LearnHub&&LearnHub.grade)?LearnHub.grade():3;
-let level=(()=>{let g=0;try{g=Number(localStorage.getItem(LV_KEY));}catch(e){}return(g===1||g===2||g===3)?g:hubGrade();})();
-function epOpen(ep){ return (ep.level||3)<=level; }
-function setLevel(lv,persist){
-  lv=Number(lv); if(lv!==1&&lv!==2&&lv!==3)return;
-  level=lv; if(persist){try{localStorage.setItem(LV_KEY,String(lv));}catch(e){}}
-  const h=document.getElementById('hdLv'); if(h){h.textContent=LV_NAME[lv];h.hidden=(lv===3);}
-}
-/* 配点換算: ratio = Σ(話ごとの最高得点率)/6 をハブの満点(学年別)に換算。raw = 直近の得点 */
+function epOpen(i){ i=Number(i); return i===0 || !!G.clear[i-1]; }
+/* 配点換算: ratio = Σ(話ごとの最高得点率)/6 をハブの満点に換算（学年係数なし）。raw = 直近の得点 */
 function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
 function hubReport(epIdx, ratio, rank, epNo, rawScore){
   const rec=hubLoad();
@@ -311,10 +298,10 @@ function hubReport(epIdx, ratio, rank, epNo, rawScore){
   const ranks=Object.assign({},rec.ranks||{},G.clear);
   const done=Object.keys(ratios).length;
   let sum=0; for(const k in ratios) sum+=ratios[k];
-  const best=hubScale(sum/HUB.total,{grade:level});
+  const best=hubScale(sum/HUB.total,{grade:0});
   hubSaveLocal({done,best,ratios,ranks});
   if(window.LearnHub && typeof LearnHub.report==='function'){
-    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best, grade:level, raw:Math.round(rawScore||0),
+    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best, grade:hubGrade(), raw:Math.round(rawScore||0),
       note:`素点 ${Math.round(rawScore||0)} / FILE ${epNo} ランク${rank}`.slice(0,40)}); }catch(e){}
   }
 }
@@ -353,8 +340,7 @@ function cutin(txt,color){
 <script>
 "use strict";
 /* ================= エピソードデータ ================= */
-/* level: 段階モード用（1=初級 FILE01-02、2=中級 FILE03-05、3=上級 FILE06）。
-   初級は level<=1 のFILEだけ、中級は level<=2、上級は全部が選べる */
+/* level: 旧・段階モードの名残（現在は未使用。FILE は順番に解放） */
 const EPIS=[
 /* ---------- FILE 01 キャッチセールス ---------- */
 {no:'01',level:1,title:'路上の甘い罠',mode:'キャッチセールス',
@@ -1045,10 +1031,9 @@ function scTitle(){
   G.ep=null;$('#hdEp').textContent='FILE SELECT';
   G.score=0;addScore(0);
   let grid='';
-  setLevel(level);
   EPIS.forEach((ep,i)=>{
-    const open=epOpen(ep);
-    const rk=!open?`<span class="lk">${LV_NAME[ep.level||3]}で解放</span>`:(G.clear[i]?`<span class="rk">${G.clear[i]}</span>`:'');
+    const open=epOpen(i);
+    const rk=!open?`<span class="lk">FILE ${EPIS[i-1].no} をクリアで解放</span>`:(G.clear[i]?`<span class="rk">${G.clear[i]}</span>`:'');
     grid+=`<button class="epCard${open?'':' locked'}" data-i="${i}"${open?'':' disabled aria-disabled="true"'}>${rk}
       <span class="no">FILE ${ep.no}</span>
       <div class="tt">${ep.title}</div>
@@ -1062,17 +1047,11 @@ function scTitle(){
        <h1 class="big">消費者クエスト<span class="sub">SHOHISHA QUEST — 調査ファイル</span></h1>
        <p class="lead">きみは消費生活センターの新米相談員。<br>証拠を調べ、手口を見抜き、正しい知識でトラブルを解決せよ。</p>
      </div>
-     <div class="lvrow" id="lvPills" role="group" aria-label="段階"><span class="lb">段階</span>
-       ${[1,2,3].map(l=>`<button type="button" class="btn ghost lvpill${l===level?' on':''}" data-lv="${l}" aria-pressed="${l===level}">${LV_NAME[l]}</button>`).join('')}
-     </div>
      <div class="epGrid">${grid}</div>
-     <p class="lead" style="text-align:center;font-size:.85em">FILE 01 から順に挑むのがおすすめ。クリアするとランクが記録される。</p>
+     <p class="lead" style="text-align:center;font-size:.85em">FILE 01 から順に解放。クリアするとランクが記録され、次のFILEが開く。</p>
    </div>`;
   document.querySelectorAll('.epCard').forEach(b=>{
-    b.onclick=()=>{ if(epOpen(EPIS[+b.dataset.i])) startEp(+b.dataset.i); };
-  });
-  document.querySelectorAll('#lvPills .lvpill').forEach(b=>{
-    b.onclick=()=>{ setLevel(b.dataset.lv,true); scTitle(); };
+    b.onclick=()=>{ if(epOpen(+b.dataset.i)) startEp(+b.dataset.i); };
   });
 }
 function startEp(i){
@@ -1400,7 +1379,7 @@ function scResult(){
   hubReport(G.epIdx, G.score/epMax(ep), G.clear[G.epIdx], ep.no, G.score);
   const sm=ep.summary.map(s=>`<li>${s}</li>`).join('');
   const nextIdx=G.epIdx+1;
-  const nextBtn=(nextIdx<EPIS.length&&epOpen(EPIS[nextIdx]))
+  const nextBtn=(nextIdx<EPIS.length&&epOpen(nextIdx))
     ?`<button class="btn accent" id="goNext">次のFILE ${EPIS[nextIdx].no}へ</button>`:'';
   mn.innerHTML=`
    <div class="fade">
@@ -1425,7 +1404,7 @@ function scResult(){
        <button class="btn ghost" id="goTitle">ファイル選択へ</button>
      </div>
    </div>`;
-  if(nextIdx<EPIS.length&&epOpen(EPIS[nextIdx]))$('#goNext').onclick=()=>startEp(nextIdx);
+  if(nextIdx<EPIS.length&&epOpen(nextIdx))$('#goNext').onclick=()=>startEp(nextIdx);
   $('#goRetry').onclick=()=>startEp(G.epIdx);
   $('#goTitle').onclick=scTitle;
 }

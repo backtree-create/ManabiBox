@@ -39,12 +39,6 @@ button{font-family:inherit}
 .btn.ghost:active{box-shadow:0 1px 0 #0c0806,inset 0 0 0 1px rgba(0,0,0,.4)}
 .btn:disabled{opacity:.35;pointer-events:none}
 .btn.sm{padding:9px 16px;font-size:.82rem}
-/* 段階ピル(初級/中級/上級)。既存の .btn を横並びにしたもの */
-.lvrow{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:14px}
-.lvlab{font-family:var(--serif);letter-spacing:.3em;font-size:.72rem;color:var(--gold);margin-right:2px}
-.lvrow .btn{min-height:44px;min-width:76px;touch-action:manipulation}
-.lvrow .btn.on{background:var(--gold);color:var(--ink);border-color:#5c460e}
-#hudLv{color:var(--gold-light)}
 
 /* ---------- 汎用オーバーレイ(小画面でもスクロールで収まる) ---------- */
 .overlay{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;
@@ -197,7 +191,7 @@ button{font-family:inherit}
 <a id="homeBtn" href="https://backtree-create.github.io/ManabiBox/index.html">⌂ ホーム</a>
 
 <div id="hud"><div class="bar">
-  <span id="hudStage"></span><span id="hudLv" style="display:none"></span><span>⏱ <b id="timer">0</b>秒</span><span>売上 <b id="hudTotal">0円</b></span><span>🏅 <b id="hudPts">0</b>pt</span>
+  <span id="hudStage"></span><span>⏱ <b id="timer">0</b>秒</span><span>売上 <b id="hudTotal">0円</b></span><span>🏅 <b id="hudPts">0</b>pt</span>
 </div></div>
 <button class="btn ghost sm" id="hintBtn">専門家に相談(−30%)</button>
 <div id="hintToast"></div>
@@ -222,12 +216,6 @@ button{font-family:inherit}
       スマホ:<b>床をタップ</b>するとその場所へ歩きます(左のパッドでも移動可)。作品タップで検分</div>
   </div>
   <div class="warn" id="imgWarn">⚠ 名画の画像を読み込めませんでした。通信環境をご確認ください。Claudeのプレビュー内では外部画像がブロックされるため、<b>ダウンロードしてブラウザで開くか、GitHub Pagesで公開</b>してください。</div>
-  <div class="lvrow" id="lvPills" role="group" aria-label="段階">
-    <span class="lvlab">段階</span>
-    <button type="button" class="btn ghost sm lvpill" data-lv="1">初級</button>
-    <button type="button" class="btn ghost sm lvpill" data-lv="2">中級</button>
-    <button type="button" class="btn ghost sm lvpill" data-lv="3">上級</button>
-  </div>
   <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
     <button class="btn" id="startBtn">鑑定を始める</button>
     <button class="btn ghost" id="expertBtn">エキスパート</button>
@@ -508,24 +496,10 @@ const ARTWORKS_EXTRA=[
 ];
 const ARTWORKS=STAGES.concat(ARTWORKS_EXTRA);
 
-/* ==================== 段階モード(初級/中級/上級) ====================
-   初級=古典＋日本、中級=＋近世・近代、上級=全部(era フィールドで判定)。
-   初期値はハブ(まなびの基板)の学年(中1→初級、中2→中級、中3→上級)。
-   ゲーム内で変えた値は localStorage 'manabi-grade:appraiser' に残し、次回はそれを優先する。 */
-const LV_ERAS={1:["古典","日本"],2:["古典","日本","近世・近代"],3:["古典","日本","近世・近代","近代以降・抽象"]};
-const LV_NAME={1:"初級",2:"中級",3:"上級"};
-const LV_KEY="manabi-grade:appraiser";
+/* 美術史の時代区分は学年配当と無関係なので学年・段階ピルは置かず、毎回31作品全体から出題する。
+   ハブへは学年係数なし(grade:0)で送り、grade はハブの学年を表示用に添えるだけ。 */
 const hubGrade=()=>(window.LearnHub&&LearnHub.grade)?LearnHub.grade():3;
-let level=(()=>{let g=0;try{g=Number(localStorage.getItem(LV_KEY))}catch(e){}return(g===1||g===2||g===3)?g:hubGrade();})();
-function levelPool(lv){return ARTWORKS.filter(a=>LV_ERAS[lv].includes(a.era));}
-function setLevel(lv,persist){
-  lv=Number(lv); if(lv!==1&&lv!==2&&lv!==3)return;
-  level=lv; if(persist){try{localStorage.setItem(LV_KEY,String(lv))}catch(e){}}
-  document.querySelectorAll("#lvPills .lvpill").forEach(b=>{const on=Number(b.dataset.lv)===lv;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on?"true":"false");});
-  const h=document.getElementById("hudLv"); if(h){h.textContent=LV_NAME[lv];h.style.display=lv===3?"none":"";}
-}
-document.querySelectorAll("#lvPills .lvpill").forEach(b=>b.addEventListener("click",()=>setLevel(b.dataset.lv,true)));
-setLevel(level);
+try{ localStorage.removeItem("manabi-grade:appraiser"); }catch(e){} /* 旧・段階上書きの掃除 */
 const RUN_LENGTH=6;
 const DIFFS=[{candidates:3,pool:"easy"},{candidates:3,pool:"easy"},{candidates:4,pool:"mid"},{candidates:4,pool:"mid"},{candidates:5,pool:"hard"},{candidates:5,pool:"hard"}];
 const POOLS={
@@ -1144,8 +1118,8 @@ function sendHub(clearedStages,note){
   try{
     if(window.LearnHub)LearnHub.report({
       app:"appraiser", done:points, total:21000,
-      best:hubScale(hubRatio(clearedStages),{grade:level,diff:expertMode?'expert':'normal'}),
-      raw:points, grade:level,
+      best:hubScale(hubRatio(clearedStages),{grade:0,diff:expertMode?'expert':'normal'}),
+      raw:points, grade:hubGrade(),
       note:String(note).slice(0,40)
     });
   }catch(e){}
@@ -1443,7 +1417,7 @@ function showEnding(){
 /* ==================== 画面遷移 ==================== */
 function beginRun(ex){expertMode=ex;closeOv("titleOv");stage=0;total=0;points=0;fakeCount=0;
   $("hudPts").textContent="0";
-  runList=[...levelPool(level)].sort(()=>Math.random()-.5).slice(0,RUN_LENGTH);
+  runList=[...ARTWORKS].sort(()=>Math.random()-.5).slice(0,RUN_LENGTH);
   prepareStage();}
 $("startBtn").onclick=()=>beginRun(false);
 $("expertBtn").onclick=()=>beginRun(true);

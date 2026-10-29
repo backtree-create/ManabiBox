@@ -93,8 +93,18 @@ let save;
 try{ save=JSON.parse(localStorage.getItem(SAVE_KEY))||{}; }catch(e){ save={}; }
 save.notation = save.notation||'doremi';
 save.sound = (save.sound===undefined)?true:save.sound;
+/* 坑道の記録は段階別に持つ: save.stages[段階][坑道]。
+   旧形式（save.stages[坑道] の平らな記録）は「中級」の記録として移行する */
 save.stages = save.stages||{};
-['treble','bass','mixed'].forEach(k=>{ save.stages[k]=save.stages[k]||{best:0,acc:0,stars:0,cleared:false}; });
+if(save.stages.treble||save.stages.bass||save.stages.mixed){
+  const old={treble:save.stages.treble, bass:save.stages.bass, mixed:save.stages.mixed};
+  save.stages={1:{},2:{},3:{}};
+  ['treble','bass','mixed'].forEach(k=>{ if(old[k]) save.stages[2][k]=old[k]; });
+}
+[1,2,3].forEach(lv=>{
+  save.stages[lv]=save.stages[lv]||{};
+  ['treble','bass','mixed'].forEach(k=>{ save.stages[lv][k]=save.stages[lv][k]||{best:0,acc:0,stars:0,cleared:false}; });
+});
 save.endless = save.endless||{best:0,score:0};
 function persist(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }catch(e){} }
 
@@ -127,31 +137,36 @@ const STAGES=[
   range:{treble:[26,42], bass:[14,30]}, endless:true, showClefName:false},
 ];
 
-/* ================= 段階モード（初級/中級/上級） =================
-   坑道は増やさず、各坑道の clefs / range を段階で変える。
-     初級: どの坑道もト音記号のみ・加線なし（五線の中 D4〜G5 = idx 29〜39）
-     中級: 現状どおり（ト音の坑道・ヘ音の坑道は五線の中、ふかまる・はてなきは加線2本まで）
+/* ================= 段階（初級/中級/上級） =================
+   読譜に学年配当はないので「学年」ではなく「段階」。坑道の名前・記号は変えない。
+     初級: 「ト音の坑道」だけ遊べる。ほかの坑道はロック（中級で解放）
+     中級: 全4坑道を元の内容で（ト音・ヘ音の坑道は五線の中、ふかまる・はてなきは加線2本まで）
      上級: ふかまる・はてなき坑道を「加線3本まで」に広げる（ト音 F3〜E6 = 24〜44、ヘ音 A1〜G4 = 12〜32）
    idx は C0=0 の音階番号（ト音の上線 F5=38、ヘ音の上線 A3=26）。
-   初期値はハブ（まなびの基板）の学年（中1→初級、中2→中級、中3→上級）。
-   ゲーム内で変えた値は localStorage 'manabi-grade:onpu-trolley' に残し、次回はそれを優先する。 */
+   初期値は、ゲーム内で段階を選んだことがなければハブ（まなびの基板）の学年（中1→初級、中2→中級、中3→上級）。
+   ゲーム内で選んだ段階は localStorage 'manabi-grade:onpu-trolley' に残し、次回はそれを優先する。
+   ハブへの配点は学年係数なし（grade:0）。上級だけ難易度係数 hard（×1.2）。 */
 const LEVELS={
-  1:{name:'初級', all:{clefs:['treble'], range:{treble:[29,39]}, ledger:0},
-     sub:{treble:'ト音記号 / 五線の中', bass:'ト音記号 / 五線の中', mixed:'ト音記号 / 五線の中', endless:'エンドレス / ト音・五線の中'}},
-  2:{name:'中級', all:null, sub:{}},
+  1:{name:'初級', only:['treble'], sub:{}},
+  2:{name:'中級', sub:{}},
   3:{name:'上級', wide:{range:{treble:[24,44], bass:[12,32]}, ledger:3},
      sub:{mixed:'ミックス / 加線3本まで', endless:'エンドレス / 加線3本まで'}}
 };
 const LV_KEY='manabi-grade:onpu-trolley';
 const hubGrade=()=>(window.LearnHub&&LearnHub.grade)?LearnHub.grade():3;
-let level=(()=>{ let g=0; try{ g=Number(localStorage.getItem(LV_KEY)); }catch(e){} return (g===1||g===2||g===3)?g:hubGrade(); })();
+let level=(()=>{ let g=0; try{ g=Number(localStorage.getItem(LV_KEY)); }catch(e){} if(g===1||g===2||g===3) return g; g=Number(hubGrade()); return (g===1||g===2||g===3)?g:3; })();
 function setLevel(lv){ lv=Number(lv); if(lv!==1&&lv!==2&&lv!==3) return; level=lv; try{ localStorage.setItem(LV_KEY,String(lv)); }catch(e){} }
+/* その坑道はいまの段階で遊べるか */
+function stageOpen(st){ const L=LEVELS[level]; return !L.only || L.only.indexOf(st.key)>=0; }
+/* いまの段階で遊べる記録つき坑道（はてなき以外）のキー */
+function openKeys(){ return STAGES.filter(st=>!st.endless&&stageOpen(st)).map(st=>st.key); }
+/* いまの段階の記録 */
+function recOf(k){ return save.stages[level][k]; }
 /* いまの段階で実際に使う坑道設定（元の STAGES は書きかえない） */
 function stageFor(st){
   const L=LEVELS[level];
   const eff=Object.assign({ledger:(st.key==='mixed'||st.key==='endless')?2:0}, st);
-  if(L.all) Object.assign(eff, L.all);
-  else if(L.wide && (st.key==='mixed'||st.key==='endless')) Object.assign(eff, L.wide);
+  if(L.wide && (st.key==='mixed'||st.key==='endless')) Object.assign(eff, L.wide);
   if(L.sub[st.key]) eff.sub=L.sub[st.key];
   return eff;
 }
@@ -687,6 +702,7 @@ let toast=null;
 let pressFx=null; // タップ時のリップル/押し込みアニメーション
 
 function startStage(stage){
+  if(!stageOpen(stage)) return;   // ロック中の坑道（初級ではト音の坑道のみ）
   stage=stageFor(stage);
   G={stage:stage, endless:!!stage.endless, qIndex:0, asked:0, correct:0, score:0, combo:0,
      maxCombo:0, lives:3, misses:[], phase:'run', phaseT:0, scroll:0, speed:900,
@@ -758,7 +774,7 @@ function finishStage(cleared){
   if(!cleared) stars=0;
   const st=G.stage;
   if(!G.endless){
-    const rec=save.stages[st.key];
+    const rec=recOf(st.key);
     rec.best=Math.max(rec.best,G.score);
     rec.acc=Math.max(rec.acc,acc);
     rec.stars=Math.max(rec.stars,stars);
@@ -777,11 +793,11 @@ function finishStage(cleared){
 }
 /*
   送信仕様:
-  - done=クリア数/3
-  - best=3坑道(ト音・ヘ音・ミックス)の「最高スコア/理論最高{2900,2900,4500}」の平均を
-    ハブの満点(学年別)に換算した値
+  - done=いまの段階で遊べる坑道のクリア数 / total=その坑道数（初級1・中級以上3）
+  - best=遊べる坑道の「その段階での最高スコア/理論最高」の平均をハブの満点に換算した値
+    （学年係数なし。上級のみ難易度 hard ×1.2）
   - endless=はてなき坑道の最高正解数/40 をエンドレス枠(30,000)に換算した値
-  - raw=今回のスコア(素点)
+  - raw=今回のスコア(素点)、grade=表示用のハブ学年
 */
 function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
 function hubEndless(r){ return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0,Math.min(1,r))*30000); }
@@ -789,17 +805,17 @@ const STAGE_MAX_PTS={treble:2550, bass:2550, mixed:4050};
 function sendReport(cleared,acc){
   try{
     if(typeof manabiReport!=='function') return;
-    const keys=['treble','bass','mixed'];
-    const recs=keys.map(k=>save.stages[k]);
+    const keys=openKeys();
+    const recs=keys.map(k=>recOf(k));
     const clearedCount=recs.filter(r=>r.cleared).length;
-    const ratio=keys.reduce((s,k)=>s+Math.min(1,(save.stages[k].best||0)/STAGE_MAX_PTS[k]),0)/keys.length;
-    const best=hubScale(ratio,{grade:level});
+    const ratio=keys.reduce((s,k)=>s+Math.min(1,(recOf(k).best||0)/STAGE_MAX_PTS[k]),0)/keys.length;
+    const best=hubScale(ratio,{grade:0, diff:(level===3?'hard':undefined)});
     const endless=hubEndless(Math.min(1,(save.endless.best||0)/40));
     const note = G.endless
       ? ('はてなき坑道 '+G.correct+'問 素点 '+G.score)
-      : (G.stage.name+(cleared?' クリア':' 挑戦')+' 素点 '+G.score+' 正答'+acc+'%');
-    manabiReport({app:APP_KEY, done:clearedCount, total:3, best:best, endless:endless, raw:G.score,
-      grade:level, note:note.slice(0,40)});
+      : (LEVELS[level].name+' '+G.stage.name+(cleared?' クリア':' 挑戦')+' 素点 '+G.score+' 正答'+acc+'%');
+    manabiReport({app:APP_KEY, done:clearedCount, total:keys.length, best:best, endless:endless, raw:G.score,
+      grade:hubGrade(), note:note.slice(0,40)});
   }catch(e){}
 }
 
@@ -965,20 +981,29 @@ function renderSelect(dt){
   const x0=(W-(cw*4+gap*3))/2, y0=120;
   STAGES.forEach((st,i)=>{
     const x=x0+i*(cw+gap);
+    const open=stageOpen(st);
     ctx.save();
+    if(!open) ctx.globalAlpha=0.55;
     ctx.fillStyle='rgba(38,24,14,0.92)';
     ctx.shadowColor='rgba(0,0,0,0.6)'; ctx.shadowBlur=12; ctx.shadowOffsetY=4;
     rr(x,y0,cw,chh,14); ctx.fill();
     ctx.shadowBlur=0; ctx.shadowOffsetY=0;
-    ctx.strokeStyle=st.endless?'#b98cff':'#c8781e'; ctx.lineWidth=2.5; rr(x,y0,cw,chh,14); ctx.stroke();
+    ctx.strokeStyle=!open?'#6b5a40':st.endless?'#b98cff':'#c8781e'; ctx.lineWidth=2.5; rr(x,y0,cw,chh,14); ctx.stroke();
     const tx=x+cw/2, ty=y0+74;
     ctx.fillStyle='#120a06'; ctx.beginPath(); ctx.arc(tx,ty,34,Math.PI,0); ctx.lineTo(tx+34,ty+16); ctx.lineTo(tx-34,ty+16); ctx.closePath(); ctx.fill();
     ctx.strokeStyle='#5d3f22'; ctx.lineWidth=5; ctx.beginPath(); ctx.arc(tx,ty,34,Math.PI,0); ctx.stroke();
-    flame(tx-48,ty+4,7,gt*9+i*3); flame(tx+48,ty+4,7,gt*9+i*5);
-    head(st.name,tx,y0+140,17,'#ffe6b0');
+    if(open){ flame(tx-48,ty+4,7,gt*9+i*3); flame(tx+48,ty+4,7,gt*9+i*5); }
+    head(st.name,tx,y0+140,17,open?'#ffe6b0':'#a89272');
     txt(stageFor(st).sub,tx,y0+166,12,'#c7ae83');
-    if(!st.endless){
-      const rec=save.stages[st.key];
+    if(!open){
+      // ロック中: 板で閉じた坑道
+      ctx.globalAlpha=1;
+      ctx.fillStyle='rgba(20,12,6,0.9)'; rr(x+30,y0+186,cw-60,40,10); ctx.fill();
+      ctx.strokeStyle='#8d7a5c'; ctx.lineWidth=1.5; rr(x+30,y0+186,cw-60,40,10); ctx.stroke();
+      head('ロック',tx,y0+200,13,'#d9c9a8');
+      txt('中級で解放',tx,y0+217,11,'#a89272');
+    }else if(!st.endless){
+      const rec=recOf(st.key);
       let stStr=''; for(let k=0;k<3;k++) stStr+=(k<rec.stars?'★':'☆');
       txt(stStr,tx,y0+192,16,rec.stars>0?'#ffcf4d':'#6b5a40');
       txt(rec.best>0?('ベスト '+rec.best):'みちょうせん',tx,y0+214,12,'#a89272');
@@ -986,10 +1011,10 @@ function renderSelect(dt){
       txt(save.endless.best>0?('さいこう '+save.endless.best+'問'):'きろくなし',tx,y0+198,13,'#c9a8ff');
     }
     ctx.restore();
-    clickables.push({x:x,y:y0,w:cw,h:chh,fn:()=>{ sfxClick(); startStage(st); }});
+    if(open) clickables.push({x:x,y:y0,w:cw,h:chh,fn:()=>{ sfxClick(); startStage(st); }});
   });
   button(W-150,24,120,40,'タイトルへ',()=>{ sfxClick(); screen='title'; },{bg:'#4a3a26',border:'#a8905e',size:14});
-  txt('えらんでタップ / クリック',W/2,H-40,14,'#8d7a5c');
+  txt('段階: '+LEVELS[level].name+'  /  えらんでタップ / クリック',W/2,H-40,14,'#8d7a5c');
 }
 /* プレイ */
 function renderPlay(dt){
@@ -1097,7 +1122,7 @@ function drawHUD(){
   rr(14,12,220,46,12); ctx.fill();
   ctx.strokeStyle='rgba(200,120,30,0.5)'; ctx.lineWidth=1.5; rr(14,12,220,46,12); ctx.stroke();
   head(G.stage.name,124,28,14,'#ffd98a');
-  if(level!==3){   // 上級以外は段階を小さく出す
+  {   // 段階を小さく出す
     ctx.fillStyle='rgba(20,12,6,0.82)'; rr(242,12,64,24,12); ctx.fill();
     ctx.strokeStyle='rgba(200,120,30,0.5)'; rr(242,12,64,24,12); ctx.stroke();
     head(LEVELS[level].name,274,25,12,'#ffd98a');
@@ -1267,7 +1292,7 @@ window.__ONPU={
   },
   state:function(){ return {screen:screen,G:G}; },
   /* 段階モードの確認用 */
-  level:function(){ return level; }, setLevel:setLevel, stageFor:stageFor, STAGES:STAGES, CLEF_TOP:CLEF_TOP,
+  level:function(){ return level; }, setLevel:setLevel, stageFor:stageFor, stageOpen:stageOpen, openKeys:openKeys, save:function(){ return save; }, STAGES:STAGES, CLEF_TOP:CLEF_TOP,
   pick:function(){ pickQuestion(); return G.q; }, clickables:function(){ return clickables; },
   report:function(){ sendReport(true,90); }
 };

@@ -118,17 +118,8 @@ p.sub{color:#B9C2D8;font-size:clamp(12px,2.2vmin,17px);line-height:1.8;margin:1e
 .ptRow{font-weight:900;font-size:clamp(15px,3.2vmin,24px);color:var(--white)}
 .ptRow span{color:var(--amber)}
 
-/* 学年ピル（タイトル画面） */
-.gradeRow{display:flex;align-items:center;justify-content:center;gap:.4em;flex-wrap:wrap;margin:.2em 0 .5em}
-.gradeLbl{color:#B9C2D8;font-weight:700;font-size:clamp(12px,2.2vmin,16px);margin-right:.4em}
-.btn.gradePill{min-height:44px;min-width:4.2em;padding:.45em 1.1em;margin:.15em;font-size:clamp(13px,2.4vmin,17px);touch-action:manipulation}
-.btn.gradePill.on{background:var(--amber);color:#211502;border-color:var(--amber);box-shadow:0 3px 0 #A67C1B}
-.btn.gradePill.on:active{box-shadow:0 1px 0 #A67C1B}
-/* 横向きスマホなど高さが小さい画面: ピルをボタンと同じ行に並べ、1画面に収める */
+/* 横向きスマホなど高さが小さい画面: 1画面に収める */
 @media (max-height:480px){
-  .gradeRow{display:inline-flex;vertical-align:middle;gap:.25em;margin:.15em .25em .15em 0}
-  .gradeLbl{display:none}
-  .btn.gradePill{min-width:3.2em;padding:.4em .6em;margin:.05em}
   .panel p.sub{margin:.5em 0}
 }
 
@@ -359,32 +350,26 @@ const QUIZ = [
 
 /* ---------------- まなびの基板 連携 ---------------- */
 const HUB={key:'athletics', total:4, maxPt:4700, store:'manabi-athletics'};
-/* 学年モード: 競技は共通。保健クイズだけ「選んだ学年以下」から出題。初期値はハブの学年、ゲーム内で変えた値は localStorage に保存 */
-const GRADE_KEY='manabi-grade:'+HUB.key, GRADE_LABEL={1:'中1',2:'中2',3:'中3'};
+/* 学年: 競技は共通。保健クイズだけハブの学年（まなびの基板で選んだ学年）以下の問題から出題する。ゲーム内に学年の選択はない */
 const hubGrade = () => (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3;
-function loadGrade(){ try{ const v=Number(localStorage.getItem(GRADE_KEY)); if(v===1||v===2||v===3) return v; }catch(e){} return hubGrade(); }
-let GRADE = loadGrade();
-function setGrade(g, save){ GRADE=g; if(save){ try{ localStorage.setItem(GRADE_KEY, String(g)); }catch(e){} }
-  document.querySelectorAll('.gradePill').forEach(b=>{ const on=+b.dataset.g===g; b.classList.toggle('on',on); b.setAttribute('aria-pressed',String(on)); });
-  const lbl=document.querySelector('#bEvent .lbl'); if(lbl) lbl.textContent = g===3 ? 'EVENT' : 'EVENT / '+GRADE_LABEL[g];
-}
-/* 出題プール: 同じ学年を優先し、足りないときだけ下の学年から補う */
+/* 出題プール: ハブ学年以下の全問題から無作為に n 問 */
 function buildQuizPool(n){
+  const G=hubGrade();
   const sh=a=>[...a].sort(()=>Math.random()-.5);
-  return sh(QUIZ.filter(q=>q.g===GRADE)).concat(sh(QUIZ.filter(q=>q.g<GRADE))).slice(0,n);
+  return sh(QUIZ.filter(q=>q.g<=G)).slice(0,n);
 }
-/* 配点換算: ratio = 合計pt/4700 をハブの満点(学年別)に換算。raw = 合計pt */
+/* 配点換算: ratio = 合計pt/4700 をハブの満点に換算（内容は学年でほぼ変わらないため学年係数なし）。raw = 合計pt */
 function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
 function hubLoad(){ try{ return JSON.parse(localStorage.getItem(HUB.store)||'{}'); }catch(e){ return {}; } }
 function hubSaveLocal(o){ try{ localStorage.setItem(HUB.store, JSON.stringify(o)); }catch(e){} }
 function hubReport(doneEvents, totalPt, note){
   const rec=hubLoad();
   const done=Math.max(rec.done||0, doneEvents);
-  const score=hubScale(Math.min(1, totalPt/HUB.maxPt), {grade:GRADE});
+  const score=hubScale(Math.min(1, totalPt/HUB.maxPt), {grade:0});
   const best=Math.max(rec.best||0, score);
   hubSaveLocal({done,best});
   if(window.LearnHub && typeof LearnHub.report==='function'){
-    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best, raw:Math.round(totalPt), grade:GRADE, note:String(note).slice(0,40)}); }catch(e){}
+    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best, raw:Math.round(totalPt), grade:hubGrade(), note:String(note).slice(0,40)}); }catch(e){}
   }
 }
 /* ホーム（ハブ）へ戻るボタン。ハブ配下で開いたときだけ出す */
@@ -653,12 +638,9 @@ function screenMenu(){
      </div>
      <p class="sub">中学の混成競技「四種競技」にちなんだ4種目に挑戦。<br>
      種目の合間には保健クイズが3問。正解するとスタミナの最大値が上がり、ボーナス点も入る。</p>
-     <div class="gradeRow" role="group" aria-label="学年"><span class="gradeLbl">学年</span>${[1,2,3].map(g=>`<button class="btn ghost gradePill" type="button" data-g="${g}">${GRADE_LABEL[g]}</button>`).join('')}</div>
      <button class="btn" id="goStart">大会にエントリー</button>
      <button class="btn ghost" id="goFull">全画面表示</button>
    </div>`;
-  ovl.querySelectorAll('.gradePill').forEach(b=>{ b.onclick=()=>{ setGrade(+b.dataset.g, true); SFX.lock(); }; });
-  setGrade(GRADE, false);
   $('#goStart').onclick = ()=>{ ac(); SFX.ding(); S.evIndex=0; S.staminaMax=100; S.results=[]; S.quizGood=0;
       S.quizPool=buildQuizPool(3); screenIntro(); };
   $('#goFull').onclick = ()=>{ const el=document.documentElement;
@@ -727,7 +709,7 @@ function screenQuiz(){
     };
   });
 }
-window.__ATH={ get grade(){return GRADE;}, setGrade:g=>setGrade(g,true), QUIZ, buildQuizPool, S, screenMenu, screenQuiz, screenEventResult, screenFinal, EVENTS };
+window.__ATH={ get grade(){return hubGrade();}, QUIZ, buildQuizPool, S, screenMenu, screenQuiz, screenEventResult, screenFinal, EVENTS };
 function rankOf(total){
   if(total>=3100) return ['S','伝説の選手爆誕。オリンピックが君を待っている。'];
   if(total>=2500) return ['A','大会MVP級！ 全種目ハイレベルにまとめた。'];

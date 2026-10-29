@@ -322,7 +322,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
         <div class="hud-item time-hud"><span>TIME</span><strong id="time">60.0</strong></div>
         <div class="hud-item"><span>SCORE</span><strong id="score">0000</strong></div>
         <div class="hud-item"><span>CHAIN</span><strong id="combo">00</strong></div>
-        <div class="hud-item grade-hud" id="gradeHud" hidden><span>GRADE</span><strong id="gradeHudValue">中1</strong></div>
+        <div class="hud-item grade-hud" id="gradeHud" hidden><span>GRADE</span><strong id="gradeHudValue">中1・2</strong></div>
         <div class="lives" id="lives" aria-label="残りエネルギー3"><i></i><i></i><i></i></div>
         <button class="reset-button" id="resetButton" type="button">RESET</button>
       </div>
@@ -330,7 +330,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
 
     <main>
       <section class="mission" aria-labelledby="missionLabel">
-        <p class="eyebrow" id="missionLabel"><span></span> <b id="rankLabel">CALIBRATION</b> / LINE <b id="missionNumber">01</b><em class="grade-tag" id="gradeTag"> / <b>中1</b></em></p>
+        <p class="eyebrow" id="missionLabel"><span></span> <b id="rankLabel">CALIBRATION</b> / LINE <b id="missionNumber">01</b><em class="grade-tag" id="gradeTag"> / <b>中1・2</b></em></p>
         <div class="equation" aria-live="polite">
           <span id="startValue">−4</span>
           <span id="operator">+</span>
@@ -389,8 +389,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
         </div>
         <div class="grade-row" id="gradeRow" role="group" aria-label="学年">
           <span class="grade-row-label">GRADE</span>
-          <button class="reset-button grade-pill" type="button" data-grade="1">中1</button>
-          <button class="reset-button grade-pill" type="button" data-grade="2">中2</button>
+          <button class="reset-button grade-pill" type="button" data-grade="1">中1・2</button>
           <button class="reset-button grade-pill" type="button" data-grade="3">中3</button>
         </div>
         <button class="launch-button" id="startButton" type="button">START ZERO RUSH</button>
@@ -417,17 +416,18 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
   "use strict";
 
   /* ---- 学年モード ------------------------------------------
-     中1 = 整数の加減＋絶対値（どちらも中1「正負の数」の内容）
-     中2 = さらに 小数（0.5刻み）の加減を混ぜる（中1内容の発展）
-     中3 = さらに 平方根の位置（√2≈1.4, √3≈1.7, √5≈2.2 を 0.1 刻みの目盛で）
-     初期値はハブの学年。ゲーム内で変えた値は localStorage に保存する。 */
+     中1・2 = 整数の加減＋小数（0.5刻み）の加減＋絶対値（すべて中1「正負の数」の内容。中2に数直線の新単元はない）
+     中3   = さらに 平方根の位置（√2, √3, √5 を 0.1 刻みの目盛で）
+     内部値は 1（中1・2）か 3（中3）の2段階。ハブの学年 1・2 → 1、3 → 3。
+     初期値はハブの学年。ゲーム内で変えた値は localStorage に保存する（保存値 2 は 1 として扱う）。 */
   const APP = "zero-line";
   const GRADE_KEY = "manabi-grade:" + APP;
-  const GRADE_LABEL = { 1: "中1", 2: "中2", 3: "中3" };
+  const GRADE_LABEL = { 1: "中1・2", 3: "中3" };
+  const normGrade = g => (Number(g) >= 3 ? 3 : 1);
   const hubGrade = () => (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3;
   function loadGrade() {
-    try { const v = Number(localStorage.getItem(GRADE_KEY)); if (v === 1 || v === 2 || v === 3) return v; } catch { /* unavailable */ }
-    return hubGrade();
+    try { const v = Number(localStorage.getItem(GRADE_KEY)); if (v === 1 || v === 2 || v === 3) return normGrade(v); } catch { /* unavailable */ }
+    return normGrade(hubGrade());
   }
   function saveGrade(g) { try { localStorage.setItem(GRADE_KEY, String(g)); } catch { /* unavailable */ } }
   let GRADE = loadGrade();
@@ -438,19 +438,19 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     half:  { min: -10, max: 10, step: 0.5 },
     tenth: { min: -3,  max: 3,  step: 0.1 }
   };
-  /* 中3: 平方根の位置（0.1刻み）。近似値は √2≈1.4, √3≈1.7, √5≈2.2 */
+  /* 中3: 平方根の位置（0.1刻み）。value は目盛上の正解位置（√2≈1.4, √3≈1.7, √5≈2.2）、exact は真の値（結果表示用） */
+  const R2 = Math.SQRT2, R3 = Math.sqrt(3), R5 = Math.sqrt(5);
   const ROOTS = [
-    { expr: "√2", value: 1.4 }, { expr: "√3", value: 1.7 }, { expr: "√5", value: 2.2 },
-    { expr: "−√2", value: -1.4 }, { expr: "−√3", value: -1.7 }, { expr: "−√5", value: -2.2 },
-    { expr: "1 + √2", value: 2.4 }, { expr: "1 + √3", value: 2.7 }, { expr: "√5 − 1", value: 1.2 },
-    { expr: "2 − √2", value: 0.6 }, { expr: "1 − √3", value: -0.7 }, { expr: "2 − √5", value: -0.2 },
-    { expr: "−1 − √2", value: -2.4 }, { expr: "√2 − 3", value: -1.6 }, { expr: "√3 − 2", value: -0.3 }
+    { expr: "√2", value: 1.4, exact: R2 }, { expr: "√3", value: 1.7, exact: R3 }, { expr: "√5", value: 2.2, exact: R5 },
+    { expr: "−√2", value: -1.4, exact: -R2 }, { expr: "−√3", value: -1.7, exact: -R3 }, { expr: "−√5", value: -2.2, exact: -R5 },
+    { expr: "1 + √2", value: 2.4, exact: 1 + R2 }, { expr: "1 + √3", value: 2.7, exact: 1 + R3 }, { expr: "√5 − 1", value: 1.2, exact: R5 - 1 },
+    { expr: "2 − √2", value: 0.6, exact: 2 - R2 }, { expr: "1 − √3", value: -0.7, exact: 1 - R3 }, { expr: "2 − √5", value: -0.2, exact: 2 - R5 },
+    { expr: "−1 − √2", value: -2.4, exact: -1 - R2 }, { expr: "√2 − 3", value: -1.6, exact: R2 - 3 }, { expr: "√3 − 2", value: -0.3, exact: R3 - 2 }
   ];
-  /* 学年ごとの出題の種類と割合 */
+  /* 学年ごとの出題の種類と割合（1=中1・2、3=中3） */
   const MIX = {
-    1: [["int", .8], ["abs", .2]],
-    2: [["int", .5], ["abs", .15], ["half", .35]],
-    3: [["int", .35], ["abs", .15], ["half", .25], ["root", .25]]
+    1: [["int", .55], ["half", .25], ["abs", .2]],
+    3: [["int", .4], ["half", .2], ["abs", .15], ["root", .25]]
   };
 
   const ROUND_SECONDS = 60;
@@ -596,7 +596,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
   }
   function genRoot() {
     const root = pick(ROOTS);
-    return { kind: "root", line: "tenth", start: 0, move: root.value, target: root.value, key: `r${root.expr}`, expr: root.expr };
+    return { kind: "root", line: "tenth", start: 0, move: root.value, target: root.value, key: `r${root.expr}`, expr: root.expr, exact: root.exact };
   }
   function generate() {
     let p, guard = 0;
@@ -607,9 +607,15 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     } while (guard < 200 && (p.ok === false || p.move === 0 || p.target < LINES[p.line].min || p.target > LINES[p.line].max || p.key === state.lastProblem));
     return p;
   }
+  /* 平方根がどの整数の間にあるか（答える前のヒント。近似値は正解後に見せる） */
+  function minus(n, digits = 0) { const a = Math.abs(n).toFixed(digits); return n < 0 ? `−${a}` : a; }
+  function rootBetween() {
+    const lo = Math.floor(state.exact);
+    return `${minus(lo)} と ${minus(lo + 1)}`;
+  }
   function targetHint() {
     if (state.kind === "abs") return `0からの距離 ${fmt(state.target)} の位置へ`;
-    if (state.kind === "root") return `${state.expr} ≈ ${fmt(state.target)} の位置へ`;
+    if (state.kind === "root") return `${state.expr} は ${rootBetween()} の間`;
     return `コアを${state.move > 0 ? "右" : "左"}へ ${fmt(Math.abs(state.move))} マス動かそう`;
   }
 
@@ -620,6 +626,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     state.lastProblem = p.key;
     state.kind = p.kind;
     state.expr = p.expr || "";
+    state.exact = p.exact;
     state.start = p.start;
     state.move = p.move;
     state.target = p.target;
@@ -631,11 +638,11 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     setExpression();
     el.missionNumber.textContent = pad(state.mission, 2);
     if (state.rank === 1) {
-      el.moveInstruction.textContent = state.kind === "abs" ? "ABSOLUTE VALUE" : state.kind === "root" ? `ROOT ≈ ${fmt(state.target)}` : `MOVE ${signed(state.move)}`;
+      el.moveInstruction.textContent = state.kind === "abs" ? "ABSOLUTE VALUE" : state.kind === "root" ? "SQUARE ROOT" : `MOVE ${signed(state.move)}`;
       el.hint.textContent = targetHint();
     } else if (state.rank === 2) {
       el.moveInstruction.textContent = state.kind === "abs" ? "ABSOLUTE VALUE" : state.kind === "root" ? "SQUARE ROOT" : `VECTOR ${signed(state.move)}`;
-      el.hint.textContent = state.kind === "abs" ? "絶対値は 0 からの距離" : state.kind === "root" ? "√2≈1.4  √3≈1.7  √5≈2.2 を使って位置を決めよう" : "符号から移動方向を判断しよう";
+      el.hint.textContent = state.kind === "abs" ? "絶対値は 0 からの距離" : state.kind === "root" ? "2乗して比べ、どの整数の間かを考えて位置を決めよう" : "符号から移動方向を判断しよう";
     } else {
       el.moveInstruction.textContent = "NO GUIDANCE";
       el.hint.textContent = "式を読み、着地点を決めよう";
@@ -714,7 +721,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
 
   function solvedText() {
     if (state.kind === "abs") return `${state.expr} = ${fmt(state.target)}`;
-    if (state.kind === "root") return `${state.expr} ≈ ${fmt(state.target)}`;
+    if (state.kind === "root") return `${state.expr} ≈ ${minus(state.exact, 2)}（目盛 ${fmt(state.target)}）`;
     return `${signed(state.start)} ${state.move >= 0 ? "+" : "−"} ${fmt(Math.abs(state.move))} = ${signed(state.target)}`;
   }
 
@@ -828,9 +835,9 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
         app: APP,
         done: Math.min(20, state.cleared),
         total: 20,
-        best: hubScale(Math.min(1, state.score / 15000), { grade: GRADE }),
+        best: hubScale(Math.min(1, state.score / 15000), { grade: GRADE === 3 ? 2 : 1 }),
         raw: state.score,
-        grade: GRADE,
+        grade: hubGrade(),
         note: `素点 ${state.score} / ${state.cleared}ライン・最大${state.maxCombo}連鎖`.slice(0, 40)
       });
     }
@@ -840,6 +847,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
 
   /* ---- 学年ピルと HUD ラベル ---- */
   function applyGrade(g, save) {
+    g = normGrade(g);
     GRADE = g;
     if (save) saveGrade(g);
     el.gradeRow.querySelectorAll(".grade-pill").forEach(b => {

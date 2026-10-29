@@ -44,13 +44,20 @@
     g = Number(g);
     if (g !== 1 && g !== 2 && g !== 3) return grade();
     try { global.localStorage.setItem(KEY_GRADE, String(g)); } catch (e) {}
+    /* ゲーム側で個別に選んだ学年（manabi-grade:<app>）はハブで選び直したら捨てる */
+    try {
+      var ls = global.localStorage, drop = [];
+      for (var i = 0; i < ls.length; i++) { var k = ls.key(i); if (k && k.indexOf('manabi-grade:') === 0) drop.push(k); }
+      drop.forEach(function (k) { ls.removeItem(k); });
+    } catch (e) {}
     return g;
   }
   function gradeLabel(g) { return '中' + (g || grade()); }
 
   /* その学年・難易度での満点 */
+  /* grade に 0 を渡すと学年係数なし（内容が学年で変わらないゲーム用）。未指定はハブの学年 */
   function maxFor(g, diff) {
-    var gm = GRADE_MULT[Number(g) || grade()] || 1;
+    var gm = (g === 0 || g === '0') ? 1 : (GRADE_MULT[Number(g) || grade()] || 1);
     var dm = diff == null ? 1 : (typeof diff === 'number' ? diff : (DIFF_MULT[String(diff)] || 1));
     return Math.round(BASE_MAX * gm * dm);
   }
