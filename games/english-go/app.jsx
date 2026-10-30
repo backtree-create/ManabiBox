@@ -845,6 +845,45 @@ const LEVELS = [
 ];
 
 const TOTAL_Q = LEVELS.reduce((s, l) => s + l.count, 0);
+
+/* ---- コース ----
+   ノーマル＝従来どおり 3+3+3+1＝10問。ロング＝5+5+5+1＝16問。
+   ハブへ送る出来ばえは「正解数 / そのコースの問題数」で正規化するので、満点はどちらも同じ。 */
+const COURSES = {
+  normal: { key: "normal", label: "ノーマル", counts: LEVELS.map((l) => l.count) },
+  long: { key: "long", label: "ロング", counts: [5, 5, 5, 1] },
+};
+const COURSE_KEY = "english-go:course";
+const loadCourse = () => { try { const c = localStorage.getItem(COURSE_KEY); if (COURSES[c]) return c; } catch (e) {} return "normal"; };
+const saveCourse = (c) => { try { localStorage.setItem(COURSE_KEY, c); } catch (e) {} };
+const courseTotal = (c) => COURSES[c].counts.reduce((s, n) => s + n, 0);
+
+/* ---- ごほうび（manabi-juice.js） ---- */
+const APP = "english-go";
+const MJX = () => window.MJ || null;
+const TITLES = [
+  { min: 0, name: "ルーキー" }, { min: 4, name: "レギュラー" },
+  { min: 12, name: "エース" }, { min: 30, name: "マスター" },
+];
+const recKey = (course, grade, lv, what) => `${course}-g${grade}-s${lv}-${what}`;
+const fmtSec = (v) => (v == null ? "—" : `${Number(v).toFixed(1)}秒`);
+const REVIEW_MAX = 10;
+/* 復習に出す単語：学年の範囲外（その学年で出ないプール）は出さない */
+const reviewWords = (grade) => {
+  const M = MJX();
+  if (!M) return [];
+  return M.misses(APP).filter((m) => {
+    const d = m.data || {};
+    const lv = Number(d.level);
+    return d.en && d.jp && LEVELS[lv] && LEVELS[lv].g <= grade;
+  });
+};
+/* ボスの段階ダメージ：打った文字数に応じて HP が減る（正誤は見せない＝ヒントにならない） */
+const BOSS_LINES = [
+  ["フハハ、効かぬわ！"],
+  ["ぐぬっ…やるではないか", "ぐっ…効いたぞ…"],
+  ["ば、ばかな…！", "我の城が…ゆらいでおる…"],
+];
 /* 古い hub-progress.js がキャッシュされている端末のためのフォールバック */
 function hubScale(r, o) { return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0, Math.min(1, r)) * 10000); }
 
@@ -877,6 +916,7 @@ const wordsFor = (grade, stageIdx) => LEVELS[poolIdxFor(grade, stageIdx)].words;
 /* HUD に出す難易度タグ。中3は従来の tag、中1・中2は実際に引くプールの学年 */
 const tagFor = (grade, stageIdx) => (grade >= 3 ? LEVELS[stageIdx].tag : POOL_TAG[poolIdxFor(grade, stageIdx)]);
 const CELL_COLORS = ["#2E86FF", "#12A9E8", "#0FC4B0", "#2FD061", "#7ED321", "#A9DC1B", "#D9DC12", "#F5B912", "#FF8A1E", "#FF3B4E"];
+const cellColor = (i, total) => CELL_COLORS[Math.min(9, Math.floor((i * 10) / Math.max(1, total)))];
 const timeFor = (level, word) => (level.base + word.length * 0.5) * 2;
 const shuffle = (a) => {
   const r = [...a];
@@ -1410,6 +1450,28 @@ function EnglishDeGo() {
   const [missedList, setMissedList] = useState([]);
   const [clearedQ, setClearedQ] = useState(0);
   const [defeat, setDefeat] = useState(false);
+  /* フェーズ4：コース・復習・記録 */
+  const [course, setCourseState] = useState(loadCourse);
+  const setCourse = (c) => { setCourseState(c); saveCourse(c); };
+  const [review, setReview] = useState(false);      // 復習モード中か
+  const [rvList, setRvList] = useState([]);         // 復習で出す単語 [en, jp, level]
+  const [rvOk, setRvOk] = useState([]);             // 復習で覚えた単語
+  const [rvNg, setRvNg] = useState([]);             // 復習でまだの単語
+  const [stageRec, setStageRec] = useState(null);   // 直前に終えたステージの記録 {avg, bestT, isNew}
+  const [newRec, setNewRec] = useState(false);      // 今回の結果で新記録が出たか
+  const [titleName, setTitleName] = useState("");
+  const [rvCount, setRvCount] = useState(0);        // タイトルの「復習（n語）」
+  const stageRef = useRef({ used: 0, speed: 0, miss: 0 }); // ステージ内の正解の所要秒・速さ率・時間切れ
+  const charboxRef = useRef(null);
+  const meaningRef = useRef(null);
+  const stageElRef = useRef(null);
+  const scoreNumRef = useRef(null);
+  const statRefs = useRef({});
+  const bossPrev = useRef(0);
+  const bannerRef = useRef(false);               // カットインのあとに「新記録」を出すか
+  const counts = COURSES[course].counts;
+  const totalQ = review ? rvList.length : courseTotal(course);
+  const countFor = (i) => counts[i];
 
   const inputRef = useRef(null);
   const rafRef = useRef(null);
@@ -1441,9 +1503,11 @@ useEffect(() => {
   if (screen !== "clear" && screen !== "result" && screen !== "over") return;
   const done = screen === "result" ? LEVELS.length
              : screen === "clear" ? lvIndex + 1 : lvIndex;
-  /* 出来ばえ = (正解数/10) × (0.6 + 0.4×速さ率)。速さ率 = 正解した問題の平均(残り秒/制限秒) */
+  /* 出来ばえ = (正解数/そのコースの問題数) × (0.6 + 0.4×速さ率)。速さ率 = 正解した問題の平均(残り秒/制限秒)
+     ノーマルは /10、ロングは /16 で正規化するので、どちらも満点は同じ（コースで有利・不利にならない） */
+  if (review) return;
   const speed = clearedQ > 0 ? Math.max(0, Math.min(1, speedRef.current / clearedQ)) : 0;
-  const ratio = (clearedQ / TOTAL_Q) * (0.6 + 0.4 * speed);
+  const ratio = (clearedQ / courseTotal(course)) * (0.6 + 0.4 * speed);
   window.manabiReport({
     app: "english-go",
     done,
@@ -1451,7 +1515,7 @@ useEffect(() => {
     best: hubScale(ratio, { grade }),
     grade,
     raw: score,
-    note: `素点 ${score.toLocaleString()}・` + (
+    note: `${COURSES[course].label}・素点 ${score.toLocaleString()}・` + (
           screen === "result" ? `全ステージ制覇`
         : screen === "clear"  ? `STAGE ${lvIndex + 1} クリア`
         : `STAGE ${lvIndex + 1} でゲームオーバー`),
@@ -1502,27 +1566,50 @@ useEffect(() => {
     const fresh = shuffle(wordsFor(grade, lv));
     return [fresh[0], fresh.slice(1)];
   };
+  const resetStageRef = () => { stageRef.current = { used: 0, speed: 0, miss: 0 }; };
   const startLevel = (idx) => {
     const p = shuffle(wordsFor(grade, idx));
+    resetStageRef(); setStageRec(null);
     setLvIndex(idx); setPool(p.slice(1)); setCurrent(p[0]);
     setSolved(0); setQid((n) => n + 1); setScreen("play");
   };
   const nextWord = () => {
+    if (review) {
+      const [w, ...rest] = pool;
+      setPool(rest); setCurrent(w); setQid((n) => n + 1);
+      return;
+    }
     const [w, rest] = drawFrom(pool, lvIndex);
     setPool(rest); setCurrent(w); setQid((n) => n + 1);
   };
   const startGame = () => {
+    setReview(false);
     setTimeouts(0); setTypos(0); setScore(0); setCombo(0);
-    setMissedList([]); setClearedQ(0); setNotice({ text: "", tone: "" });
-    speedRef.current = 0;
+    setMissedList([]); setClearedQ(0); setNotice({ text: "", tone: "" }); setNewRec(false);
+    speedRef.current = 0; bannerRef.current = false;
     startLevel(0);
   };
+  /* 復習モード：貯めた誤答だけを出す（ハブには送らない） */
+  const startReview = () => {
+    const list = shuffle(reviewWords(grade)).slice(0, REVIEW_MAX).map((m) => [m.data.en, m.data.jp, Number(m.data.level)]);
+    if (!list.length) return;
+    setReview(true); setRvList(list); setRvOk([]); setRvNg([]);
+    setTimeouts(0); setTypos(0); setScore(0); setCombo(0);
+    setMissedList([]); setClearedQ(0); setNotice({ text: "", tone: "" });
+    speedRef.current = 0; resetStageRef();
+    setLvIndex(0); setPool(list.slice(1)); setCurrent(list[0]);
+    setSolved(0); setQid((n) => n + 1); setScreen("play");
+  };
+  /* 今の問題がどの単語プール（LEVELS の添字）から出ているか */
+  const poolOfCurrent = () => (current && current[2] != null ? current[2] : poolIdxFor(grade, lvIndex));
+  const qLevel = review && current && current[2] != null ? LEVELS[current[2]] : level;
 
   useEffect(() => {
     if (screen !== "play" || !current) return;
     lockRef.current = false;
     setTyped(""); setMood("idle"); setLine(pick(level.char.ask));
-    const t = timeFor(level, current[0]);
+    bossPrev.current = 0;
+    const t = timeFor(qLevel, current[0]);
     setLimit(t); setLeft(t);
     endAtRef.current = performance.now() + t * 1000;
     const tick = () => {
@@ -1537,13 +1624,55 @@ useEffect(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, qid]);
 
+  /* ステージを終えたときの記録（最高正解数・最速平均回答時間）と称号 */
+  const saveStageRecord = (cleared, nowSolved) => {
+    const M = MJX();
+    if (!M || review) return null;
+    const lv = level.lv;
+    const nRes = M.record(APP, recKey(course, grade, lv, "n"), nowSolved);
+    let avg = null, tRes = null;
+    if (cleared && nowSolved > 0) {
+      avg = Math.round((stageRef.current.used / nowSolved) * 10) / 10;
+      tRes = M.record(APP, recKey(course, grade, lv, "t"), avg, { lower: true });
+      const clears = (M.best(APP, "clears") || 0) + 1;
+      M.record(APP, "clears", clears);
+      setTitleName(M.title(APP, TITLES, clears));
+    }
+    const isNew = !!((nRes && nRes.isNew) || (tRes && tRes.isNew));
+    const rec = { avg, bestT: M.best(APP, recKey(course, grade, lv, "t")), bestN: M.best(APP, recKey(course, grade, lv, "n")), isNew };
+    setStageRec(rec);
+    if (isNew) { setNewRec(true); bannerRef.current = true; }
+    return rec;
+  };
+  const stageRank = () => {
+    const s = stageRef.current, n = Math.max(1, countFor(lvIndex));
+    if (s.miss === 0 && s.speed / n >= 0.55) return "S";
+    if (s.miss === 0) return "A";
+    if (s.miss === 1) return "B";
+    return "C";
+  };
+
   const advance = (nowSolved) => {
-    if (nowSolved >= level.count) {
+    if (review) {
+      if (nowSolved >= rvList.length) setScreen("rvresult"); else nextWord();
+      return;
+    }
+    if (nowSolved >= countFor(lvIndex)) {
       beep("boom");
       setDefeat(true);
+      const rec = saveStageRecord(true, nowSolved);
+      const rank = stageRank();
+      const last = lvIndex + 1 >= LEVELS.length;
       setTimeout(() => {
         setDefeat(false);
-        setScreen(lvIndex + 1 >= LEVELS.length ? "result" : "clear");
+        setScreen(last ? "result" : "clear");
+        const M = MJX();
+        if (!M) return;
+        M.cutin({
+          title: last ? "ALL CLEAR" : `STAGE ${level.lv} CLEAR`,
+          sub: rec && rec.avg != null ? `平均 ${fmtSec(rec.avg)} / 問` : level.stage,
+          rank, color: theme.accent, sound: "none",
+        }).then(() => { if (bannerRef.current) { bannerRef.current = false; M.banner("新記録", { color: "#FFC13D" }); } });
       }, 1500);
     } else nextWord();
   };
@@ -1555,6 +1684,7 @@ useEffect(() => {
     if (val === "q" && answer.toLowerCase() !== "q") { finishMiss(true); return; }
     if (val !== answer.toLowerCase()) {
       setTypos((n) => n + 1); setTyped(""); setShake(true); beep("typo");
+      MJX()?.flash("#FF4D62");
       setNotice({ text: `${typed.trim()} → ちがいます！`, tone: "warn" });
       setLine(pick(level.char.typo)); setMood("sad");
       clearTimeout(moodTimer.current);
@@ -1565,14 +1695,30 @@ useEffect(() => {
     lockRef.current = true;
     cancelAnimationFrame(rafRef.current);
     const rest = Math.max(0, (endAtRef.current - performance.now()) / 1000);
-    speedRef.current += limit > 0 ? Math.min(1, rest / limit) : 0;
-    setScore((s) => s + 100 * level.lv + Math.round(rest * 10) + combo * 30);
-    setCombo((c) => c + 1);
-    setClearedQ((n) => n + 1);
     const nowSolved = solved + 1;
     setSolved(nowSolved);
     beep("ok"); setMood("happy"); setLine(pick(level.char.ok));
     setNotice({ text: `${answer} ＝ ${meaning}`, tone: "ok" });
+    /* 正解の手ごたえ：パーティクル＋得点ポップ（連続正解で大きく） */
+    const M = MJX();
+    const at = meaningRef.current;
+    if (review) {
+      if (M) { M.hit(APP, answer); M.burst(at, { color: "#4BE07A", count: 26 }); M.pop(at, "おぼえた！", { color: "#4BE07A", size: 30 }); }
+      setRvOk((w) => [...w, [answer, meaning]]);
+      setClearedQ((n) => n + 1);
+    } else {
+      const gain = 100 * level.lv + Math.round(rest * 10) + combo * 30;
+      speedRef.current += limit > 0 ? Math.min(1, rest / limit) : 0;
+      stageRef.current.speed += limit > 0 ? Math.min(1, rest / limit) : 0;
+      stageRef.current.used += Math.max(0, limit - rest);
+      setScore((s) => s + gain);
+      setCombo((c) => c + 1);
+      setClearedQ((n) => n + 1);
+      if (M) {
+        M.burst(at, { color: theme.accent, color2: "#FFD43B", count: Math.min(60, 20 + combo * 8) });
+        M.pop(at, combo >= 1 ? `+${gain}  ${combo + 1}連続` : `+${gain}`, { color: "#FFD43B", size: Math.min(48, 28 + combo * 4) });
+      }
+    }
     setFlash({ ok: true, answer, meaning });
     setTimeout(() => { setFlash(null); advance(nowSolved); }, 1500);
   };
@@ -1582,17 +1728,89 @@ useEffect(() => {
     lockRef.current = true;
     cancelAnimationFrame(rafRef.current);
     const [answer, meaning] = current;
-    const n = timeouts + 1;
-    setTimeouts(n); setCombo(0);
-    setMissedList((w) => (w.some((x) => x[0] === answer) ? w : [...w, [answer, meaning]]));
+    const M = MJX();
+    if (M) {
+      M.flash("#FF4D62");
+      M.shake(stageElRef.current, 8);
+      M.miss(APP, answer, { jp: meaning, en: answer, level: poolOfCurrent() });
+    }
+    setCombo(0);
     beep("timeup"); setMood("sad"); setLine(pick(level.char.ng));
     setNotice({ text: `${answer} ＝ ${meaning}`, tone: "ng" });
+    if (review) {
+      /* 復習ではライフは減らない。まちがえた単語は残る */
+      const nowSolved = solved + 1;
+      setSolved(nowSolved);
+      setRvNg((w) => [...w, [answer, meaning]]);
+      setFlash({ ok: false, answer, meaning, gaveUp, last: nowSolved >= rvList.length });
+      setTimeout(() => { setFlash(null); advance(nowSolved); }, 2000);
+      return;
+    }
+    const n = timeouts + 1;
+    stageRef.current.miss += 1;
+    setTimeouts(n);
+    setMissedList((w) => (w.some((x) => x[0] === answer) ? w : [...w, [answer, meaning]]));
     setFlash({ ok: false, answer, meaning, gaveUp, last: n >= MAX_LIFE });
     setTimeout(() => {
       setFlash(null);
-      if (n >= MAX_LIFE) setScreen("over"); else nextWord();
+      if (n >= MAX_LIFE) { saveStageRecord(false, solved); setScreen("over"); } else nextWord();
     }, 2000);
   };
+
+  /* ---- 結果画面に入ったとき：自己ベスト・実績・カウントアップ ---- */
+  useEffect(() => {
+    const M = MJX();
+    if (!M) return;
+    if (screen === "result" || screen === "over") {
+      if (!review) {
+        const r = M.record(APP, `${course}-g${grade}-score`, score);
+        if (r.isNew) { setNewRec(true); bannerRef.current = true; }
+        if (screen === "over" && bannerRef.current) { bannerRef.current = false; M.banner("新記録", { color: "#FFC13D" }); }
+        if (screen === "result") {
+          M.achieve(APP, "allclear", "全ステージ制覇");
+          if (timeouts === 0) M.achieve(APP, "nomiss", "時間切れなしで制覇");
+          if (course === "long") M.achieve(APP, "long", "ロングコース制覇");
+        }
+      }
+      const s = statRefs.current;
+      const t = setTimeout(() => {
+        if (s.score) M.countUp(s.score, score, { ms: 1100 });
+        if (s.ok) M.countUp(s.ok, clearedQ, { ms: 800, format: (v) => `${Math.round(v)}/${courseTotal(course)}` });
+        if (s.typo) M.countUp(s.typo, typos, { ms: 700 });
+      }, screen === "result" ? 400 : 80);
+      return () => clearTimeout(t);
+    }
+    if (screen === "clear" && scoreNumRef.current) {
+      M.countUp(scoreNumRef.current, score, { from: Math.max(0, score - 1500), ms: 900 });
+    }
+    if (screen === "rvresult") {
+      if (rvNg.length === 0) M.cutin({ title: "復習 クリア", sub: `${rvOk.length}語 おぼえた`, rank: "S", color: "#4BE07A" });
+      setRvCount(reviewWords(grade).length);
+    }
+    if (screen === "title") {
+      setRvCount(reviewWords(grade).length);
+      setTitleName(M.title(APP, TITLES, M.best(APP, "clears") || 0));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen]);
+  useEffect(() => { const M = MJX(); if (M) setRvCount(reviewWords(grade).length); }, [grade]);
+  /* 効果音の ON/OFF を共通演出にも合わせる */
+  useEffect(() => { MJX()?.setMuted(!sound); }, [sound]);
+
+  /* ---- ボス（最終ステージ）の段階ダメージ ---- */
+  const isBoss = screen === "play" && !review && lvIndex === LEVELS.length - 1 && current;
+  const bossHp = isBoss ? (flash && flash.ok ? 0 : Math.max(0.12, 1 - (typed.length / current[0].length) * 0.88)) : 1;
+  const bossStage = !isBoss ? 0 : bossHp <= 0 ? 3 : bossHp > 0.66 ? 0 : bossHp > 0.36 ? 1 : 2;
+  useEffect(() => {
+    if (!isBoss) return;
+    if (bossStage > bossPrev.current && bossStage < 3) {
+      const M = MJX();
+      if (M) { M.shake(charboxRef.current, 5 + bossStage * 3); M.burst(charboxRef.current?.querySelector(".cracks") || charboxRef.current, { color: "#FF3B6B", color2: "#C08BF0", count: 10 + bossStage * 8 }); }
+      setLine(pick(BOSS_LINES[bossStage])); setMood(bossStage >= 2 ? "sad" : "idle");
+    }
+    bossPrev.current = bossStage;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bossStage, isBoss]);
 
   const onKeyDown = (e) => { if (e.key === "Enter") { e.preventDefault(); if (typed.trim()) submit(); } };
 
@@ -1627,6 +1845,10 @@ useEffect(() => {
       {screen === "title" && (
         <div className="stage" style={{ "--accent": theme.accent, "--accent2": theme.accent2 }}>
           <Scene theme={LEVELS[0].theme} />
+          <div className="mybadge" aria-label="称号と自己ベスト">
+            {titleName && <span className="mytitle">{titleName}</span>}
+            <span className="mybest"><em>ベスト</em>{(MJX()?.best(APP, `${course}-g${grade}-score`) ?? 0).toLocaleString()}<small>pt</small></span>
+          </div>
           <div className="layer center-col">
             <div className="logo">
               <span className="logo-jp out">英語で</span><span className="logo-go out">GO!</span>
@@ -1637,7 +1859,7 @@ useEffect(() => {
                   <div className="castart"><Character ckey={l.char.key} mood="idle" className="char-sm" /></div>
                   <b>STAGE {l.lv}</b>
                   <span>{l.char.name}</span>
-                  <i>{l.stage} / {l.count}問</i>
+                  <i>{l.stage} / {counts[l.lv - 1]}問</i>
                 </div>
               ))}
             </div>
@@ -1649,14 +1871,23 @@ useEffect(() => {
               <button className={"pill" + (sound ? " pill-on" : "")} onClick={() => setSound(!sound)}>効果音 {sound ? "ON" : "OFF"}</button>
               <button className={"pill" + (bgmOn ? " pill-on" : "")} onClick={() => setBgmOn(!bgmOn)}>BGM {bgmOn ? "ON" : "OFF"}</button>
             </div>
-            <div className="pills gradepills" role="group" aria-label="学年">
-              {[1, 2, 3].map((g) => (
-                <button key={g} className={"pill gradepill" + (grade === g ? " pill-on" : "")} aria-pressed={grade === g}
-                  onClick={() => setGrade(g)}>{GRADE_LABEL[g]}</button>
-              ))}
+            <div className="selrow">
+              <div className="pills gradepills" role="group" aria-label="学年">
+                {[1, 2, 3].map((g) => (
+                  <button key={g} className={"pill gradepill" + (grade === g ? " pill-on" : "")} aria-pressed={grade === g}
+                    onClick={() => setGrade(g)}>{GRADE_LABEL[g]}</button>
+                ))}
+              </div>
+              <div className="pills gradepills coursepills" role="group" aria-label="コース">
+                {Object.values(COURSES).map((c) => (
+                  <button key={c.key} className={"pill gradepill" + (course === c.key ? " pill-on" : "")} aria-pressed={course === c.key}
+                    onClick={() => setCourse(c.key)}>{c.label}<small>{courseTotal(c.key)}問</small></button>
+                ))}
+              </div>
             </div>
             <div className="btnrow">
               <button className="gobtn" onClick={startGame}>スタート</button>
+              {rvCount > 0 && <button className="gobtn rv" onClick={startReview}>復習<small>{rvCount}語</small></button>}
               {fsSupported && (
                 <button className="gobtn sub" onClick={toggleFs}>
                   {isFs ? "全画面をやめる" : "全画面表示"}
@@ -1670,7 +1901,7 @@ useEffect(() => {
 
       {/* ================= プレイ ================= */}
       {screen === "play" && current && (
-        <div className={"stage" + (tapKeys ? " tapmode" : "")} style={{ "--accent": theme.accent, "--accent2": theme.accent2 }}>
+        <div ref={stageElRef} className={"stage" + (tapKeys ? " tapmode" : "")} style={{ "--accent": theme.accent, "--accent2": theme.accent2 }}>
           <Scene theme={theme} />
           <div className="layer play">
 
@@ -1678,11 +1909,15 @@ useEffect(() => {
             <div className="topbar">
               <div className="hud-tl">
                 <div className="capsule">
-                  {Array.from({ length: TOTAL_Q }).map((_, i) => (
-                    <span key={i}
-                      className={"cell" + (i < clearedQ ? " cell-done" : "") + (i === clearedQ ? " cell-now" : "")}
-                      style={i < clearedQ ? { background: CELL_COLORS[i] } : undefined}>{i + 1}</span>
-                  ))}
+                  {Array.from({ length: totalQ }).map((_, i) => {
+                    const doneQ = review ? solved : clearedQ;
+                    const bad = review && rvNg.some((w) => w[0] === (rvList[i] || [])[0]);
+                    return (
+                      <span key={i}
+                        className={"cell" + (i < doneQ ? " cell-done" : "") + (i === doneQ ? " cell-now" : "") + (totalQ > 12 ? " cell-xs" : "")}
+                        style={i < doneQ ? { background: bad ? "#8A7FA8" : cellColor(i, totalQ) } : undefined}>{i + 1}</span>
+                    );
+                  })}
                 </div>
                 <div className="pills">
                   <button className={"pill" + (showSlots ? " pill-on" : "")} onClick={() => { setShowSlots(!showSlots); if (!tapKeys) inputRef.current?.focus(); }}>マスひょうじ</button>
@@ -1696,9 +1931,25 @@ useEffect(() => {
                 </div>
               </div>
               <div className="hud-tr">
-                <div className="diff"><em>STAGE {level.lv}</em>{tagFor(grade, lvIndex)}</div>
-                <div className="stagename">{level.stage}{grade !== 3 && <span className="gradetag">{GRADE_LABEL[grade]}</span>}</div>
+                {review ? (
+                  <>
+                    <div className="diff diff-rv"><em>REVIEW</em>復習モード</div>
+                    <div className="stagename">まちがえた単語<span className="gradetag">{GRADE_LABEL[grade]}まで</span></div>
+                  </>
+                ) : (
+                  <>
+                    <div className="diff"><em>STAGE {level.lv}</em>{tagFor(grade, lvIndex)}</div>
+                    <div className="stagename">{level.stage}{grade !== 3 && <span className="gradetag">{GRADE_LABEL[grade]}</span>}
+                      {MJX()?.best(APP, recKey(course, grade, level.lv, "t")) != null && (
+                        <span className="besttag">最速 {fmtSec(MJX().best(APP, recKey(course, grade, level.lv, "t")))}</span>
+                      )}
+                    </div>
+                  </>
+                )}
                 <div className="hudrow">
+                  {review ? (
+                    <div className="scorebox">おぼえた {rvOk.length}<small>/ {rvList.length}語</small></div>
+                  ) : (<>
                   <div className="lifebox">
                     {Array.from({ length: MAX_LIFE }).map((_, i) => (
                       <svg key={i} viewBox="0 0 24 22" className={"hp" + (i < life ? " hp-on" : "")}>
@@ -1707,6 +1958,7 @@ useEffect(() => {
                     ))}
                   </div>
                   <div className="scorebox">{score.toLocaleString()}<small>pt</small></div>
+                  </>)}
                 </div>
               </div>
             </div>
@@ -1714,15 +1966,26 @@ useEffect(() => {
             {/* --- 中段：キャラ＋出題 --- */}
             <div className="mid">
               <div className="charcol">
-                <div className="bubble">{line}<i /></div>
-                <div className="charbox"><Character ckey={level.char.key} mood={mood} className="char-stage" /></div>
+                <div className="bubble" key={line}>{line}<i /></div>
+                <div className={"charbox" + (isBoss ? " bossfx dmg-" + bossStage : "")} ref={charboxRef}>
+                  <Character ckey={level.char.key} mood={mood} className="char-stage" />
+                  {isBoss && (
+                    <div className="cracks" aria-hidden="true"><i className="ck1" /><i className="ck2" /><i className="ck3" /></div>
+                  )}
+                </div>
+                {isBoss && (
+                  <div className="bosshp" aria-label={`魔王のHP ${Math.round(bossHp * 100)}%`}>
+                    <em>HP</em>
+                    <span className="bosshp-bar"><i style={{ width: `${Math.round(bossHp * 100)}%` }} /></span>
+                  </div>
+                )}
                 <div className="nameplate">{level.char.name}</div>
               </div>
               <div className="qcol">
                 <div className="qlabel">この意味の英単語は？</div>
                 <div className="qbox">
                   <div className="qslab" />
-                  <div className={"meaning out" + (ratio < 0.25 ? " danger" : "")}>{current[1]}</div>
+                  <div ref={meaningRef} className={"meaning out" + (ratio < 0.25 ? " danger" : "")}>{current[1]}</div>
                 </div>
               </div>
             </div>
@@ -1781,7 +2044,7 @@ useEffect(() => {
                 <div className="fhead out">{flash.ok ? "せいかい！" : flash.gaveUp ? "ギブアップ" : "時間切れ"}</div>
                 <div className="fans out">{flash.answer}</div>
                 <div className="fmean">{flash.meaning}</div>
-                {!flash.ok && !flash.last && <div className="fnext">同じステージの別の問題へ</div>}
+                {!flash.ok && !flash.last && <div className="fnext">{review ? "つぎの単語へ（この単語は復習リストに残ります）" : "同じステージの別の問題へ"}</div>}
               </div>
             )}
 
@@ -1813,17 +2076,20 @@ useEffect(() => {
             <div className="vsrow">
               <div className="cast" style={{ "--c": theme.accent }}>
                 <div className="castart"><Character ckey={level.char.key} mood="sad" className="char-sm" /></div>
-                <span>{level.char.name}</span><i>クリア！</i>
+                <span>{level.char.name}</span>
+                <i className="recline">平均 <b>{fmtSec(stageRec && stageRec.avg)}</b></i>
+                <i className={"recline" + (stageRec && stageRec.isNew ? " rec-new" : "")}>{stageRec && stageRec.isNew ? "新記録！" : `最速 ${fmtSec(stageRec && stageRec.bestT)}`}</i>
               </div>
               <div className="vs out">NEXT</div>
               <div className="cast" style={{ "--c": LEVELS[lvIndex + 1].theme.accent }}>
                 <div className="castart"><Character ckey={LEVELS[lvIndex + 1].char.key} mood="idle" className="char-sm" /></div>
                 <span>{LEVELS[lvIndex + 1].char.name}</span>
                 <i>{LEVELS[lvIndex + 1].stage}</i>
+                <i className="recline">最速 {fmtSec(MJX()?.best(APP, recKey(course, grade, lvIndex + 2, "t")))}</i>
               </div>
             </div>
             <div className="board">
-              スコア <b>{score.toLocaleString()}</b> ／ 残り <b>{life}</b>ライフ ／ つぎは <b>{LEVELS[lvIndex + 1].count}問</b>
+              スコア <b ref={scoreNumRef}>{score.toLocaleString()}</b> ／ 残り <b>{life}</b>ライフ ／ つぎは <b>{countFor(lvIndex + 1)}問</b>
             </div>
             <button className="gobtn" onClick={() => startLevel(lvIndex + 1)} autoFocus>つぎのステージへ</button>
           </div>
@@ -1841,12 +2107,17 @@ useEffect(() => {
             </div>
             <div className="board wide">
               <div className="stats">
-                <div className="stat"><span>スコア</span><b>{score.toLocaleString()}</b></div>
-                <div className="stat"><span>正解</span><b>{clearedQ}/{TOTAL_Q}</b></div>
+                <div className="stat"><span>スコア</span><b ref={(el) => { statRefs.current.score = el; }}>{score.toLocaleString()}</b></div>
+                <div className="stat"><span>正解</span><b ref={(el) => { statRefs.current.ok = el; }}>{clearedQ}/{courseTotal(course)}</b></div>
                 <div className="stat"><span>到達</span><b>STAGE {level.lv}</b></div>
-                <div className="stat"><span>打ちまちがえ</span><b>{typos}</b></div>
+                <div className="stat"><span>打ちまちがえ</span><b ref={(el) => { statRefs.current.typo = el; }}>{typos}</b></div>
               </div>
-              <h3>復習リスト(答えられなかった単語)</h3>
+              <div className="resmeta">
+                <span>{COURSES[course].label}コース・{GRADE_LABEL[grade]}</span>
+                {newRec ? <span className="rec-new">新記録！</span> : <span>ベスト {(MJX()?.best(APP, `${course}-g${grade}-score`) ?? score).toLocaleString()}pt</span>}
+                {titleName && <span>称号 {titleName}</span>}
+              </div>
+              <h3>今回まちがえた単語</h3>
               {missedList.length === 0 ? (<p>ミスなし。文句なしです。</p>) : (
                 <ul className="rlist">
                   {missedList.map(([w, m]) => (<li key={w}><span className="rw">{w}</span><span className="rm">{m}</span></li>))}
@@ -1856,6 +2127,34 @@ useEffect(() => {
             <div className="btnrow">
               <button className="gobtn" onClick={startGame}>もう一度</button>
               <button className="gobtn sub" onClick={() => setScreen("title")}>タイトルへ</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= 復習の結果 ================= */}
+      {screen === "rvresult" && (
+        <div className="stage" style={{ "--accent": theme.accent, "--accent2": theme.accent2 }}>
+          <Scene theme={theme} />
+          <div className="layer center-col">
+            <Character ckey={level.char.key} mood={rvNg.length ? "idle" : "happy"} className="char-sm" />
+            <div className="big out ok">復習おわり</div>
+            <div className="board wide">
+              <div className="stats">
+                <div className="stat"><span>おぼえた</span><b>{rvOk.length}語</b></div>
+                <div className="stat"><span>もう一度</span><b>{rvNg.length}語</b></div>
+                <div className="stat"><span>復習リストの残り</span><b>{rvCount}語</b></div>
+              </div>
+              <h3>今回まちがえた単語（復習リストに残ります）</h3>
+              {rvNg.length === 0 ? (<p>ぜんぶ正解。復習リストから消えました。</p>) : (
+                <ul className="rlist">
+                  {rvNg.map(([w, m]) => (<li key={w}><span className="rw">{w}</span><span className="rm">{m}</span></li>))}
+                </ul>
+              )}
+            </div>
+            <div className="btnrow">
+              {rvCount > 0 && <button className="gobtn" onClick={startReview}>つづけて復習</button>}
+              <button className={"gobtn" + (rvCount > 0 ? " sub" : "")} onClick={() => setScreen("title")}>タイトルへ</button>
             </div>
           </div>
         </div>
@@ -2204,7 +2503,78 @@ const CSS = `
   .btnrow{width:100%;}
   .gobtn{font-size:16px; padding:9px 24px;}
 }
-@media (prefers-reduced-motion:reduce){ .edg *{animation:none !important;} }
+/* ================= フェーズ4：コース・記録・復習・ボス ================= */
+/* 画面の出入り：中身を少しずつずらして下から出す（合計1.5秒以内） */
+.center-col > *{animation:rise .42s cubic-bezier(.22,1,.36,1) both;}
+.center-col > *:nth-child(2){animation-delay:.06s} .center-col > *:nth-child(3){animation-delay:.12s}
+.center-col > *:nth-child(4){animation-delay:.18s} .center-col > *:nth-child(5){animation-delay:.24s}
+.center-col > *:nth-child(6){animation-delay:.3s}  .center-col > *:nth-child(7){animation-delay:.36s}
+@keyframes rise{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
+.gobtn,.pill{transition:transform .18s cubic-bezier(.4,0,.2,1), box-shadow .18s cubic-bezier(.4,0,.2,1), background-color .25s cubic-bezier(.4,0,.2,1);}
+.gobtn:active{transform:translateY(4px) scale(.97);}
+.pill:active{transform:translateY(3px) scale(.97);}
+@media (hover:hover){
+  .gobtn:hover{transform:scale(1.04);}
+  .pill:hover{transform:scale(1.04);}
+}
+.mybadge{position:absolute; top:12px; right:14px; z-index:3; display:flex; align-items:center; gap:6px;
+  animation:rise .42s cubic-bezier(.22,1,.36,1) .2s both;}
+.mytitle{background:var(--out); color:var(--yellow); border:3px solid var(--paper); border-radius:999px;
+  font-size:13px; font-weight:900; padding:3px 13px; box-shadow:0 3px 0 #00000040; letter-spacing:.06em;}
+.mybest{background:#1B0F33C8; border:3px solid var(--out); border-radius:999px; padding:3px 12px;
+  font-family:var(--disp); font-size:15px; font-weight:800; color:#fff;}
+.mybest em{font-style:normal; font-family:var(--round); font-size:12px; color:#C9BEEA; margin-right:6px;}
+.mybest small{font-size:12px; opacity:.75; margin-left:2px;}
+.selrow{display:flex; gap:18px; flex-wrap:wrap; justify-content:center; align-items:center; z-index:2;}
+.coursepills .pill small{font-size:12px; margin-left:6px; opacity:.75;}
+.gobtn small{font-size:13px; margin-left:6px; opacity:.8;}
+.gobtn.rv{background:#FFE1E6;}
+.cell.cell-xs{width:22px; height:24px; font-size:12px;}
+.diff-rv{background:#2FB37A;}
+.besttag{display:inline-block; margin-left:6px; padding:1px 8px; border-radius:999px; background:#00000066;
+  color:#FFE48A; font-size:12px; font-weight:800; vertical-align:middle;}
+.recline{display:block;}
+.cast .recline b{background:none; color:var(--out); padding:0; font-family:var(--round); font-size:inherit; letter-spacing:0;}
+.cast i.recline{font-size:12px; opacity:.85;}
+.rec-new{color:#D9304A !important; font-weight:900; opacity:1 !important;}
+.board .rec-new{color:#FFC13D !important;}
+.resmeta{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; font-size:13px; color:#EFE9FF; margin:-4px 0 8px;}
+
+/* ボス：打つほど HP が減り、見た目が段階的に変わる（CSS のフィルタとひび割れのオーバーレイ） */
+.charbox{position:relative;}
+.bossfx .char-stage{transition:filter .45s cubic-bezier(.4,0,.2,1);}
+.bossfx.dmg-1 .char-stage{filter:drop-shadow(0 8px 5px #00000035) drop-shadow(0 0 10px #FF3B6B88) saturate(1.15);}
+.bossfx.dmg-2 .char-stage{filter:drop-shadow(0 8px 5px #00000035) drop-shadow(0 0 16px #FF3B6B) saturate(1.4) brightness(.92) hue-rotate(-18deg);}
+.bossfx.dmg-3 .char-stage{filter:brightness(1.6) saturate(.4);}
+.bossfx{container-type:size;}
+/* ひびは SVG の描画範囲（下寄せ・200:210）に重ねる */
+.cracks{position:absolute; bottom:0; left:50%; transform:translateX(-50%); aspect-ratio:200/210;
+  width:min(100%, 95cqh); pointer-events:none;}
+.cracks i{position:absolute; display:block; background:#1A0B2A; opacity:0; transform:scale(.4);
+  transition:opacity .3s cubic-bezier(.4,0,.2,1), transform .35s cubic-bezier(.22,1,.36,1);
+  filter:drop-shadow(0 0 2px #FFB3CF);}
+.ck1{left:44%; top:20%; width:16%; height:28%;
+  clip-path:polygon(48% 0,58% 0,52% 22%,72% 34%,50% 58%,62% 100%,52% 100%,40% 60%,60% 36%,40% 24%);}
+.ck2{left:27%; top:38%; width:22%; height:20%;
+  clip-path:polygon(100% 20%,100% 32%,70% 38%,56% 70%,30% 66%,0 100%,0 86%,24% 56%,50% 58%,62% 28%);}
+.ck3{left:52%; top:58%; width:22%; height:24%;
+  clip-path:polygon(0 10%,0 22%,30% 30%,44% 64%,74% 60%,100% 96%,100% 82%,78% 50%,50% 52%,38% 18%);}
+.dmg-1 .ck1, .dmg-2 .ck1, .dmg-2 .ck2, .dmg-2 .ck3{opacity:.92; transform:none;}
+.dmg-3 .cracks{opacity:0; transition:opacity .2s;}
+.bosshp{flex:none; display:flex; align-items:center; gap:6px; width:min(100%,170px);}
+.bosshp em{font-style:normal; font-family:var(--disp); font-size:12px; font-weight:800; color:#fff;
+  background:#FF3B6B; border:2px solid var(--out); border-radius:999px; padding:0 7px;}
+.bosshp-bar{flex:1; height:12px; background:#1B0F33CC; border:3px solid var(--out); border-radius:999px; overflow:hidden;}
+.bosshp-bar i{display:block; height:100%; background:linear-gradient(90deg,#FF3B6B,#FF9AD0);
+  transition:width .35s cubic-bezier(.4,0,.2,1);}
+
+@media (max-width:640px){
+  .mybadge{top:8px; right:8px;}
+  .mytitle{font-size:12px; padding:2px 9px;}
+  .mybest{font-size:13px; padding:2px 9px;}
+  .selrow{gap:8px;}
+}
+@media (prefers-reduced-motion:reduce){ .edg *{animation:none !important; transition:none !important;} }
 `;
 
 
