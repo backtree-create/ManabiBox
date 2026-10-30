@@ -4,6 +4,7 @@
  <script src="../../config.js"></script>
  <script src="../../hub-progress.js"></script>
  <script src="../../manabi-connect.js"></script>
+ <script src="../../manabi-juice.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>サイエンスクエスト ― 観測塔</title>
@@ -75,7 +76,7 @@ button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipul
 /* 画面内でスクロールする領域だけ慣性を許す */
 #quizBox,.review-list,.clear-card{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
 #stage{
-  position:relative;width:100vw;height:100vh;height:100dvh;overflow:hidden;
+  position:relative;width:100vw;height:100vh;height:100dvh;overflow:hidden;overflow:clip;
   background:
     radial-gradient(ellipse 60% 45% at 22% 8%, rgba(120,110,220,.16), transparent 62%),
     radial-gradient(ellipse 60% 55% at 82% 96%, rgba(176,110,245,.16), transparent 64%),
@@ -301,7 +302,7 @@ button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipul
 /* ---------- BATTLE ---------- */
 #screen-battle{gap:clamp(6px,1.2vh,12px);}
 /* ハブの「もどる」ボタン(左上固定)と全画面ボタンの下に HUD を置く */
-.hud-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-shrink:0;padding-top:28px;}
+.hud-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-shrink:0;padding-top:38px;}
 .floor-tag{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:clamp(10px,1.4vh,12px);letter-spacing:.14em;}
 .floor-tag .sigil{filter:drop-shadow(0 0 6px var(--elem));}
 #progressDots{display:flex;gap:6px;}
@@ -668,8 +669,8 @@ button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipul
 #screen-defeat .clear-title{color:var(--bad);}
 #screen-defeat .rays{opacity:.16;background:repeating-conic-gradient(from 0deg,rgba(255,111,125,.2) 0deg 3deg,transparent 3deg 16deg);}
 
+#cornerBtns{position:absolute;top:10px;right:12px;z-index:45;display:flex;gap:8px;align-items:center;}
 #fullscreenBtn{
-  position:absolute;top:10px;right:12px;z-index:45;
   font-family:'Cinzel',serif;font-size:10px;letter-spacing:.2em;
   background:rgba(14,10,29,.7);color:var(--muted);
   border:1px solid var(--hair-soft);border-radius:1px;
@@ -717,6 +718,97 @@ button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipul
   .load-dial{width:min(34vh,180px);}
   .screen{padding-top:8px;padding-bottom:8px;}
 }
+/* ============ フェーズ4: 音・観測記録・連続正答・再観測・途中式 ============ */
+#soundBtn{
+  font-family:'Zen Kaku Gothic New',sans-serif;font-weight:700;font-size:12px;letter-spacing:.14em;
+  background:rgba(14,10,29,.7);color:var(--brass-lt);
+  border:1px solid var(--hair);border-radius:1px;
+  padding:0 14px;min-height:44px;min-width:76px;cursor:pointer;
+  transition:color .3s cubic-bezier(.4,0,.2,1),border-color .3s cubic-bezier(.4,0,.2,1),transform .15s cubic-bezier(.4,0,.2,1);
+}
+#soundBtn[aria-pressed="false"]{color:var(--muted);border-color:var(--hair-soft);}
+#soundBtn:active,#fullscreenBtn:active{transform:scale(.97);}
+@media (hover:hover){ #soundBtn:hover{border-color:var(--brass);color:#fff;} }
+#fullscreenBtn{min-height:44px;}
+
+/* タイトル: 称号と観測記録(1行) */
+#recordRow{
+  display:flex;align-items:center;justify-content:center;gap:clamp(10px,2vw,16px);flex-wrap:wrap;
+  font-size:13px;color:var(--muted);letter-spacing:.06em;min-height:30px;
+}
+#recTitle{
+  font-family:'Shippori Mincho B1',serif;font-weight:600;font-size:14px;letter-spacing:.14em;
+  color:var(--brass-lt);padding:4px 14px;border:1px solid var(--hair);border-radius:999px;
+  background:linear-gradient(rgba(214,178,106,.14),rgba(214,178,106,.03));
+}
+#recTitle:empty{display:none;}
+#recBody{display:flex;gap:clamp(10px,2vw,18px);flex-wrap:wrap;justify-content:center;}
+#recBody b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums;}
+#recBody .rec-sep{width:1px;align-self:stretch;background:var(--hair-soft);}
+#recordRow.swap{animation:recSwap .35s cubic-bezier(.4,0,.2,1);}
+@keyframes recSwap{from{opacity:.25;transform:translateY(4px);}to{opacity:1;transform:none;}}
+#startRow{display:flex;gap:12px;align-items:stretch;justify-content:center;flex-wrap:wrap;}
+#startRow .btn{min-height:48px;}
+#btnStart:active,#btnReview:active,.rv-actions .btn:active{transform:scale(.97);}
+#btnReview{display:none;color:var(--brass-lt);border-color:var(--hair);}
+#btnReview.on{display:inline-block;}
+#btnReview .n{font-family:'Roboto Mono',monospace;margin-left:4px;}
+
+/* 戦闘: 連続正答 */
+.combo-tag{
+  font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--brass-lt);
+  padding:3px 9px;border:1px solid var(--hair);border-radius:999px;white-space:nowrap;
+  opacity:0;transform:translateY(4px) scale(.9);
+  transition:opacity .3s cubic-bezier(.4,0,.2,1),transform .3s cubic-bezier(.4,0,.2,1);
+}
+.combo-tag.on{opacity:1;transform:none;}
+.combo-tag.bump{animation:comboBump .38s cubic-bezier(.22,1,.36,1);}
+@keyframes comboBump{0%{transform:scale(1.35);}100%{transform:scale(1);}}
+.combo-tag .cg{display:inline-flex;gap:3px;margin-left:6px;vertical-align:middle;}
+.combo-tag .cg i{width:6px;height:6px;border:1px solid var(--hair);transform:rotate(45deg);display:block;transition:background .3s cubic-bezier(.4,0,.2,1);}
+.combo-tag .cg i.on{background:var(--brass);border-color:var(--brass);}
+.pips.refill i.on:last-of-type{animation:popIn .5s var(--ease);}
+
+/* 解説の途中式 */
+.work-line{
+  font-family:'Roboto Mono','Zen Kaku Gothic New',monospace;font-size:clamp(13px,1.8vh,16px);
+  color:#fff;letter-spacing:.02em;line-height:1.7;
+  padding:8px 14px;border:1px solid rgba(214,178,106,.35);border-left:3px solid var(--brass);
+  background:rgba(214,178,106,.08);border-radius:2px;
+  animation:riseIn .4s cubic-bezier(.22,1,.36,1) .12s both;
+}
+.work-line:empty{display:none;}
+.work-line .cap{display:block;margin-bottom:2px;font-size:12px;letter-spacing:.2em;}
+.review-item .work{font-family:'Roboto Mono','Zen Kaku Gothic New',monospace;color:var(--brass-lt);margin-top:2px;}
+
+/* 再観測 */
+#screen-review{gap:clamp(10px,1.8vh,16px);}
+.rv-box{
+  width:min(96vw,660px);max-height:calc(100% - 60px);overflow-y:auto;
+  padding:clamp(16px,2.8vh,28px) clamp(16px,3.2vw,32px);
+  display:flex;flex-direction:column;gap:clamp(10px,1.7vh,16px);text-align:left;
+  animation:cardRise .45s cubic-bezier(.22,1,.36,1) both;
+}
+.rv-box::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--elem),transparent);}
+.rv-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.rv-head .ttl{font-family:'Shippori Mincho B1',serif;font-weight:600;font-size:15px;letter-spacing:.16em;color:var(--brass-lt);}
+.rv-head .cnt{font-family:'Roboto Mono',monospace;font-size:13px;color:var(--muted);}
+.rv-meta{font-size:12px;color:var(--elem);letter-spacing:.14em;}
+#rvQ{font-family:'Shippori Mincho B1',serif;font-weight:600;font-size:clamp(14px,2.1vh,18px);line-height:1.85;}
+#rvChoices{display:flex;flex-direction:column;gap:8px;}
+#rvAsk,#rvFb,#rvDone{display:flex;flex-direction:column;gap:clamp(10px,1.6vh,14px);}
+#rvFb,#rvDone{display:none;animation:riseIn .4s cubic-bezier(.22,1,.36,1);}
+#rvFb.on,#rvDone.on{display:flex;}
+#rvFbHead{font-family:'Shippori Mincho B1',serif;font-weight:600;font-size:clamp(14px,2vh,17px);letter-spacing:.1em;}
+#rvFbHead.good{color:var(--good);} #rvFbHead.bad{color:var(--bad);}
+#rvFbExp{font-size:clamp(12px,1.6vh,14px);line-height:1.9;color:#ded8ef;border-left:2px solid var(--hair);padding-left:14px;}
+.rv-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
+.rv-actions .btn{min-height:46px;}
+.rv-sum{display:flex;gap:clamp(14px,4vw,34px);justify-content:center;padding:6px 0;}
+.rv-sum .stat .cap{font-size:12px;letter-spacing:.14em;}
+.rv-msg{text-align:center;font-size:14px;color:var(--text);line-height:1.8;}
+.rv-quit{min-height:44px;padding:0 16px;}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
 }
@@ -747,7 +839,10 @@ button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipul
   <div id="starfield"></div>
   <div id="vignette"></div>
   <div id="grain"></div>
-  <button id="fullscreenBtn">FULLSCREEN</button>
+  <div id="cornerBtns">
+    <button id="soundBtn" type="button" aria-pressed="true" aria-label="音のオン・オフ">音 ON</button>
+    <button id="fullscreenBtn">FULLSCREEN</button>
+  </div>
 
   <!-- TITLE -->
   <div class="screen center active" id="screen-title">
@@ -758,7 +853,11 @@ button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipul
     <div id="sigilRow" class="rise d3"></div>
     <div id="diffRow" class="rise d4"></div>
     <div id="gradeRow" class="rise d4" role="group" aria-label="学年"></div>
-    <button class="btn primary rise d5" id="btnStart">登塔する</button>
+    <div id="recordRow" class="rise d5" aria-label="観測記録"><span id="recTitle"></span><span id="recBody"></span></div>
+    <div id="startRow" class="rise d5">
+      <button class="btn primary" id="btnStart">登塔する</button>
+      <button class="btn" id="btnReview" type="button">再観測<span class="n" id="btnReviewN"></span></button>
+    </div>
   </div>
 
   <!-- LOADING -->
@@ -833,7 +932,7 @@ button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipul
 
     <div class="commands">
       <button class="btn primary" id="btnAttack">こうげき</button>
-      <div class="skill-chip"><span class="cap">Spectrum</span><span class="pips" id="spectrumPips"></span></div>
+      <div class="skill-chip"><span class="cap">Spectrum</span><span class="pips" id="spectrumPips"></span><span class="combo-tag" id="comboTag"></span></div>
     </div>
 
     <!-- QUIZ -->
@@ -844,13 +943,14 @@ button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipul
           <div id="quizQuestion" style="margin:12px 0 14px"></div>
           <div class="hint-bar">
             <button class="hint-btn" id="btnSpectrum">分光 <span class="pips" id="spectrumPipsQuiz"></span></button>
-            <span class="hint-note">光を分け、偽りの理を 二つ 退ける</span>
+            <span class="hint-note">偽りの理を 二つ 退ける ・ 3連続正答で 1回 回復</span>
           </div>
           <div id="quizChoices"></div>
         </div>
         <div id="quizFeedback">
           <div id="feedbackHeadline"></div>
           <div id="feedbackExp"></div>
+          <div class="work-line" id="feedbackWork"></div>
           <button class="btn" id="feedbackContinue">つづける</button>
         </div>
       </div>
@@ -880,6 +980,36 @@ button{font:inherit;-webkit-appearance:none;appearance:none;touch-action:manipul
       <div class="btn-row">
         <button class="btn primary" id="btnRetryFloor">この層に 再挑戦</button>
         <button class="btn ghost" id="btnGiveUp">塔を 降りる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RE-OBSERVE (誤答だけを出す復習。ハブには送らない) -->
+  <div class="screen center" id="screen-review">
+    <div class="panel rv-box" id="rvBox">
+      <div class="rv-head">
+        <span class="ttl">再観測</span>
+        <span class="cnt" id="rvCount"></span>
+        <button class="btn ghost rv-quit" id="rvQuit" type="button">やめる</button>
+      </div>
+      <div id="rvAsk">
+        <div class="rv-meta" id="rvMeta"></div>
+        <div id="rvQ"></div>
+        <div id="rvChoices"></div>
+      </div>
+      <div id="rvFb">
+        <div id="rvFbHead"></div>
+        <div id="rvFbExp"></div>
+        <div class="work-line" id="rvFbWork"></div>
+        <div class="rv-actions"><button class="btn primary" id="rvNext" type="button">つぎへ</button></div>
+      </div>
+      <div id="rvDone">
+        <div class="rv-msg" id="rvDoneMsg"></div>
+        <div class="rv-sum stat-grid" id="rvSum"></div>
+        <div class="rv-actions" style="justify-content:center">
+          <button class="btn" id="rvAgain" type="button">もう一度</button>
+          <button class="btn primary" id="rvBack" type="button">タイトルへ</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1262,7 +1392,7 @@ function iR(r,lo,hi,step){step=step||1;return lo+Math.floor(r()*Math.floor((hi-l
 function pk(r,a){return a[Math.floor(r()*a.length)];}
 function nf(v){const n=Math.round(v*1000)/1000;return String(n);}
 /* 数値問題:正解と、誤りやすい値から誤答を3つ作る */
-function numQ(q,val,unit,cands,exp){
+function numQ(q,val,unit,cands,exp,work){
   const f=v=>nf(v)+unit, ans=f(val), used=new Set([ans]), w=[];
   for(let i=0;i<cands.length&&w.length<3;i++){
     const c=cands[i];
@@ -1274,7 +1404,9 @@ function numQ(q,val,unit,cands,exp){
   while(w.length<3&&k<24){const s=f(val*k);if(!used.has(s)){used.add(s);w.push(s);}k++;}
   while(w.length<3){const s=f(val+w.length*0.5+0.5);if(!used.has(s)){used.add(s);w.push(s);}else break;}
   if(w.length<3) return null;
-  return {q:q,choices:[ans].concat(w),a:0,exp:exp,kind:"calc"};
+  const o={q:q,choices:[ans].concat(w),a:0,exp:exp,kind:"calc"};
+  if(work) o.work=work;   /* 途中式(解説の下に式の形で出す) */
+  return o;
 }
 /* 用語問題:同じ表の別項目を誤答にする */
 function factQ(r,q,ans,pool,exp,g){
@@ -1414,49 +1546,64 @@ const GB={
 physics:[
  G(2,r=>{const R=iR(r,2,60,2),I=iR(r,1,9),V=I*R;
    return numQ(`${V}Vの電源に${R}Ωの抵抗をつないだとき、流れる電流は何Aか。`,I,"A",[V*R,V+R,V/(R/2),I*2],
-     `オームの法則(電流=電圧÷抵抗)より ${V}÷${R}=${I}A。`);}),
+     `オームの法則(電流=電圧÷抵抗)より ${V}÷${R}=${I}A。`,
+     `I = V ÷ R = ${V} ÷ ${R} = ${I} A`);}),
  G(2,r=>{const R=iR(r,3,50),I=iR(r,2,9),V=I*R;
    return numQ(`${R}Ωの抵抗に${I}Aの電流を流すには、何Vの電圧が必要か。`,V,"V",[R+I,R/I,V*2,V/2],
-     `電圧=電流×抵抗より ${I}×${R}=${V}V。`);}),
+     `電圧=電流×抵抗より ${I}×${R}=${V}V。`,
+     `V = I × R = ${I} × ${R} = ${V} V`);}),
  G(2,r=>{const I=iR(r,2,10),R=iR(r,3,40),V=I*R;
    return numQ(`${V}Vの電圧を加えると${I}Aの電流が流れた。この抵抗は何Ωか。`,R,"Ω",[V*I,V+I,I/V*100,R*2],
-     `抵抗=電圧÷電流より ${V}÷${I}=${R}Ω。`);}),
+     `抵抗=電圧÷電流より ${V}÷${I}=${R}Ω。`,
+     `R = V ÷ I = ${V} ÷ ${I} = ${R} Ω`);}),
  G(2,r=>{const a=iR(r,2,40,2),b=iR(r,2,40,2);if(a===b)return null;
    return numQ(`${a}Ωと${b}Ωの抵抗を直列につないだときの合成抵抗は何Ωか。`,a+b,"Ω",[a*b/(a+b),a*b,Math.abs(a-b),(a+b)/2],
-     `直列では合成抵抗は各抵抗の和になるので ${a}+${b}=${a+b}Ω。`);}),
+     `直列では合成抵抗は各抵抗の和になるので ${a}+${b}=${a+b}Ω。`,
+     `R = R1 + R2 = ${a} + ${b} = ${a+b} Ω`);}),
  G(2,r=>{const a=iR(r,4,40,4);
    return numQ(`${a}Ωの抵抗を2つ並列につないだときの合成抵抗は何Ωか。`,a/2,"Ω",[a*2,a,a*a,a/4],
-     `同じ抵抗2つの並列では、合成抵抗はもとの半分の ${a/2}Ωになる。`);}),
+     `同じ抵抗2つの並列では、合成抵抗はもとの半分の ${a/2}Ωになる。`,
+     `R = ${a} ÷ 2 = ${nf(a/2)} Ω`);}),
  G(2,r=>{const V=iR(r,3,100),I=iR(r,1,9);
    return numQ(`${V}Vの電圧で${I}Aの電流が流れる器具の消費電力は何Wか。`,V*I,"W",[V/I,V+I,V*I*2,V-I],
-     `電力=電圧×電流より ${V}×${I}=${V*I}W。`);}),
+     `電力=電圧×電流より ${V}×${I}=${V*I}W。`,
+     `P = V × I = ${V} × ${I} = ${V*I} W`);}),
  G(2,r=>{const P=iR(r,200,1500,100),h=pk(r,[0.5,1,1.5,2,3]);
    return numQ(`消費電力${P}Wの器具を${h}時間使ったときの電力量は何Whか。`,P*h,"Wh",[P/h,P+h*100,P*h*60,P],
-     `電力量=電力×時間より ${P}×${h}=${P*h}Wh。`);}),
+     `電力量=電力×時間より ${P}×${h}=${P*h}Wh。`,
+     `電力量 = 電力 × 時間 = ${P} × ${h} = ${nf(P*h)} Wh`);}),
  G(3,r=>{const F=iR(r,5,60,5),s=iR(r,2,12);
    return numQ(`${F}Nの力で物体を力の向きに${s}m動かしたときの仕事は何Jか。`,F*s,"J",[F/s,F+s,F*s*2,s/F],
-     `仕事=力×距離より ${F}×${s}=${F*s}J。`);}),
+     `仕事=力×距離より ${F}×${s}=${F*s}J。`,
+     `仕事 = 力 × 距離 = ${F} × ${s} = ${F*s} J`);}),
  G(3,r=>{const W=iR(r,100,3000,100),t=iR(r,2,20,2);
    return numQ(`${W}Jの仕事を${t}秒でしたときの仕事率は何Wか。`,W/t,"W",[W*t,t/W,W-t,W/(t*2)],
-     `仕事率=仕事÷時間より ${W}÷${t}=${W/t}W。`);}),
+     `仕事率=仕事÷時間より ${W}÷${t}=${W/t}W。`,
+     `仕事率 = 仕事 ÷ 時間 = ${W} ÷ ${t} = ${nf(W/t)} W`);}),
  G(2,r=>{const F=iR(r,100,900,100),S=pk(r,[0.01,0.02,0.05,0.1,0.2,0.5]);
    return numQ(`面積${S}m^2の面に${F}Nの力が垂直にはたらくときの圧力は何Paか。`,F/S,"Pa",[F*S,S/F,F/(S*2),F],
-     `圧力=力÷面積より ${F}÷${S}=${F/S}Pa。`);}),
+     `圧力=力÷面積より ${F}÷${S}=${F/S}Pa。`,
+     `圧力 = 力 ÷ 面積 = ${F} ÷ ${S} = ${nf(F/S)} Pa`);}),
  G(3,r=>{const v=iR(r,2,25),t=iR(r,3,30);
    return numQ(`${v*t}mの距離を${t}秒で進んだ物体の平均の速さは何m/sか。`,v,"m/s",[v*t,t/v,v*2,v*t/2],
-     `速さ=距離÷時間より ${v*t}÷${t}=${v}m/s。`);}),
+     `速さ=距離÷時間より ${v*t}÷${t}=${v}m/s。`,
+     `速さ = 距離 ÷ 時間 = ${v*t} ÷ ${t} = ${v} m/s`);}),
  G(1,r=>{const d=pk(r,[0.9,1.2,2.7,7.9,8.9,11.3]),V=iR(r,10,60,10),m=Math.round(d*V*10)/10;
    return numQ(`質量${m}g、体積${V}cm^3の物質の密度は何g/cm^3か。`,d,"g/cm^3",[V/m,m*V,d*2,m-V],
-     `密度=質量÷体積より ${m}÷${V}=${d}g/cm^3。`);}),
+     `密度=質量÷体積より ${m}÷${V}=${d}g/cm^3。`,
+     `密度 = 質量 ÷ 体積 = ${m} ÷ ${V} = ${d} g/cm³`);}),
  G(3,r=>{const air=pk(r,[2.5,3,4,4.5,5,6]),buo=pk(r,[0.8,1,1.2,1.5,2]);if(buo>=air)return null;
    return numQ(`ばねばかりの値が空気中で${air}N、水中で${Math.round((air-buo)*10)/10}Nだった。浮力は何Nか。`,buo,"N",[air,air+buo,air*buo,buo*2],
-     `浮力=空気中の重さ-水中での値より ${air}-${Math.round((air-buo)*10)/10}=${buo}N。`);}),
+     `浮力=空気中の重さ-水中での値より ${air}-${Math.round((air-buo)*10)/10}=${buo}N。`,
+     `浮力 = 空気中 − 水中 = ${air} − ${Math.round((air-buo)*10)/10} = ${buo} N`);}),
  G(1,r=>{const t=iR(r,2,12);
    return numQ(`稲光が見えてから${t}秒後に雷鳴が聞こえた。音の速さを340m/sとすると、落雷地点までの距離は何mか。`,340*t,"m",[340/t,340+t,340*t*2,340],
-     `距離=速さ×時間より 340×${t}=${340*t}m。`);}),
+     `距離=速さ×時間より 340×${t}=${340*t}m。`,
+     `距離 = 速さ × 時間 = 340 × ${t} = ${340*t} m`);}),
  G(1,r=>{const kg=pk(r,[0.5,1,1.5,2,2.5,3,4,5]);
    return numQ(`質量${kg}kgの物体にはたらく重力は何Nか(100gの物体にはたらく重力を1Nとする)。`,kg*10,"N",[kg,kg*100,kg/10,kg*10*2],
-     `100gで1Nなので、${kg}kg=${kg*1000}gでは ${kg*10}N。`);}),
+     `100gで1Nなので、${kg}kg=${kg*1000}gでは ${kg*10}N。`,
+     `${kg} kg = ${nf(kg*1000)} g  →  ${nf(kg*1000)} ÷ 100 = ${nf(kg*10)} N`);}),
  GM(r=>{const k=pk(r,keys({"慣性の法則":1,"フックの法則":1,"作用・反作用の法則":1,"仕事の原理":1,"電磁誘導":1}));
    const d={"慣性の法則":"力がはたらかない、またはつり合っているとき、物体は静止か等速直線運動を続ける",
      "フックの法則":"ばねの伸びは加えた力の大きさに比例する",
@@ -1468,28 +1615,35 @@ physics:[
 chemistry:[
  G(2,r=>{const m=pk(r,[0.4,0.8,1.2,1.6,2,2.4,3.2,4]);
    return numQ(`銅と酸素は質量比4:1で結びつく。銅${m}gを完全に酸化させたときにできる酸化銅は何gか。`,m*1.25,"g",[m,m*4,m*1.5,m*0.25],
-     `結びつく酸素は ${Math.round(m*0.25*100)/100}g。質量保存の法則より ${m}+${Math.round(m*0.25*100)/100}=${Math.round(m*1.25*100)/100}g。`);}),
+     `結びつく酸素は ${Math.round(m*0.25*100)/100}g。質量保存の法則より ${m}+${Math.round(m*0.25*100)/100}=${Math.round(m*1.25*100)/100}g。`,
+     `酸化銅 = 銅 + 酸素 = ${m} + ${Math.round(m*0.25*100)/100} = ${Math.round(m*1.25*100)/100} g`);}),
  G(2,r=>{const m=pk(r,[0.3,0.6,0.9,1.2,1.5,2.1,3]);
    return numQ(`マグネシウムと酸素は質量比3:2で結びつく。マグネシウム${m}gを完全に燃焼させたときにできる酸化マグネシウムは何gか。`,
      Math.round(m*5/3*1000)/1000,"g",[m*2,m*3,m*2/3,m],
-     `結びつく酸素は ${Math.round(m*2/3*100)/100}g。合計 ${Math.round(m*5/3*100)/100}g。`);}),
+     `結びつく酸素は ${Math.round(m*2/3*100)/100}g。合計 ${Math.round(m*5/3*100)/100}g。`,
+     `酸化マグネシウム = ${m} + ${Math.round(m*2/3*100)/100} = ${Math.round(m*5/3*100)/100} g`);}),
  G(2,r=>{const m=pk(r,[3.5,7,10.5,14,21]);
    return numQ(`鉄と硫黄は質量比7:4で結びつく。鉄${m}gと過不足なく反応する硫黄は何gか。`,Math.round(m*4/7*1000)/1000,"g",[m*7/4,m,m*2,m/2],
-     `7:4の比より ${m}×4÷7=${Math.round(m*4/7*100)/100}g。`);}),
+     `7:4の比より ${m}×4÷7=${Math.round(m*4/7*100)/100}g。`,
+     `硫黄 = ${m} × 4 ÷ 7 = ${Math.round(m*4/7*100)/100} g`);}),
  G(1,r=>{const M=pk(r,[100,200,250,400,500]),p=pk(r,[4,5,8,10,12,20,25]);
    const a=M*p/100, b=M-a;
    return numQ(`水${b}gに食塩${a}gをとかした水溶液の質量パーセント濃度は何%か。`,p,"%",[a/b*100,b/M*100,a,p*2],
-     `濃度=溶質÷溶液全体×100より ${a}÷${M}×100=${p}%。`);}),
+     `濃度=溶質÷溶液全体×100より ${a}÷${M}×100=${p}%。`,
+     `濃度 = 溶質 ÷ 溶液 × 100 = ${a} ÷ ${M} × 100 = ${p} %`);}),
  G(1,r=>{const p=pk(r,[4,5,8,10,12,15,20,25]),M=iR(r,100,500,50);
    return numQ(`質量パーセント濃度${p}%の水溶液${M}gに含まれる溶質は何gか。`,M*p/100,"g",[M/p,M*p,p,M-M*p/100],
-     `${M}×${p}÷100=${M*p/100}g。`);}),
+     `${M}×${p}÷100=${M*p/100}g。`,
+     `溶質 = 溶液 × 濃度 ÷ 100 = ${M} × ${p} ÷ 100 = ${nf(M*p/100)} g`);}),
  G(1,r=>{const p=pk(r,[15,20,25,30]),q=pk(r,[5,10]),M=iR(r,100,400,100);if(q>=p)return null;
    return numQ(`${p}%の水溶液${M}gに水を加えて${q}%にしたい。加える水は何gか。`,M*(p/q-1),"g",[M*p/q,M*q/p,M,M*(p-q)/100],
-     `溶質は ${M*p/100}g。${q}%にするには全体が ${M*p/q}g必要なので、加える水は ${M*p/q}-${M}=${M*(p/q-1)}g。`);}),
+     `溶質は ${M*p/100}g。${q}%にするには全体が ${M*p/q}g必要なので、加える水は ${M*p/q}-${M}=${M*(p/q-1)}g。`,
+     `全体 = ${nf(M*p/100)} ÷ ${q} × 100 = ${nf(M*p/q)} g  →  水 = ${nf(M*p/q)} − ${M} = ${nf(M*(p/q-1))} g`);}),
  G(1,r=>{const s1=pk(r,[85,110,169]),s2=pk(r,[13,24,32]),w=pk(r,[50,100,200]);if(s2>=s1)return null;
    return numQ(`ある物質の溶解度は高温で${s1}g、低温で${s2}g(いずれも水100gあたり)である。水${w}gを使った高温の飽和水溶液を低温まで冷やすと、出てくる結晶は何gか。`,
      (s1-s2)*w/100,"g",[s1*w/100,s2*w/100,(s1-s2),(s1+s2)*w/100],
-     `溶解度の差 ${s1-s2}g/100g に水の量をかけて (${s1}-${s2})×${w}÷100=${(s1-s2)*w/100}g。`);}),
+     `溶解度の差 ${s1-s2}g/100g に水の量をかけて (${s1}-${s2})×${w}÷100=${(s1-s2)*w/100}g。`,
+     `結晶 = (${s1} − ${s2}) × ${w} ÷ 100 = ${nf((s1-s2)*w/100)} g`);}),
  G(1,r=>{const k=pk(r,keys(T.gasMake));
    return factQ(r,`${k}を発生させる方法として正しいものはどれか。`,T.gasMake[k],vals(T.gasMake),`${k}は「${T.gasMake[k]}」で発生させる。`);}),
  G(1,r=>{const k=pk(r,keys(T.gasTest));
@@ -1533,7 +1687,8 @@ biology:[
      `裏をふさぐと裏からの蒸散がなくなるので ${all}-${back}=${Math.round((all-back)*100)/100}mL。`);}),
  G(1,r=>{const a=pk(r,[5,10,15]),b=pk(r,[4,10,15,20,40,60]);
    return numQ(`接眼レンズが${a}倍、対物レンズが${b}倍のときの顕微鏡の倍率は何倍か。`,a*b,"倍",[a+b,b/a,a*b*2,b-a],
-     `倍率=接眼×対物より ${a}×${b}=${a*b}倍。`);}),
+     `倍率=接眼×対物より ${a}×${b}=${a*b}倍。`,
+     `倍率 = 接眼 × 対物 = ${a} × ${b} = ${a*b} 倍`);}),
  G(2,r=>{const v=iR(r,50,90,5),n=iR(r,60,80,5);
    return numQ(`心臓が1回の拍動で${v}mLの血液を送り出し、1分間に${n}回拍動するとき、1分間に送り出される血液は何mLか。`,
      v*n,"mL",[v+n,v/n,n/v,v*n/2],`${v}×${n}=${v*n}mL。`);}),
@@ -1558,22 +1713,26 @@ biology:[
 earth:[
  G(1,r=>{const v=pk(r,[3,4,5,6,8]),d=v*iR(r,4,30);
    return numQ(`地震の波が${v}km/sで伝わるとき、震源から${d}km離れた地点に届くまで何秒かかるか。`,d/v,"秒",[d*v,v/d,d,d/(v*2)],
-     `時間=距離÷速さより ${d}÷${v}=${d/v}秒。`);}),
+     `時間=距離÷速さより ${d}÷${v}=${d/v}秒。`,
+     `時間 = 距離 ÷ 速さ = ${d} ÷ ${v} = ${nf(d/v)} 秒`);}),
  G(1,r=>{const vp=8,vs=4,d=iR(r,40,320,40);
    return numQ(`P波の速さが${vp}km/s、S波の速さが${vs}km/sのとき、震源から${d}km離れた地点の初期微動継続時間は何秒か。`,
      d/vs-d/vp,"秒",[d/vp,d/vs,d/(vp+vs),(vp-vs)],
-     `P波は${d/vp}秒、S波は${d/vs}秒で到達するので、その差は ${d/vs-d/vp}秒。`);}),
+     `P波は${d/vp}秒、S波は${d/vs}秒で到達するので、その差は ${d/vs-d/vp}秒。`,
+     `${d} ÷ ${vs} − ${d} ÷ ${vp} = ${nf(d/vs)} − ${nf(d/vp)} = ${nf(d/vs-d/vp)} 秒`);}),
  G(1,r=>{const k=pk(r,[6,7,8,9]),t=iR(r,3,20);
    return numQ(`初期微動継続時間が震源距離に比例し、1秒あたり${k}kmに相当するとき、初期微動継続時間が${t}秒だった地点の震源からの距離は何kmか。`,
      k*t,"km",[k/t,t/k,k*t*2,k+t],`${k}×${t}=${k*t}km。`);}),
  G(2,r=>{const sat=pk(r,[9.4,12.8,17.3,20.6,23.1,30.4]),h=pk(r,[30,40,50,60,70,80]);
    const act=Math.round(sat*h/100*100)/100;
    return numQ(`気温がある温度のとき飽和水蒸気量は${sat}g/m^3である。空気1m^3に水蒸気が${act}g含まれるとき、湿度は何%か。`,
-     h,"%",[act,sat,act/sat,sat/act*100],`湿度=実際の水蒸気量÷飽和水蒸気量×100より ${act}÷${sat}×100=${h}%。`);}),
+     h,"%",[act,sat,act/sat,sat/act*100],`湿度=実際の水蒸気量÷飽和水蒸気量×100より ${act}÷${sat}×100=${h}%。`,
+     `湿度 = 水蒸気量 ÷ 飽和水蒸気量 × 100 = ${act} ÷ ${sat} × 100 = ${h} %`);}),
  G(2,r=>{const dew=pk(r,[9.4,12.8,17.3]),now=pk(r,[17.3,20.6,23.1,30.4]);if(dew>=now)return null;
    return numQ(`気温での飽和水蒸気量が${now}g/m^3、露点での飽和水蒸気量が${dew}g/m^3であるとき、湿度はおよそ何%か。`,
      Math.round(dew/now*1000)/10,"%",[now/dew*100,dew,now,dew/now*10],
-     `露点での飽和水蒸気量が実際の水蒸気量なので ${dew}÷${now}×100≒${Math.round(dew/now*1000)/10}%。`);}),
+     `露点での飽和水蒸気量が実際の水蒸気量なので ${dew}÷${now}×100≒${Math.round(dew/now*1000)/10}%。`,
+     `湿度 = ${dew} ÷ ${now} × 100 ≒ ${Math.round(dew/now*1000)/10} %`);}),
  G(3,r=>{const lat=iR(r,24,45),kind=pk(r,["春分・秋分","夏至","冬至"]);
    const h={"春分・秋分":90-lat,"夏至":Math.round((90-lat+23.4)*10)/10,"冬至":Math.round((90-lat-23.4)*10)/10}[kind];
    if(h<=0)return null;
@@ -1604,19 +1763,23 @@ physics:[
  G(2,r=>{const a=iR(r,2,20,2),b=iR(r,2,20,2),V=iR(r,6,60,6);if(a===b)return null;
    const I=V/(a+b),v2=Math.round(I*b*100)/100;
    return numQ(`${a}Ωと${b}Ωを直列につなぎ、全体に${V}Vを加えた。${b}Ωにかかる電圧は何Vか。`,v2,"V",[V,V/2,I,V*b/a],
-     `合成抵抗は${a+b}Ω、電流は ${V}÷${a+b}=${Math.round(I*100)/100}A。${b}Ωには ${Math.round(I*100)/100}×${b}=${v2}V。`);}),
+     `合成抵抗は${a+b}Ω、電流は ${V}÷${a+b}=${Math.round(I*100)/100}A。${b}Ωには ${Math.round(I*100)/100}×${b}=${v2}V。`,
+     `I = V ÷ R = ${V} ÷ ${a+b} = ${Math.round(I*100)/100} A  →  V = I × R = ${Math.round(I*100)/100} × ${b} = ${v2} V`);}),
  G(2,r=>{const p=pk(r,[[3,6],[4,12],[6,12],[5,20],[10,15],[12,24]]),a=p[0],b=p[1];
    const V=a*b/(a+b)*iR(r,1,6), I=V/a+V/b;
    return numQ(`${a}Ωと${b}Ωを並列につなぎ、${V}Vを加えた。回路全体に流れる電流は何Aか。`,I,"A",[V/(a+b),V/a,V/b,I/2],
-     `各抵抗に同じ電圧がかかるので ${V}÷${a}+${V}÷${b}=${I}A。`);}),
+     `各抵抗に同じ電圧がかかるので ${V}÷${a}+${V}÷${b}=${I}A。`,
+     `I = ${V} ÷ ${a} + ${V} ÷ ${b} = ${nf(V/a)} + ${nf(V/b)} = ${nf(I)} A`);}),
  G(2,r=>{const V=iR(r,3,12),I=pk(r,[1,1.5,2,2.5,3]),t=iR(r,60,600,60);
    return numQ(`電熱線に${V}Vを加え${I}Aの電流を${t}秒間流したときの発熱量は何Jか。`,V*I*t,"J",[V*I,V*t,I*t,V*I*t/60],
-     `発熱量=電圧×電流×時間より ${V}×${I}×${t}=${V*I*t}J。`);}),
+     `発熱量=電圧×電流×時間より ${V}×${I}×${t}=${V*I*t}J。`,
+     `発熱量 = V × I × 時間 = ${V} × ${I} × ${t} = ${nf(V*I*t)} J`);}),
  G(2,r=>{const Q=iR(r,2100,12600,2100),m=pk(r,[50,100,200]);
    const dT=Math.round(Q/(m*4.2)*10)/10;
    return numQ(`${Q}Jの熱がすべて水${m}gに伝わったとき、水温は何℃上がるか(水1gを1℃上げるのに4.2J必要とする)。`,
      dT,"℃",[Q/m,m/Q,dT*2,Q/4.2],
-     `水${m}gを1℃上げるには ${m*4.2}J必要なので ${Q}÷${m*4.2}=${dT}℃。`);}),
+     `水${m}gを1℃上げるには ${m*4.2}J必要なので ${Q}÷${m*4.2}=${dT}℃。`,
+     `上昇温度 = 熱量 ÷ (4.2 × 質量) = ${Q} ÷ ${nf(m*4.2)} = ${dT} ℃`);}),
  G(3,r=>{const kg=pk(r,[1,2,3,4,5]),h=iR(r,2,10);
    return numQ(`質量${kg}kgの物体を動滑車1個で${h}m引き上げるとき、ひもを引く長さは何mか(滑車の重さは考えない)。`,
      h*2,"m",[h,h/2,h*4,kg*h],`動滑車では力が半分になる代わりに、引く長さは2倍の ${h*2}mになる。`);}),
@@ -1625,7 +1788,8 @@ physics:[
      kg*5,"N",[kg*10,kg,kg*20,kg*2.5],`重力は${kg*10}N。動滑車で半分になるので ${kg*5}N。`);}),
  G(3,r=>{const F=iR(r,10,80,10),s=iR(r,2,10),t=iR(r,2,10);
    return numQ(`${F}Nの力で物体を${s}m動かすのに${t}秒かかった。このときの仕事率は何Wか。`,F*s/t,"W",[F*s,F/t,s/t,F*s*t],
-     `仕事は ${F}×${s}=${F*s}J。仕事率は ${F*s}÷${t}=${F*s/t}W。`);}),
+     `仕事は ${F}×${s}=${F*s}J。仕事率は ${F*s}÷${t}=${F*s/t}W。`,
+     `仕事 = ${F} × ${s} = ${F*s} J  →  仕事率 = ${F*s} ÷ ${t} = ${nf(F*s/t)} W`);}),
  GM(r=>{const k=pk(r,keys(T.whyP));
    return factQ(r,`${k}のはなぜか。理由として最も適切なものはどれか。`,T.whyP[k],vals(T.whyP),`${k}のは、${T.whyP[k]}である。`,tg("whyP",k));}),
  GM(r=>{const k=pk(r,keys(T.whyP));
@@ -1635,23 +1799,28 @@ chemistry:[
  G(2,r=>{const ox=pk(r,[2,4,5,8,10,20]);
    return numQ(`銅と酸素は質量比4:1で結びつく。酸化銅${ox}gを炭素で完全に還元したとき、得られる銅は何gか。`,
      Math.round(ox*4/5*1000)/1000,"g",[ox/5,ox,ox*5/4,ox/2],
-     `酸化銅は銅:酸素=4:1なので銅は全体の4/5。${ox}×4÷5=${Math.round(ox*4/5*100)/100}g。`);}),
+     `酸化銅は銅:酸素=4:1なので銅は全体の4/5。${ox}×4÷5=${Math.round(ox*4/5*100)/100}g。`,
+     `銅 = ${ox} × 4 ÷ 5 = ${Math.round(ox*4/5*100)/100} g`);}),
  G(2,r=>{const ox=pk(r,[2,4,5,8,10,20]);
    return numQ(`銅と酸素は質量比4:1で結びつく。酸化銅${ox}gに含まれる酸素は何gか。`,
      Math.round(ox/5*1000)/1000,"g",[ox*4/5,ox,ox/4,ox/2],
-     `酸素は全体の1/5なので ${ox}÷5=${Math.round(ox/5*100)/100}g。`);}),
+     `酸素は全体の1/5なので ${ox}÷5=${Math.round(ox/5*100)/100}g。`,
+     `酸素 = ${ox} ÷ 5 = ${Math.round(ox/5*100)/100} g`);}),
  G(3,r=>{const a=pk(r,[10,20]),f=pk(r,[0.4,0.5,0.6,0.8,1.2,1.5]),b=a*f,mul=pk(r,[1.5,2,2.5,3]),cc=a*mul;
    return numQ(`ある塩酸${a}cm^3と、ある水酸化ナトリウム水溶液${b}cm^3がちょうど中和した。同じ塩酸${cc}cm^3を中和するのに必要な水酸化ナトリウム水溶液は何cm^3か。`,
      b*mul,"cm^3",[a*cc/b,b,cc,b*a/cc],
-     `比例関係より ${b}×${cc}÷${a}=${b*mul}cm^3。`);}),
+     `比例関係より ${b}×${cc}÷${a}=${b*mul}cm^3。`,
+     `${a} : ${b} = ${cc} : x  →  x = ${b} × ${cc} ÷ ${a} = ${nf(b*mul)} cm³`);}),
  G(1,r=>{const p=pk(r,[10,20,25]),M=iR(r,100,400,100),add=iR(r,50,200,50);
    const nc=Math.round(M*p/(M+add)*100)/100;
    return numQ(`${p}%の水溶液${M}gに水を${add}g加えたとき、濃度は何%になるか。`,nc,"%",[p,M*p/100,p-add/10,p*2],
-     `溶質は${M*p/100}gのまま、全体は${M+add}gになるので ${M*p/100}÷${M+add}×100=${nc}%。`);}),
+     `溶質は${M*p/100}gのまま、全体は${M+add}gになるので ${M*p/100}÷${M+add}×100=${nc}%。`,
+     `濃度 = ${nf(M*p/100)} ÷ ${M+add} × 100 = ${nc} %`);}),
  G(1,r=>{const s1=pk(r,[110,169,85]),s2=pk(r,[32,24,13]),w=pk(r,[50,150,200,250]);if(s2>=s1)return null;
    return numQ(`溶解度が高温で${s1}g、低温で${s2}g(水100gあたり)の物質がある。水${w}gを用いた高温の飽和水溶液を低温まで冷やすと、析出する結晶は何gか。`,
      Math.round((s1-s2)*w/100*100)/100,"g",[(s1-s2),s1*w/100,s2*w/100,(s1-s2)*100/w],
-     `(${s1}-${s2})×${w}÷100=${Math.round((s1-s2)*w/100*100)/100}g。`);}),
+     `(${s1}-${s2})×${w}÷100=${Math.round((s1-s2)*w/100*100)/100}g。`,
+     `結晶 = (${s1} − ${s2}) × ${w} ÷ 100 = ${Math.round((s1-s2)*w/100*100)/100} g`);}),
  GM(r=>{const k=pk(r,keys(T.whyC));
    return factQ(r,`${k}のはなぜか。理由として最も適切なものはどれか。`,T.whyC[k],vals(T.whyC),`${k}のは、${T.whyC[k]}である。`,tg("whyC",k));}),
  GM(r=>{const k=pk(r,keys(T.whyC));
@@ -2786,7 +2955,7 @@ document.querySelectorAll(".gradePill").forEach(b=>b.addEventListener("click",()
 setGrade(GRADE,false);
 $("btnStart").addEventListener("click",()=>{
   floorIdx=0;score={correct:0,total:0};wrongLog=[];retryCount=0;
-  playerHp=100;
+  playerHp=100;combo=0;BGM.start();
   ensureFloorReady(0,goFloorIntro);
 });
 
@@ -2867,6 +3036,7 @@ function startFloor(){
   spectrumLeft=c.spectrum;
   floorScore={correct:0,total:0};floorWrong=[];
   hitsLeft=hitPlan[0];hitsMax=hitPlan[0];
+  updateCombo(false);
   $("battleSigil").innerHTML=sigilSVG(f.sigil,16,f.color);
   $("battleFloorLabel").textContent=`${f.stratum}  ${f.label}`;
   $("hpArc").style.strokeDasharray=ARC_LEN;
@@ -2966,9 +3136,10 @@ function handleAnswer(pos,correctPos,q){
   if(ok){score.correct++;floorScore.correct++;}
   else{
     playerHp=Math.max(0,playerHp-c.damage);
-    const rec={q:q.q,correctText:q.choices[q.a],exp:q.exp};
+    const rec={q:q.q,correctText:q.choices[q.a],exp:q.exp,work:workOf(q)};
     wrongLog.push(rec);floorWrong.push(rec);
   }
+  answerFx(ok,choiceBtns[correctPos],q);
   setTimeout(()=>{
     $("quizAsking").style.display="none";
     $("quizFeedback").classList.add("active");
@@ -2976,6 +3147,7 @@ function handleAnswer(pos,correctPos,q){
     h.innerHTML=`<i class="bolt"></i>${ok?"会心の 一撃。理を 射抜いた":"手ごたえなし。理を 取り違えた"}`;
     h.className=ok?"good":"bad";
     $("feedbackExp").textContent=`正解:「${q.choices[q.a]}」 ― ${q.exp}`;
+    setWork($("feedbackWork"),workOf(q));
   },620);
 }
 $("feedbackContinue").addEventListener("click",()=>{
@@ -2994,12 +3166,16 @@ $("feedbackContinue").addEventListener("click",()=>{
   }
   hitsLeft--;
   const w=$("monsterSvgWrap");w.classList.remove("hit");void w.offsetWidth;w.classList.add("hit");
+  mj("sfx","stamp");
+  mj("burst",w,{color:f.color,count:22});
+  mj("pop",w,"-1",{color:"#ffc06a",size:30});
   if(hitsLeft<=0){
     const fallen=f.monsters[monsterIdx].name;
     locked=true;
     $("hpArc").style.strokeDashoffset=ARC_LEN;
     $("monsterHpLabel").textContent="のこり 正答 0";
     setMessage(`${fallen} の 核が 砕けた。`);
+    setTimeout(()=>mj("sfx","coin"),260);
     const tk=runToken;
     playShatter(fallen,()=>{
       if(tk!==runToken) return;   /* 層をやり直した後の遅延実行を無効化 */
@@ -3035,7 +3211,7 @@ function statCell(label,valueId,suffix){
 function reviewHTML(list,head){
   if(!list.length)return `<div class="review-item" style="border-top:none;color:var(--good)">誤答なし。完全な 読み解きだった。</div>`;
   return `<div class="cap" style="text-align:left">${head}</div>`+list.map(w=>
-    `<div class="review-item"><div class="q">Q. ${w.q}</div><div class="a">A. ${w.correctText}</div><div class="exp">${w.exp}</div></div>`).join("");
+    `<div class="review-item"><div class="q">Q. ${w.q}</div><div class="a">A. ${w.correctText}</div><div class="exp">${w.exp}</div>${w.work?`<div class="work">${w.work}</div>`:""}</div>`).join("");
 }
 /* ============ まなびの基板へ送る ============ */
 /* 古い hub-progress.js がキャッシュされている端末のためのフォールバック */
@@ -3065,15 +3241,17 @@ function goDefeat(){
   countUp($("dfA"),floorScore.correct,"");countUp($("dfB"),floorScore.total,"");
   $("defeatReview").innerHTML=reviewHTML(floorWrong,"この層で 取り違えた 理");
   showScreen("screen-defeat");
+  mj("sfx","fail");
 }
 $("btnRetryFloor").addEventListener("click",()=>{
   retryCount++;
   playerHp=100;
   score.correct-=floorScore.correct;score.total-=floorScore.total;
   wrongLog=wrongLog.slice(0,wrongLog.length-floorWrong.length);
+  combo=0;
   startFloor();
 });
-$("btnGiveUp").addEventListener("click",()=>showScreen("screen-title"));
+$("btnGiveUp").addEventListener("click",()=>{showScreen("screen-title");renderRecord();replay($("screen-title"));});
 
 /* ============ 層のクリア ============ */
 function goFloorClear(fled){
@@ -3088,6 +3266,7 @@ function goFloorClear(fled){
   warmFloor(floorIdx+1);
   if(floorIdx+1>=FLOORS.length) warmEmblem(DIFF[diffKey].tier);
   showScreen("screen-floorClear");
+  floorClearFx(f);
 }
 $("btnNextFloor").addEventListener("click",()=>{
   floorIdx++;
@@ -3114,9 +3293,15 @@ function goEnd(){
   $("endRankName").textContent=`${c.latin} · ${rankLa} — ${rankJp}`;
 
   $("endStats").innerHTML=statCell("正答率","enA","%")+statCell("正答数","enB","")+statCell("出題数","enC","");
-  countUp($("enA"),pct,"%",1200);
-  countUp($("enB"),score.correct,"",1000);
-  countUp($("enC"),score.total,"",800);
+  if(window.MJ&&MJ.countUp){
+    MJ.countUp($("enA"),pct,{ms:1200,format:n=>Math.round(n)+"%"});
+    MJ.countUp($("enB"),score.correct,{ms:1000});
+    MJ.countUp($("enC"),score.total,{ms:800});
+  }else{
+    countUp($("enA"),pct,"%",1200);
+    countUp($("enB"),score.correct,"",1000);
+    countUp($("enC"),score.total,"",800);
+  }
 
   const badges=[];
   if(!wrongLog.length)badges.push(`<span class="badge hot"><i></i>無傷 踏破</span>`);
@@ -3125,7 +3310,7 @@ function goEnd(){
   if(!retryCount)badges.push(`<span class="badge"><i></i>一度も 倒れず</span>`);
   $("endBadges").innerHTML=badges.map((b,i)=>b.replace('class="badge',`style="animation-delay:${.5+i*.14}s" class="badge`)).join("");
 
-  $("endReview").innerHTML=reviewHTML(wrongLog,"取り違えた 理の 復習");
+  $("endReview").innerHTML=reviewHTML(wrongLog,"今回まちがえた問題");
 
   const motes=$("endMotes");
   const n=c.tier==="expert"?30:(c.tier==="hard"?14:0);
@@ -3141,8 +3326,277 @@ function goEnd(){
     const fl=$("endFlash");fl.classList.remove("go");void fl.offsetWidth;fl.classList.add("go");
   }
   showScreen("screen-end");
+  endFx(pct);
 }
-$("btnReplay").addEventListener("click",()=>{showScreen("screen-title");replay($("screen-title"));});
+$("btnReplay").addEventListener("click",()=>{showScreen("screen-title");renderRecord();replay($("screen-title"));});
+
+/* ============================================================
+   フェーズ4: 音(効果音・BGM) / 観測記録と称号 / 連続正答で分光回復 / 再観測 / 途中式
+   演出と保存は共通の manabi-juice.js (window.MJ) に任せる。読み込めない環境では何もしない
+   ============================================================ */
+const APP="science-quest";
+function mj(name){
+  const M=window.MJ; if(!M||typeof M[name]!=="function") return undefined;
+  try{ return M[name].apply(M,[].slice.call(arguments,1)); }catch(e){ return undefined; }
+}
+
+/* ---- 途中式 ----
+   自動生成の計算問題は q.work を持つ。それ以外の計算問題は、解説文の中の
+   「公式=…より」と「数×数=答え」の部分を拾って式の形に並べる */
+function workOf(q){
+  if(!q) return "";
+  if(q.work) return q.work;
+  if(q.kind!=="calc"||!q.exp) return "";
+  const exp=String(q.exp), sp=t=>t.replace(/\s*([×÷+\-−])\s*/g," $1 ");
+  const chains=[], re=/((?:\d+(?:\.\d+)?(?:\/\d+)?)(?:\s*[×÷+\-−]\s*\(?\d+(?:\.\d+)?(?:\/\d+)?\)?)+)\s*[=≒]\s*(\d+(?:\.\d+)?)(?!\s*[×÷+\-−\d.(])\s*(個体|時間|度|秒|個|倍|本|分|回|[A-Za-zΩ℃%\/^0-9³²]*)/g;
+  let m,last=NaN;
+  while((m=re.exec(exp))){ chains.push(`${sp(m[1])} = ${m[2]}${m[3]?" "+m[3]:""}`); last=parseFloat(m[2]); }
+  /* 最後の式の答えが正解と一致するときだけ出す(途中の値で終わる解説は式にしない) */
+  if(!chains.length||last!==parseFloat(String(q.choices[q.a]).replace(/^約/,""))) return "";
+  const f=exp.match(/([^\s()（）、。=\d]+)=([^\s()（）、。=\d][^\s()（）、。=]*?[×÷][^\s()（）、。=]+?)[)）]?(?:より|=)/);
+  return (f?`${f[1]} = ${sp(f[2])} = `:"")+chains.join("  →  ");
+}
+function setWork(el,w){
+  el.textContent="";
+  if(!w) return;
+  const c=document.createElement("span"); c.className="cap"; c.textContent="途中式";
+  el.appendChild(c); el.appendChild(document.createTextNode(w));
+}
+
+/* ---- BGM ----
+   オルゴールのような小さな分散和音(Am-F-C-G)を WebAudio で鳴らす。音 OFF で止まる */
+let soundOn=!mj("muted");
+const BGM=(function(){
+  let ctx=null,out=null,timer=0,on=false,next=0,step=0;
+  const PROG=[[57,60,64,69],[53,57,60,65],[48,52,55,60],[55,59,62,67]];
+  const PAT=[0,2,1,3,2,1,0,2], BEAT=0.42;
+  const hz=n=>440*Math.pow(2,(n-69)/12);
+  function ensure(){
+    if(ctx) return true;
+    const C=window.AudioContext||window.webkitAudioContext; if(!C) return false;
+    try{ ctx=new C(); }catch(e){ return false; }
+    out=ctx.createGain(); out.gain.value=0;
+    const lp=ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=2200;
+    out.connect(lp); lp.connect(ctx.destination);
+    return true;
+  }
+  function note(f,t,d,v,type){
+    const o=ctx.createOscillator(),g=ctx.createGain(); o.type=type; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(v,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(g); g.connect(out); o.start(t); o.stop(t+d+0.05);
+  }
+  function pump(){
+    if(!on||!ctx) return;
+    if(next<ctx.currentTime) next=ctx.currentTime+0.05;
+    while(next<ctx.currentTime+0.6){
+      const ch=PROG[Math.floor(step/PAT.length)%PROG.length], k=step%PAT.length;
+      note(hz(ch[PAT[k]]+12),next,1.4,0.45,"triangle");
+      if(k===0) note(hz(ch[0]-12),next,BEAT*PAT.length*0.95,0.3,"sine");
+      next+=BEAT; step++;
+    }
+  }
+  function start(){
+    if(on||!soundOn||!ensure()) return;
+    on=true;
+    try{ if(ctx.state==="suspended") ctx.resume(); }catch(e){}
+    const t=ctx.currentTime;
+    out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value,t); out.gain.linearRampToValueAtTime(0.06,t+1.5);
+    next=t+0.1; clearInterval(timer); timer=setInterval(pump,150); pump();
+  }
+  function stop(){
+    if(!on) return; on=false; clearInterval(timer);
+    if(ctx){ const t=ctx.currentTime; out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value,t); out.gain.linearRampToValueAtTime(0,t+0.3); }
+  }
+  document.addEventListener("visibilitychange",()=>{
+    if(!ctx) return;
+    try{ if(document.hidden) ctx.suspend(); else if(on) ctx.resume(); }catch(e){}
+  });
+  return {start:start,stop:stop};
+})();
+function syncSound(){
+  const b=$("soundBtn"); if(!b) return;
+  b.textContent=soundOn?"音 ON":"音 OFF"; b.setAttribute("aria-pressed",String(soundOn));
+}
+$("soundBtn").addEventListener("click",()=>{
+  soundOn=!soundOn; mj("setMuted",!soundOn);
+  if(soundOn){ mj("sfx","tap"); BGM.start(); } else BGM.stop();
+  syncSound();
+});
+syncSound();
+
+/* ---- 連続正答 ---- 3 連続ごとに分光が 1 回もどる(その層の上限まで) */
+let combo=0;
+const COMBO_STEP=3;
+function updateCombo(bump){
+  const el=$("comboTag"); if(!el) return;
+  if(combo<1){ el.classList.remove("on","bump"); return; }
+  const lit=(combo-1)%COMBO_STEP+1;
+  el.innerHTML=`${combo} 連続<span class="cg">${Array.from({length:COMBO_STEP},(_,i)=>`<i class="${i<lit?'on':''}"></i>`).join("")}</span>`;
+  el.classList.add("on");
+  if(bump){ el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
+}
+function qid(q){
+  const t=String(q.q||""); let h=5381;
+  for(let i=0;i<t.length;i++) h=(Math.imul(h,33)+t.charCodeAt(i))>>>0;
+  return "q"+h.toString(36)+"-"+t.length.toString(36);
+}
+function packQ(q,fid){
+  return {q:q.q,choices:q.choices.slice(),a:q.a,exp:q.exp||"",work:workOf(q)||"",g:q.g||3,f:fid,kind:q.kind||""};
+}
+function answerFx(ok,btn,q){
+  const f=FLOORS[floorIdx];
+  if(ok){
+    combo++;
+    const big=Math.min(combo,6);
+    mj("sfx",combo>=COMBO_STEP?"combo":"ok");
+    mj("burst",btn,{color:f.color,count:14+big*4});
+    mj("pop",btn,combo>=2?`${combo} 連続`:"正解",{color:"#5fe0a0",size:20+big*3});
+    if(combo%COMBO_STEP===0&&spectrumLeft<DIFF[diffKey].spectrum){
+      spectrumLeft++;
+      updateSpectrum(); $("btnSpectrum").disabled=true;
+      setTimeout(()=>{ mj("pop",$("btnSpectrum"),"分光 +1",{color:"#f4e3b6",size:20}); mj("sfx","coin"); },320);
+    }
+  }else{
+    combo=0;
+    mj("sfx","ng"); mj("flash");
+    mj("miss",APP,qid(q),packQ(q,f.id));
+  }
+  updateCombo(ok);
+}
+
+/* ---- 観測記録・称号 ----
+   難易度×学年ごとに 最高到達層 / 踏破時の最高正答率 / 踏破回数 を端末に残す */
+const TITLES=[{min:0,name:"見習い観測員"},{min:3,name:"観測員"},{min:10,name:"主任観測員"},{min:50,name:"塔の賢者"}];
+const recKey=()=>`${diffKey}-g${GRADE}`;
+/* 第3層まで到達で観測員、初踏破で主任観測員、踏破5回またはエキスパート踏破で塔の賢者 */
+function titleValue(){
+  let maxF=0,clears=0,ex=0;
+  Object.keys(DIFF).forEach(d=>[1,2,3].forEach(g=>{
+    const k=`${d}-g${g}`;
+    maxF=Math.max(maxF,mj("best",APP,k+":floor")||0);
+    const c=mj("best",APP,k+":clears")||0; clears+=c; if(d==="expert") ex+=c;
+  }));
+  if(!clears) return maxF;
+  return ex?50:Math.min(50,10+10*(clears-1));
+}
+function renderRecord(animate){
+  $("recTitle").textContent=mj("title",APP,TITLES,titleValue())||"";
+  const k=recKey(), fl=mj("best",APP,k+":floor"), rt=mj("best",APP,k+":rate"), cl=mj("best",APP,k+":clears")||0;
+  const lab=`${DIFF[diffKey].label}・${GRADE_LABEL[GRADE]}`;
+  $("recBody").innerHTML=(fl===undefined&&rt===undefined)
+    ? `<span>${lab}　まだ 観測記録なし</span>`
+    : `<span>${lab}</span><i class="rec-sep"></i><span>最高 <b>${fl||0}</b> / ${FLOORS.length} 層</span><span>踏破時の正答率 <b>${rt===undefined?"―":rt+"%"}</b></span><span>踏破 <b>${cl}</b> 回</span>`;
+  if(animate){ const row=$("recordRow"); row.classList.remove("swap"); void row.offsetWidth; row.classList.add("swap"); }
+  const n=reviewPool().length;
+  $("btnReviewN").textContent=`（${n}問）`;
+  $("btnReview").classList.toggle("on",n>0);
+}
+function rankOf(p){ return p>=100?"S":(p>=80?"A":(p>=60?"B":"C")); }
+function floorClearFx(f){
+  const p=floorScore.total?Math.round(floorScore.correct/floorScore.total*100):0;
+  const r=mj("record",APP,recKey()+":floor",floorIdx+1);   /* 効果音はカットインが鳴らす */
+  const n=floorIdx+1;
+  const after=()=>{
+    if(r&&r.isNew){ mj("banner",`新記録　${n} 層 到達`,{color:"#b8862f"}); mj("sfx","record"); }
+    mj("title",APP,TITLES,titleValue());
+  };
+  const pr=mj("cutin",{title:`${f.label} 制覇`,sub:`この層の正答率 ${p}%`,rank:rankOf(p),color:f.color});
+  if(pr&&pr.then) pr.then(after); else after();
+}
+function endFx(pct){
+  const k=recKey();
+  mj("record",APP,k+":clears",(mj("best",APP,k+":clears")||0)+1);
+  const r=mj("record",APP,k+":rate",pct);
+  mj("sfx","levelup");
+  setTimeout(()=>{
+    if(r&&r.isNew){ mj("banner",`新記録　正答率 ${pct}%`,{color:"#b8862f"}); mj("sfx","record"); }
+    mj("title",APP,TITLES,titleValue());
+    mj("achieve",APP,"summit","はじめての 踏破");
+    if(!wrongLog.length) mj("achieve",APP,"perfect","無傷で 踏破");
+    if(diffKey==="expert") mj("achieve",APP,"expert","エキスパートで 踏破");
+  },1000);
+}
+
+/* ---- 再観測 ----
+   まちがえた問題だけを最大10問。正解すると記録から消える。ハブには送らない。
+   選んだ学年より上の問題は出さない */
+const RV={list:[],i:0,ok:0,ng:0,locked:false}, RV_MAX=10;
+function reviewPool(){
+  const L=mj("misses",APP)||[];
+  return L.filter(m=>m&&m.data&&m.data.q&&Array.isArray(m.data.choices)&&m.data.choices.length===4&&(m.data.g||3)<=GRADE);
+}
+function floorOf(id){ return FLOORS.filter(x=>x.id===id)[0]||FLOORS[FLOORS.length-1]; }
+function startReview(){
+  const pool=reviewPool();
+  if(!pool.length){ renderRecord(false); return; }
+  RV.list=pool.slice(0,RV_MAX); RV.i=0; RV.ok=0; RV.ng=0;
+  BGM.start();
+  showScreen("screen-review");
+  rvOpen();
+}
+function rvOpen(){
+  const m=RV.list[RV.i], q=m.data, f=floorOf(q.f);
+  setElem(f.color);
+  $("rvCount").textContent=`${RV.i+1} / ${RV.list.length}`;
+  $("rvMeta").textContent=f.label+(m.n>1?`　・　${m.n} 回 まちがえた`:"");
+  $("rvQ").textContent=q.q;
+  const wrap=$("rvChoices"); wrap.innerHTML="";
+  const order=shuffle([0,1,2,3]), cp=order.indexOf(q.a), btns=[];
+  order.forEach((orig,pos)=>{
+    const b=document.createElement("button"); b.className="choice-btn"; b.type="button";
+    b.innerHTML=`<span class="key"><span>${KEYS[pos]}</span></span><span></span>`;
+    b.lastChild.textContent=q.choices[orig];
+    b.addEventListener("click",()=>rvAnswer(pos,cp,btns,m));
+    wrap.appendChild(b); btns.push(b);
+  });
+  $("rvAsk").style.display=""; $("rvFb").classList.remove("on"); $("rvDone").classList.remove("on");
+  RV.locked=false;
+  const box=$("rvBox"); box.style.animation="none"; void box.offsetWidth; box.style.animation="";
+}
+function rvAnswer(pos,cp,btns,m){
+  if(RV.locked) return; RV.locked=true;
+  btns.forEach((b,i)=>{ b.disabled=true; if(i===cp) b.classList.add("correct"); else if(i===pos) b.classList.add("wrong"); });
+  const ok=pos===cp, q=m.data, f=floorOf(q.f);
+  if(ok){
+    RV.ok++; mj("hit",APP,m.id); mj("sfx","ok");
+    mj("burst",btns[cp],{color:f.color,count:20}); mj("pop",btns[cp],"解消",{color:"#5fe0a0",size:24});
+  }else{
+    RV.ng++; mj("miss",APP,m.id,q); mj("sfx","ng"); mj("flash");
+  }
+  setTimeout(()=>{
+    $("rvAsk").style.display="none";
+    const h=$("rvFbHead");
+    h.textContent=ok?"再観測 成功。記録から 消えた":"まだ 取り違えている。記録に 残す";
+    h.className=ok?"good":"bad";
+    $("rvFbExp").textContent=`正解:「${q.choices[q.a]}」 ― ${q.exp||""}`;
+    setWork($("rvFbWork"),q.work||workOf(q));
+    $("rvNext").textContent=RV.i+1<RV.list.length?"つぎへ":"結果を 見る";
+    $("rvFb").classList.add("on");
+  },620);
+}
+function rvDone(){
+  $("rvAsk").style.display="none"; $("rvFb").classList.remove("on");
+  const left=reviewPool().length;
+  $("rvCount").textContent="";
+  $("rvDoneMsg").textContent=RV.ng?"残った問題は、もう一度 観測しよう。":"すべて 解消した。見事な 再観測だ。";
+  $("rvSum").innerHTML=statCell("今回 解消","rvA","")+statCell("まだ 残る","rvB","");
+  if(window.MJ&&MJ.countUp){ MJ.countUp($("rvA"),RV.ok,{ms:700}); MJ.countUp($("rvB"),left,{ms:700}); }
+  else { $("rvA").textContent=RV.ok; $("rvB").textContent=left; }
+  $("rvAgain").style.display=left?"":"none";
+  $("rvDone").classList.add("on");
+  mj("sfx",RV.ng?"page":"clear");
+}
+function rvToTitle(){ showScreen("screen-title"); renderRecord(false); replay($("screen-title")); }
+$("rvNext").addEventListener("click",()=>{ RV.i++; if(RV.i<RV.list.length) rvOpen(); else rvDone(); });
+$("rvAgain").addEventListener("click",startReview);
+$("rvBack").addEventListener("click",rvToTitle);
+$("rvQuit").addEventListener("click",rvToTitle);
+$("btnReview").addEventListener("click",startReview);
+document.querySelectorAll(".diff-card").forEach(b=>b.addEventListener("click",()=>renderRecord(true)));
+document.querySelectorAll(".gradePill").forEach(b=>b.addEventListener("click",()=>renderRecord(true)));
+renderRecord(false);
+/* 舞台(#stage)は見た目の都合で外にはみ出す装飾を持つ。フォーカス移動などで中身がずれないよう常に原点に戻す */
+$("stage").addEventListener("scroll",function(){ if(this.scrollTop||this.scrollLeft){ this.scrollTop=0; this.scrollLeft=0; } });
 
 })();
 </script>

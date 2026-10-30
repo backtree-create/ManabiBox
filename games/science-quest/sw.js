@@ -1,13 +1,14 @@
 /* 観測塔 ― オフライン用のキャッシュ
    校内の回線が細くても、二度目以降は通信なしで起動できるようにする */
-const CACHE = "science-quest-v5";
+const CACHE = "science-quest-v6";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
-  "./favicon.ico"
+  "./favicon.ico",
+  "../../manabi-juice.js"
 ];
 
 self.addEventListener("install", e=>{
@@ -33,7 +34,7 @@ self.addEventListener("fetch", e=>{
   if(req.method !== "GET") return;
   const sameOrigin = new URL(req.url).origin === location.origin;
 
-  const hubScript = sameOrigin && /\/(config|hub-progress|manabi-connect)\.js$/.test(new URL(req.url).pathname);
+  const hubScript = sameOrigin && /\/(config|hub-progress|manabi-connect|manabi-juice)\.js$/.test(new URL(req.url).pathname);
   if(sameOrigin && (req.mode === "navigate" || hubScript)){
     e.respondWith(
       fetch(req).then(res=>{
