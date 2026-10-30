@@ -86,6 +86,12 @@ h1{font-size:clamp(26px,7.6vw,44px);margin:0 0 6px;line-height:1.2;font-weight:4
 .btn.sm{font-size:13px;padding:8px 14px;min-height:44px;border-width:2px;box-shadow:3px 3px 0 var(--sumi2)}
 .btn.ghost{background:var(--ai)}
 .btnrow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+/* ── 学年ピル（出題範囲：その学年まで） ── */
+.gsel{display:inline-flex;gap:6px;align-items:center}
+.gsel .btn.gradePill{min-width:56px;padding:8px 12px}
+.gsel .btn.gradePill.on{background:var(--kin);color:var(--sumi2)}
+.gtag{display:inline-block;margin-left:8px;padding:2px 8px;min-height:0;border:2px solid var(--kin);
+  color:var(--kin);font-size:12px;letter-spacing:.14em;vertical-align:middle;font-family:var(--dot)}
 
 /* ── 見出し・ツール ── */
 .bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
@@ -230,6 +236,11 @@ body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
     <p class="note" style="margin:0">HP は5。まちがえるたびに1つ減る。0になったらその地は仕切り直し。</p>
   </div>
   <div class="btnrow">
+    <span class="gsel" role="group" aria-label="学年（出題範囲）">
+      <button class="btn ghost sm gradePill" data-g="1" aria-pressed="false">中1</button>
+      <button class="btn ghost sm gradePill" data-g="2" aria-pressed="false">中2</button>
+      <button class="btn ghost sm gradePill" data-g="3" aria-pressed="false">中3</button>
+    </span>
     <button class="btn" id="startBtn">旅に出る</button>
     <button class="btn ghost sm" id="fsBtn">全画面</button>
     <button class="btn ghost sm" id="sndBtn">音 ♪ ON</button>
@@ -245,7 +256,7 @@ body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
 <!-- ワールドマップ -->
 <section id="map" class="screen">
   <div class="bar">
-    <h2 class="mincho">日本列島マップ</h2>
+    <h2 class="mincho"><span id="mapTitle">日本列島マップ</span><span id="gradeTag" class="gtag" hidden></span></h2>
     <div class="tools">
       <button class="icobtn" id="mReview">復習 0</button>
       <button class="icobtn" id="mSide">裏へ</button>
@@ -329,16 +340,54 @@ body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
 
 /* ============ 問題データ（questions.js から読み込む） ============ */
 const QD=window.QDATA||null;
-function pool(sub,mode){
+
+/* ============ 学年（出題範囲） ============
+   各問題の g（1〜3）が「選んだ学年まで」のものだけ出す。同じ学年を優先し、
+   足りないときだけ下の学年から補う。中3は全範囲（従来どおり）。
+   初期値はハブで選んだ学年、ゲーム内で変えた値は localStorage に残して次回はそれを優先する。 */
+const GRADE_KEY="manabi-grade:japan-quest", GRADE_LABEL={1:"中1",2:"中2",3:"中3"};
+const hubGrade=()=>(window.LearnHub&&LearnHub.grade)?LearnHub.grade():3;
+function loadGrade(){ try{ const v=Number(localStorage.getItem(GRADE_KEY)); if(v===1||v===2||v===3) return v; }catch(e){} return hubGrade(); }
+let GRADE=loadGrade();
+function qGrade(q){ const g=Number(q&&q.g); return (g===1||g===2||g===3)?g:1; }  /* g が無い問題は中1扱い */
+function shuffle(arr){
+ const a=arr.slice();
+ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+ return a;
+}
+/* 学年で切り、同学年→下の学年の順にシャッフルして並べる */
+function byGrade(arr){
+ if(GRADE>=3) return shuffle(arr.filter(q=>qGrade(q)<=3));
+ return shuffle(arr.filter(q=>qGrade(q)===GRADE)).concat(shuffle(arr.filter(q=>qGrade(q)<GRADE)));
+}
+function fullPool(sub,mode){
  const s=(QD&&QD[sub])||{};
  const arr=(mode==="dark"?s.adv:s.basic)||[];
  return arr.slice();
 }
-function tokyoPool(mode){
+/* 裏（発展）で選んだ学年の問題が少ない教科は、同じ教科の表の問題（同じく学年まで）で補う */
+const POOL_MIN=16;
+function pool(sub,mode){
+ const a=byGrade(fullPool(sub,mode));
+ if(mode!=="dark"||a.length>=POOL_MIN) return a;
+ const have=new Set(a.map(q=>q.q));
+ return a.concat(byGrade(fullPool(sub,"light")).filter(q=>!have.has(q.q)).slice(0,POOL_MIN-a.length));
+}
+function fullTokyoPool(mode){
  let all=[];
- if(QD) for(const k of Object.keys(QD)) all=all.concat(pool(k,mode));
+ if(QD) for(const k of Object.keys(QD)) all=all.concat(fullPool(k,mode));
  return all;
 }
+function tokyoPool(mode){ return byGrade(fullTokyoPool(mode)); }
+function setGrade(g,persist){
+ GRADE=(g===1||g===2||g===3)?g:3;
+ if(persist){ try{ localStorage.setItem(GRADE_KEY,String(GRADE)); }catch(e){} }
+ document.querySelectorAll(".gradePill").forEach(b=>{ const on=Number(b.dataset.g)===GRADE; b.classList.toggle("on",on); b.setAttribute("aria-pressed",String(on)); });
+ const t=document.getElementById("gradeTag");
+ if(t){ t.textContent=GRADE_LABEL[GRADE]+"の範囲"; t.hidden=(GRADE===3); }
+}
+document.querySelectorAll(".gradePill").forEach(b=>b.addEventListener("click",()=>setGrade(Number(b.dataset.g),true)));
+setGrade(GRADE,false);
 
 /* ============ エリア定義 ============ */
 const AREAS={
@@ -918,8 +967,9 @@ function reviewList(){
  for(const k of save.wrong.slice()){
   const p=k.split("|"); if(p.length<3) continue;
   const sub=p[0],mode=p[1],text=p.slice(2).join("|");
-  const src=sub==="tokyo"?tokyoPool(mode):pool(sub,mode);
-  const q=src.find(x=>x.q===text);
+  const src=sub==="tokyo"?fullTokyoPool(mode):fullPool(sub,mode);   /* 復習は学年で切らない */
+  let q=src.find(x=>x.q===text);
+  if(!q&&mode==="dark"&&sub!=="tokyo") q=fullPool(sub,"light").find(x=>x.q===text);  /* 裏で補った表の問題 */
   if(q) out.push({key:k,sub:sub,mode:mode,q:q}); else removeWrong(k);
  }
  return out;
@@ -938,7 +988,7 @@ function enter(key){
    S={key:"tokyo",area:{name:(dark?"裏 東京":"東京"),subject:dark?"五教科・発展":"五教科",
         item:dark?"夜明けの証":"日本一の証"},
       enemies:[{name:dark?"闇王トウキョウ":"学王トウキョウ",hp:8,boss:true,final:true,art:"tokyo_final"}],
-      qs:pick(src,Math.min(src.length,24)),qi:0,ei:0,hp:5,
+      qs:src.slice(0,Math.min(src.length,24)),qi:0,ei:0,hp:5,   /* pool は学年順に並べ済み */
       omamori:(dark?save.dark.length:save.cleared.length),
       wrong:[],asked:0,correct:0,dark:dark};
    bgm("boss");
@@ -950,7 +1000,7 @@ function enter(key){
                {name:dark?darkName(a.zako[1]):a.zako[1],hp:2,art:key+"_z1"},
                {name:dark?darkName(a.zako[2]):a.zako[2],hp:2,art:key+"_z2"},
                {name:dark?darkName(a.boss):a.boss,hp:3,boss:true,art:key+"_boss"}],
-      qs:pick(src,src.length),qi:0,ei:0,hp:5,omamori:0,
+      qs:src,qi:0,ei:0,hp:5,omamori:0,   /* pool は学年順に並べ済み */
       wrong:[],asked:0,correct:0,dark:dark};
    bgm("battle");
  }
@@ -1005,7 +1055,7 @@ function ask(){
  updHud();
  if(S.qi>=S.qs.length){ // 問題が尽きたら再シャッフル
    const src=S.key==="tokyo"?tokyoPool(S.dark?"dark":"light"):pool(S.area.sub,S.dark?"dark":"light");
-   S.qs=S.qs.concat(pick(src,src.length));
+   S.qs=S.qs.concat(src);
  }
  const q=S.qs[S.qi];
  document.getElementById("qtext").textContent=q.q;
@@ -1109,7 +1159,11 @@ async function finish(win){
    const dk=S.dark;
    const list=dk?save.dark:save.cleared;
    if(S.key!=="tokyo"&&!list.includes(S.key)) list.push(S.key);
-   const bk=(dk?"d_":"")+S.key, b=save.best[bk]||0; if(rate>b) save.best[bk]=rate;
+   /* 最高記録は「正答率×学年係数」で比べ、そのときの学年も残す（中1で取った記録を中3係数で送らないため） */
+   const bk=(dk?"d_":"")+S.key, GM={1:1,2:1.2,3:1.5};
+   if(!save.bestG) save.bestG={};
+   const b=(save.best[bk]||0)*GM[save.bestG[bk]||3];
+   if(rate*GM[GRADE]>b){ save.best[bk]=rate; save.bestG[bk]=GRADE; }
    if(S.key==="tokyo"){ if(dk) save.darkTokyo=true; else save.tokyo=true; }
    await persist();
  }else SFX.over();
@@ -1169,7 +1223,7 @@ function setSide(mode){
  document.body.classList.toggle("dark",isDark());
  const b=document.getElementById("mSide");
  if(b) b.textContent=isDark()?"表へ":"裏へ";
- const h=document.querySelector("#map .bar h2");
+ const h=document.getElementById("mapTitle");
  if(h) h.textContent=isDark()?"裏 日本列島マップ":"日本列島マップ";
 }
 function toMap(){
