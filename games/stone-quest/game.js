@@ -18,6 +18,47 @@ function quizTotals(){
 /* 古い hub-progress.js がキャッシュされている端末のためのフォールバック */
 function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
 
+/* ---------------- 学年(クイズの出題学年) ----------------
+   data.js の各技術 quiz は {1:[…],2:[…],3:[…]} で学年ごとに書かれている。
+   選んだ学年の問題を優先し、足りないときだけ下の学年(それでも足りなければ上の学年)から補う。
+   初期値はハブで選んだ学年。ゲーム内で選び直した値は localStorage に残す
+   (ハブで学年を選び直すと hub-progress.js 側で消される)。
+   学年で出題範囲が広がるわけではないので、ハブへの換算は学年係数なし(grade:0)。 */
+const GRADE_KEY = "manabi-grade:stone-quest";
+const GRADE_LABEL = {1:"中1", 2:"中2", 3:"中3"};
+const hubGrade = () => (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3;
+function loadGrade(){
+  try{ const v = Number(localStorage.getItem(GRADE_KEY)); if(v===1||v===2||v===3) return v; }catch(e){}
+  return hubGrade();
+}
+let GRADE = loadGrade();
+function setGrade(g, persist){
+  if(g!==1 && g!==2 && g!==3) return;
+  GRADE = g;
+  if(persist){ try{ localStorage.setItem(GRADE_KEY, String(g)); }catch(e){} }
+}
+/* 技術の単元名(学年ごとの topics があればその学年のもの) */
+function techTopic(t){ return (t.topics && t.topics[GRADE]) ? t.topics[GRADE] : (t.topic || ""); }
+/* 技術の学年別問題。配列で書かれた古い形式もそのまま使える */
+function quizPool(t, g){
+  const q = t.quiz;
+  if(Array.isArray(q)) return q.slice();
+  if(!q || typeof q !== "object") return [];
+  const arr = q[g] || q[String(g)];
+  return Array.isArray(arr) ? arr.slice() : [];
+}
+/* 出題する3問: 同学年を優先 → 足りなければ下の学年 → それでも足りなければ上の学年 */
+function pickQuiz(t, n){
+  if(Array.isArray(t.quiz)) return shuffled(t.quiz).slice(0, n);
+  const order = [GRADE, ...[3,2,1].filter(g=>g<GRADE), ...[1,2,3].filter(g=>g>GRADE)];
+  let out = [];
+  for(const g of order){
+    if(out.length >= n) break;
+    out = out.concat(shuffled(quizPool(t, g)).slice(0, n - out.length));
+  }
+  return out;
+}
+
 function reportToHub(){
   try{
     if(!window.LearnHub || !S) return;
@@ -29,8 +70,9 @@ function reportToHub(){
       app:  MANABI_APP_KEY,
       done: S.techs.length,
       total: TECHS.length,
-      best: hubScale(ratio),
+      best: hubScale(ratio, { grade: 0 }),   /* 学年で範囲は広がらないので学年係数なし */
       raw:  qt.correct,
+      grade: hubGrade(),                      /* 表示用の学年 */
       note: qt.total ? `正解${qt.correct}/${qt.total} 正答率${qt.rate}% 仲間${S.statues}人` : "",
     });
   }catch(e){}
@@ -511,12 +553,27 @@ G.showTitle = function(){
       武器は<b style="color:var(--gold)">「科学の知識」</b>ただひとつ。<br>
       素材を集め、理科の力で技術を研究し、現代文明を取りもどせ!
     </p>
-    <div class="center" style="margin-top:20px">
+    <div class="center gradeSel" role="group" aria-label="クイズの学年">
+      <span class="dim">クイズの学年</span>
+      ${[1,2,3].map(g=>`<button class="gradePill ${g===GRADE?'primary on':''}" data-g="${g}" aria-pressed="${g===GRADE}" onclick="G.setGrade(${g})">${GRADE_LABEL[g]}</button>`).join("")}
+    </div>
+    <div class="center" style="margin-top:14px">
       ${has ? `<button class="primary" onclick="G.continueGame()">つづきから</button>` : ""}
       <button class="${has?'':'primary'}" onclick="G.startNew(${has})">はじめから</button>
       <button onclick="G.showHelp('title')">あそびかた</button>
     </div>`);
 };
+
+G.setGrade = function(g){
+  setGrade(g, true);
+  document.querySelectorAll(".gradePill").forEach(b=>{
+    const on = Number(b.dataset.g) === GRADE;
+    b.classList.toggle("primary", on); b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", String(on));
+  });
+};
+/* 拠点などに出す小さな学年ラベル(中3のときは出さない) */
+function gradeTag(){ return GRADE===3 ? "" : `<span class="tag gradeTag">学年:${GRADE_LABEL[GRADE]}</span>`; }
 
 G.startNew = function(confirmNeeded){
   if(confirmNeeded && !confirm("セーブデータを消して最初からはじめますか?")) return;
@@ -542,7 +599,7 @@ G.showCamp = function(){
   save(); updateSide();
   const stage = CIV_STAGES[completedEras()];
   showOverlay(`
-    <h2>⛺ 科学王国の拠点 <span class="tag">いまの文明:${esc(stage)}</span></h2>
+    <h2>⛺ 科学王国の拠点 <span class="tag">いまの文明:${esc(stage)}</span>${gradeTag()}</h2>
     <p class="dim">拠点にもどると HP は全回復する。研究を進めて文明度100%を目指そう!<br>
     ⚠ ダンジョンでたおれると<b>持ち物の半分</b>を落としてしまうぞ。準備はしっかりと。</p>
     <div class="btns" style="margin-bottom:14px">
@@ -574,7 +631,7 @@ function canAfford(cost){ return Object.entries(cost).every(([k,n]) => (S.inv[k]
 
 G.showResearch = function(){
   const eraNames = {1:"時代1:石器の文明", 2:"時代2:農耕と金属の文明", 3:"時代3:エネルギーの文明", 4:"時代4:情報の文明"};
-  let html = `<h2>🔬 科学ロードマップ <span class="tag">研究には素材と「理科の知識」(クイズ3問中2問正解)が必要</span></h2>`;
+  let html = `<h2>🔬 科学ロードマップ <span class="tag">研究には素材と「理科の知識」(クイズ3問中2問正解)が必要</span>${gradeTag()}</h2>`;
   for(let era=1; era<=4; era++){
     const open = era===1 || eraComplete(era-1);
     html += `<div class="eraHead">${eraNames[era]} ${open?"":"🔒(前の時代をすべて研究すると解放)"}</div>`;
@@ -596,7 +653,7 @@ G.showResearch = function(){
       const afford = canAfford(t.cost);
       const rec = S.quiz[t.id];
       html += `<div class="techCard ${done?"done":""}">
-        <div class="tname">${done?"✅":"🧪"} ${esc(t.name)}<span class="topic">【${esc(t.topic)}】</span></div>
+        <div class="tname">${done?"✅":"🧪"} ${esc(t.name)}<span class="topic">【${esc(techTopic(t))}】</span></div>
         <div class="tdesc">${esc(t.desc)}</div>
         <div class="tcost">必要な素材: ${costHtml(t.cost)}</div>
         ${rec ? `<div class="tdesc">これまでのクイズ正答: ${rec.correct}/${rec.total}問</div>` : ""}
@@ -682,7 +739,8 @@ G.equipGear = function(kind, id){
 G.startResearch = function(techId){
   const t = TECHS.find(x=>x.id===techId);
   if(!t || S.techs.includes(t.id) || !canAfford(t.cost)) return;
-  const picked = shuffled(t.quiz).slice(0,3);
+  const picked = pickQuiz(t, 3);
+  if(picked.length < 3) return;
   Q = { tech:t, list:picked, idx:0, correct:0, answered:false };
   if(!S.quiz[t.id]) S.quiz[t.id] = { tries:0, correct:0, total:0 };
   S.quiz[t.id].tries++;
@@ -696,7 +754,7 @@ function renderQuizQuestion(){
   Q.order = order;
   Q.answered = false;
   showOverlay(`
-    <h2>🧪 研究:${esc(t.name)} <span class="tag">【${esc(t.topic)}】</span></h2>
+    <h2>🧪 研究:${esc(t.name)} <span class="tag">【${esc(techTopic(t))}】</span>${gradeTag()}</h2>
     <p class="dim">研究を成功させるには、3問中2問以上の正解が必要だ。</p>
     <div class="qProg">第${Q.idx+1}問 / 3問(いままでの正解:${Q.correct})</div>
     <p style="font-size:15px; line-height:1.9"><b>Q. ${esc(item.q)}</b></p>
@@ -809,7 +867,7 @@ G.showRecord = function(){
     const r = S.quiz[t.id];
     rows += `<tr>
       <td>${S.techs.includes(t.id)?"✅":"　"} ${esc(t.name)}</td>
-      <td>${esc(t.topic)}</td>
+      <td>${esc(techTopic(t))}</td>
       <td>${r ? `${r.correct}/${r.total}問` : "―"}</td>
     </tr>`;
   }
