@@ -139,6 +139,45 @@ p.sub{color:#C9BFA8;font-size:clamp(12px,2.2vmin,16px);line-height:1.8;margin:.6
 .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #6d5212}
 .btn.ghost{background:transparent;color:var(--white);border:3px solid #4a351e;box-shadow:0 4px 0 #221708}
 .btn.ghost:active{transform:translateY(2px)}
+/* 学年ピル（保健クイズの出題学年。表紙の既存ボタンの見た目を流用） */
+.gradeRow{display:inline-flex;align-items:center;justify-content:center;gap:.3em;flex-wrap:wrap;vertical-align:middle;margin:.2em .2em}
+/* 表紙・面クリアは中身が多いので横に広げ、横画面でスクロールなしに収める */
+.panel.wide{width:min(96%,1040px)}
+.gradeRow .gl{font-family:'DotGothic16',monospace;font-size:clamp(11px,2vmin,14px);color:#C9BFA8;letter-spacing:.08em;margin-right:.3em}
+.btn.gradePill{min-height:44px;min-width:4.2em;padding:0 1.1em;margin:.15em .1em;font-size:clamp(13px,2.4vmin,17px);touch-action:manipulation}
+.btn.gradePill.on{background:var(--amber);color:#211502;border-color:#A67C1B;box-shadow:0 4px 0 #6d5212}
+/* 面クリア画面：左に結果、右に保健クイズ（横画面で1画面に収める） */
+.clearGrid{display:grid;grid-template-columns:1fr 1fr;gap:2% 3%;align-items:start;text-align:left;margin:.4em 0}
+.clearGrid table.res{margin:.3em 0;font-size:clamp(11px,2.1vmin,15px)}
+.clearGrid table.res td{padding:.32em .3em}
+.clearGrid table.res td:last-child{white-space:nowrap}
+.clearGrid .rankWrap{text-align:center}
+.clearGrid .rank{font-size:clamp(36px,8vmin,72px)}
+.clearGrid .rankMsg{font-size:clamp(11px,2.2vmin,15px);margin-top:.2em}
+.quizBox{background:rgba(255,197,61,.05);border:2px solid #4a351e;border-radius:4px;padding:3% 3.5%;height:100%}
+.quizBox .qh{font-family:'DotGothic16',monospace;color:var(--amber);font-size:clamp(11px,2vmin,14px);letter-spacing:.15em;display:flex;justify-content:space-between;align-items:center}
+.quizBox .qh .qg{color:#C9BFA8;letter-spacing:.08em}
+.quizBox .qq{font-weight:700;font-size:clamp(13px,2.5vmin,18px);line-height:1.55;margin:.4em 0 .5em;color:var(--white)}
+.qBtn{display:flex;align-items:center;gap:.6em;width:100%;min-height:44px;margin:.28em 0;padding:.35em .8em;
+  border:2px solid #4a351e;border-radius:4px;background:rgba(10,7,3,.7);color:var(--white);cursor:pointer;text-align:left;
+  font-family:'Zen Kaku Gothic New',sans-serif;font-weight:700;font-size:clamp(12px,2.3vmin,16px);line-height:1.4;
+  touch-action:manipulation;transition:background .15s,border-color .15s,transform .15s}
+.qBtn .k{font-family:'DotGothic16',monospace;color:var(--amber);flex:0 0 1.4em}
+.qBtn:active{background:rgba(255,197,61,.25);border-color:var(--amber)}
+.qBtn:disabled{cursor:default;opacity:.55}
+.qBtn.ok{opacity:1;border-color:var(--good);background:rgba(90,211,138,.18);animation:qPop .35s}
+.qBtn.ng{opacity:1;border-color:var(--red);background:rgba(229,83,60,.18);animation:qShake .35s}
+@keyframes qPop{0%{transform:scale(.97)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
+@keyframes qShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.quizBox .qr{margin-top:.5em;font-size:clamp(11px,2.1vmin,14px);line-height:1.6;color:#E8DFC8;display:none;animation:qIn .3s}
+.quizBox .qr b{color:var(--amber)}
+.quizBox .qr b.hd{color:var(--good)}
+.quizBox .qr.ng b.hd{color:var(--red)}
+.quizBox .qr .hp{display:inline-block;color:#211502;background:var(--amber);border-radius:3px;padding:.05em .5em;margin-right:.4em;font-family:'DotGothic16',monospace}
+@keyframes qIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.clearBtns{margin-top:.2em}
+.clearBtns.wait{visibility:hidden}
+@media (max-width:700px){.clearGrid{grid-template-columns:1fr}}
 .safety{background:rgba(229,83,60,.08);border:2px solid rgba(229,83,60,.5);border-radius:4px;
   padding:2.5% 4%;margin:1em 0;text-align:left;font-size:clamp(11px,2.1vmin,15px);line-height:2}
 .safety b{color:var(--red)}
@@ -303,12 +342,150 @@ function hubReport(stage, rank, score){
   const done=Object.keys(stages).length;
   /* 出来ばえ = Σ(面ごとのランク点 S:1.0 A:0.8 B:0.6 C:0.4) / 8面 */
   let sum=0; for(const k in stages) sum+=rankPt(stages[k]);
-  const best=hubScale(Math.min(1, sum/HUB.total));
+  /* 学年で面構成は変わらない（保健クイズの中身だけ）ので学年係数なし {grade:0}。report の grade は表示用にハブ学年 */
+  const best=hubScale(Math.min(1, sum/HUB.total), {grade:0});
   hubSaveLocal({done,best,stages,topScore:Math.max(rec.topScore||0,score)});
   if(window.LearnHub && typeof LearnHub.report==='function'){
-    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best, raw:score,
+    try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best, raw:score, grade:hubGrade(),
       note:`${stage}面 ランク${rank} 素点 ${score}`}); }catch(e){}
   }
+}
+
+/* ---------------- 学年（保健クイズの出題学年） ----------------
+   面構成は学年共通。面クリア画面の「休憩」で出す保健クイズだけ、選んだ学年以下（同学年優先）から出題する。
+   初期値はハブの学年。表紙で選び直した値は localStorage に残す（ハブで学年を選び直すと hub-progress.js 側で消える）。 */
+const GRADE_KEY='manabi-grade:fitness-dungeon', GRADE_LABEL={1:'中1',2:'中2',3:'中3'};
+const hubGrade=()=>(window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3;
+function loadGrade(){
+  try{ const v=Number(localStorage.getItem(GRADE_KEY)); if(v===1||v===2||v===3) return v; }catch(e){}
+  return hubGrade();
+}
+let GRADE=loadGrade();
+function setGrade(g,persist){
+  if(g!==1&&g!==2&&g!==3) return;
+  GRADE=g;
+  if(persist){ try{ localStorage.setItem(GRADE_KEY,String(g)); }catch(e){} }
+  document.querySelectorAll('.gradePill').forEach(b=>{const on=+b.dataset.g===GRADE;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));});
+}
+
+/* ---------------- 保健クイズ（面クリア画面の休憩で1問） ----------------
+   g = 学年（1:中1 / 2:中2 / 3:中3）。{g,q,c:[4択],a:正解index,e:解説}
+   中1: 心身の機能の発達（呼吸器・骨・思春期）・健康な生活（運動・食事・休養と睡眠）
+   中2: 傷害の防止（けがの防止・熱中症・応急手当・運動時の安全）
+   中3: 健康と環境（体温調節と適応能力・高地・大気汚染・換気）・感染症の予防と運動 */
+const HQ=[
+ {g:1,q:'運動をすると呼吸が速く深くなるのはなぜ？',
+  c:['体温を下げるため','筋肉が必要とする酸素を多く取り入れるため','汗を出すため','心臓を休ませるため'],a:1,
+  e:'運動中の筋肉は多くの酸素を使い、二酸化炭素を多く出す。呼吸が速く深くなることで<b>酸素を多く取り入れ</b>、二酸化炭素を体の外へ出している。'},
+ {g:1,q:'運動が骨にあたえる効果として正しいのは？',
+  c:['骨に刺激が加わり、丈夫になる','骨が細くなって軽くなる','骨の成長が止まる','骨には何の影響もない'],a:0,
+  e:'走る・跳ぶなど骨に力が加わる運動は<b>骨を丈夫にする</b>。カルシウムなどの栄養と睡眠も合わせると、成長期に骨量が増えやすい。'},
+ {g:1,q:'運動を続けると、呼吸器（肺）はどのように発達する？',
+  c:['肺活量が増え、一度に取り込める空気の量が増える','肺が小さくなる','安静時の呼吸回数が常に多くなる','何も変化しない'],a:0,
+  e:'呼吸にかかわる筋肉が発達して<b>肺活量が増え</b>、一度に多くの空気を出し入れできるようになる。そのため少ない呼吸回数で必要な酸素をまかなえる。'},
+ {g:1,q:'軽い運動やストレッチで血行をよくして疲れをとる休み方を何という？',
+  c:['積極的休養','完全休養','強制休養','睡眠休養'],a:0,
+  e:'休養には、体を休めてねむる「消極的休養」と、軽く体を動かして回復を早める「<b>積極的休養</b>」がある。疲れの種類に合わせて使い分ける。'},
+ {g:1,q:'睡眠が足りない状態が続くと起こりやすいのは？',
+  c:['集中力や判断力が下がる','運動能力が高まる','病気への抵抗力が強くなる','体温が上がり続ける'],a:0,
+  e:'睡眠不足は脳の働きを低下させ、<b>集中力・判断力・記憶力が下がる</b>。けがをしやすくなり、病気への抵抗力も弱まる。'},
+ {g:1,q:'体内時計を整えて、夜にしっかり眠るために有効なのは？',
+  c:['朝に太陽の光を浴びる','寝る直前まで強い光の画面を見る','毎日寝る時刻をばらばらにする','夕方に長い昼寝をする'],a:0,
+  e:'<b>朝の光を浴びる</b>と体内時計がリセットされ、夜になると自然に眠くなるリズムが整う。寝る前のスマートフォンの光や不規則な就寝時刻はリズムを乱す。'},
+ {g:1,q:'思春期の体の発達について正しいのは？',
+  c:['発達の時期や程度には個人差がある','全員が同じ時期に同じように発達する','男子だけ体が変化する','発達は小学校のうちに終わる'],a:0,
+  e:'思春期には身長が急に伸び、男女それぞれの体つきの変化が現れる。始まる時期や進み方には<b>個人差</b>があり、人と比べてあせる必要はない。'},
+ {g:1,q:'WHO（世界保健機関）が5〜17歳にすすめる身体活動の目安は？',
+  c:['1日平均60分以上','1週間に10分','1か月に1回','運動は必要ない'],a:0,
+  e:'WHOは5〜17歳に、<b>1日平均60分以上</b>の中強度から高強度の身体活動をすすめている。通学や部活動、遊びなど、合計で60分になればよい。'},
+ {g:1,q:'運動習慣を長く続けるための工夫として適切なのは？',
+  c:['楽しめる運動を選び、無理のない目標を立てて生活に組み込む','最初から毎日限界まで行う','すぐに結果が出なければやめる','体調に関係なく予定どおり行う'],a:0,
+  e:'習慣として続くのは、<b>楽しさがあり生活の中に無理なく組み込める運動</b>。記録をつけたり仲間と行ったりすることも継続の助けになる。'},
+ {g:1,q:'食事でとるエネルギーが、運動や生活で使うエネルギーより多い状態が続くとどうなりやすい？',
+  c:['余った分が体脂肪としてたくわえられ、肥満につながりやすい','体重が減り続ける','筋肉だけが増えていく','体には何の変化も起こらない'],a:0,
+  e:'食事でとるエネルギーと、運動や生活で使うエネルギーの<b>つり合い</b>が大切。とりすぎが続くと体脂肪が増え、不足が続くとやせすぎや成長への悪影響につながる。成長期は運動量に合った量を、栄養のバランスよくとる。'},
+ {g:2,q:'捻挫の手当で、患部を心臓より高い位置に上げる理由は？',
+  c:['腫れや内出血を抑えるため','体温を上げるため','筋肉をほぐすため','骨を元の位置に戻すため'],a:0,
+  e:'患部を高くすると血液が患部に集まりにくくなり、<b>腫れや内出血を抑えられる</b>。RICEのE（Elevation・挙上）にあたる。'},
+ {g:2,q:'打撲や捻挫を氷で冷やすときの注意として正しいのは？',
+  c:['氷を直接肌に当てて長時間冷やす','タオルなどで包み、1回15〜20分ほど冷やす','冷やしたらすぐに温める','冷やさずに強くもむ'],a:1,
+  e:'氷を直接肌に当て続けると凍傷のおそれがある。氷のうは<b>タオル越し</b>に当て、1回15〜20分を目安に、間をあけてくり返す。'},
+ {g:2,q:'暑い中で運動していたら、足がつり、めまいがした。考えられるのは？',
+  c:['熱中症の初期症状','筋肉が強くなっているサイン','水分のとりすぎ','寒さによる症状'],a:0,
+  e:'大量の汗で水分と塩分が失われると、こむら返り（熱けいれん）やめまい・立ちくらみが起こる。<b>すぐに運動をやめ</b>、涼しい場所で水分と塩分を補給する。'},
+ {g:2,q:'気温が同じでも熱中症が起こりやすくなるのはどんなとき？',
+  c:['湿度が高いとき','風が強いとき','日かげにいるとき','湿度が低いとき'],a:0,
+  e:'<b>湿度が高いと汗が蒸発しにくく</b>、体の熱を逃がせない。暑さ指数（WBGT）が気温だけでなく湿度や日ざしをもとに決められているのはそのため。'},
+ {g:2,q:'熱中症を防ぐ運動のしかたとして正しいのは？',
+  c:['暑くなり始めの時期は運動を軽めにして、体を暑さに慣らす','暑い日ほど長時間運動してきたえる','体調が悪くても休まず続ける','厚着をして汗を多くかく'],a:0,
+  e:'体が暑さに慣れる（暑熱順化）には数日から2週間ほどかかる。<b>暑くなり始めは軽い運動から</b>始め、こまめに休憩と水分補給をとる。'},
+ {g:2,q:'骨折が疑われるときの応急手当として正しいのは？',
+  c:['添え木などで患部を固定し、動かさない','骨の位置を自分で元に戻す','患部をもんで温める','すぐに歩かせて病院へ向かわせる'],a:0,
+  e:'骨折が疑われるときは<b>患部を動かさない</b>ことが第一。板・雑誌・傘などを添え木にして固定し、速やかに医療機関へ運ぶ。'},
+ {g:2,q:'鼻血が出たときの正しい手当は？',
+  c:['座って少し下を向き、小鼻を強くつまむ','上を向いて首の後ろをたたく','あお向けに寝る','鼻にティッシュを深く詰めて放置する'],a:0,
+  e:'座って少し下を向き、<b>小鼻（鼻のやわらかい部分）を10分ほど強くつまんで圧迫</b>する。上を向くと血がのどに流れ込んでしまう。'},
+ {g:2,q:'運動中のけがを防ぐために、運動の前に行う「環境」の確認として正しいのは？',
+  c:['用具や場所の安全を点検する','まわりに人がいても気にせず始める','暗い場所でも同じ練習をする','ぬれた床でもそのまま走る'],a:0,
+  e:'けがは本人の体調や技能などの<b>人的要因</b>と、用具・場所・天候などの<b>環境要因</b>が重なって起こる。用具の破損や床の状態を事前に確かめることで防げるけがは多い。'},
+ {g:2,q:'倒れている人に声をかけても反応がない。まず行うことは？',
+  c:['大声で周りに助けを求め、119番通報とAEDの手配を頼む','水をかけて目を覚まさせる','体を強くゆすって運ぶ','しばらく様子を見て待つ'],a:0,
+  e:'反応がなければすぐに周囲の人に協力を求め、<b>119番通報とAEDを持ってくる役割を分担</b>する。普段どおりの呼吸がなければ（判断に迷っても）ただちに胸骨圧迫を始める。'},
+ {g:2,q:'やけどをしたときの応急手当として正しいのは？',
+  c:['すぐに流水で十分に冷やす','氷を直接当てて強く押さえる','水ぶくれをつぶす','油や薬をぬってこする'],a:0,
+  e:'衣服の上からでもよいので、<b>すぐに流水で10分以上冷やして</b>痛みと傷が深くなるのを抑える。水ぶくれはつぶさず、広い範囲や深いやけどは医療機関へ。'},
+ {g:3,q:'暑いときや運動したとき、皮膚の血管はどうなる？',
+  c:['縮んで血液が流れにくくなる','広がって血液が多く流れる','変化しない','血液が流れなくなる'],a:1,
+  e:'皮膚の血管が<b>広がって血液が多く流れ</b>、体の熱を外へ逃がす。寒いときは逆に血管が縮んで熱を逃がさないようにする。'},
+ {g:3,q:'汗をかくと体温が下がるのはなぜ？',
+  c:['汗が皮膚を冷たい色にするから','汗が蒸発するときに体の熱をうばうから','汗が血液をうすめるから','汗に冷たい成分が含まれるから'],a:1,
+  e:'水が<b>蒸発するときにまわりの熱をうばう</b>性質を利用している。湿度が高くて汗が蒸発しにくいときや、蒸発せずに流れ落ちる汗では、体温は下がりにくい。'},
+ {g:3,q:'寒いときに体がふるえるのは何のため？',
+  c:['筋肉を小刻みに動かして熱をつくるため','体の水分を減らすため','心拍数を下げるため','皮膚の血管を広げるため'],a:0,
+  e:'筋肉が動くと熱が発生する。ふるえは体が自動的に<b>筋肉を細かく動かして熱をつくり</b>、下がった体温を上げようとする反応。'},
+ {g:3,q:'病原体が体内に入っても、必ず発病するとは限らないのはなぜ？',
+  c:['体の抵抗力（免疫）の強さによって変わるから','病原体はすぐに死んでしまうから','感染は夜にしか起こらないから','運動している人は感染しないから'],a:0,
+  e:'発病するかどうかは、病原体の感染力と<b>体の抵抗力</b>の関係で決まる。適度な運動・バランスのよい食事・十分な睡眠は抵抗力を高める。'},
+ {g:3,q:'感染症への抵抗力と運動の関係として正しいのは？',
+  c:['適度な運動は抵抗力を保つのに役立つが、疲労がたまると抵抗力が下がりやすい','運動すればするほど感染しなくなる','運動は抵抗力と関係がない','運動をすると必ず抵抗力が下がる'],a:0,
+  e:'日常的な適度の運動は、体の抵抗力を保つのに役立つ。一方、無理な練習が続いて<b>疲労がたまったり睡眠が不足したりすると</b>抵抗力が下がりやすいので、休養と栄養で回復させる。'},
+ {g:3,q:'発熱やのどの痛みなど、感染症の症状があるときの運動は？',
+  c:['運動は休み、回復してから再開する','汗をかいて治すために激しく運動する','熱が高いほど運動するとよい','周りにうつさなければ運動してよい'],a:0,
+  e:'症状があるときの運動は<b>回復を遅らせ</b>、まれに心臓などに負担をかける。周囲へうつすおそれもあるので、休んで回復を待つ。'},
+ {g:3,q:'部活動で感染症の広がりを防ぐ行動として適切なのは？',
+  c:['タオルや飲み物の容器を他の人と共用しない','体調が悪くても練習に参加する','更衣室の換気をしない','手洗いは試合のあとだけ行う'],a:0,
+  e:'タオルや飲み物の回し飲みは、だ液や汗を通して病原体が移る原因になる。体調不良時の参加見合わせ、換気、こまめな手洗いも<b>感染経路を断つ</b>基本。'},
+ {g:3,q:'標高の高い場所で運動すると息が苦しくなりやすいのはなぜ？',
+  c:['気圧が低く、1回の呼吸で取りこめる酸素の量が少ないから','気温が高いから','湿度が高いから','重力が強いから'],a:0,
+  e:'空気中の酸素の割合は変わらないが、標高が高いほど気圧が下がって空気がうすくなり、<b>1回の呼吸で取りこめる酸素が少なく</b>なる。体が慣れるまでは運動量を控え、頭痛や吐き気が出たら無理をしない。'},
+ {g:3,q:'「光化学スモッグ注意報」が出ているときの対応として適切なのは？',
+  c:['屋外での激しい運動を控える','いつもより長く屋外で運動する','深呼吸をたくさんする','窓を全開にして換気を強める'],a:0,
+  e:'光化学スモッグの原因物質（光化学オキシダント）は目やのどを刺激する。運動で呼吸が増えると多く吸い込んでしまうため、<b>屋外での激しい運動は控える</b>。'},
+ {g:3,q:'多くの人が閉め切った室内で運動すると、空気中で増える気体は？',
+  c:['二酸化炭素','酸素','窒素','水素'],a:0,
+  e:'呼吸で出される二酸化炭素が室内にたまり、空気が汚れる。学校環境衛生基準では二酸化炭素濃度<b>1500ppm（0.15%）以下</b>が望ましいとされ、定期的な換気が必要。'},
+];
+/* 出題: 選んだ学年を優先し、足りなければ下の学年から。同じ問題は一巡するまで出さない */
+const QUIZ_USED_KEY='manabi-fitness-dungeon:quizUsed';
+const quizUsed=new Set((()=>{ try{ return JSON.parse(localStorage.getItem(QUIZ_USED_KEY)||'[]'); }catch(e){ return []; } })().filter(i=>Number.isInteger(i)&&i>=0&&i<HQ.length));
+function saveQuizUsed(){ try{ localStorage.setItem(QUIZ_USED_KEY, JSON.stringify([...quizUsed])); }catch(e){} }
+function pickQuiz(){
+  /* 選んだ学年の問題を優先（各学年10問あるので、1回の通しプレイ7問はすべて同学年）。
+     その学年に問題が無いときだけ下の学年から。使用済みは localStorage に残し、一巡するまで同じ問題を出さない */
+  let g=GRADE;
+  while(g>1 && !HQ.some(q=>q.g===g)) g--;
+  const pool=[]; HQ.forEach((q,i)=>{ if(q.g===g) pool.push(i); });
+  if(!pool.length) return HQ[0];
+  let cand=pool.filter(i=>!quizUsed.has(i));
+  if(!cand.length){
+    /* 一巡したら、その学年の使用済みを消す。直前に出した問題だけは続けて出さない */
+    const last=pickQuiz.last;
+    pool.forEach(i=>quizUsed.delete(i));
+    cand=pool.filter(i=>i!==last);
+  }
+  const i=cand[Math.floor(Math.random()*cand.length)];
+  quizUsed.add(i); pickQuiz.last=i; saveQuizUsed();
+  return HQ[i];
 }
 (function(){
   const btn=document.getElementById('homeBtn');
@@ -815,7 +992,7 @@ function onRep(mv,pi){
           const first=!e.ok[1-pi];
           addScore(first?250:150,first?'先取！ +250':'+150',pi);
         } else {
-          if(P.hearts<3){P.hearts++;drawHearts();
+          if(P.hearts<(S.heartMax||3)){P.hearts++;drawHearts();
             S.popups.push({txt:'ハート回復！',rx:0.5,ry:0.36,life:1.4,pi});}
           else addScore(200,'満タン！ +200',pi);
         }
@@ -1049,7 +1226,7 @@ const ovl=$('#ovl');
 function screenMenu(){
   S.scene='menu';
   hideHome(false);
-  S.np=1;S.paused=false;
+  S.np=1;S.paused=false;S.bonusHeart=false;
   document.getElementById('stage').classList.remove('vs','camov','nocam','camfull','cammini');
   $('#camHint').style.display='none';
   $('#depthMeter').style.display='none';
@@ -1057,7 +1234,7 @@ function screenMenu(){
   $('#practiceBar').style.display='none';$('#streak').style.display='none';
   ovl.style.display='flex';
   ovl.innerHTML=`
-   <div class="panel">
+   <div class="panel wide">
      <div class="eyebrow">HOKEN-TAIIKU NIGHT GAMES</div>
      <h1>リアル体つくりダンジョン<span class="en">REAL FITNESS DUNGEON</span></h1>
      <div class="moveList">
@@ -1076,7 +1253,7 @@ function screenMenu(){
      <button class="btn" id="goCam">1人でプレイ（カメラ）</button>
      <button class="btn" id="goVs">2人で対戦（カメラ）</button>
      <button class="btn ghost" id="goPractice">練習モード（カメラなし）</button>
-     <button class="btn ghost" id="goFull">全画面</button>
+     <button class="btn ghost" id="goFull">全画面</button><div class="gradeRow"><span class="gl">休憩の保健クイズ</span>${[1,2,3].map(g=>`<button class="btn ghost gradePill${g===GRADE?' on':''}" type="button" data-g="${g}" aria-pressed="${g===GRADE}">${GRADE_LABEL[g]}</button>`).join('')}</div>
      <div id="err"></div>
      <div class="trivia"><b>保体メモ：</b>強さの違う運動を交互に行うと心拍数が上下する。これは<b>インターバルトレーニング</b>の考え方。走り＋筋トレ＋ジャンプで全身をバランスよく。</div>
    </div>`;
@@ -1096,6 +1273,7 @@ function screenMenu(){
   };
   $('#goCam').onclick=()=>startCam(1);
   $('#goVs').onclick=()=>startCam(2);
+  ovl.querySelectorAll('.gradePill').forEach(b=>{ b.onclick=()=>setGrade(+b.dataset.g,true); });
   $('#goPractice').onclick=()=>{ac();S.mode='practice';S.np=1;
     document.getElementById('stage').classList.remove('vs','camov','camfull','cammini');
     document.getElementById('stage').classList.add('nocam');
@@ -1188,7 +1366,7 @@ function screenStageSelect(){
 function drawHearts(){
   const el=$('#hearts');
   let html='';
-  for(let i=0;i<3;i++){
+  for(let i=0;i<(S.heartMax||3);i++){
     html+=`<span class="${i<S.hearts?'':'lost'}"><svg viewBox="0 0 24 22"><path fill="#E5533C" d="M12 21C5 15 1 11 1 6.5 1 3.4 3.4 1 6.5 1 8.6 1 10.7 2.2 12 4 13.3 2.2 15.4 1 17.5 1 20.6 1 23 3.4 23 6.5 23 11 19 15 12 21Z"/></svg></span>`;
   }
   el.innerHTML=html;
@@ -1239,6 +1417,8 @@ function startRun(stageN){
   buildStage(S.stage);S.enc=null;
   S.t=0;S.dist=0;S.v=0;
   S.p=[mkPlayer(),mkPlayer()];
+  /* 休憩の保健クイズに正解していたら、この面はハート4つで開始 */
+  S.heartMax=(S.np===1&&S.bonusHeart)?4:3; S.p[0].hearts=S.heartMax; S.bonusHeart=false;
   S.shake=0;S.redFlash=0;S.popups=[];S.slash=null;
   S.countdown=3.6;
   lastJumpAny=-9;
@@ -1369,18 +1549,55 @@ function finishRun(){
     $('#goSel').onclick=()=>screenStageSelect();
     $('#goMenu').onclick=()=>screenMenu();
   } else {
+    /* 休憩＝保健クイズ1問。正解で次の面のハート+1、不正解でも解説を読んで進める */
+    const Q=pickQuiz();
+    const K=['A','B','C','D'];
+    /* 選択肢は毎回並べかえる（データ上の正解位置に偏りがあっても、画面では偏らない） */
+    const ORD=[0,1,2,3];
+    for(let j=ORD.length-1;j>0;j--){ const r=Math.floor(Math.random()*(j+1)); [ORD[j],ORD[r]]=[ORD[r],ORD[j]]; }
     ovl.innerHTML=`
-     <div class="panel">
+     <div class="panel wide">
        <div class="eyebrow">STAGE ${S.stage} CLEAR</div>
        <h2>${S.stage}面「${THEMES[S.stage-1].name}」制覇！</h2>
-       ${table}
-       <div class="rank">RANK ${rk}</div>
-       <div class="rankMsg">${msg}</div>
-       <p class="sub">ここで<b>ひと休み</b>。呼吸を整えて、水分をとってから次へ進もう。<br>次の${S.stage+1}面は、少しだけ手ごわいぞ。</p>
-       <button class="btn" id="goNext">次の${S.stage+1}面へ</button>
-       <button class="btn ghost" id="goSel">面セレクト</button>
-       <button class="btn ghost" id="goMenu">タイトルへ</button>
+       <div class="clearGrid">
+         <div>
+           ${table}
+           <div class="rankWrap"><div class="rank">RANK ${rk}</div><div class="rankMsg">${msg}</div></div>
+         </div>
+         <div class="quizBox" id="quizBox">
+           <div class="qh"><span>休憩の保健クイズ</span><span class="qg">${GRADE_LABEL[Q.g]}　正解でハート+1</span></div>
+           <div class="qq">${Q.q}</div>
+           ${ORD.map((ci,pos)=>`<button class="qBtn" type="button" data-i="${ci}"><span class="k">${K[pos]}</span><span>${Q.c[ci]}</span></button>`).join('')}
+           <div class="qr" id="quizRes"></div>
+         </div>
+       </div>
+       <div class="clearBtns wait" id="clearBtns">
+         <button class="btn" id="goNext">次の${S.stage+1}面へ</button>
+         <button class="btn ghost" id="goSel">面セレクト</button>
+         <button class="btn ghost" id="goMenu">タイトルへ</button>
+       </div>
      </div>`;
+    const btns=ovl.querySelectorAll('.qBtn');
+    btns.forEach(b=>{
+      b.onclick=()=>{
+        if(S.quizDone) return;
+        S.quizDone=true;
+        const i=+b.dataset.i, ok=(i===Q.a);
+        btns.forEach(x=>{ x.disabled=true; const xi=+x.dataset.i; if(xi===Q.a) x.classList.add('ok'); else if(xi===i) x.classList.add('ng'); });
+        const res=$('#quizRes');
+        if(ok){
+          SFX.chest(); S.bonusHeart=true;
+          res.innerHTML=`<span class="hp">ハート+1</span><b class="hd">正解！</b> 次の面はハート4つで出発。<br>${Q.e}`;
+        } else {
+          SFX.hurt();
+          res.classList.add('ng');
+          res.innerHTML=`<b class="hd">ざんねん。</b> 正解は ${K[ORD.indexOf(Q.a)]}。<br>${Q.e}`;
+        }
+        res.style.display='block';
+        $('#clearBtns').classList.remove('wait');
+      };
+    });
+    S.quizDone=false;
     $('#goNext').onclick=()=>startRun(S.stage+1);
     $('#goSel').onclick=()=>screenStageSelect();
     $('#goMenu').onclick=()=>screenMenu();
