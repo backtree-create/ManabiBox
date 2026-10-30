@@ -45,12 +45,18 @@
   }
 
   /* ---------------- 保存 ---------------- */
+  /* 読み込みはメモリに控えておき、毎回 localStorage を解析しない（描画のたびに呼ばれても軽い） */
+  var cache = null;
   function load() {
-    try { return JSON.parse(global.localStorage.getItem(KEY)) || {}; } catch (e) { return {}; }
+    if (cache) return cache;
+    try { cache = JSON.parse(global.localStorage.getItem(KEY)) || {}; } catch (e) { cache = {}; }
+    return cache;
   }
   function save(all) {
+    cache = all;
     try { global.localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {}
   }
+  global.addEventListener('storage', function (e) { if (!e.key || e.key === KEY) cache = null; });
   function slot(all, app) {
     if (!all[app]) all[app] = { best: {}, title: '', ach: {}, miss: {} };
     var s = all[app];
