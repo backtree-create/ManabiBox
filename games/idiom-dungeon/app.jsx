@@ -241,6 +241,42 @@ const IDIOMS = RAW.split("\n").map((line, i) => {
 const BY_EN = Object.fromEntries(IDIOMS.map((x) => [x.en, x]));
 
 /* ------------------------------------------------------------
+   ごほうび・学習記録（manabi-juice.js の MJ と、この端末の図鑑）
+   ・永続の図鑑：迷宮で正しく使えた熟語（宝箱の正解・扉/魔物に正しく唱えた・復習の正解）
+   ・取りこぼし：MJ.miss に貯め、次のもぐりで出題を優先。初回で正解できたら MJ.hit で消す
+------------------------------------------------------------ */
+const APP = "idiom-dungeon";
+const TOTAL = IDIOMS.length;
+const DEX_KEY = "idiom-dungeon:dex:v1";
+const mj = (fn, ...a) => { try { const M = window.MJ; return M && typeof M[fn] === "function" ? M[fn](...a) : undefined; } catch (e) { return undefined; } };
+const loadDex = () => { try { return JSON.parse(localStorage.getItem(DEX_KEY)) || {}; } catch (e) { return {}; } };
+const saveDex = (d) => { try { localStorage.setItem(DEX_KEY, JSON.stringify(d)); } catch (e) {} };
+const dexOwned = (d) => Object.keys(d).filter((en) => BY_EN[en]);
+/* 称号は図鑑の収集数で上がる（ハブのカードにも出る） */
+const TITLES = [
+  { min: 0, name: "灯を持つ者" },
+  { min: 15, name: "迷宮の見習い" },
+  { min: 50, name: "熟語の探索者" },
+  { min: 110, name: "封印の解読者" },
+  { min: 180, name: "迷宮の賢者" },
+];
+const titleTier = (n) => TITLES.reduce((k, t, i) => (n >= t.min ? i : k), 0);
+const ACHS = [
+  { id: "boss", label: "層の主を倒した" },
+  { id: "clear-novice", label: "見習いコース制覇" },
+  { id: "clear-adventurer", label: "冒険者コース制覇" },
+  { id: "clear-king", label: "熟語の王コース制覇" },
+  { id: "nomiss", label: "ノーミス踏破" },
+  { id: "endless-10", label: "果てなき坑道 B10F" },
+  { id: "dex-100", label: "図鑑 100語" },
+  { id: "dex-all", label: "図鑑コンプリート" },
+  { id: "review-clear", label: "復習をすべて片づけた" },
+];
+const missList = () => (mj("misses", APP) || []).filter((m) => BY_EN[m.id]);
+const missOf = (x) => mj("miss", APP, x.en, { en: x.en, ja: x.meanings.join("／"), g: x.grade });
+const BOSS_LINES = ["この言葉、読み解けるか。", "……ひびが入ったか。だが、まだ終わらぬ。", "ばかな、言葉が……崩れていく……"];
+
+/* ------------------------------------------------------------
    コース設定
    ・魔力は厳しめ。灯火（祭壇で休める回数）を使い切って
      魔力が尽きたら、そこで探索は終わる
@@ -1034,14 +1070,15 @@ const CREATURES = {
   ),
 };
 
-function Creature({ name, big, dead }) {
+function Creature({ name, big, dead, stage = 0 }) {
   const draw = CREATURES[name] || CREATURES["ねむりの番人"];
   return (
-    <div className={"crea" + (big ? " big" : "")}>
+    <div className={"crea" + (big ? " big" : "") + (stage && !dead ? ` st${stage}` : "")}>
       <svg viewBox="0 0 200 134" className={"creature" + (dead ? " down" : "")} aria-hidden="true">
         <Defs />
         {draw(dead)}
       </svg>
+      {stage > 0 && !dead && <span className="cracks" aria-hidden="true" />}
       {dead && (
         <div className="ruin" aria-hidden="true">
           {SHARDS.map((sh, i) => (
@@ -1059,9 +1096,9 @@ function Creature({ name, big, dead }) {
 /* ------------------------------------------------------------
    部屋の絵
 ------------------------------------------------------------ */
-function Scene({ kind, name, solved }) {
+function Scene({ kind, name, solved, stage = 0, hitKey = 0 }) {
   if (kind === "monster" || kind === "midboss" || kind === "boss")
-    return <Creature name={name} big={kind !== "monster"} dead={solved} />;
+    return <Creature key={"c" + hitKey} name={name} big={kind !== "monster"} dead={solved} stage={stage} />;
   if (kind === "treasure" || kind === "treasure3")
     return (
       <svg viewBox="0 0 200 116" className="scene" aria-hidden="true">
@@ -1107,14 +1144,72 @@ function IdiomLabyrinth() {
   const [settled, setSettled] = useState(true);
   const [flash, setFlash] = useState(null);
   const [showDex, setShowDex] = useState(false);
-  const [bgmOn, setBgmOn] = useState(true);
+  const [bgmOn, setBgmOn] = useState(() => !mj("muted"));
   const [bossStep, setBossStep] = useState(0);
   const [stat, setStat] = useState({ fails: 0, tries: 0, rests: 0, spent: 0, route: [] });
+  /* 永続の図鑑・称号・取りこぼし */
+  const [perm, setPerm] = useState(loadDex);
+  const permCount = useMemo(() => dexOwned(perm).length, [perm]);
+  const [titleName, setTitleName] = useState(() => mj("titleOf", APP) || TITLES[0].name);
+  const [missCount, setMissCount] = useState(() => missList().length);
+  const [reveal, setReveal] = useState(null);       // 誤答のあとに見せる正しい熟語
+  const [quizWrong, setQuizWrong] = useState([]);   // 宝物庫で外した選択肢
+  const [runMiss, setRunMiss] = useState([]);       // 今回まちがえた熟語（en）
+  const [endTab, setEndTab] = useState("miss");
+  const [carried, setCarried] = useState(0);        // 記憶から持ち込んだ語数
 
   const bgm = useBgm();
   const sfx = useSfx(bgmOn);
   const used = useRef(new Set());
   const owned = useRef({ v: new Set(), s: new Set(), p: new Set() });
+  const weak = useRef(new Set());       // このもぐりで優先して出す取りこぼし
+  const missed = useRef(new Set());     // このもぐりで一度でも外した熟語
+  const combo = useRef(0);
+  const floorFails0 = useRef(0);        // 層に入ったときの不発数
+  const cutFloor = useRef(-1);          // カットインを出した層
+
+  /* 音の設定を共通演出（MJ）と合わせる */
+  useEffect(() => { mj("setMuted", !bgmOn); }, [bgmOn]);
+  /* 称号（図鑑の収集数）と図鑑の実績 */
+  useEffect(() => {
+    const t = mj("title", APP, TITLES, permCount);
+    if (t) setTitleName(t);
+    if (permCount >= 100) mj("achieve", APP, "dex-100", "図鑑 100語");
+    if (permCount >= TOTAL) mj("achieve", APP, "dex-all", "図鑑コンプリート");
+  }, [permCount]);
+
+  /* 正しく使えた熟語を端末の図鑑に残す */
+  const keep = (en) => {
+    if (!BY_EN[en]) return;
+    setPerm((d) => {
+      const n = { ...d, [en]: { at: (d[en] && d[en].at) || Date.now(), n: ((d[en] && d[en].n) || 0) + 1 } };
+      saveDex(n);
+      return n;
+    });
+  };
+  /* 正解（初回で当てたら取りこぼしから消す）／誤答（取りこぼしに貯める） */
+  const gotRight = (x) => {
+    keep(x.en);
+    if (!missed.current.has(x.en)) { if (mj("hit", APP, x.en)) setMissCount(missList().length); combo.current += 1; }
+    else combo.current = 0;
+  };
+  const gotWrong = (x) => {
+    combo.current = 0;
+    if (!x) return;
+    missed.current.add(x.en);
+    missOf(x);
+    setMissCount(missList().length);
+    setRunMiss((a) => (a.includes(x.en) ? a : [...a, x.en]));
+  };
+  const juiceOk = (text, big) => {
+    setTimeout(() => {
+      const el = document.querySelector(".room .crea, .room .scene, .room .carved, .room");
+      const c = combo.current;
+      mj("burst", el, { colors: ["#F0D79A", "#5ED6C6", "#FFFFFF"], count: (big ? 34 : 18) + Math.min(c, 6) * 4, spread: big ? 1.3 : 1 });
+      mj("pop", el, c >= 2 ? `${text}　${c}連続` : text, { color: "#F0D79A", size: 24 + Math.min(c, 5) * 3 });
+    }, 30);
+  };
+  const juiceNg = () => { mj("flash", "#D9563C"); mj("sfx", "ng"); };
 
   const gaveOut = mp < MP_COST && torches <= 0;
 
@@ -1159,8 +1254,41 @@ function IdiomLabyrinth() {
     window.manabiReport(rep);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, fi]);
-   
+
   const floorName = DEEP_NAMES[fi] || `深層 ${fi + 1 - DEEP_NAMES.length}`;
+
+  /* 層クリア・結果：カットイン、自己ベスト、実績、数字のカウントアップ（ハブ送信とは別） */
+  useEffect(() => {
+    if (screen === "floorclear") {
+      mj("record", APP, "depth-" + course.key, fi + 1);
+      if (course.endless && fi + 1 >= 10) mj("achieve", APP, "endless-10", "果てなき坑道 B10F");
+      if (cutFloor.current !== fi) {   // 層の主を倒した層はそのときに出しているので出さない
+        cutFloor.current = fi;
+        const ff = stat.fails - floorFails0.current;
+        const rank = ff === 0 ? "S" : ff <= 2 ? "A" : ff <= 5 ? "B" : "C";
+        mj("cutin", { title: `B${fi + 1}F 突破`, sub: `${floorName}　不発 ${ff}`, rank, color: "#B0832C" });
+      }
+    }
+    if (screen === "end") {
+      const won = !gaveOut && !course.endless;
+      const r = mj("record", APP, "depth-" + course.key, fi + 1);
+      if (won) {
+        mj("record", APP, "clear-" + course.key, 1);
+        mj("achieve", APP, "clear-" + course.key, `${course.name}コース制覇`);
+        if (stat.fails === 0) mj("achieve", APP, "nomiss", "ノーミス踏破");
+      }
+      if (course.endless && r && r.isNew) setTimeout(() => mj("banner", "新記録", { color: "#B0832C" }), 900);
+      setEndTab(runMiss.length ? "miss" : "got");
+      const t = setTimeout(() => {
+        document.querySelectorAll(".lab [data-cu]").forEach((el) => {
+          const pre = el.dataset.pre || "", suf = el.dataset.suf || "";
+          mj("countUp", el, Number(el.dataset.cu), { ms: 1000, format: (n) => pre + Math.round(n) + suf });
+        });
+      }, 1050);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen]);
   /* 出題学年はコースの grades だけで決まる（層が進むほど上の学年へ） */
   const gradeOKFor = (c, f) => {
     const g = c.grades[Math.min(c.grades.length - 1, Math.floor(f / 2))];
@@ -1175,6 +1303,9 @@ function IdiomLabyrinth() {
 
   const target = room ? (room.targets ? room.targets[bossStep] : room.idiom) : null;
   const needTriple = target && target.tokens.length === 3;
+  /* ボスの損壊段階：0 無傷 / 1 ひび / 2 崩れかけ（言葉を砕いた割合で決まる） */
+  const bossStage = room && room.targets && !solved
+    ? (bossStep / room.targets.length >= 0.5 ? 2 : bossStep > 0 ? 1 : 0) : 0;
   const spellTokens = needTriple ? [sel.v, sel.s, sel.p] : [sel.v, sel.p];
   const spell = spellTokens.every(Boolean) ? spellTokens.join(" ") : null;
   const learned = useMemo(() => dex.map((en) => BY_EN[en]).filter(Boolean), [dex]);
@@ -1201,6 +1332,11 @@ function IdiomLabyrinth() {
       const twins = pool.filter((x) => x.meanings.length > 1);
       if (twins.length) pool = twins;
     }
+    /* 取りこぼした熟語（コースの学年の範囲内で、まだ出ていないもの）を優先 */
+    if (weak.current.size) {
+      const w = pool.filter((x) => weak.current.has(x.en) && !used.current.has(x.id));
+      if (w.length && Math.random() < 0.65) pool = w;
+    }
     const got = rnd(pool);
     used.current.add(got.id);
     return got;
@@ -1218,6 +1354,7 @@ function IdiomLabyrinth() {
   const buildRoom = (kind, c = course, f = fi) => {
     const mixed = triplesOK(c) && f >= (c.tripleFrom || 2);
     setSel({ v: null, s: null, p: null }); setSolved(false); setMsg(""); setTwinOpen(false); setBossStep(0); setSettled(true);
+    setReveal(null); setQuizWrong([]);
     if (kind === "fork") {
       const opts = [ROUTES.quiet, ROUTES.guard];
       if (mixed) opts.push(ROUTES.cursed);
@@ -1255,6 +1392,7 @@ function IdiomLabyrinth() {
   };
 
   const beginFloor = (c, f) => {
+    floorFails0.current = f === 0 ? 0 : stat.fails;
     const [first, ...rest] = floorQueue(c, f);
     setQueue(rest);
     setRoom(buildRoom(first, c, f));
@@ -1267,6 +1405,15 @@ function IdiomLabyrinth() {
     setCourse(c); setFi(0); setMp(c.mp); setTorches(c.torches);
     setStones([]); setCards([]); setOrbs([]); setDex([]);
     setStat({ fails: 0, tries: 0, rests: 0, spent: 0, route: [] });
+    missed.current = new Set(); combo.current = 0; cutFloor.current = -1;
+    setRunMiss([]); setEndTab("miss");
+    const inRange = (x) => c.grades.includes(x.grade) && (c.triples || x.tokens.length === 2);
+    weak.current = new Set(missList().map((m) => m.id).filter((en) => inRange(BY_EN[en])));
+    /* 記憶の頁：称号が上がるほど、図鑑の熟語を最初から持ち込める（パーツつき・最大3語） */
+    const k = Math.min(3, titleTier(permCount));
+    const mem = shuffle(dexOwned(perm).map((en) => BY_EN[en]).filter(inRange)).slice(0, k);
+    mem.forEach((x) => { grantParts(x); learn(x.en); });
+    setCarried(mem.length);
     beginFloor(c, 0);
   };
 
@@ -1289,13 +1436,18 @@ function IdiomLabyrinth() {
     setStat((s) => ({ ...s, tries: s.tries + 1 }));
     if (choice === right) {
       grantParts(room.idiom); learn(room.idiom.en);
+      gotRight(room.idiom);
       sfx("chest");
-      setSolved(true); setFlash("ok");
+      setSolved(true); setFlash("ok"); setReveal(null);
+      juiceOk(`パーツ +${room.idiom.tokens.length}`);
       setMsg(`「${room.idiom.en}」＝${right}。錠が外れ、${room.idiom.tokens.length}個のパーツを手に入れた。`);
     } else {
       setMp((m) => Math.max(0, m - MP_QUIZ_MISS));
       setStat((s) => ({ ...s, fails: s.fails + 1, spent: s.spent + MP_QUIZ_MISS }));
-      setFlash("ng");
+      setFlash("ng"); juiceNg();
+      gotWrong(room.idiom);
+      setQuizWrong((a) => [...a, choice]);
+      setReveal({ en: room.idiom.en, ja: right });
       setMsg(`錠は動かない。手がしびれ、魔力を${MP_QUIZ_MISS}失った。`);
     }
     setTimeout(() => setFlash(null), 420);
@@ -1314,18 +1466,30 @@ function IdiomLabyrinth() {
     if (en === target.en) {
       setMp((m) => Math.min(course.mp, m - 0 + MP_BACK));
       learn(en);
-      setFlash(["monster", "midboss", "boss"].includes(room.kind) &&
-        (!room.targets || bossStep + 1 >= room.targets.length) ? "kill" : "ok");
+      gotRight(target);
+      setReveal(null);
+      const foe = ["monster", "midboss", "boss"].includes(room.kind);
+      setFlash(foe && (!room.targets || bossStep + 1 >= room.targets.length) ? "kill" : "ok");
       if (room.targets && bossStep + 1 < room.targets.length) {
         sfx("hit");
+        juiceOk(`封印 ${bossStep + 1}/${room.targets.length} 破壊`);
         setBossStep(bossStep + 1);
         setSel({ v: null, s: null, p: null });
-        setMsg(`「${en}」が鎧を砕いた。${room.name}は次の言葉を突きつけてくる。`);
+        setMsg(`「${en}」＝${target.meanings.join("／")}。言葉が鎧を砕いた。${room.name}は次の言葉を突きつけてくる。`);
         setTimeout(() => setFlash(null), 420);
         return;
       }
       setSolved(true);
-      sfx(["monster", "midboss", "boss"].includes(room.kind) ? "kill" : "door");
+      sfx(foe ? "kill" : "door");
+      juiceOk(foe ? "撃破" : "解錠", foe);
+      if (room.kind === "midboss" || room.kind === "boss") {
+        /* 層の主を倒した：崩れ落ちるのを見せてからカットイン */
+        const ff = stat.fails - floorFails0.current;
+        const rank = ff === 0 ? "S" : ff <= 2 ? "A" : ff <= 5 ? "B" : "C";
+        cutFloor.current = fi;
+        setTimeout(() => mj("cutin", { title: `${room.name} 撃破`, sub: `B${fi + 1}F ${floorName}　不発 ${ff}`, rank, color: "#B0832C" }), 1050);
+        mj("achieve", APP, "boss", "層の主を倒した");
+      }
       if (course.endless && room.kind === "midboss") {
         setTorches((t) => Math.min(4, t + 1));
       }
@@ -1344,10 +1508,12 @@ function IdiomLabyrinth() {
       }
     } else if (BY_EN[en]) {
       learn(en);
-      setStat((s) => ({ ...s, fails: s.fails + 1 })); setFlash("ng");
+      setStat((s) => ({ ...s, fails: s.fails + 1 })); setFlash("ng"); juiceNg();
+      gotWrong(target); setReveal({ en: target.en, ja: target.meanings.join("／") });
       setMsg(`「${en}」＝${BY_EN[en].meanings.join("／")}。熟語としては成立し、図鑑に記録された。だがここでは反応しない。`);
     } else {
-      setStat((s) => ({ ...s, fails: s.fails + 1 })); setFlash("dud");
+      setStat((s) => ({ ...s, fails: s.fails + 1 })); setFlash("dud"); juiceNg();
+      gotWrong(target); setReveal({ en: target.en, ja: target.meanings.join("／") });
       setMsg("パーツは反発し合った。その組み合わせは熟語にならない。");
     }
     setSel({ v: null, s: null, p: null });
@@ -1393,7 +1559,7 @@ function IdiomLabyrinth() {
     return (
       <div className="lab">
         <style>{CSS}</style>
-        <div className="frame title">
+        <div className="frame title home">
           <p className="eyebrow">動詞の石　＋　前置詞の宝珠</p>
           <h1 className="mincho">熟語の迷宮</h1>
           <p className="lead">
@@ -1401,16 +1567,29 @@ function IdiomLabyrinth() {
             道は途中で分かれる。どちらを選ぶかで、手に入るものと消える魔力が変わる。
           </p>
           <div className="toprow">
+            <span className="titlepill"><i>称号</i>{titleName}</span>
+            <button className="bgmtoggle dexgo" onClick={() => setScreen("dex")}>熟語図鑑 <b>{permCount}</b>/{TOTAL}</button>
+            <button className="bgmtoggle revgo" onClick={() => setScreen("review")} disabled={missCount === 0}>
+              復習{missCount > 0 ? `（${missCount}語）` : ""}
+            </button>
             <button className={"bgmtoggle" + (bgmOn ? "" : " off")} onClick={() => setBgmOn(!bgmOn)}>♪ 音 {bgmOn ? "ON" : "OFF"}</button>
           </div>
           <div className="courses">
-            {COURSES.map((c) => (
-              <button key={c.key} className={"course" + (c.key === recommended.key ? " rec" : "")} onClick={() => start(c)}>
-                <span className="cname mincho">{c.name}{c.key === recommended.key && <span className="rectag">おすすめ</span>}</span>
-                <span className="cfloor">{c.endless ? "果てしなく" : `地下${c.floors}層`}／灯火{c.torches}／魔力{c.mp}</span>
-                <span className="cdesc">{c.desc}</span>
-              </button>
-            ))}
+            {COURSES.map((c, i) => {
+              const cleared = mj("best", APP, "clear-" + c.key);
+              const deep = mj("best", APP, "depth-" + c.key);
+              return (
+                <button key={c.key} className={"course" + (c.key === recommended.key ? " rec" : "")} onClick={() => start(c)}
+                  style={{ animationDelay: `${0.12 + i * 0.1}s` }}>
+                  <span className="cname mincho">{c.name}{c.key === recommended.key && <span className="rectag">おすすめ</span>}</span>
+                  <span className="cfloor">{c.endless ? "果てしなく" : `地下${c.floors}層`}／灯火{c.torches}／魔力{c.mp}</span>
+                  <span className="cdesc">{c.desc}</span>
+                  <span className={"cbest" + (cleared ? " done" : "")}>
+                    {cleared ? "★ 制覇" : deep ? `最高 B${deep}F` : "未踏"}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           <p className="note">
             唱えるたびに魔力を{MP_COST}使い、正解でも{MP_BACK}しか戻らない。<br />
@@ -1418,6 +1597,28 @@ function IdiomLabyrinth() {
             果てなき坑道は 2層ごとに層の主が現れ、倒すと灯火をひとつ奪える。
           </p>
         </div>
+      </div>
+    );
+
+  /* ---------------- 熟語図鑑（端末に残る） ---------------- */
+  if (screen === "dex")
+    return (
+      <div className="lab full">
+        <style>{CSS}</style>
+        <DexScreen perm={perm} onBack={() => setScreen("title")} />
+      </div>
+    );
+
+  /* ---------------- 復習（取りこぼした熟語だけ。ハブには送らない） ---------------- */
+  if (screen === "review")
+    return (
+      <div className="lab full">
+        <style>{CSS}</style>
+        <ReviewScreen
+          onBack={() => { setMissCount(missList().length); setScreen("title"); }}
+          onRight={(x) => { keep(x.en); mj("hit", APP, x.en); setMissCount(missList().length); }}
+          onWrong={(x) => { missOf(x); }}
+        />
       </div>
     );
 
@@ -1471,21 +1672,37 @@ function IdiomLabyrinth() {
           <div className="rule drop2" aria-hidden="true" />
           {won && <p className="lead drop3">扉はすべて開かれ、坑道の奥に朝の光が差している。</p>}
           <div className="stats drop3">
-            <div><span>到達</span><b>B{fi + 1}F</b></div>
-            <div><span>覚えた熟語</span><b>{dex.length}</b></div>
-            <div><span>不発</span><b>{stat.fails}</b></div>
-            <div><span>使った魔力</span><b>{stat.spent}</b></div>
+            <div><span>到達</span><b data-cu={fi + 1} data-pre="B" data-suf="F">B{fi + 1}F</b></div>
+            <div><span>覚えた熟語</span><b data-cu={dex.length}>{dex.length}</b></div>
+            <div><span>不発</span><b data-cu={stat.fails}>{stat.fails}</b></div>
+            <div><span>使った魔力</span><b data-cu={stat.spent}>{stat.spent}</b></div>
             <div><span>灯火の残り</span><b>{torches}</b></div>
           </div>
           {stat.route.length > 0 && <p className="route drop3">通った道　{stat.route.join(" → ")}</p>}
           <div className="stele drop4">
-            <h3 className="sub">持ち帰った熟語</h3>
-            <ul className="dexlist">
-              {learned.map((x) => (<li key={x.en}><b>{x.en}</b><span>{x.meanings.join("／")}</span></li>))}
-            </ul>
+            <div className="steletabs" role="tablist">
+              <button role="tab" aria-selected={endTab === "miss"} className={"stab" + (endTab === "miss" ? " on" : "")} onClick={() => setEndTab("miss")}>
+                今回まちがえた熟語 <b>{runMiss.length}</b>
+              </button>
+              <button role="tab" aria-selected={endTab === "got"} className={"stab" + (endTab === "got" ? " on" : "")} onClick={() => setEndTab("got")}>
+                持ち帰った熟語 <b>{learned.length}</b>
+              </button>
+            </div>
+            {endTab === "miss" ? (
+              runMiss.length === 0 ? <p className="empty stempty">まちがえた熟語はない。見事な踏破だ。</p> : (
+                <ul className="dexlist miss" key="m">
+                  {runMiss.map((en) => BY_EN[en]).filter(Boolean).map((x) => (<li key={x.en}><b>{x.en}</b><span>{x.meanings.join("／")}</span></li>))}
+                </ul>
+              )
+            ) : (
+              <ul className="dexlist" key="g">
+                {learned.map((x) => (<li key={x.en}><b>{x.en}</b><span>{x.meanings.join("／")}</span></li>))}
+              </ul>
+            )}
           </div>
           <div className="row drop4">
             <button className="act" onClick={() => start(course)}>もう一度もぐる</button>
+            {runMiss.length > 0 && missCount > 0 && <button className="act alt" onClick={() => setScreen("review")}>復習する（{missCount}語）</button>}
             <button className="act alt" onClick={() => setScreen("title")}>コースを選び直す</button>
           </div>
         </div>
@@ -1524,7 +1741,7 @@ function IdiomLabyrinth() {
 
         <main className={"room" + (flash ? ` fl-${flash}` : "")}>
           <Cave fork={room.kind === "fork"} />
-          <Scene kind={room.kind} name={room.name} solved={solved} />
+          <Scene kind={room.kind} name={room.name} solved={solved} stage={bossStage} hitKey={bossStep} />
 
           {/* 分かれ道 */}
           {room.kind === "fork" && (
@@ -1544,8 +1761,11 @@ function IdiomLabyrinth() {
           )}
 
           {(room.kind === "midboss" || room.kind === "boss") && !solved && (
-            <p className="bosslead">
-              {room.name}が {room.targets.length} つの言葉を突きつけてくる。（{bossStep + 1}つ目）
+            <p className={"bosslead bs" + bossStage} key={"bl" + bossStep}>
+              <span className="hp" aria-label={`残りの封印 ${room.targets.length - bossStep}`}>
+                {room.targets.map((_, i) => <i key={i} className={i < bossStep ? "gone" : ""} />)}
+              </span>
+              <span className="mincho">{room.name}「{BOSS_LINES[bossStage]}」</span>
             </p>
           )}
 
@@ -1567,7 +1787,8 @@ function IdiomLabyrinth() {
               {!solved && (
                 <div className="choices">
                   {quizChoices.map((c) => (
-                    <button key={c} className="choice" onClick={() => answerQuiz(c)}>{c}</button>
+                    <button key={c} className={"choice" + (reveal && c === reveal.ja ? " answer" : "")}
+                      disabled={quizWrong.includes(c)} onClick={() => answerQuiz(c)}>{c}</button>
                   ))}
                 </div>
               )}
@@ -1594,7 +1815,13 @@ function IdiomLabyrinth() {
         </main>
 
         <div className="window">
-          <p>{msg || DEFAULT_TEXT(room)}</p>
+          <p>{msg || (carried > 0 && fi === 0 && room.kind === "treasure" && stat.tries === 0
+            ? `記憶の頁がひらいた。図鑑から ${carried} 語のパーツを持ちこんでいる。` + DEFAULT_TEXT(room) : DEFAULT_TEXT(room))}</p>
+          {reveal && !solved && (
+            <p className="reveal" key={reveal.en + stat.fails}>
+              <span className="rvl">正しくは</span><b>{reveal.en}</b><span className="rvj">＝ {reveal.ja}</span>
+            </p>
+          )}
           {solved && room.kind === "door" && target.meanings.length > 1 && !twinOpen && (
             <button className="act sm" onClick={() => { setTwinOpen(true); setMsg(`右の扉も同じ呪文で開いた。${target.en} は二つの意味を持っている。`); }}>
               右の扉を調べる
@@ -1658,6 +1885,194 @@ function Motes({ n }) {
           width: `${3 + (i % 3) * 2}px`, height: `${3 + (i % 3) * 2}px`,
         }} />
       ))}
+    </div>
+  );
+}
+
+/* 枠の大きさから、1ページに並べられる数を決める（スクロールさせない） */
+function useFit(ref, cellW, cellH, gap, deps) {
+  const [fit, setFit] = useState({ cols: 2, per: 12 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const run = () => {
+      const w = el.clientWidth, h = el.clientHeight;
+      if (!w || !h) return;
+      const cols = Math.max(1, Math.floor((w + gap) / (cellW + gap)));
+      const rows = Math.max(1, Math.floor((h + gap) / (cellH + gap)));
+      setFit((f) => (f.cols === cols && f.per === cols * rows ? f : { cols, per: cols * rows }));
+    };
+    run();
+    const ro = window.ResizeObserver ? new ResizeObserver(run) : null;
+    if (ro) ro.observe(el);
+    window.addEventListener("resize", run);
+    return () => { if (ro) ro.disconnect(); window.removeEventListener("resize", run); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+  return fit;
+}
+
+const GRADE_N = [1, 2, 3].map((g) => IDIOMS.filter((x) => x.grade === g).length);
+
+function DexScreen({ perm, onBack }) {
+  const [tab, setTab] = useState(1);      // 1 / 2 / 3 / "ach"
+  const [page, setPage] = useState(0);
+  const gridRef = useRef(null);
+  const { cols, per } = useFit(gridRef, 232, 58, 8, [tab]);
+  const has = (x) => !!perm[x.en];
+  const got = IDIOMS.filter(has).length;
+  const gotG = [1, 2, 3].map((g) => IDIOMS.filter((x) => x.grade === g && has(x)).length);
+  const ach = mj("achievements", APP) || {};
+  const achN = ACHS.filter((a) => ach[a.id]).length;
+  const items = tab === "ach" ? [] : IDIOMS.filter((x) => x.grade === tab);
+  const pages = Math.max(1, Math.ceil(items.length / per));
+  const pg = Math.min(page, pages - 1);
+  const shown = items.slice(pg * per, pg * per + per);
+  const cover = COURSES.filter((c) => !c.endless).map((c) => {
+    const all = IDIOMS.filter((x) => c.grades.includes(x.grade));
+    return { name: c.name, n: all.filter(has).length, d: all.length };
+  });
+  const go = (t) => { setTab(t); setPage(0); mj("sfx", "page"); };
+  const turn = (d) => { setPage(Math.max(0, Math.min(pages - 1, pg + d))); mj("sfx", "page"); };
+  return (
+    <div className="frame full enter">
+      <header className="subhead">
+        <button className="back" onClick={onBack}>◀ もどる</button>
+        <h2 className="mincho">熟語図鑑</h2>
+        <div className="dexsum">
+          <span className="num"><b>{got}</b> / {TOTAL}</span>
+          <span className="sumbar"><i style={{ width: `${(got / TOTAL) * 100}%` }} /></span>
+        </div>
+      </header>
+      <div className="cover">
+        {cover.map((c) => (
+          <span key={c.name} className={"cv" + (c.n >= c.d ? " full" : "")}>{c.name}の範囲 <b>{c.n}</b>/{c.d}</span>
+        ))}
+      </div>
+      <div className="tabs" role="tablist">
+        {[1, 2, 3].map((g, i) => (
+          <button key={g} role="tab" aria-selected={tab === g} className={"tab" + (tab === g ? " on" : "")} onClick={() => go(g)}>
+            中{g}<small>{gotG[i]}/{GRADE_N[i]}</small>
+          </button>
+        ))}
+        <button role="tab" aria-selected={tab === "ach"} className={"tab" + (tab === "ach" ? " on" : "")} onClick={() => go("ach")}>
+          実績<small>{achN}/{ACHS.length}</small>
+        </button>
+      </div>
+      <div className="dexbox" ref={gridRef}>
+        {tab === "ach" ? (
+          <ul className="achlist" key="ach">
+            {ACHS.map((a, i) => (
+              <li key={a.id} className={ach[a.id] ? "got" : ""} style={{ animationDelay: `${i * 0.04}s` }}>
+                <span className="mark">{ach[a.id] ? "★" : "・"}</span>{a.label}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <ul className="dexgrid" key={tab + "-" + pg} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))` }}>
+            {shown.map((x, i) => (
+              <li key={x.en} className={has(x) ? "got" : "unk"} style={{ animationDelay: `${Math.min(i, 20) * 0.015}s` }}>
+                <b>{has(x) ? x.en : x.tokens.map(() => "？").join(" ")}</b>
+                <span>{x.meanings.join("／")}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {tab !== "ach" && (
+        <div className="pager">
+          <button className="pg" onClick={() => turn(-1)} disabled={pg <= 0}>◀ 前</button>
+          <span className="pgnum">{pg + 1} / {pages}</span>
+          <button className="pg" onClick={() => turn(1)} disabled={pg >= pages - 1}>次 ▶</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* 復習：取りこぼした熟語の意味を見て、正しい英熟語を選ぶ（最大10問） */
+function reviewChoices(q) {
+  const same = (x) => x.en !== q.en && x.tokens.length === q.tokens.length && x.meanings.join() !== q.meanings.join();
+  const near = shuffle(IDIOMS.filter((x) => same(x) && (x.verb === q.verb || x.prep === q.prep)));
+  const rest = shuffle(IDIOMS.filter((x) => same(x) && !near.includes(x)));
+  return shuffle([q, ...[...near, ...rest].slice(0, 3)]).map((x) => x.en);
+}
+
+function ReviewScreen({ onBack, onRight, onWrong }) {
+  const [qs, setQs] = useState(() => shuffle(missList()).slice(0, 10).map((m) => BY_EN[m.id]));
+  const [i, setI] = useState(0);
+  const [pick, setPick] = useState(null);
+  const [right, setRight] = useState(0);
+  const cardRef = useRef(null);
+  const q = qs[i];
+  const choices = useMemo(() => (q ? reviewChoices(q) : []), [q]);
+  const done = i >= qs.length;
+  const left = done ? missList().length : 0;
+  useEffect(() => { if (done && qs.length && left === 0) mj("achieve", APP, "review-clear", "復習をすべて片づけた"); }, [done]);
+  const answer = (en, ev) => {
+    if (pick) return;
+    setPick(en);
+    if (en === q.en) {
+      setRight((r) => r + 1); onRight(q);
+      mj("sfx", "ok");
+      mj("burst", ev.currentTarget, { colors: ["#F0D79A", "#5ED6C6", "#FFFFFF"], count: 22 });
+      mj("pop", ev.currentTarget, "覚え直した", { color: "#F0D79A", size: 24 });
+    } else {
+      onWrong(q);
+      mj("sfx", "ng"); mj("flash", "#D9563C"); mj("shake", cardRef.current);
+    }
+  };
+  const next = () => { setPick(null); setI(i + 1); };
+  const again = () => { setQs(shuffle(missList()).slice(0, 10).map((m) => BY_EN[m.id])); setI(0); setPick(null); setRight(0); };
+  return (
+    <div className="frame full enter">
+      <header className="subhead">
+        <button className="back" onClick={onBack}>◀ もどる</button>
+        <h2 className="mincho">復習</h2>
+        <div className="dexsum">
+          <span className="num">{done ? qs.length : i + 1} / {qs.length}</span>
+          <span className="sumbar"><i style={{ width: `${qs.length ? ((done ? qs.length : i) / qs.length) * 100 : 0}%` }} /></span>
+        </div>
+      </header>
+      {!done && q && (
+        <div className="revbody" key={"q" + i}>
+          <div className="revcard" ref={cardRef}>
+            <span className="gradetag">中{q.grade}</span>
+            <div className="ja mincho">{q.meanings.join("／")}</div>
+            <p className="revq">この意味になる英熟語はどれか</p>
+          </div>
+          <div className="revchoices">
+            {choices.map((en, k) => (
+              <button key={en} style={{ animationDelay: `${0.08 + k * 0.06}s` }}
+                className={"rch" + (pick ? (en === q.en ? " right" : en === pick ? " wrong" : " dim") : "")}
+                onClick={(e) => answer(en, e)} disabled={!!pick && en !== q.en && en !== pick}>{en}</button>
+            ))}
+          </div>
+          <div className="revfoot">
+            {pick ? (
+              <>
+                <p className={"revmsg" + (pick === q.en ? " ok" : " ng")}>
+                  {pick === q.en ? "正解" : "正しくは"}　<b>{q.en}</b>　＝ {q.meanings.join("／")}
+                </p>
+                <button className="act" onClick={next}>{i + 1 < qs.length ? "次へ" : "結果を見る"}</button>
+              </>
+            ) : <p className="revmsg">正解すると取りこぼしから消える。</p>}
+          </div>
+        </div>
+      )}
+      {done && (
+        <div className="revbody revdone">
+          <h3 className="mincho grand">{qs.length === 0 ? "取りこぼしはない" : left === 0 ? "すべて覚え直した" : "復習を終えた"}</h3>
+          <div className="stats">
+            <div><span>覚え直した</span><b>{right}</b></div>
+            <div><span>残りの取りこぼし</span><b>{left}</b></div>
+          </div>
+          <div className="row">
+            {left > 0 && <button className="act" onClick={again}>もう一度（{Math.min(10, left)}問）</button>}
+            <button className={"act" + (left > 0 ? " alt" : "")} onClick={onBack}>タイトルへ</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2027,6 +2442,171 @@ const CSS = `
   .lab.play .frame{height:100%;}
   .lab.play .room{flex:none;}
   .lab.play .bag{flex:1 1 auto; min-height:90px; overflow:auto; -webkit-overflow-scrolling:touch;}
+}
+
+/* ================= フェーズ4：ごほうび・図鑑・復習・損壊 ================= */
+/* ボタンの押しごたえ */
+.act,.course,.choice,.route-btn,.bgmtoggle,.dexbtn,.stone,.orb,.card,.known,.tab,.pg,.back,.stab,.rch{
+  transition:transform .12s cubic-bezier(.4,0,.2,1), border-color .16s, background-color .16s, color .16s, filter .16s;}
+.act:active:not(:disabled),.course:active,.choice:active:not(:disabled),.route-btn:active,.bgmtoggle:active:not(:disabled),
+.dexbtn:active,.stone:active:not(:disabled),.orb:active:not(:disabled),.card:active:not(:disabled),.known:active:not(:disabled),
+.tab:active,.pg:active:not(:disabled),.back:active,.stab:active,.rch:active:not(:disabled){transform:scale(.97);}
+@media (hover:hover){ .course:hover{transform:translateY(-2px);} }
+
+/* タイトル：称号・図鑑・復習を1列に */
+.home{max-width:1000px;}
+.home .courses{animation:none;}
+.course{animation:up .45s cubic-bezier(.22,1,.36,1) backwards;}
+.home .course{max-width:232px;}
+.titlepill{display:inline-flex; align-items:center; gap:9px; min-height:44px; padding:0 16px;
+  font-family:var(--mi); font-size:16px; letter-spacing:.12em; color:#F0D79A;
+  border:1px solid #D9A94A88; background:linear-gradient(180deg,#2A2138,#181322);}
+.titlepill i{font-style:normal; font-family:var(--go); font-size:12px; letter-spacing:.14em; color:var(--ink);
+  background:var(--gold); padding:2px 7px;}
+.bgmtoggle b{color:var(--gold); font-family:var(--mo); font-weight:700;}
+.dexgo,.revgo{color:var(--parch);}
+.revgo:not(:disabled){border-color:#D98A8A99; color:#F0B8A8;}
+.bgmtoggle:disabled{opacity:.4; cursor:default;}
+.cbest{margin-top:auto; padding-top:4px; font-family:var(--mo); font-size:12px; letter-spacing:.08em; color:#6B6182;}
+.cbest.done{color:var(--gold);}
+
+/* 図鑑・復習の画面（1画面に収める） */
+.lab.full{box-sizing:border-box; height:100vh; height:100dvh; overflow:hidden;}
+.frame.full{height:100%; max-width:960px; gap:10px;}
+.enter{animation:up .4s cubic-bezier(.22,1,.36,1) both;}
+.subhead{display:flex; align-items:center; gap:14px; padding:44px 0 10px; border-bottom:1px solid var(--carve); flex:none;}
+.subhead h2{margin:0; font-size:24px; letter-spacing:.2em; color:var(--parch); font-weight:700;}
+.back,.pg{font-family:inherit; font-size:14px; color:var(--parch); background:transparent; border:1px solid var(--carve);
+  min-height:44px; min-width:44px; padding:0 16px; cursor:pointer;}
+@media (hover:hover){ .back:hover,.pg:hover:not(:disabled){border-color:var(--gold); color:var(--gold);} }
+.pg:disabled{opacity:.35; cursor:default;}
+.dexsum{margin-left:auto; display:flex; align-items:center; gap:10px;}
+.dexsum .num{font-family:var(--mo); font-size:14px; color:var(--dim);}
+.dexsum .num b{font-size:22px; color:var(--gold);}
+.sumbar{display:block; width:140px; height:8px; background:#0A0810; border:1px solid var(--carve);}
+.sumbar i{display:block; height:100%; background:linear-gradient(90deg,#B0832C,var(--gold)); transition:width .45s cubic-bezier(.4,0,.2,1);}
+.cover{display:flex; gap:8px; flex-wrap:wrap; flex:none;}
+.cv{font-size:12px; color:var(--dim); border:1px solid var(--carve); padding:4px 10px; letter-spacing:.04em;}
+.cv b{font-family:var(--mo); color:var(--parch); font-size:14px;}
+.cv.full{border-color:var(--gold); color:var(--gold);}
+.tabs{display:flex; gap:6px; flex:none;}
+.tab{flex:1; font-family:inherit; font-size:15px; letter-spacing:.1em; color:var(--dim); background:#151120;
+  border:1px solid var(--carve); min-height:48px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;}
+.tab small{font-family:var(--mo); font-size:12px; letter-spacing:0; color:#6B6182;}
+.tab.on{color:var(--ink); background:var(--gold); border-color:var(--gold);}
+.tab.on small{color:#3A2A10;}
+@media (hover:hover){ .tab:hover:not(.on){border-color:var(--gold); color:var(--gold);} }
+.dexbox{flex:1 1 auto; min-height:0; overflow:hidden; position:relative;}
+.dexgrid{list-style:none; margin:0; padding:0; display:grid; grid-auto-rows:58px; gap:8px;}
+.dexgrid li{display:flex; flex-direction:column; justify-content:center; gap:2px; padding:0 12px; min-width:0;
+  background:#151120; border:1px solid #2A2338; border-left:3px solid var(--gold);
+  animation:cell .32s cubic-bezier(.22,1,.36,1) both;}
+.dexgrid li.unk{border-left-color:#39304A; background:#110E19;}
+.dexgrid b{font-family:var(--mo); font-size:15px; font-weight:600; color:var(--parch); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.dexgrid .unk b{color:#4E4562; letter-spacing:.1em;}
+.dexgrid span{font-size:12px; color:#A99DC0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.dexgrid .unk span{color:#6B6182;}
+@keyframes cell{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+.achlist{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:8px;}
+.achlist li{display:flex; align-items:center; gap:12px; min-height:52px; padding:0 14px; font-size:15px; color:#6B6182;
+  background:#110E19; border:1px solid #2A2338; animation:cell .32s cubic-bezier(.22,1,.36,1) both;}
+.achlist li.got{color:var(--parch); background:#1B1626; border-color:#D9A94A66;}
+.achlist .mark{font-size:18px; color:#39304A; width:18px; text-align:center;}
+.achlist li.got .mark{color:var(--gold);}
+.pager{display:flex; align-items:center; justify-content:center; gap:16px; flex:none; padding-bottom:4px;}
+.pgnum{font-family:var(--mo); font-size:15px; color:var(--parch); min-width:64px; text-align:center;}
+
+/* 復習 */
+.revbody{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:18px;
+  width:100%; max-width:720px; margin:0 auto; animation:up .4s cubic-bezier(.22,1,.36,1) both;}
+.revcard{position:relative; text-align:center; padding:30px 18px 22px; background:#0E0B16; border:1px solid var(--carve);
+  box-shadow:inset 0 0 60px #00000088;}
+.revcard .gradetag{position:absolute; left:12px; top:12px; font-size:12px;}
+.revcard .ja{font-size:clamp(26px,5vw,40px);}
+.revq{margin:12px 0 0; font-size:14px; color:var(--dim); letter-spacing:.1em;}
+.revchoices{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.rch{font-family:var(--mo); font-size:19px; color:var(--parch); background:#1E1829; border:1px solid var(--carve);
+  min-height:64px; padding:8px 12px; cursor:pointer; animation:up .4s cubic-bezier(.22,1,.36,1) backwards;}
+@media (hover:hover){ .rch:hover:not(:disabled){border-color:var(--gold); color:var(--gold);} }
+.rch.right{border-color:var(--arcane); color:var(--arcane); background:#132320; box-shadow:0 0 18px #5ED6C640;}
+.rch.wrong{border-color:#D9563C; color:#F0A898; background:#2A1418;}
+.rch.dim,.rch:disabled{opacity:.4; cursor:default;}
+.revfoot{min-height:110px; display:flex; flex-direction:column; align-items:center; gap:10px;}
+.revmsg{margin:0; font-size:15px; color:var(--dim); text-align:center; line-height:1.7;}
+.revmsg b{font-family:var(--mo); font-size:18px; color:var(--parch);}
+.revmsg.ok{color:var(--arcane);} .revmsg.ng{color:#F0A898;}
+.revdone{align-items:center; text-align:center;}
+.revdone h3{font-size:clamp(26px,5vw,38px); color:var(--parch); margin:0;}
+.revdone .row{margin-top:0;}
+
+/* 結果：まちがえた熟語／持ち帰った熟語 */
+.steletabs{display:flex; gap:6px; margin-bottom:10px;}
+.stab{flex:1; font-family:inherit; font-size:13px; letter-spacing:.06em; color:var(--dim); background:transparent;
+  border:1px solid var(--carve); min-height:44px; cursor:pointer;}
+.stab b{font-family:var(--mo); color:var(--parch); margin-left:4px;}
+.stab.on{color:var(--parch); border-color:var(--gold); background:#2A2138;}
+.stab.on b{color:var(--gold);}
+.dexlist.miss li{border-left-color:#D9563C;}
+.stempty{margin:10px 0; text-align:center;}
+.dexlist li{animation:cell .3s cubic-bezier(.22,1,.36,1) both;}
+
+/* 誤答のあとに正しい熟語を出す */
+.reveal{display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 10px; margin-top:6px !important; padding-top:6px;
+  border-top:1px dashed #D9563C66; animation:up .3s cubic-bezier(.22,1,.36,1) both;}
+.reveal .rvl{font-size:12px; color:#F0A898; letter-spacing:.1em;}
+.reveal b{font-family:var(--mo); font-size:17px; color:var(--parch);}
+.reveal .rvj{font-size:14px; color:#B7ACCB;}
+.choice.answer{border-color:var(--arcane); color:var(--arcane); box-shadow:0 0 0 1px var(--arcane) inset, 0 0 16px #5ED6C640;}
+.choice:disabled{opacity:.35; cursor:default;}
+.fl-dud{animation:fng .38s, fdud .4s;}
+
+/* ボスの損壊段階（手描きの絵は足さず、フィルタ・ひび・揺れで見せる） */
+.bosslead{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; animation:up .35s cubic-bezier(.22,1,.36,1) both;}
+.bosslead .mincho{font-size:15px; letter-spacing:.06em;}
+.bosslead.bs1 .mincho{color:#E8B86A;}
+.bosslead.bs2 .mincho{color:#F08A6A;}
+.hp{display:inline-flex; gap:4px;}
+.hp i{width:22px; height:8px; background:linear-gradient(180deg,#F0D79A,#B0832C); border:1px solid #07060C;
+  transition:opacity .4s cubic-bezier(.4,0,.2,1), filter .4s;}
+.hp i.gone{opacity:.25; filter:grayscale(1);}
+.crea.st1,.crea.st2{animation:stagger .55s cubic-bezier(.36,.07,.19,.97) both;}
+@keyframes stagger{
+  0%{transform:none; filter:brightness(2.2)}
+  15%{transform:translateX(-9px) rotate(-2deg)}
+  35%{transform:translateX(7px) rotate(1.5deg); filter:none}
+  55%{transform:translateX(-4px) rotate(-.6deg)}
+  75%{transform:translateX(2px)}
+  100%{transform:none}}
+.crea.st1 .creature{filter:saturate(.75) contrast(1.08) brightness(.95);}
+.crea.st2 .creature{filter:saturate(.5) sepia(.35) hue-rotate(-20deg) contrast(1.18) brightness(.85);}
+.cracks{position:absolute; left:24%; right:24%; top:14%; bottom:16%; pointer-events:none;
+  -webkit-mask-image:radial-gradient(closest-side,#000 55%,transparent 100%);
+  mask-image:radial-gradient(closest-side,#000 55%,transparent 100%);
+  background:
+    linear-gradient(68deg,transparent 48.6%,#07060CEE 49.2% 50.8%,transparent 51.4%) 18% 8%/34% 44% no-repeat,
+    linear-gradient(-54deg,transparent 48.4%,#07060CEE 49.2% 50.8%,transparent 51.6%) 42% 38%/30% 36% no-repeat,
+    linear-gradient(80deg,transparent 48.6%,#07060CDD 49.3% 50.7%,transparent 51.4%) 58% 64%/18% 40% no-repeat;
+  animation:crk .4s cubic-bezier(.22,1,.36,1) both;}
+.crea.st2 .cracks{
+  background:
+    linear-gradient(68deg,transparent 48%,#FF9A3C 48.9% 51.1%,transparent 52%) 18% 8%/34% 44% no-repeat,
+    linear-gradient(-54deg,transparent 47.8%,#FF9A3C 48.9% 51.1%,transparent 52.2%) 42% 38%/30% 36% no-repeat,
+    linear-gradient(80deg,transparent 48%,#E8873A 49% 51%,transparent 52%) 58% 64%/18% 40% no-repeat,
+    linear-gradient(-20deg,transparent 48.4%,#07060CEE 49.2% 50.8%,transparent 51.6%) 82% 20%/26% 30% no-repeat,
+    linear-gradient(36deg,transparent 48.4%,#07060CEE 49.2% 50.8%,transparent 51.6%) 10% 78%/28% 30% no-repeat,
+    linear-gradient(-70deg,transparent 48.4%,#E8873A 49.3% 50.7%,transparent 51.6%) 90% 82%/16% 34% no-repeat;
+  filter:drop-shadow(0 0 3px #FF9A3CAA);}
+@keyframes crk{from{opacity:0; transform:scale(.92)}to{opacity:1; transform:none}}
+
+@media (max-height:860px) and (orientation:landscape){
+  .subhead{padding-top:40px;}
+  .revbody{gap:12px;}
+  .revcard{padding:22px 18px 16px;}
+  .revfoot{min-height:100px;}
+}
+@media (max-width:560px){
+  .revchoices{grid-template-columns:1fr;}
+  .sumbar{width:80px;}
 }
 @media (prefers-reduced-motion:reduce){ .lab *{animation:none !important;} }
 `;

@@ -1,10 +1,11 @@
 /* 熟語の迷宮 サービスワーカー
    ファイルを更新したら CACHE の数字を上げてください */
-const CACHE = "idiom-labyrinth-v5";
+const CACHE = "idiom-labyrinth-v6";
 const ASSETS = [
   "./", "./index.html", "./app.jsx", "./manifest.json",
   "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png",
-  "./favicon-32.png", "./favicon.ico", "./icon.svg"
+  "./favicon-32.png", "./favicon.ico", "./icon.svg",
+  "../../manabi-juice.js"
 ];
 
 self.addEventListener("install", (e) => {
