@@ -1,6 +1,6 @@
 /* 観測塔 ― オフライン用のキャッシュ
    校内の回線が細くても、二度目以降は通信なしで起動できるようにする */
-const CACHE = "science-quest-v4";
+const CACHE = "science-quest-v5";
 const ASSETS = [
   "./",
   "./index.html",
