@@ -86,6 +86,7 @@ body.namelock .card .cta{color:var(--muted);}
   letter-spacing:.18em;text-transform:uppercase;color:var(--accent);}
 .card h3{margin:2px 0 0;font-size:19px;font-weight:700;letter-spacing:.01em;color:#fff;}
 .card p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.7;flex:1;}
+.card .ctitle{align-self:flex-start;font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 10px;}
 .meta{display:flex;justify-content:space-between;align-items:center;gap:12px;
   font-family:"Outfit",sans-serif;font-size:12.5px;color:var(--muted);
   font-variant-numeric:tabular-nums;}
@@ -340,6 +341,8 @@ const label = (done, total) => done <= 0 ? 'はじめる' : (done >= total ? '�
 
 function render(){
   const saved = LearnHub.all();
+  let titles = {};
+  try { titles = JSON.parse(localStorage.getItem('manabi-board:titles:v1') || '{}') || {}; } catch (e) {}
   let doneSum = 0, totalSum = 0;
 
   $('grid').innerHTML = APPS.map(app => {
@@ -357,6 +360,7 @@ function render(){
         </span>
       </div>
       <p>${esc(app.desc)}</p>
+      ${titles[app.key] ? `<span class="ctitle">称号　${esc(titles[app.key])}</span>` : ''}
       <div class="marker"><i data-w="${w}"></i></div>
       <div class="meta">
         <span>${done} / ${app.total} ${esc(app.unit)}</span>

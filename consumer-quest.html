@@ -243,6 +243,114 @@ table.res td:last-child{text-align:right;font-family:'Noto Serif JP',serif;font-
 .fade{animation:fadein .4s}
 @keyframes fadein{from{opacity:0;transform:translateY(10px)}}
 .hidden{display:none!important}
+
+/* ===== フェーズ4：音ボタン・称号・証拠ファイル・FILE EX ===== */
+#sndBtn{flex:none;align-self:center;min-height:44px;min-width:44px;cursor:pointer;touch-action:manipulation;
+  font-family:'Noto Sans JP',sans-serif;font-weight:900;font-size:12px;letter-spacing:.08em;line-height:1.2;
+  background:transparent;color:#C9C2B0;border:2px solid #5A5244;border-radius:3px;padding:.2em .6em;
+  transition:color .2s cubic-bezier(.4,0,.2,1),border-color .2s cubic-bezier(.4,0,.2,1),transform .1s}
+#sndBtn[aria-pressed="true"]{color:var(--warn);border-color:var(--warn)}
+#sndBtn:active{transform:scale(.97)}
+.btn,.card,.epCard,.copt,.sbtn{transition:transform .1s cubic-bezier(.4,0,.2,1),box-shadow .1s,background .2s,border-color .2s}
+.copt:active,.sbtn:active{transform:scale(.97)}
+main#mn.tight{padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+.epCard .bst{font-size:clamp(11px,2.8vw,12px);font-weight:900;color:var(--ok);letter-spacing:.05em;margin-left:.6em;font-family:'Noto Sans JP',sans-serif}
+/* タイトルの称号行 */
+.rankRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;margin:12px 0 0}
+.rankRow .rr{display:flex;align-items:baseline;gap:.6em;background:var(--band);color:var(--paper);
+  padding:.35em 1em;border-left:6px solid var(--warn);font-weight:700;font-size:clamp(12px,3.2vw,14px)}
+.rankRow .rr b{font-family:'Noto Serif JP',serif;font-weight:900;color:var(--warn);font-size:1.18em;letter-spacing:.06em}
+.rankRow .rr span{color:#C9C2B0;font-size:.9em}
+.exBtn{min-height:44px;cursor:pointer;touch-action:manipulation;border:2px solid var(--shu);background:#fff;color:var(--shu);
+  font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(13px,3.4vw,15px);letter-spacing:.08em;
+  padding:.35em 1em;border-radius:3px;box-shadow:3px 3px 0 rgba(26,23,18,.18)}
+.exBtn:active{transform:scale(.97)}
+.exBtn small{font-family:'Noto Sans JP',sans-serif;font-size:.8em;font-weight:700;margin-left:.5em;color:var(--ink2)}
+.exBtn.locked{border-color:#B8B09C;color:#8A8270;background:#EEECE4;box-shadow:none;pointer-events:none}
+.stg>*{animation:stgIn .42s cubic-bezier(.22,1,.36,1) both}
+.stg>*:nth-child(2){animation-delay:.1s}.stg>*:nth-child(3){animation-delay:.2s}
+.stg>*:nth-child(4){animation-delay:.3s}.stg>*:nth-child(5){animation-delay:.4s}.stg>*:nth-child(6){animation-delay:.5s}
+.stg>*:nth-child(7){animation-delay:.6s}
+@keyframes stgIn{from{opacity:0;transform:translateY(12px)}}
+/* 対決の見出し行と証拠ボタン */
+.btHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.btHead h2.sec{margin:.6em 0 .4em}
+.evBtn{flex:none;min-height:44px;cursor:pointer;touch-action:manipulation;background:#FFF3B8;color:var(--ink);
+  border:2px solid var(--ink);border-left:6px solid var(--warn);border-radius:3px;font-weight:900;
+  font-size:clamp(12px,3.2vw,14px);letter-spacing:.06em;padding:.3em .9em;box-shadow:3px 3px 0 rgba(26,23,18,.18)}
+.evBtn:active{transform:scale(.97)}
+/* ページ送りオーバーレイ */
+#ovl{position:fixed;inset:0;z-index:60;background:rgba(20,17,12,.62);display:flex;align-items:center;justify-content:center;
+  padding:16px;opacity:0;pointer-events:none;transition:opacity .3s cubic-bezier(.4,0,.2,1)}
+#ovl.on{opacity:1;pointer-events:auto}
+#ovl .pan{width:min(640px,100%);max-height:calc(100dvh - 32px);background:var(--paper);border-top:6px solid var(--warn);
+  box-shadow:0 18px 50px rgba(0,0,0,.45);display:flex;flex-direction:column;
+  transform:translateY(18px);transition:transform .42s cubic-bezier(.22,1,.36,1)}
+#ovl.on .pan{transform:none}
+#ovl .ovh{display:flex;align-items:center;gap:10px;background:var(--band);color:var(--paper);padding:8px 8px 8px 16px}
+#ovl .ovh .ttl{flex:1;font-family:'Noto Serif JP',serif;font-weight:900;letter-spacing:.1em;font-size:clamp(14px,3.8vw,17px)}
+#ovl .ovh .pg{font-weight:900;color:var(--warn);font-size:14px;font-variant-numeric:tabular-nums}
+#ovl .ovx{min-width:44px;min-height:44px;background:transparent;border:2px solid #5A5244;color:var(--paper);border-radius:3px;
+  font-size:18px;font-weight:900;cursor:pointer;touch-action:manipulation}
+#ovl .ovx:active{transform:scale(.97)}
+#ovl .ovb{padding:20px 20px 12px;min-height:240px;overflow:hidden}
+#ovl .ovb .in{animation:pgIn .32s cubic-bezier(.22,1,.36,1)}
+#ovl .ovb .in.back{animation-name:pgBack}
+@keyframes pgIn{from{opacity:0;transform:translateX(26px)}}
+@keyframes pgBack{from{opacity:0;transform:translateX(-26px)}}
+.evk{display:inline-block;background:var(--warn);color:var(--ink);font-weight:900;font-size:12px;letter-spacing:.15em;padding:.1em .8em}
+.evl{font-family:'Noto Serif JP',serif;font-weight:900;font-size:clamp(18px,4.8vw,23px);line-height:1.5;margin:.45em 0 .5em;
+  border-bottom:3px solid var(--warn);padding-bottom:.25em}
+.eve{font-size:clamp(14px,3.7vw,16px);line-height:1.85;color:var(--ink2)}
+.eve b{color:var(--shu)}
+.evq{font-weight:700;font-size:clamp(14px,3.7vw,16px);line-height:1.75;margin:.5em 0}
+.eva{font-size:clamp(13px,3.4vw,15px);color:var(--shu);font-weight:700}
+.evo{font-size:clamp(14px,3.6vw,16px);color:var(--ok);font-weight:900;margin:.2em 0 .5em}
+#ovl .ovf{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px 16px}
+#ovl .ovf .btn{margin:0;padding:.55em 1.3em;min-height:44px}
+#ovl .dots{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+#ovl .dots i{width:9px;height:9px;border-radius:50%;background:#D8D2C2;transition:background .2s cubic-bezier(.4,0,.2,1),transform .2s}
+#ovl .dots i.on{background:var(--shu);transform:scale(1.25)}
+/* 今回まちがえた問い（結果） */
+.missBox{border:2px solid var(--shu);background:#fff;margin:.9em 0;padding:.8em 1em}
+.missBox h4{font-family:'Noto Serif JP',serif;font-weight:900;color:var(--shu);font-size:clamp(14px,3.8vw,16px);margin-bottom:.3em}
+.missBox li{list-style:none;font-size:clamp(12.5px,3.3vw,14.5px);border-top:1px dashed var(--line);padding:.35em 0}
+.missBox li .st{display:inline-block;font-size:.8em;font-weight:900;background:#FBEAE7;color:var(--shu);padding:0 .5em;margin-right:.4em}
+.missBox .ok{color:var(--ok);font-weight:900}
+.missBox .btn{margin:.5em 0 0;padding:.5em 1.4em}
+.nomiss{text-align:center;font-family:'Noto Serif JP',serif;font-weight:900;color:var(--ok);margin:.6em 0}
+.cbHint{color:#F5B8B0;font-weight:700;font-size:clamp(12px,3.2vw,14px);margin-top:8px;min-height:1em}
+/* FILE EX */
+.exTop{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.exTop h2.sec{margin:.2em 0 .4em}
+.exNo{font-family:'Noto Serif JP',serif;font-weight:900;color:var(--shu);font-size:clamp(16px,4.2vw,20px);font-variant-numeric:tabular-nums}
+.exBar{height:8px;background:#E4DECC;border:1px solid var(--line);margin-bottom:12px}
+.exBar i{display:block;height:100%;background:var(--shu);transition:width .45s cubic-bezier(.22,1,.36,1)}
+.exQ{font-weight:700;font-size:clamp(15px,4vw,18px);line-height:1.75;margin:.2em 0 .7em}
+.exFrom{display:inline-block;background:var(--ink);color:var(--paper);font-size:.7em;font-weight:900;letter-spacing:.12em;padding:0 .6em;margin-right:.6em;vertical-align:.12em}
+.exOpts{display:grid;grid-template-columns:1fr;gap:8px}
+@media(min-width:560px){.exOpts{grid-template-columns:1fr 1fr}}
+.exOpt{display:flex;align-items:center;gap:.6em;text-align:left;min-height:52px;cursor:pointer;touch-action:manipulation;background:#fff;border:2px solid var(--ink);
+  border-radius:4px;padding:.5em .8em;font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:clamp(13px,3.5vw,15px);line-height:1.5;color:var(--ink);
+  box-shadow:3px 3px 0 rgba(26,23,18,.18);transition:transform .1s cubic-bezier(.4,0,.2,1),background .2s,border-color .2s,opacity .2s}
+.exOpt:active{transform:scale(.97)}
+.exOpt .k{flex:none;width:1.8em;height:1.8em;display:flex;align-items:center;justify-content:center;background:var(--ink);color:var(--paper);
+  font-family:'Noto Serif JP',serif;font-weight:900;border-radius:2px}
+.exOpt.correct{border-color:var(--ok);background:#EFF8EC}.exOpt.correct .k{background:var(--ok)}
+.exOpt.wrong{border-color:var(--shu);background:#FBEAE7}.exOpt.wrong .k{background:var(--shu)}
+.exOpt.dim{opacity:.45}
+.exOpt:disabled{cursor:default}
+#exFb{min-height:0}
+#exFb .note{margin:.7em 0 .4em;animation:stgIn .35s cubic-bezier(.22,1,.36,1)}
+#exFb .btn{margin:.2em 0}
+.exScore{font-family:'Noto Serif JP',serif;font-weight:900;text-align:center;font-size:clamp(30px,9vw,46px);line-height:1.2}
+.exScore small{font-size:.45em;color:var(--ink2)}
+@media(hover:hover){
+  .exOpt:not(:disabled):hover,.evBtn:hover,.exBtn:hover{transform:scale(1.02)}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}
+}
 </style>
 </head>
 <body>
@@ -254,15 +362,17 @@ table.res td:last-child{text-align:right;font-family:'Noto Serif JP',serif;font-
       <div class="ep"><span id="hdEp">FILE SELECT</span></div>
     </div>
     <div id="score">SCORE 0</div>
+    <button id="sndBtn" type="button" aria-pressed="true" title="効果音のON/OFF">音 ON</button>
   </header>
   <main id="mn"></main>
   <div id="telop"><span class="who" id="tWho"></span><div class="say" id="tSay"></div><div class="nx">▼ タップ</div></div>
-  <div class="choicebar" id="cbar"><div class="q" id="cbQ"></div><div class="opts" id="cbO"></div></div>
+  <div class="choicebar" id="cbar"><div class="q" id="cbQ"></div><div class="opts" id="cbO"></div><div class="cbHint" id="cbH"></div></div>
   <div id="cutin"><span id="cutTxt">反論成立</span></div>
 </div>
 <script src="config.js"></script>
 <script src="hub-progress.js"></script>
 <script src="manabi-connect.js"></script>
+<script src="manabi-juice.js"></script>
 <script>
 "use strict";
 /* =========================================================
@@ -316,20 +426,125 @@ function hubReport(epIdx, ratio, rank, epNo, rawScore){
 })();
 function scrollBottom(){mn.scrollTop=mn.scrollHeight;}
 
-let telopQueue=[],telopDone=null;
+/* ---------------- 演出（manabi-juice.js。読めないときは何もしない） ---------------- */
+const MJX=(function(){
+  const nop=()=>{};
+  const stub={sfx:nop,setMuted:nop,muted:()=>false,burst:nop,pop:nop,shake:nop,flash:nop,
+    cutin:()=>Promise.resolve(),countUp:(el,to,o)=>{ if(el) el.textContent=(o&&o.format)?o.format(to):String(to); },
+    toast:nop,banner:nop,best:()=>undefined,record:()=>({isNew:false,first:false}),title:()=>'',
+    achieve:()=>false,reduced:()=>false};
+  return window.MJ||stub;
+})();
+const APP='consumer-quest';
+function reducedMotion(){
+  try{ return MJX.reduced?MJX.reduced():matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; }
+}
+G.combo=0;
+/* 正解：パーティクル＋得点ポップ（コンボで大きく） */
+function good(el,pts){
+  G.combo++;
+  MJX.sfx(G.combo>=3?'combo':'ok');
+  MJX.burst(el,{color:'#F5C400',color2:'#2E7D46',count:G.combo>=3?34:20});
+  if(pts) MJX.pop(el,'+'+pts,{color:'#F5C400',size:G.combo>=3?34:26});
+}
+/* 誤答：揺れ＋赤フラッシュ */
+function bad(el,pts){
+  G.combo=0;
+  MJX.sfx('ng');MJX.shake(el);MJX.flash('#C73A2A');
+  if(pts) MJX.pop(el,'-'+pts,{color:'#E8604F',size:22});
+}
+/* まちがえた問いの記録（結果画面用） */
+function noteMiss(stage,q,a,ok,why){ (G.miss=G.miss||[]).push({stage,q,a,ok,why:why||''}); }
+
+/* ---------------- 効果音 ON/OFF ---------------- */
+(function(){
+  const b=document.getElementById('sndBtn');
+  const paint=()=>{ const on=!MJX.muted(); b.textContent=on?'音 ON':'音 OFF'; b.setAttribute('aria-pressed',on?'true':'false'); };
+  b.addEventListener('click',()=>{ MJX.setMuted(!MJX.muted()); paint(); MJX.sfx('tap'); });
+  paint();
+})();
+
+/* ---------------- タイプライター（HTMLのタグを保ったまま1文字ずつ） ---------------- */
+function typeHTML(el,html,done){
+  el.innerHTML=html;
+  const ctl={busy:()=>false,finish(){}};
+  if(reducedMotion()){ if(done)done(); return ctl; }
+  const nodes=[];const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;
+  while((n=w.nextNode())){ nodes.push([n,n.nodeValue]); n.nodeValue=''; }
+  let ni=0,ci=0,cnt=0,fin=false;
+  const tick=()=>{
+    while(ni<nodes.length && !nodes[ni][1].length) ni++;
+    if(ni>=nodes.length){ end(); return; }
+    const [nd,tx]=nodes[ni]; ci++; nd.nodeValue=tx.slice(0,ci);
+    if(ci>=tx.length){ ni++; ci=0; }
+    if(++cnt%4===0) MJX.sfx('type');
+  };
+  const tm=setInterval(tick,28);
+  function end(){ if(fin)return; fin=true; clearInterval(tm); nodes.forEach(([nd,tx])=>nd.nodeValue=tx); if(done)done(); }
+  ctl.busy=()=>!fin; ctl.finish=end;
+  return ctl;
+}
+
+let telopQueue=[],telopDone=null,telopTW=null;
 function telop(lines,done){
   telopQueue=[...lines];telopDone=done||null;
   $('#telop').style.display='block';nextTelop();
 }
 function nextTelop(){
+  if(telopTW&&telopTW.busy()){ telopTW.finish(); return; } /* 1回目のタップは全文表示 */
   if(!telopQueue.length){
-    $('#telop').style.display='none';
+    $('#telop').style.display='none';telopTW=null;
     const d=telopDone;telopDone=null;if(d)d();return;
   }
   const [who,say]=telopQueue.shift();
-  $('#tWho').textContent=who;$('#tSay').innerHTML=say;
+  $('#tWho').textContent=who;
+  telopTW=typeHTML($('#tSay'),say);
 }
 $('#telop').addEventListener('pointerdown',e=>{e.preventDefault();nextTelop();});
+
+/* ---------------- ページ送りオーバーレイ（証拠ファイル・まちがえた問い） ---------------- */
+const OVL=(function(){
+  const o=document.createElement('div');o.id='ovl';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');
+  o.innerHTML=`<div class="pan"><div class="ovh"><div class="ttl" id="ovT"></div><div class="pg" id="ovP"></div>
+    <button class="ovx" id="ovX" type="button" aria-label="とじる">×</button></div>
+    <div class="ovb" id="ovB"></div>
+    <div class="ovf"><button class="btn ghost" id="ovPrev" type="button">◀ 前</button><div class="dots" id="ovD"></div>
+    <button class="btn" id="ovNext" type="button">次 ▶</button></div></div>`;
+  document.body.appendChild(o);
+  let pages=[],idx=0;
+  const q=s=>o.querySelector(s);
+  function show(i,back){
+    idx=Math.max(0,Math.min(pages.length-1,i));
+    q('#ovB').innerHTML=`<div class="in${back?' back':''}">${pages[idx]}</div>`;
+    q('#ovP').textContent=`${idx+1} / ${pages.length}`;
+    q('#ovD').innerHTML=pages.map((_,k)=>`<i class="${k===idx?'on':''}"></i>`).join('');
+    q('#ovPrev').disabled=idx===0;
+    q('#ovNext').textContent=idx===pages.length-1?'とじる':'次 ▶';
+  }
+  function close(){ o.classList.remove('on'); }
+  q('#ovX').onclick=close;
+  q('#ovPrev').onclick=()=>{ if(idx>0){ MJX.sfx('page'); show(idx-1,true); } };
+  q('#ovNext').onclick=()=>{ if(idx<pages.length-1){ MJX.sfx('page'); show(idx+1); } else close(); };
+  o.addEventListener('pointerdown',e=>{ if(e.target===o) close(); });
+  document.addEventListener('keydown',e=>{
+    if(!o.classList.contains('on'))return;
+    if(e.key==='Escape')close();
+    else if(e.key==='ArrowRight')q('#ovNext').click();
+    else if(e.key==='ArrowLeft')q('#ovPrev').click();
+  });
+  return {open(title,pg,start){
+    if(!pg.length)return;
+    pages=pg;q('#ovT').textContent=title;show(start||0);
+    MJX.sfx('page');o.classList.add('on');
+  }};
+})();
+function missPages(list){
+  return list.map(m=>`<span class="evk">${m.stage}</span>
+    <div class="evq">${m.q}</div>
+    <div class="eva">選んだ答え：${m.a}</div>
+    <div class="evo">正解：${m.ok}</div>
+    ${m.why?`<div class="eve">${m.why}</div>`:''}`);
+}
 function cutin(txt,color){
   const c=$('#cutin');
   c.style.background=color||'var(--shu)';
@@ -692,7 +907,7 @@ EPIS.push(
  doc:`<div class="phone"><div class="scr">
    <div class="bar"><span>メッセージ｜先輩</span><span>2週間前</span></div>
    <div class="body">
-     <div class="sms">ユウタ久しぶり！<span class="spot" data-id="s1">絶対もうかる話</span>があるんだけど、今度会えない？ すごい人紹介するよ🔥</div>
+     <div class="sms">ユウタ久しぶり！<span class="spot" data-id="s1">絶対もうかる話</span>があるんだけど、今度会えない？ すごい人紹介するよ！</div>
      <div class="sms" style="margin-top:8px"><span class="spot" data-dud="1">土曜の14時にカフェ集合で！</span></div>
    </div>
  </div></div>
@@ -1026,16 +1241,37 @@ function rankOf(sc,ep){
   return['C','解決はできた。まとめを読み直してリベンジしよう。'];
 }
 
+/* ---------- 称号・自己ベスト ---------- */
+const TITLES=[{min:0,name:'見習い相談員'},{min:4,name:'相談員'},{min:12,name:'主任相談員'},{min:22,name:'消費生活アドバイザー'}];
+const RK_PT={S:4,A:3,B:2,C:1}; /* 解決した FILE のランクを点数化（最大 24） */
+function clearedN(){ return EPIS.filter((_,i)=>!!G.clear[i]).length; }
+function rankPts(){ let s=0; EPIS.forEach((_,i)=>{ s+=RK_PT[G.clear[i]]||0; }); return s; }
+function curTitle(){ return MJX.title(APP,TITLES,rankPts())||TITLES[0].name; }
+function seedBest(){ /* 既存の記録（得点率）を自己ベストに引き継ぐ */
+  const r=(hubLoad().ratios)||{};
+  for(const k in r){ if(MJX.best(APP,'file'+k)===undefined) MJX.record(APP,'file'+k,Math.round(r[k]*100)); }
+}
+function stripTags(s){ const d=document.createElement('div'); d.innerHTML=s; return d.textContent; }
+function shuffle(a){ a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function missBoxHTML(list,limit){
+  if(!list.length) return `<div class="nomiss">今回まちがえた問い：なし（ノーミス）</div>`;
+  const li=list.slice(0,limit).map(m=>`<li><span class="st">${m.stage}</span>${stripTags(m.a)} → <span class="ok">${stripTags(m.ok)}</span></li>`).join('');
+  return `<div class="missBox"><h4>今回まちがえた問い（${list.length}）</h4><ul>${li}${list.length>limit?`<li>ほか ${list.length-limit} 件</li>`:''}</ul>
+    <button class="btn" id="missBtn" type="button">解説つきで見返す</button></div>`;
+}
+
 /* ---------- ファイル選択 ---------- */
 function scTitle(){
-  G.ep=null;$('#hdEp').textContent='FILE SELECT';
+  G.ep=null;$('#hdEp').textContent='FILE SELECT';mn.classList.remove('tight');mn.scrollTop=0;
   G.score=0;addScore(0);
+  const ttl=curTitle(),n=clearedN(),exOpen=n>=EPIS.length,exB=MJX.best(APP,'ex');
   let grid='';
   EPIS.forEach((ep,i)=>{
     const open=epOpen(i);
+    const b=MJX.best(APP,'file'+i);
     const rk=!open?`<span class="lk">FILE ${EPIS[i-1].no} をクリアで解放</span>`:(G.clear[i]?`<span class="rk">${G.clear[i]}</span>`:'');
     grid+=`<button class="epCard${open?'':' locked'}" data-i="${i}"${open?'':' disabled aria-disabled="true"'}>${rk}
-      <span class="no">FILE ${ep.no}</span>
+      <span class="no">FILE ${ep.no}${open&&b!==undefined?`<span class="bst">最高 ${b}%</span>`:''}</span>
       <div class="tt">${ep.title}</div>
       <div class="md">手口：${ep.mode}｜相談者：${ep.client}</div>
     </button>`;
@@ -1046,18 +1282,24 @@ function scTitle(){
        <span class="tag">家庭科｜消費生活</span>
        <h1 class="big">消費者クエスト<span class="sub">SHOHISHA QUEST — 調査ファイル</span></h1>
        <p class="lead">きみは消費生活センターの新米相談員。<br>証拠を調べ、手口を見抜き、正しい知識でトラブルを解決せよ。</p>
+       <div class="rankRow">
+         <div class="rr"><span>称号</span><b>${ttl}</b><span>解決 ${n} / ${EPIS.length}</span></div>
+         <button class="exBtn${exOpen?'':' locked'}" id="exBtn" type="button"${exOpen?'':' disabled aria-disabled="true"'}>FILE EX まとめテスト<small>${exOpen?(exB!==undefined?`最高 ${exB} / ${EXQ.length}`:'挑戦できる'):'全6話の解決で解放'}</small></button>
+       </div>
      </div>
-     <div class="epGrid">${grid}</div>
+     <div class="epGrid stg">${grid}</div>
      <p class="lead" style="text-align:center;font-size:.85em">FILE 01 から順に解放。クリアするとランクが記録され、次のFILEが開く。</p>
    </div>`;
   document.querySelectorAll('.epCard').forEach(b=>{
-    b.onclick=()=>{ if(epOpen(+b.dataset.i)) startEp(+b.dataset.i); };
+    b.onclick=()=>{ if(epOpen(+b.dataset.i)){ MJX.sfx('tap'); startEp(+b.dataset.i); } };
   });
+  if(exOpen) $('#exBtn').onclick=scEx;
 }
 function startEp(i){
-  G.epIdx=i;G.ep=EPIS[i];
+  G.epIdx=i;G.ep=EPIS[i];mn.classList.remove('tight');
   G.score=0;addScore(0);
   G.found=0;G.duds=0;G.battleMiss=0;G.calMiss=0;G.fua=0;G.turn=0;
+  G.miss=[];G.foundIds=[];G.combo=0;
   $('#hdEp').textContent=`FILE ${G.ep.no}｜${G.ep.title}`;
   scBrief();
 }
@@ -1065,26 +1307,32 @@ function startEp(i){
 /* ---------- 相談（チャット） ---------- */
 function scBrief(){
   const ep=G.ep;
+  MJX.sfx('page');
   mn.innerHTML=`
    <div class="fade">
      <h2 class="sec">受付記録｜FILE ${ep.no}</h2>
      <div class="chat" id="chatBox"></div>
      <div style="text-align:center;margin-top:14px"><button class="btn" id="chatNext">▼</button></div>
    </div>`;
-  let i=0;
+  let i=0,tw=null;
   const box=$('#chatBox');
+  const ready=()=>{
+    $('#chatNext').textContent='証拠を調べる';
+    $('#chatNext').classList.add('accent');
+    $('#chatNext').onclick=scEvidence;
+  };
   const push=()=>{
-    if(i>=ep.chat.length){
-      $('#chatNext').textContent='証拠を調べる';
-      $('#chatNext').classList.add('accent');
-      $('#chatNext').onclick=scEvidence;
-      return;
-    }
+    if(tw&&tw.busy()){ tw.finish(); return; }   /* 1回目のタップは全文表示 */
+    if(i>=ep.chat.length){ ready(); return; }
     const [side,text,nm]=ep.chat[i++];
     const d=document.createElement('div');
     d.className='msg '+side;
-    d.innerHTML=(nm?`<span class="nm">${nm}</span>`:'')+text;
+    if(nm){ const s=document.createElement('span'); s.className='nm'; s.textContent=nm; d.appendChild(s); }
+    const body=document.createElement('span'); d.appendChild(body);
     box.appendChild(d);
+    const last=i>=ep.chat.length;
+    if(side==='sys'){ body.innerHTML=text; tw=null; if(last) ready(); }
+    else tw=typeHTML(body,text,()=>{ scrollBottom(); if(last) ready(); });
     scrollBottom();
   };
   push();push();
@@ -1093,7 +1341,8 @@ function scBrief(){
 
 /* ---------- 証拠しらべ ---------- */
 function scEvidence(){
-  const ep=G.ep;G.found=0;G.duds=0;
+  const ep=G.ep;G.found=0;G.duds=0;G.foundIds=[];
+  MJX.sfx('page');
   mn.innerHTML=`
    <div class="fade">
      <h2 class="sec">証拠しらべ｜${ep.evTitle}</h2>
@@ -1109,6 +1358,8 @@ function scEvidence(){
       if(sp.dataset.id){
         sp.classList.add('found');
         G.found++;addScore(100);
+        G.foundIds.push(sp.dataset.id);
+        good(sp,100);
         const d=ep.spots[sp.dataset.id];
         const f=document.createElement('div');
         f.className='fusen';
@@ -1122,6 +1373,8 @@ function scEvidence(){
       } else {
         sp.classList.add('dud');
         G.duds++;addScore(-30);
+        bad(sp,30);
+        noteMiss('証拠しらべ','あやしい所にマーカーを引こう',`「${sp.textContent}」に引いた`,'ここは問題なし',ep.dudExpl);
         const f=document.createElement('div');
         f.className='fusen';f.style.borderLeftColor='#A0A0A0';f.style.background='#EEECE4';
         f.innerHTML=ep.dudExpl;
@@ -1136,14 +1389,16 @@ function scEvidence(){
 /* ---------- 手口特定 ---------- */
 function scQuiz(){
   const ep=G.ep;
+  MJX.sfx('page');
   mn.innerHTML=`
    <div class="fade">
      <h2 class="sec">分析｜手口の特定</h2>
      <p class="lead">${ep.quiz.lead}</p>
-     <div class="cards" id="qc"></div>
+     <div class="cards stg" id="qc"></div>
      <div id="qres"></div>
    </div>`;
   const opts=[...ep.quiz.opts].sort(()=>Math.random()-.5);
+  const okOpt=ep.quiz.opts.find(o=>o.ok);
   const box=$('#qc');
   opts.forEach(o=>{
     const c=document.createElement('div');
@@ -1152,6 +1407,7 @@ function scQuiz(){
     c.onclick=()=>{
       if(o.ok){
         c.classList.add('correct');addScore(100);
+        good(c,100);
         cutin('手口特定','var(--ok)');
         $('#qres').innerHTML=`<div class="note">${ep.quiz.after}</div>
         <div style="text-align:center"><button class="btn accent" id="goBt">${ep.battleBtn}</button></div>`;
@@ -1159,7 +1415,10 @@ function scQuiz(){
         box.querySelectorAll('.card').forEach(x=>x.onclick=null);
         scrollBottom();
       } else {
+        if(!c.classList.contains('wrong')) noteMiss('手口特定',ep.quiz.lead,o.n,okOpt.n,o.d);
         c.classList.add('wrong');addScore(-30);
+        bad(c,30);
+        $('#qres').innerHTML=`<div class="note gray"><b>ちがう。</b>「${o.n}」は——${o.d}<br>今回の証拠に合う手口をもう一度考えよう。</div>`;
       }
     };
     box.appendChild(c);
@@ -1167,12 +1426,23 @@ function scQuiz(){
 }
 
 /* ---------- 対決 ---------- */
+function evPages(){
+  const ep=G.ep;
+  const ids=(G.foundIds&&G.foundIds.length)?G.foundIds:Object.keys(ep.spots);
+  const pg=ids.map((id,k)=>`<span class="evk">証拠 ${k+1}｜${ep.evTitle}</span>
+    <div class="evl">${ep.spots[id].label}</div><div class="eve">${ep.spots[id].expl}</div>`);
+  const ok=ep.quiz.opts.find(o=>o.ok);
+  pg.push(`<span class="evk">分析｜手口の特定</span><div class="evl">${ok.n}</div><div class="eve">${ok.d}</div>`);
+  return pg;
+}
 function scBattle(){
   const ep=G.ep;
   G.turn=0;G.fua=0;
+  MJX.sfx('page');
   mn.innerHTML=`
    <div class="fade">
-     <h2 class="sec">対決｜${ep.foe}</h2>
+     <div class="btHead"><h2 class="sec">対決｜${ep.foe}</h2>
+       <button class="evBtn" id="evBtn" type="button">証拠ファイル</button></div>
      <div class="gauges">
        <div class="g" id="gLie"><div class="lb">相手の言い逃れ</div><div class="bar"><div class="fill" style="width:100%"></div></div></div>
        <div class="g" id="gFua"><div class="lb">相談者の不安</div><div class="bar"><div class="fill" style="width:0%"></div></div></div>
@@ -1181,37 +1451,46 @@ function scBattle(){
      <div id="btSay"></div>
      <div class="cards" id="btCards"></div>
    </div>`;
+  $('#evBtn').onclick=()=>OVL.open(`証拠ファイル｜FILE ${ep.no}`,evPages());
   battleTurn();
 }
 function battleTurn(){
   const ep=G.ep;
   const t=ep.battle[G.turn];
+  const okCard=t.cards.find(o=>o.ok);
   $('#gLie .fill').style.width=(100*(ep.battle.length-G.turn)/ep.battle.length)+'%';
   $('#gFua .fill').style.width=(G.fua/3*100)+'%';
-  $('#btSay').innerHTML=`<div class="note gray"><b>${ep.foe}：</b>${t.say}</div>`;
+  $('#btSay').innerHTML=`<div class="note gray"><b>${ep.foe}：</b><span id="btSayT"></span></div>`;
+  const sayTW=typeHTML($('#btSayT'),t.say);
   const box=$('#btCards');box.innerHTML='';
   [...t.cards].sort(()=>Math.random()-.5).forEach(o=>{
     const c=document.createElement('div');
     c.className='card';
     c.innerHTML=`<div class="cn">${o.n}</div><div class="cd">${o.d}</div>`;
     c.onclick=()=>{
+      if(sayTW.busy()) sayTW.finish();
       if(o.ok){
         c.classList.add('correct');
         cutin('反論成立');addScore(200);
+        good(c,200);
         box.querySelectorAll('.card').forEach(x=>x.onclick=null);
         telop([['相談員（きみ）',o.re]],()=>{
           G.turn++;
           if(G.turn>=ep.battle.length){
             $('#gLie .fill').style.width='0%';
             cutin('完全論破','var(--ok)');
+            MJX.sfx('combo');
             telop(ep.winTelop,scFinal);
           } else battleTurn();
         });
       } else {
+        if(!c.classList.contains('wrong')) noteMiss('対決',`${ep.foe}「${t.say}」`,o.n,okCard.n,o.ng||'');
         c.classList.add('wrong');
         G.battleMiss++;G.fua++;addScore(-50);
+        bad(c,50);
         $('#gFua .fill').style.width=(G.fua/3*100)+'%';
         if(G.fua>=3){
+          MJX.sfx('fail');
           telop(ep.badTelop,()=>{G.fua=0;battleTurn();});
         } else {
           telop([['相談員（きみ）',o.ng||'……ちがう、これじゃない。']]);
@@ -1226,6 +1505,7 @@ function battleTurn(){
 /* ---------- 手続き（3形式） ---------- */
 function scFinal(){
   const f=G.ep.final;
+  MJX.sfx('page');
   if(f.type==='sortlist')scSort();
   else scWrite();
 }
@@ -1260,7 +1540,9 @@ let cbTarget=null;
 function openChoice(def,bl){
   cbTarget={def,bl};
   $('#cbQ').textContent=def.q;
+  $('#cbH').textContent='';
   const o=$('#cbO');o.innerHTML='';
+  let missed=false;
   def.opts.forEach((t,i)=>{
     const b=document.createElement('button');
     b.className='copt';b.textContent=t;
@@ -1268,11 +1550,13 @@ function openChoice(def,bl){
       if(i===def.ok){
         bl.textContent=t;bl.classList.add('filled');bl.classList.remove('hot');
         addScore(50);
+        good(bl,50);
         $('#cbar').style.display='none';
         const rest=[...document.querySelectorAll('.blank:not(.filled)')];
         if(rest.length){rest[0].classList.add('hot');}
         else{
           $('#stamp').classList.add('on');
+          setTimeout(()=>MJX.sfx('stamp'),reducedMotion()?0:220);
           setTimeout(()=>{
             $('#pcNextWrap').classList.remove('hidden');
             const cal=G.ep.final.cal;
@@ -1286,7 +1570,10 @@ function openChoice(def,bl){
         }
       } else {
         addScore(-30);
+        bad(b,30);
+        if(!missed){ missed=true; noteMiss('手続き',def.q,t,def.opts[def.ok],''); }
         b.style.background='#F5B8B0';
+        $('#cbH').textContent='ちがうようだ。証拠しらべや対決で確かめた事実を思い出そう。';
       }
     };
     o.appendChild(b);
@@ -1313,7 +1600,9 @@ function buildCal(cfg){
         if($('#calRes').dataset.done)return;
         if(d===cfg.ok){
           e.classList.add('pick');
-          addScore(Math.max(50,150-G.calMiss*50));
+          const pts=Math.max(50,150-G.calMiss*50);
+          addScore(pts);
+          good(e,pts);
           $('#calRes').dataset.done='1';
           $('#calRes').innerHTML=`<div class="note">${cfg.okNote}</div>`;
           $('#finBtnWrap').innerHTML='<button class="btn accent" id="goRes">解決へ</button>';
@@ -1321,6 +1610,8 @@ function buildCal(cfg){
           scrollBottom();
         } else {
           G.calMiss++;addScore(-20);
+          bad(e,20);
+          noteMiss('期限の計算',cfg.lead,`${cfg.title}${d}日`,`${cfg.title}${cfg.ok}日`,cfg.ngNote);
           $('#calRes').innerHTML=`<div class="note">${cfg.ngNote}</div>`;
         }
       };
@@ -1356,6 +1647,8 @@ function scSort(){
       const correct=(ansDo===it.ok);
       d.classList.add(correct?'ok':'ng');
       addScore(correct?40:-30);
+      if(correct) good(d,40);
+      else { bad(d,30); noteMiss('仕分け',it.t,ansDo?'やる':'やらない',it.ok?'やる':'やらない',it.why); }
       d.querySelector('.why').innerHTML=(correct?'<b>正解。</b>':'<b>おっと、逆だ。</b>')+it.why;
       done++;
       if(done>=f.items.length){
@@ -1377,6 +1670,9 @@ function scResult(){
   const prev=G.clear[G.epIdx];
   if(!prev||'SABC'.indexOf(rk)<'SABC'.indexOf(prev))G.clear[G.epIdx]=rk;
   hubReport(G.epIdx, G.score/epMax(ep), G.clear[G.epIdx], ep.no, G.score);
+  const pct=Math.round(Math.max(0,Math.min(1,G.score/epMax(ep)))*100);
+  const rec=MJX.record(APP,'file'+G.epIdx,pct);
+  const miss=G.miss||[];
   const sm=ep.summary.map(s=>`<li>${s}</li>`).join('');
   const nextIdx=G.epIdx+1;
   const nextBtn=(nextIdx<EPIS.length&&epOpen(nextIdx))
@@ -1387,12 +1683,13 @@ function scResult(){
      <h2 class="sec">解決報告</h2>
      <p class="lead">${ep.resultLead}</p>
      <table class="res">
-       <tr><td>SCORE</td><td>${G.score} / ${epMax(ep)}</td></tr>
+       <tr><td>SCORE</td><td><span id="resSc">0</span> / ${epMax(ep)}</td></tr>
        <tr><td>証拠の誤マーカー</td><td>${G.duds} 回</td></tr>
        <tr><td>反論ミス</td><td>${G.battleMiss} 回</td></tr>
      </table>
      <div class="rank">${rk}</div>
      <p class="lead" style="text-align:center;font-weight:700">${msg}</p>
+     ${missBoxHTML(miss,5)}
      <div class="pointbox">
        <h4>テストに出る！ FILE ${ep.no} のまとめ</h4>
        <ul>${sm}</ul>
@@ -1404,11 +1701,136 @@ function scResult(){
        <button class="btn ghost" id="goTitle">ファイル選択へ</button>
      </div>
    </div>`;
+  mn.scrollTop=0;
+  if(miss.length) $('#missBtn').onclick=()=>OVL.open('今回まちがえた問い',missPages(miss));
   if(nextIdx<EPIS.length&&epOpen(nextIdx))$('#goNext').onclick=()=>startEp(nextIdx);
   $('#goRetry').onclick=()=>startEp(G.epIdx);
   $('#goTitle').onclick=scTitle;
+  MJX.cutin({title:'事件解決',sub:`FILE ${ep.no} CLOSED`,rank:rk,color:'#C73A2A'}).then(()=>{
+    MJX.countUp($('#resSc'),G.score,{ms:900});
+    if(rec.isNew) MJX.banner(`新記録 ${pct}%`,{color:'#C73A2A'});
+    if(!miss.length) MJX.achieve(APP,'nomiss','ノーミス解決');
+    if(clearedN()>=EPIS.length) MJX.achieve(APP,'allclear','全FILE解決');
+    curTitle();
+  });
 }
+
+/* ================= FILE EX まとめの復習テスト =================
+   全6話の解決で解放。各話の要点を4択で確認する。
+   ハブ送信の分母（6話）には含めない（hubReport は呼ばない）。
+   opts[0] が正解（表示時にシャッフル）。                      */
+const EXQ=[
+ {f:'01',q:'訪問販売（キャッチセールスもふくむ）で、クーリングオフの説明が書かれた書面を<b>4月10日</b>に受け取った。クーリングオフができる<b>最終日</b>は？',
+  opts:['4月17日','4月18日','4月24日','4月30日'],
+  exp:'訪問販売は<b>書面を受け取った日から8日間</b>。受け取った日（10日）を1日目と数えるので、8日目は<b>4月17日</b>。'},
+ {f:'04',q:'マルチ商法（連鎖販売取引）のクーリングオフ期間は？',
+  opts:['書面を受け取った日から20日間','書面を受け取った日から8日間','書面を受け取った日から14日間','契約した日から30日間'],
+  exp:'連鎖販売取引は<b>20日間</b>。訪問販売・キャッチセールスの<b>8日間</b>とセットで覚えよう。'},
+ {f:'03',q:'ネット通販（通信販売）で買った商品について、正しいものは？',
+  opts:['クーリングオフの制度はなく、返品できるかは販売サイトの返品ルール（返品特約）による','8日以内ならクーリングオフで無条件に解約できる','20日以内ならクーリングオフで解約できる','開封していなければ、いつでも返品できる'],
+  exp:'通信販売は自分で比べて申し込む取引なので<b>クーリングオフは無い</b>。返品のルールは広告や最終確認画面の表示で、注文前に確認する。'},
+ {f:'03',q:'ネット通販の定期購入。2022年6月からのルールで、注文を確定する直前の画面（最終確認画面）にはっきり表示しなければならないのは？',
+  opts:['回数・総額・解約方法などの契約内容','ほかの購入者の口コミ','商品をつくった工場の住所','販売会社の社長の名前'],
+  exp:'最終確認画面には<b>分量（回数）・価格（総額）・支払時期・解約方法</b>などの表示が義務。誤解させる表示で申し込んだときは、<b>申込みを取り消せる</b>。'},
+ {f:'02',q:'契約が成立するのは、どんなとき？',
+  opts:['申込みと承諾の意思が合ったとき（口約束でも成立する）','契約書にサインしたときだけ','代金を支払ったとき','商品を受け取ったとき'],
+  exp:'契約は<b>申込みと承諾の合意</b>で成立し、<b>口約束でも成立</b>する。金額や条件を知らされずにリンクを押しただけでは合意がなく、契約は成立していない。'},
+ {f:'02',q:'スマホに身に覚えのない請求（架空請求）が届いた。正しい対応は？',
+  opts:['連絡も支払いもせず、画面を保存して家族や188に相談する','書かれた番号に電話して、まちがいだと伝える','少しだけ払って様子を見る','退会フォームに名前と住所を入力する'],
+  exp:'連絡すると個人情報を知られ、さらにねらわれる。<b>払わない・連絡しない・個人情報を渡さない</b>。ただし<b>裁判所からの特別送達</b>（支払督促など）だけは放置せず、すぐ相談する。'},
+ {f:'01',q:'2022年4月からの成年年齢と、成年になると変わることの組み合わせで正しいのは？',
+  opts:['18歳。親の同意なく契約でき、未成年者取消しは使えなくなる','20歳。それまでは親の同意がない契約を取り消せる','18歳。ただし20歳までは未成年者取消しが使える','16歳。高校生から一人で契約できる'],
+  exp:'成年年齢は<b>18歳</b>。18歳から一人で契約できる一方、<b>未成年者取消しは使えない</b>。だからこそ契約は慎重に。'},
+ {f:'05',q:'フリマアプリで届いた商品が、説明とちがう偽物だった。まずすべきことは？',
+  opts:['受取評価をせず、写真を撮って運営事務局に連絡する','先に受取評価をしてから、出品者と話し合う','アプリの外で出品者と直接やりとりして返金してもらう','出品者にクーリングオフの通知を送る'],
+  exp:'受取評価をすると<b>代金が出品者に渡り</b>、補償を受けにくくなる。個人間取引は<b>クーリングオフの対象外</b>。やりとりは<b>アプリの中で</b>。'},
+ {f:'06',q:'注文していない商品が一方的に届き、代金の請求書が入っていた（送り付け商法）。正しいものは？',
+  opts:['代金を払う必要はなく、すぐに処分してもよい','14日間保管してから返送しなければならない','開封したら代金を払わなければならない','受け取った以上、代金を払う義務がある'],
+  exp:'2021年7月の法改正で、注文していない商品は<b>直ちに処分してよい</b>ことになった。<b>支払いも返送も不要</b>。「14日間保管」は改正前の古いルール。'},
+ {f:'06',q:'「今夜にも天井が落ちる」など、事実とちがう説明を信じて結んだ契約は？',
+  opts:['不実告知として、消費者契約法で取り消せる','自分でサインしたので、取り消せない','工事が終わったあとでなければ取り消せない','業者が認めたときだけ取り消せる'],
+  exp:'大事なことについて<b>事実とちがう説明（不実告知）</b>を信じて結んだ契約は、<b>消費者契約法</b>で取り消せる。訪問販売なら8日間のクーリングオフも使える。'},
+ {f:'共通',q:'消費生活のトラブルで困ったときに相談できる「消費者ホットライン」の電話番号は？',
+  opts:['188','110','119','118'],
+  exp:'<b>188（いやや！）</b>は、近くの消費生活センターなどの相談窓口につながる。110は警察、119は消防・救急、118は海上保安庁への緊急通報。'},
+];
+let EX=null;
+function exRank(c,n){ return c>=n?'S':c>=n-2?'A':c>=Math.ceil(n*0.6)?'B':'C'; }
+function scEx(){
+  EX={i:0,order:shuffle(EXQ),ok:0,miss:[]};
+  G.ep=null;G.combo=0;G.score=0;addScore(0);
+  mn.classList.add('tight');
+  $('#hdEp').textContent='FILE EX｜まとめの復習テスト';
+  exQ();
+}
+function exQ(){
+  const q=EX.order[EX.i],n=EX.order.length;
+  MJX.sfx('page');
+  const opts=shuffle(q.opts.map((t,k)=>({t,ok:k===0})));
+  mn.innerHTML=`
+   <div class="fade">
+     <div class="exTop"><h2 class="sec">FILE EX｜まとめテスト</h2><span class="exNo">Q${EX.i+1} / ${n}</span></div>
+     <div class="exBar"><i style="width:${EX.i/n*100}%"></i></div>
+     <p class="exQ"><span class="exFrom">${q.f==='共通'?'共通':'FILE '+q.f}</span>${q.q}</p>
+     <div class="exOpts stg" id="exO"></div>
+     <div id="exFb"></div>
+   </div>`;
+  mn.scrollTop=0;
+  const box=$('#exO');
+  opts.forEach((o,k)=>{
+    const b=document.createElement('button');
+    b.type='button';b.className='exOpt';
+    b.innerHTML=`<span class="k">${'ABCD'[k]}</span><span>${o.t}</span>`;
+    b.onclick=()=>{
+      box.querySelectorAll('.exOpt').forEach((x,j)=>{
+        x.disabled=true;
+        if(opts[j].ok) x.classList.add('correct');
+        else if(x!==b) x.classList.add('dim');
+      });
+      const okText=q.opts[0];
+      if(o.ok){
+        EX.ok++;addScore(100);good(b,100);
+        $('#exFb').innerHTML=`<div class="note"><b>正解！</b>${q.exp}</div>`;
+      } else {
+        b.classList.add('wrong');bad(b,0);
+        EX.miss.push({stage:q.f==='共通'?'共通':'FILE '+q.f,q:q.q,a:o.t,ok:okText,why:q.exp});
+        $('#exFb').innerHTML=`<div class="note"><b>ちがう。</b>正解は「${okText}」。<br>${q.exp}</div>`;
+      }
+      const last=EX.i>=n-1;
+      $('#exFb').insertAdjacentHTML('beforeend',`<div style="text-align:right"><button class="btn accent" id="exNx" type="button">${last?'結果を見る':'次の問題 ▶'}</button></div>`);
+      $('#exNx').onclick=()=>{ if(last) exResult(); else { EX.i++; exQ(); } };
+    };
+    box.appendChild(b);
+  });
+}
+function exResult(){
+  const n=EX.order.length,c=EX.ok,rk=exRank(c,n);
+  const rec=MJX.record(APP,'ex',c);
+  MJX.sfx('page');
+  mn.innerHTML=`
+   <div class="fade">
+     <div style="text-align:center"><span class="tag">FILE EX CLOSED</span></div>
+     <h2 class="sec">まとめテスト｜結果</h2>
+     <div class="exScore"><span id="exSc">0</span><small> / ${n} 問正解</small></div>
+     <div class="rank" style="font-size:clamp(56px,14vw,92px)">${rk}</div>
+     ${missBoxHTML(EX.miss,3)}
+     <div style="text-align:center;margin-top:.6em">
+       <button class="btn accent" id="exRetry" type="button">もう一度</button>
+       <button class="btn ghost" id="exTitle" type="button">ファイル選択へ</button>
+     </div>
+   </div>`;
+  if(EX.miss.length) $('#missBtn').onclick=()=>OVL.open('まちがえた問い｜FILE EX',missPages(EX.miss));
+  $('#exRetry').onclick=scEx;
+  $('#exTitle').onclick=scTitle;
+  MJX.cutin({title:'まとめテスト完了',sub:`${c} / ${n} 問正解`,rank:rk,color:'#C73A2A'}).then(()=>{
+    MJX.countUp($('#exSc'),c,{ms:700});
+    if(rec.isNew) MJX.banner(`新記録 ${c} / ${n}`,{color:'#C73A2A'});
+    if(c>=n) MJX.achieve(APP,'exfull','FILE EX 満点');
+  });
+}
+
 hubBoot();
+seedBest();
 scTitle();
 
 </script>
