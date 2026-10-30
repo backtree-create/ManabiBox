@@ -1,5 +1,5 @@
 /* 英語でGO!  ブラウザ直読み版（React UMD + Babel Standalone） */
-const { useState, useEffect, useRef, useCallback } = React;
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
 /* ============================================================
    英語でGO!   ステージ制 英単語スペリングゲーム
@@ -1667,12 +1667,7 @@ useEffect(() => {
         setDefeat(false);
         setScreen(last ? "result" : "clear");
         const M = MJX();
-        if (!M) return;
-        M.cutin({
-          title: last ? "ALL CLEAR" : `STAGE ${level.lv} CLEAR`,
-          sub: rec && rec.avg != null ? `平均 ${fmtSec(rec.avg)} / 問` : level.stage,
-          rank, color: theme.accent, sound: "none",
-        }).then(() => { if (bannerRef.current) { bannerRef.current = false; M.banner("新記録", { color: "#FFC13D" }); } });
+        if (M && bannerRef.current) { bannerRef.current = false; M.banner("新記録", { color: "#FFC13D" }); }
       }, 1500);
     } else nextWord();
   };
@@ -1703,7 +1698,7 @@ useEffect(() => {
     const M = MJX();
     const at = meaningRef.current;
     if (review) {
-      if (M) { M.hit(APP, answer); M.burst(at, { color: "#4BE07A", count: 26 }); M.pop(at, "おぼえた！", { color: "#4BE07A", size: 30 }); }
+      if (M) { M.hit(APP, answer); M.burst(at, { color: "#4BE07A", count: 14 }); M.pop(at, "おぼえた！", { color: "#4BE07A", size: 30 }); }
       setRvOk((w) => [...w, [answer, meaning]]);
       setClearedQ((n) => n + 1);
     } else {
@@ -1715,7 +1710,7 @@ useEffect(() => {
       setCombo((c) => c + 1);
       setClearedQ((n) => n + 1);
       if (M) {
-        M.burst(at, { color: theme.accent, color2: "#FFD43B", count: Math.min(60, 20 + combo * 8) });
+        M.burst(at, { color: theme.accent, color2: "#FFD43B", count: Math.min(24, 12 + combo * 3) });
         M.pop(at, combo >= 1 ? `+${gain}  ${combo + 1}連続` : `+${gain}`, { color: "#FFD43B", size: Math.min(48, 28 + combo * 4) });
       }
     }
@@ -1731,7 +1726,6 @@ useEffect(() => {
     const M = MJX();
     if (M) {
       M.flash("#FF4D62");
-      M.shake(stageElRef.current, 8);
       M.miss(APP, answer, { jp: meaning, en: answer, level: poolOfCurrent() });
     }
     setCombo(0);
@@ -1837,6 +1831,14 @@ useEffect(() => {
   const barColor = ratio > 0.5 ? "#4BE07A" : ratio > 0.25 ? "#FFD43B" : "#FF4D62";
   const life = MAX_LIFE - timeouts;
 
+  /* 自己ベストは画面が変わったときだけ読む（出題中は毎フレーム再描画されるため） */
+  const hudBest = useMemo(() => (screen === "play" && !review ? MJX()?.best(APP, recKey(course, grade, level.lv, "t")) : null),
+    [screen, review, course, grade, level.lv]);
+  const nextBest = useMemo(() => (screen === "clear" ? MJX()?.best(APP, recKey(course, grade, lvIndex + 2, "t")) : null),
+    [screen, course, grade, lvIndex]);
+  const scoreBest = useMemo(() => ((screen === "result" || screen === "over") ? MJX()?.best(APP, `${course}-g${grade}-score`) : null),
+    [screen, course, grade, newRec]);
+
   return (
     <div className="edg" ref={rootRef}>
       <style>{CSS}</style>
@@ -1845,10 +1847,6 @@ useEffect(() => {
       {screen === "title" && (
         <div className="stage" style={{ "--accent": theme.accent, "--accent2": theme.accent2 }}>
           <Scene theme={LEVELS[0].theme} />
-          <div className="mybadge" aria-label="称号と自己ベスト">
-            {titleName && <span className="mytitle">{titleName}</span>}
-            <span className="mybest"><em>ベスト</em>{(MJX()?.best(APP, `${course}-g${grade}-score`) ?? 0).toLocaleString()}<small>pt</small></span>
-          </div>
           <div className="layer center-col">
             <div className="logo">
               <span className="logo-jp out">英語で</span><span className="logo-go out">GO!</span>
@@ -1870,20 +1868,14 @@ useEffect(() => {
               <button className={"pill" + (showSlots ? " pill-on" : "")} onClick={() => setShowSlots(!showSlots)}>マスひょうじ {showSlots ? "ON" : "OFF"}</button>
               <button className={"pill" + (sound ? " pill-on" : "")} onClick={() => setSound(!sound)}>効果音 {sound ? "ON" : "OFF"}</button>
               <button className={"pill" + (bgmOn ? " pill-on" : "")} onClick={() => setBgmOn(!bgmOn)}>BGM {bgmOn ? "ON" : "OFF"}</button>
+              <button className={"pill" + (course === "long" ? " pill-on" : "")} aria-pressed={course === "long"}
+                onClick={() => setCourse(course === "long" ? "normal" : "long")}>ロング{courseTotal("long")}問 {course === "long" ? "ON" : "OFF"}</button>
             </div>
-            <div className="selrow">
-              <div className="pills gradepills" role="group" aria-label="学年">
-                {[1, 2, 3].map((g) => (
-                  <button key={g} className={"pill gradepill" + (grade === g ? " pill-on" : "")} aria-pressed={grade === g}
-                    onClick={() => setGrade(g)}>{GRADE_LABEL[g]}</button>
-                ))}
-              </div>
-              <div className="pills gradepills coursepills" role="group" aria-label="コース">
-                {Object.values(COURSES).map((c) => (
-                  <button key={c.key} className={"pill gradepill" + (course === c.key ? " pill-on" : "")} aria-pressed={course === c.key}
-                    onClick={() => setCourse(c.key)}>{c.label}<small>{courseTotal(c.key)}問</small></button>
-                ))}
-              </div>
+            <div className="pills gradepills" role="group" aria-label="学年">
+              {[1, 2, 3].map((g) => (
+                <button key={g} className={"pill gradepill" + (grade === g ? " pill-on" : "")} aria-pressed={grade === g}
+                  onClick={() => setGrade(g)}>{GRADE_LABEL[g]}</button>
+              ))}
             </div>
             <div className="btnrow">
               <button className="gobtn" onClick={startGame}>スタート</button>
@@ -1940,9 +1932,7 @@ useEffect(() => {
                   <>
                     <div className="diff"><em>STAGE {level.lv}</em>{tagFor(grade, lvIndex)}</div>
                     <div className="stagename">{level.stage}{grade !== 3 && <span className="gradetag">{GRADE_LABEL[grade]}</span>}
-                      {MJX()?.best(APP, recKey(course, grade, level.lv, "t")) != null && (
-                        <span className="besttag">最速 {fmtSec(MJX().best(APP, recKey(course, grade, level.lv, "t")))}</span>
-                      )}
+                      {hudBest != null && <span className="besttag">最速 {fmtSec(hudBest)}</span>}
                     </div>
                   </>
                 )}
@@ -2085,7 +2075,7 @@ useEffect(() => {
                 <div className="castart"><Character ckey={LEVELS[lvIndex + 1].char.key} mood="idle" className="char-sm" /></div>
                 <span>{LEVELS[lvIndex + 1].char.name}</span>
                 <i>{LEVELS[lvIndex + 1].stage}</i>
-                <i className="recline">最速 {fmtSec(MJX()?.best(APP, recKey(course, grade, lvIndex + 2, "t")))}</i>
+                <i className="recline">最速 {fmtSec(nextBest)}</i>
               </div>
             </div>
             <div className="board">
@@ -2114,7 +2104,7 @@ useEffect(() => {
               </div>
               <div className="resmeta">
                 <span>{COURSES[course].label}コース・{GRADE_LABEL[grade]}</span>
-                {newRec ? <span className="rec-new">新記録！</span> : <span>ベスト {(MJX()?.best(APP, `${course}-g${grade}-score`) ?? score).toLocaleString()}pt</span>}
+                {newRec ? <span className="rec-new">新記録！</span> : <span>ベスト {(scoreBest ?? score).toLocaleString()}pt</span>}
                 {titleName && <span>称号 {titleName}</span>}
               </div>
               <h3>今回まちがえた単語</h3>
@@ -2505,28 +2495,6 @@ const CSS = `
 }
 /* ================= フェーズ4：コース・記録・復習・ボス ================= */
 /* 画面の出入り：中身を少しずつずらして下から出す（合計1.5秒以内） */
-.center-col > *{animation:rise .42s cubic-bezier(.22,1,.36,1) both;}
-.center-col > *:nth-child(2){animation-delay:.06s} .center-col > *:nth-child(3){animation-delay:.12s}
-.center-col > *:nth-child(4){animation-delay:.18s} .center-col > *:nth-child(5){animation-delay:.24s}
-.center-col > *:nth-child(6){animation-delay:.3s}  .center-col > *:nth-child(7){animation-delay:.36s}
-@keyframes rise{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
-.gobtn,.pill{transition:transform .18s cubic-bezier(.4,0,.2,1), box-shadow .18s cubic-bezier(.4,0,.2,1), background-color .25s cubic-bezier(.4,0,.2,1);}
-.gobtn:active{transform:translateY(4px) scale(.97);}
-.pill:active{transform:translateY(3px) scale(.97);}
-@media (hover:hover){
-  .gobtn:hover{transform:scale(1.04);}
-  .pill:hover{transform:scale(1.04);}
-}
-.mybadge{position:absolute; top:12px; right:14px; z-index:3; display:flex; align-items:center; gap:6px;
-  animation:rise .42s cubic-bezier(.22,1,.36,1) .2s both;}
-.mytitle{background:var(--out); color:var(--yellow); border:3px solid var(--paper); border-radius:999px;
-  font-size:13px; font-weight:900; padding:3px 13px; box-shadow:0 3px 0 #00000040; letter-spacing:.06em;}
-.mybest{background:#1B0F33C8; border:3px solid var(--out); border-radius:999px; padding:3px 12px;
-  font-family:var(--disp); font-size:15px; font-weight:800; color:#fff;}
-.mybest em{font-style:normal; font-family:var(--round); font-size:12px; color:#C9BEEA; margin-right:6px;}
-.mybest small{font-size:12px; opacity:.75; margin-left:2px;}
-.selrow{display:flex; gap:18px; flex-wrap:wrap; justify-content:center; align-items:center; z-index:2;}
-.coursepills .pill small{font-size:12px; margin-left:6px; opacity:.75;}
 .gobtn small{font-size:13px; margin-left:6px; opacity:.8;}
 .gobtn.rv{background:#FFE1E6;}
 .cell.cell-xs{width:22px; height:24px; font-size:12px;}
@@ -2542,17 +2510,14 @@ const CSS = `
 
 /* ボス：打つほど HP が減り、見た目が段階的に変わる（CSS のフィルタとひび割れのオーバーレイ） */
 .charbox{position:relative;}
-.bossfx .char-stage{transition:filter .45s cubic-bezier(.4,0,.2,1);}
-.bossfx.dmg-1 .char-stage{filter:drop-shadow(0 8px 5px #00000035) drop-shadow(0 0 10px #FF3B6B88) saturate(1.15);}
-.bossfx.dmg-2 .char-stage{filter:drop-shadow(0 8px 5px #00000035) drop-shadow(0 0 16px #FF3B6B) saturate(1.4) brightness(.92) hue-rotate(-18deg);}
-.bossfx.dmg-3 .char-stage{filter:brightness(1.6) saturate(.4);}
+.bossfx.dmg-3 .char-stage{opacity:.55; transition:opacity .2s;}
 .bossfx{container-type:size;}
 /* ひびは SVG の描画範囲（下寄せ・200:210）に重ねる */
 .cracks{position:absolute; bottom:0; left:50%; transform:translateX(-50%); aspect-ratio:200/210;
   width:min(100%, 95cqh); pointer-events:none;}
 .cracks i{position:absolute; display:block; background:#1A0B2A; opacity:0; transform:scale(.4);
   transition:opacity .3s cubic-bezier(.4,0,.2,1), transform .35s cubic-bezier(.22,1,.36,1);
-  filter:drop-shadow(0 0 2px #FFB3CF);}
+}
 .ck1{left:44%; top:20%; width:16%; height:28%;
   clip-path:polygon(48% 0,58% 0,52% 22%,72% 34%,50% 58%,62% 100%,52% 100%,40% 60%,60% 36%,40% 24%);}
 .ck2{left:27%; top:38%; width:22%; height:20%;
@@ -2568,12 +2533,6 @@ const CSS = `
 .bosshp-bar i{display:block; height:100%; background:linear-gradient(90deg,#FF3B6B,#FF9AD0);
   transition:width .35s cubic-bezier(.4,0,.2,1);}
 
-@media (max-width:640px){
-  .mybadge{top:8px; right:8px;}
-  .mytitle{font-size:12px; padding:2px 9px;}
-  .mybest{font-size:13px; padding:2px 9px;}
-  .selrow{gap:8px;}
-}
 @media (prefers-reduced-motion:reduce){ .edg *{animation:none !important; transition:none !important;} }
 `;
 
