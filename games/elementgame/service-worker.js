@@ -1,4 +1,5 @@
-const CACHE_NAME = 'element-master-3d-v9'; // v9: スコアアタックに学年モード（中2＝原子のみ6面／中3＝イオン10面）を追加
+const CACHE_NAME = 'element-master-3d-v10'; // v10: 演出・図鑑・自己ベスト（共通の manabi-juice.js を追加）
+// v9: スコアアタックに学年モード（中2＝原子のみ6面／中3＝イオン10面）を追加
 // v8: ManabiBox の games/ に統合。ハブ共通スクリプトを通信優先に変更
 // v6: // 2人対戦モード(同一端末)を廃止しオンライン対戦に一本化したためバージョンを上げる
 
@@ -17,7 +18,8 @@ const APP_SHELL = [
   './icon-512.png',
   './icon-512-maskable.png',
   './apple-touch-icon.png',
-  './favicon-32.png'
+  './favicon-32.png',
+  '../../manabi-juice.js'
 ];
 
 // インストール時にアプリ本体（HTML/アイコン）をキャッシュしておく。
@@ -54,7 +56,7 @@ self.addEventListener('fetch', (event) => {
   // ハブ共通スクリプト（../../config.js など）は接続先の変更をすぐ反映したいので
   // 通信優先にし、切れているときだけキャッシュを使う
   const path = new URL(event.request.url).pathname;
-  if (/\/(config|hub-progress|manabi-connect)\.js$/.test(path)) {
+  if (/\/(config|hub-progress|manabi-connect|manabi-juice)\.js$/.test(path)) {
     event.respondWith(
       fetch(event.request).then((response) => {
         if (response && response.ok) {

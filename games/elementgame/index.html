@@ -1238,10 +1238,159 @@
       .home-header h1 { font-size: 1.3rem; }
       .scoreboard { font-size: 0.9rem; gap: 10px; }
     }
+    /* ==================== フェーズ4: 自己ベスト・図鑑・今日の化学式・音ボタン ==================== */
+    .best-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0;
+      background: #fff8e7;
+      border: 3px dashed #f1c40f;
+      border-radius: 18px;
+      margin: 18px 0;
+      padding: 14px 6px;
+      text-align: center;
+    }
+    .best-cell { padding: 2px 8px; min-width: 0; }
+    .best-cell + .best-cell { border-left: 2px solid rgba(241, 196, 15, 0.35); }
+    .best-label { font-size: 0.95rem; color: #7f8c8d; font-weight: bold; }
+    .best-value { font-size: 1.9rem; font-weight: 900; color: #2c3e50; margin-top: 4px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .best-value.best-score { color: #d35400; }
+    .best-value.best-title { font-size: 1.25rem; color: #7a4ad9; padding-top: 8px; }
+    .best-value.bump { animation: bestBump 0.45s cubic-bezier(.22,1,.36,1); }
+    @keyframes bestBump { 0% { transform: scale(0.85); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
+
+    .dex-tab-count {
+      display: inline-block;
+      margin-left: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(41, 128, 185, 0.12);
+      font-size: 0.85rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .dex-top { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+    .dex-count { font-weight: bold; color: #4a5568; white-space: nowrap; font-size: 1rem; }
+    .dex-count b { font-size: 1.5rem; color: #2980b9; font-variant-numeric: tabular-nums; }
+    .dex-bar { flex: 1; height: 12px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
+    .dex-bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #4aa8e8, #2ecc71); transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+    .dex-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-rows: repeat(3, 76px);
+      gap: 10px;
+    }
+    .dex-card {
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 4px 6px;
+      min-width: 0;
+      cursor: pointer;
+      font: inherit;
+      color: #2c3e50;
+      transition: transform 0.2s cubic-bezier(.4,0,.2,1), border-color 0.2s, box-shadow 0.2s;
+      animation: dexIn 0.35s cubic-bezier(.22,1,.36,1) both;
+      touch-action: manipulation;
+    }
+    @keyframes dexIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .dex-card .f { font-size: 1.2rem; font-weight: 900; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+    .dex-card .n { font-size: 0.75rem; color: #64748b; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+    .dex-card.have { background: #fff; border-color: #9fd3f5; }
+    .dex-card.have.g3 { border-color: #c9b8f5; }
+    .dex-card.lock { cursor: default; background: #f1f5f9; }
+    .dex-card.lock .f { color: #b8c2cf; }
+    .dex-card.lock .n { color: #b8c2cf; }
+    .dex-card.sel { border-color: #2980b9; box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.22); }
+    @media (hover: hover) { .dex-card.have:hover { transform: scale(1.05); } }
+    .dex-card.have:active { transform: scale(0.97); }
+    .dex-detail {
+      margin-top: 12px;
+      min-height: 72px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      padding: 10px 14px;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: #4a5568;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .dex-detail.show { animation: tabSlideIn 0.3s cubic-bezier(.22,1,.36,1) both; }
+    .dex-detail .dh { font-weight: 900; color: #2c3e50; font-size: 1rem; }
+    .dex-detail .dh .df { color: #2980b9; margin-right: 8px; font-size: 1.15rem; }
+    .dex-detail .eq { font-weight: bold; color: #6c4fd1; }
+    .dex-detail .muted { color: #94a3b8; text-align: center; }
+    .dex-pager { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 12px; }
+    .btn.dex-nav { min-height: 44px; min-width: 110px; touch-action: manipulation; }
+    .btn.dex-nav:active:not(:disabled) { transform: scale(0.97); }
+    .dex-page { font-weight: bold; color: #4a5568; min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; }
+
+    /* 今日の化学式カード（結果モーダル内） */
+    .today-card {
+      text-align: left;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--glass-border-strong);
+      border-left: 5px solid #f1c40f;
+      border-radius: 14px;
+      padding: 12px 16px;
+      animation: fadeInUp 0.4s cubic-bezier(.22,1,.36,1) 0.15s both;
+    }
+    .today-head { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: bold; color: #f1c40f; letter-spacing: 0.06em; }
+    .today-new { background: #2ecc71; color: #06260f; border-radius: 999px; padding: 1px 10px; font-size: 0.75rem; letter-spacing: 0; }
+    .today-main { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; }
+    .today-formula { font-size: 1.7rem; font-weight: 900; color: #fff; }
+    .today-name { font-size: 1rem; font-weight: bold; color: var(--text-light); }
+    .today-eq { margin-top: 6px; font-size: 1.05rem; font-weight: bold; color: #c9b8ff; }
+    .today-eq .lbl { display: inline-block; font-size: 0.75rem; padding: 1px 8px; margin-right: 8px; border-radius: 6px; background: rgba(201, 184, 255, 0.18); vertical-align: 2px; }
+    .today-desc { margin-top: 6px; font-size: 0.92rem; line-height: 1.6; color: #d5dbea; }
+
+    /* 音 ON/OFF（ゲーム画面ヘッダー） */
+    .sound-btn {
+      min-height: 44px;
+      margin: -9px 0; /* タップ領域44pxを保ったまま、ヘッダーの高さは増やさない */
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--glass-border-strong);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-light);
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s cubic-bezier(.4,0,.2,1), color 0.2s;
+      touch-action: manipulation;
+    }
+    .sound-btn:active { transform: scale(0.97); }
+    .sound-btn.off { color: var(--text-muted); background: rgba(0, 0, 0, 0.25); }
+    @media (hover: hover) { .sound-btn:hover { background: rgba(255, 255, 255, 0.16); } }
+    .craft-area.mj-shake { border-color: #ff6b6b; }
+
+    @media (max-height: 860px) {
+      .best-row { margin: 12px 0; padding: 10px 6px; }
+      .best-value { font-size: 1.6rem; }
+    }
+    @media (max-width: 760px) {
+      .best-value { font-size: 1.3rem; }
+      .best-value.best-title { font-size: 0.95rem; }
+      .dex-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(5, 64px); gap: 8px; }
+      .dex-top { flex-wrap: wrap; }
+      .today-formula { font-size: 1.4rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .dex-card, .dex-detail.show, .today-card, .best-value.bump { animation: none; }
+      .dex-bar i { transition: none; }
+    }
   </style>
   <script src="../../config.js"></script>
   <script src="../../hub-progress.js"></script>
   <script src="../../manabi-connect.js"></script>
+  <script src="../../manabi-juice.js"></script>
 </head>
 <body>
 
@@ -1274,6 +1423,7 @@
       <button class="tab-btn active" onclick="switchHomeTab('online-tab')">オンライン対戦</button>
       <button class="tab-btn" onclick="switchHomeTab('score-tab')">スコアアタック</button>
       <button class="tab-btn" onclick="switchHomeTab('recipes-tab')">組み合わせ一覧</button>
+      <button class="tab-btn" id="dex-tab-btn" onclick="switchHomeTab('dex-tab')">図鑑 <span class="dex-tab-count" id="dex-tab-count">0 / 111</span></button>
     </div>
 
     <!-- タブ1: オンライン対戦（別端末同士でのP2P対戦） -->
@@ -1349,9 +1499,20 @@
         <span id="score-grade-desc" class="grade-row-desc"></span>
       </div>
 
-      <div style="background: #fff8e7; border: 3px dashed #f1c40f; padding: 20px; border-radius: 18px; text-align: center; margin: 20px 0;">
-        <div style="font-size: 1.1rem; color: #7f8c8d; font-weight: bold;">過去最高記録 (High Score)</div>
-        <div id="high-score-display" style="font-size: 2.8rem; font-weight: bold; color: #d35400; margin-top: 5px;">0 pt</div>
+      <!-- 学年ごとの自己ベスト（最高到達ステージ・最高素点）と称号 -->
+      <div class="best-row" id="best-row">
+        <div class="best-cell">
+          <div class="best-label">最高到達</div>
+          <div class="best-value" id="best-stage-display">-</div>
+        </div>
+        <div class="best-cell">
+          <div class="best-label">最高素点</div>
+          <div class="best-value best-score" id="high-score-display">0 pt</div>
+        </div>
+        <div class="best-cell">
+          <div class="best-label">称号</div>
+          <div class="best-value best-title" id="best-title-display">見習い錬金術師</div>
+        </div>
       </div>
 
       <div style="text-align: center;">
@@ -1368,6 +1529,21 @@
       </div>
       <div class="recipe-grid" id="recipe-list-container"></div>
     </div>
+
+    <!-- タブ4: 図鑑（作ったことのある化学式。ページ送りで1画面に収める） -->
+    <div id="dex-tab" class="tab-content">
+      <div class="dex-top">
+        <div class="dex-count"><span id="dex-scope">中3まで</span>の化学式 <b id="dex-have">0</b> / <span id="dex-total">111</span></div>
+        <div class="dex-bar" aria-hidden="true"><i id="dex-bar-fill"></i></div>
+      </div>
+      <div class="dex-grid" id="dex-grid"></div>
+      <div class="dex-detail" id="dex-detail"></div>
+      <div class="dex-pager">
+        <button class="btn btn-secondary dex-nav" id="dex-prev" type="button" onclick="dexPage(-1)">◀ 前へ</button>
+        <span class="dex-page" id="dex-page">1 / 1</span>
+        <button class="btn btn-secondary dex-nav" id="dex-next" type="button" onclick="dexPage(1)">次へ ▶</button>
+      </div>
+    </div>
   </div>
 
   <!-- ==================== 2. ゲームプレイ画面 ==================== -->
@@ -1383,6 +1559,7 @@
         </div>
       </div>
       <div class="scoreboard">
+        <button class="sound-btn" id="sound-btn" type="button" onclick="toggleSound()" aria-pressed="true">音 ON</button>
         <div id="score-p1-box">P1: <span class="score-p1" id="score-p1">0</span> pt</div>
         <div id="score-p2-box">P2: <span class="score-p2" id="score-p2">0</span> pt</div>
       </div>
@@ -1510,6 +1687,9 @@
             <div class="p-status" id="res-status-p2">LOSER</div>
           </div>
         </div>
+
+        <!-- 今日の化学式（スコアアタックのステージ結果だけで表示） -->
+        <div class="today-card" id="today-card" style="display:none;"></div>
 
         <button class="btn btn-success" id="next-round-btn" style="padding:14px; font-size:1.2rem;" onclick="proceedNextRound()">次へ進む</button>
       </div>
@@ -1806,6 +1986,103 @@
       { id: 'Ca3PO42', name: 'リン酸カルシウム (骨の主成分)', formula: 'Ca₃(PO₄)₂', req: { 'Ca2+': 3, 'PO43-': 2 }, g: 4, score: 220 }
     ];
 
+    // --- 2a. 「今日の化学式」・図鑑の解説（中学範囲 g:2 / g:3 のみ。迷うものは書かない） ---
+    const RECIPE_NOTES = {
+      s_He: '空気より軽く燃えない気体で、風船や飛行船に使われる。',
+      s_Ne: 'ネオンサインの管に入っている気体で、電圧をかけると赤っぽく光る。',
+      s_Ar: '空気中に約1%ふくまれる気体。ほかの物質と反応しにくい。',
+      s_Fe: '磁石に引きつけられる金属。硫黄といっしょに加熱すると硫化鉄ができる。',
+      s_Cu: '電気や熱をよく通す金属で、電線に使われる。加熱すると酸素と結びついて黒い酸化銅になる。',
+      s_Ag: '電気をいちばんよく通す金属。酸化銀を加熱すると、あとに銀が残る。',
+      s_Au: 'さびにくく、美しい光沢が長く続く金属。',
+      s_Al: '軽くてさびにくい金属で、1円玉やアルミ缶に使われる。',
+      s_Zn: 'うすい塩酸に入れると水素が発生する金属。ダニエル電池では－極になる。',
+      s_Na: '水と激しく反応する金属なので、灯油の中に入れて保存する。',
+      s_K: 'ナトリウムよりもさらに激しく水と反応する金属。',
+      s_Mg: '空気中で加熱すると強い光を出して燃え、白い酸化マグネシウムになる。',
+      s_Ca: '水と反応して水素を発生する金属。',
+      s_C: '木炭の主成分で、燃えると二酸化炭素になる。酸化銅から銅を取り出す還元の実験にも使われる。',
+      s_S: '黄色い固体。鉄といっしょに加熱すると硫化鉄ができる。',
+      s_P: '赤リンはマッチ箱の側面（こする部分）に使われている。',
+      H2: '最も軽い気体。火をつけるとポンと音を立てて燃え、水ができる。',
+      O2: '物が燃えるのを助ける気体。過酸化水素水に二酸化マンガンを加えると発生する。',
+      N2: '空気の体積の約78%をしめる気体。',
+      Cl2: '黄緑色で刺激臭のある有毒な気体。塩化銅水溶液を電気分解すると陽極から発生する。',
+      I2: 'ヨウ素液はデンプンがあると青紫色になる（ヨウ素デンプン反応）。だ液のはたらきを調べる実験で使う。',
+      CO: '炭素が不完全燃焼するとできる、においのない有毒な気体。',
+      HCl_m: '水にとけると塩酸になる気体。',
+      MgO: 'マグネシウムを燃やすとできる白い物質。',
+      CaO: '生石灰とよばれ、水を加えると発熱する。乾燥剤にも使われる。',
+      CuO: '銅を加熱するとできる黒い物質。炭素といっしょに加熱すると銅にもどる（還元）。',
+      H2O: '水素が燃えるとできる。水を電気分解すると水素と酸素に分かれる。',
+      H2O2: '過酸化水素水（オキシドール）に二酸化マンガンを加えると酸素が発生する。',
+      CO2: '石灰水を白くにごらせる気体。炭酸水素ナトリウムを加熱すると発生する。',
+      H2S: '卵がくさったようなにおいの有毒な気体。硫化鉄にうすい塩酸を加えると発生する。',
+      SO2: '刺激臭のある気体で、硫黄を燃やすとできる。',
+      NH3: '刺激臭があり、水に非常によくとける気体。水溶液はアルカリ性を示す。',
+      CH4: '天然ガスの主成分。燃えると二酸化炭素と水ができる。',
+      C2H5OH: '消毒などに使われる液体。水との混合物を加熱して分ける蒸留の実験で出てくる。',
+      i_H: '酸の水溶液に共通してふくまれ、酸性の性質のもとになる陽イオン。',
+      i_Na: 'ナトリウム原子が電子を1個失ってできる陽イオン。',
+      i_K: 'カリウム原子が電子を1個失ってできる陽イオン。',
+      i_Cl: '塩素原子が電子を1個受け取ってできる陰イオン。',
+      i_Ca: 'カルシウム原子が電子を2個失ってできる陽イオン。',
+      i_Cu: '銅原子が電子を2個失ってできる陽イオン。水溶液は青色になる。',
+      i_Fe2: '鉄原子が電子を2個失ってできる陽イオン。',
+      i_SO4: '硫酸や硫酸銅などにふくまれる、いくつかの原子が集まってできた陰イオン。',
+      NaCl: '食塩の主成分。塩酸と水酸化ナトリウム水溶液の中和でできる塩。',
+      KCl: '塩酸と水酸化カリウム水溶液の中和でできる塩。',
+      AgCl: '硝酸銀水溶液に塩化物イオンをふくむ水溶液を加えるとできる白い沈殿。',
+      MgO_i: 'マグネシウムイオンと酸化物イオンが1：1で結びついた物質。マグネシウムを燃やすとできる。',
+      CaO_i: '生石灰とよばれ、水を加えると発熱する。',
+      NaOH: '水溶液は強いアルカリ性を示す。塩酸と中和すると塩化ナトリウムと水ができる。',
+      KOH: '水溶液は強いアルカリ性を示す。',
+      HNO3: '水溶液は酸性を示す酸。',
+      NH4Cl: '水酸化カルシウムと混ぜて加熱すると、アンモニアが発生する。',
+      AgNO3: '塩化物イオンを調べる薬品。塩化物イオンがあると白い沈殿（塩化銀）ができる。',
+      K2SO4: '硫酸と水酸化カリウム水溶液の中和でできる塩。',
+      ZnSO4: 'ダニエル電池で亜鉛板を入れる水溶液にとけている物質。',
+      NH4NO3: '水にとけるときにまわりの熱をうばうので、冷却パックに使われる。',
+      FeCl2: '鉄にうすい塩酸を加えると、水素とともにできる。',
+      ZnCl2: '亜鉛にうすい塩酸を加えると、水素とともにできる。',
+      MgCl2: '豆腐を固める「にがり」の主成分。',
+      CaCl2: '乾燥剤や道路の凍結防止剤に使われる。',
+      BaCl2: '硫酸イオンを調べる薬品。硫酸イオンがあると白い沈殿（硫酸バリウム）ができる。',
+      KNO3: '温度による溶けやすさの変化が大きく、再結晶の実験で使われる。',
+      ZnO_i: '白い粉で、日焼け止めや白い絵の具に使われる。',
+      Ag2O_i: '黒い物質で、加熱すると銀と酸素に分解する。',
+      FeS_i: '鉄と硫黄を加熱するとできる黒い物質。うすい塩酸を加えると硫化水素が発生する。',
+      Ag2S_i: '銀の食器などが黒く変色するときにできる物質。',
+      BaOH2: '水溶液はアルカリ性。うすい硫酸と中和すると白い沈殿（硫酸バリウム）ができる。',
+      NH4OH: 'アンモニアを水にとかしたアンモニア水。アルカリ性を示す。',
+      CuCl2: '水溶液は青色。電気分解すると陰極に銅、陽極に塩素が出てくる。',
+      CaOH2: '水溶液は石灰水。二酸化炭素を通すと白くにごる。',
+      CuOH2: '銅イオンをふくむ水溶液にアルカリ性の水溶液を加えるとできる青白い沈殿。',
+      CaCO3: '石灰石・大理石・貝殻の主成分。うすい塩酸を加えると二酸化炭素が発生する。',
+      NaHCO3: '重曹とよばれる。加熱すると炭酸ナトリウム・水・二酸化炭素に分解する。',
+      Na2CO3: '炭酸水素ナトリウムを加熱したあとに残る白い物質。水溶液は炭酸水素ナトリウムより強いアルカリ性を示す。',
+      H2SO4: '水溶液は酸性。水酸化バリウム水溶液と中和すると白い沈殿（硫酸バリウム）ができる。',
+      Na2SO4: '水の電気分解で、電流を流しやすくするために水に加えることがある。',
+      CuSO4: '水溶液は青色。ダニエル電池で銅板を入れる水溶液にとけている物質。',
+      BaSO4: '水にとけにくい白い沈殿。うすい硫酸と水酸化バリウム水溶液の中和でできる。',
+      CaSO4: '石こうの主成分。',
+      NH42SO4: '肥料（硫安）として使われる。'
+    };
+    // 水にとけて電離する（中学で電離式を書く）物質。沈殿・酸化物などは「イオンの数の比」で示す
+    const IONIZE_IDS = new Set(['NaCl','KCl','NaOH','KOH','HNO3','NH4Cl','AgNO3','K2SO4','MgSO4','ZnSO4','CuNO32','CaNO32','MgNO32','NH4NO3','NH42CO3','K2CO3','FeNO32','FeCl2','ZnCl2','MgCl2','CaCl2','BaCl2','BaNO32','ZnNO32','KNO3','NaNO3','Na2S_i','K2S_i','BaOH2','CuCl2','CaOH2','NaHCO3','Na2CO3','H2SO4','Na2SO4','CuSO4','FeSO4','NH42SO4']);
+    // イオンからなる物質の式（電離式 または イオンの数の比）。該当しなければ null
+    function ionLine(r) {
+      if (!r || r.g !== 3) return null;
+      const keys = Object.keys(r.req);
+      if (keys.length < 2) return null;
+      const sym = (k) => { const d = MODEL_DEFINITIONS.find(m => m.key === k); return d ? d.symbol : k; };
+      if (r.id === 'NH4OH') return { label: '電離', text: 'NH₃ + H₂O → NH₄⁺ + OH⁻' };
+      if (IONIZE_IDS.has(r.id)) {
+        return { label: '電離', text: r.formula + ' → ' + keys.map(k => (r.req[k] > 1 ? r.req[k] : '') + sym(k)).join(' + ') };
+      }
+      return { label: 'イオンの数の比', text: keys.map(sym).join(' : ') + ' = ' + keys.map(k => r.req[k]).join(' : ') };
+    }
+
     // --- 2b. 学年モード（スコアアタック専用。対戦モードは学年に関係なく従来どおり） ---
     // レシピの g: 2＝原子のみ（中2 原子・分子）, 3＝イオンを含む（中3 イオン）, 4＝高校（中3でも出さない）
     // 中1は該当範囲がないので段階は「中2」「中3」の2つ。ハブの学年1は中2として扱う。
@@ -1858,6 +2135,11 @@
       }
       const h = document.getElementById('score-tab-title');
       if (h) h.innerText = `1人用 スコアアタックモード (全${stageCountFor(GRADE)}ステージ)`;
+      if (typeof updateHighScoreDisplay === 'function') {
+        updateHighScoreDisplay();
+        const dt = document.getElementById('dex-tab');
+        if (dt && dt.classList.contains('active')) { dexPageIdx = 0; dexSel = null; renderDex(); }
+      }
     }
 
     // --- 3. ゲーム状態管理 ---
@@ -2079,7 +2361,15 @@
           break;
         case 'show3D': {
           const r = RECIPES.find(x => x.id === msg.recipeId);
-          if (r) open3DModal(r);
+          if (r) {
+            if (msg.player) {
+              const isNewDex = registerCraft(msg.player, r);
+              craftSuccessFx(msg.player, r, msg.chain || 1, isNewDex);
+              open3DModal(r, isNewDex);
+            } else {
+              open3DModal(r);
+            }
+          }
           break;
         }
         case 'intent':
@@ -2200,6 +2490,7 @@
       renderRecipeList('all');
       updateHighScoreDisplay();
       setGrade(GRADE, false); // 学年ピルの初期表示（スコアアタック用）
+      updateSoundBtn();
     };
 
     // --- タッチ端末向け: 名前非表示チップを長押しするとツールチップを表示（選択は発生させない） ---
@@ -2268,9 +2559,198 @@
     }
 
     function updateHighScoreDisplay() {
-      const hs = getHighScore();
+      // ホームの自己ベストは学年ごと（manabi-juice の記録）。旧来の全体ハイスコアは保存だけ続ける
       const el = document.getElementById('high-score-display');
-      if (el) el.innerText = `${hs} pt`;
+      const raw = mj('best', MJ_APP, 'raw-g' + GRADE);
+      if (el) el.innerText = (raw === undefined) ? '-' : `${raw} pt`;
+      const st = document.getElementById('best-stage-display');
+      if (st) {
+        const done = mj('best', MJ_APP, 'stage-g' + GRADE);
+        const max = stageCountFor(GRADE);
+        st.innerText = (done === undefined) ? '-' : (done >= max ? '完全制覇' : `STAGE ${done + 1} / ${max}`);
+      }
+      const tl = document.getElementById('best-title-display');
+      if (tl) tl.innerText = titleName(titleValue());
+      updateDexCount();
+    }
+
+    // ==================== フェーズ4: 演出・ごほうび・図鑑 ====================
+    const MJ_APP = 'elementgame';
+    // manabi-juice.js が読み込めなかった場合でもゲームは止めない
+    function mj(fn, ...args) {
+      try { if (window.MJ && typeof MJ[fn] === 'function') return MJ[fn](...args); } catch (e) {}
+      return undefined;
+    }
+
+    // --- 音 ON/OFF（manabi-juice の消音設定をそのまま使う） ---
+    function updateSoundBtn() {
+      const b = document.getElementById('sound-btn');
+      if (!b) return;
+      const off = !!mj('muted');
+      b.innerText = off ? '音 OFF' : '音 ON';
+      b.classList.toggle('off', off);
+      b.setAttribute('aria-pressed', String(!off));
+    }
+    function toggleSound() {
+      mj('setMuted', !mj('muted'));
+      updateSoundBtn();
+      mj('sfx', 'tap');
+    }
+
+    // --- 称号（中2・中3でクリアしたステージ数の合計 0〜16） ---
+    const TITLE_DEFS = [
+      { min: 0,  name: '見習い錬金術師' },
+      { min: 3,  name: '錬金術師' },
+      { min: 6,  name: '化学者' },
+      { min: 11, name: '上級化学者' },
+      { min: 16, name: '化学マスター' }
+    ];
+    function titleValue() {
+      return (mj('best', MJ_APP, 'stage-g2') || 0) + (mj('best', MJ_APP, 'stage-g3') || 0);
+    }
+    function titleName(v) {
+      let n = TITLE_DEFS[0].name;
+      TITLE_DEFS.forEach(d => { if (v >= d.min) n = d.name; });
+      return n;
+    }
+
+    // --- 学年ごとの自己ベスト（クリア面数・累計素点）。新記録なら true ---
+    function saveRunRecord(done, score) {
+      const a = mj('record', MJ_APP, 'stage-g' + GRADE, done) || {};
+      const b = mj('record', MJ_APP, 'raw-g' + GRADE, score) || {};
+      mj('title', MJ_APP, TITLE_DEFS, titleValue());
+      return !!(a.isNew || b.isNew || (b.first && score > 0));
+    }
+
+    // --- 図鑑（作ったことのある化学式を端末に保存） ---
+    const DEX_KEY = 'elementgame:dex:v1';
+    function loadDex() {
+      try { const a = JSON.parse(localStorage.getItem(DEX_KEY)); return new Set(Array.isArray(a) ? a : []); } catch (e) { return new Set(); }
+    }
+    // 新しく登録したら true
+    function addDex(id) {
+      const d = loadDex();
+      if (d.has(id)) return false;
+      d.add(id);
+      try { localStorage.setItem(DEX_KEY, JSON.stringify([...d])); } catch (e) {}
+      return true;
+    }
+    // 図鑑の対象：その学年まで（中2＝g:2 の36件、中3＝g:2+g:3 の111件）
+    function dexList() {
+      return RECIPES.filter(r => r.g === 2 || (GRADE === 3 && r.g === 3));
+    }
+    function updateDexCount() {
+      const list = dexList(), d = loadDex();
+      const have = list.filter(r => d.has(r.id)).length;
+      const t = document.getElementById('dex-tab-count');
+      if (t) t.innerText = `${have} / ${list.length}`;
+      const h = document.getElementById('dex-have'); if (h) h.innerText = have;
+      const n = document.getElementById('dex-total'); if (n) n.innerText = list.length;
+      const sc = document.getElementById('dex-scope'); if (sc) sc.innerText = (GRADE === 2 ? '中2' : '中3まで');
+      const f = document.getElementById('dex-bar-fill'); if (f) f.style.width = (list.length ? (have / list.length * 100) : 0) + '%';
+      return { have, total: list.length };
+    }
+    const DEX_PER_PAGE = 15;
+    let dexPageIdx = 0, dexSel = null;
+    function dexPage(delta) {
+      const pages = Math.max(1, Math.ceil(dexList().length / DEX_PER_PAGE));
+      const next = Math.max(0, Math.min(pages - 1, dexPageIdx + delta));
+      if (next === dexPageIdx) return;
+      dexPageIdx = next;
+      dexSel = null;
+      mj('sfx', 'page');
+      renderDex();
+    }
+    function renderDex() {
+      const list = dexList(), d = loadDex();
+      const pages = Math.max(1, Math.ceil(list.length / DEX_PER_PAGE));
+      dexPageIdx = Math.max(0, Math.min(pages - 1, dexPageIdx));
+      updateDexCount();
+      const grid = document.getElementById('dex-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      const start = dexPageIdx * DEX_PER_PAGE;
+      list.slice(start, start + DEX_PER_PAGE).forEach((r, i) => {
+        const have = d.has(r.id);
+        const c = document.createElement('button');
+        c.type = 'button';
+        c.className = 'dex-card ' + (have ? 'have' : 'lock') + (r.g === 3 ? ' g3' : '') + (dexSel === r.id ? ' sel' : '');
+        c.style.animationDelay = (i * 0.03) + 's';
+        c.innerHTML = have
+          ? `<span class="f">${r.formula}</span><span class="n">${r.name}</span>`
+          : `<span class="f">？</span><span class="n">No.${start + i + 1}</span>`;
+        if (have) c.onclick = () => { dexSel = r.id; mj('sfx', 'tap'); renderDex(); };
+        else { c.setAttribute('aria-disabled', 'true'); c.setAttribute('aria-label', 'まだ作っていない'); }
+        grid.appendChild(c);
+      });
+      document.getElementById('dex-page').innerText = `${dexPageIdx + 1} / ${pages}`;
+      document.getElementById('dex-prev').disabled = (dexPageIdx === 0);
+      document.getElementById('dex-next').disabled = (dexPageIdx >= pages - 1);
+      const box = document.getElementById('dex-detail');
+      const r = dexSel ? RECIPES.find(x => x.id === dexSel) : null;
+      if (r) {
+        const ion = ionLine(r), note = RECIPE_NOTES[r.id];
+        box.innerHTML = `<div class="dh"><span class="df">${r.formula}</span>${r.name}</div>`
+          + (ion ? `<div class="eq">${ion.label}：${ion.text}</div>` : '')
+          + (note ? `<div>${note}</div>` : '');
+        box.classList.remove('show'); void box.offsetWidth; box.classList.add('show');
+      } else {
+        box.innerHTML = `<div class="muted">作った化学式のカードを選ぶと、説明が出ます</div>`;
+        box.classList.remove('show');
+      }
+    }
+
+    // --- 今日の化学式（ステージ結果）：初めて作ったもの優先、その中で最高点 ---
+    let roundNewDex = new Set();
+    function renderTodayCard(created) {
+      const el = document.getElementById('today-card');
+      if (!el) return;
+      if (!created || created.length === 0) { el.style.display = 'none'; el.innerHTML = ''; return; }
+      const fresh = created.filter(r => roundNewDex.has(r.id));
+      const pool = fresh.length ? fresh : created;
+      const r = pool.slice().sort((a, b) => b.score - a.score)[0];
+      const ion = (GRADE === 3) ? ionLine(r) : null;
+      const note = RECIPE_NOTES[r.id];
+      el.innerHTML = `<div class="today-head">今日の化学式${roundNewDex.has(r.id) ? '<span class="today-new">図鑑に初登録</span>' : ''}</div>`
+        + `<div class="today-main"><span class="today-formula">${r.formula}</span><span class="today-name">${r.name}</span></div>`
+        + (ion ? `<div class="today-eq"><span class="lbl">${ion.label}</span>${ion.text}</div>` : '')
+        + (note ? `<p class="today-desc">${note}</p>` : '');
+      el.style.display = '';
+      el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+    }
+
+    // --- 合成の手ごたえ ---
+    function craftSuccessFx(player, recipe, chain, isNewDex) {
+      const area = document.getElementById(`craft-p${player}`);
+      const btn = document.getElementById(`craft-p${player}-btn`);
+      if (!window.MJ) {
+        if (btn) { const r = btn.getBoundingClientRect(); playScoreFxAt(r.left + r.width / 2, r.top, `+${recipe.score}pt!`); }
+        return;
+      }
+      mj('burst', area || btn, { color: '#4ade80', color2: '#5adeff', count: Math.min(60, 20 + (chain - 1) * 8) });
+      mj('pop', btn || area, `+${recipe.score}`, { color: '#4ade80', size: 28 });
+      if (chain >= 2) {
+        mj('sfx', 'combo');
+        setTimeout(() => mj('pop', area || btn, `×${chain} CHAIN`, { color: '#ffd166', size: Math.min(56, 30 + (chain - 2) * 6) }), 160);
+      } else {
+        mj('sfx', 'ok');
+      }
+    }
+    function craftFailFx(player, text) {
+      const area = document.getElementById(`craft-p${player}`);
+      mj('sfx', 'ng');
+      mj('shake', area);
+      mj('flash');
+      mj('toast', text, { color: 'rgba(192,57,43,.95)', ms: 1800 });
+      if (!window.MJ) alert(text);
+    }
+    // 自分の端末で作った化学式だけを図鑑に登録する
+    function registerCraft(player, recipe) {
+      const mine = !onlineRole || player === myPlayerNum;
+      if (!mine) return false;
+      const isNew = addDex(recipe.id);
+      if (isNew) roundNewDex.add(recipe.id);
+      return isNew;
     }
 
      
@@ -2333,8 +2813,10 @@ function checkAndSaveHighScore(score, cleared) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
       
-      event.target.classList.add('active');
+      const tb = (event && event.target && event.target.closest) ? event.target.closest('.tab-btn') : null;
+      if (tb) tb.classList.add('active');
       document.getElementById(tabId).classList.add('active');
+      if (tabId === 'dex-tab') renderDex();
     }
 
     function startGame(mode = 'vs') {
@@ -2347,6 +2829,7 @@ function checkAndSaveHighScore(score, cleared) {
 
       if (mode === 'scoreAttack') {
         state.stage = 1;
+        runNewRecord = false;
         // 中2＝原子のみ（かんたん相当）で6面、中3＝イオンのみで10面
         state.difficulty = (GRADE === 2) ? 'easy' : 'hard';
         state.maxStages = stageCountFor(GRADE);
@@ -2484,6 +2967,7 @@ function checkAndSaveHighScore(score, cleared) {
       state.crafts = { 1: [], 2: [] };
       state.created = { 1: [], 2: [] };
       state.draftPicksCount = 0;
+      roundNewDex = new Set();
       state.maxDraftPicks = (state.gameMode === 'scoreAttack') ? 12 : 24;
       state.turnPlayer = (state.round % 2 === 1) ? 1 : 2;
 
@@ -2748,30 +3232,35 @@ function checkAndSaveHighScore(score, cleared) {
     }
 
     function craftChemical(player, fromNetwork) {
+      // 合成できない組み合わせは、その場（自分の端末）で失敗の手ごたえを返して終わる（通信はしない）
+      if (!fromNetwork) {
+        if (onlineRole && player !== myPlayerNum) return;
+        if (state.phase !== 'BUILD') return;
+        const r0 = checkRecipeMatch(state.crafts[player]);
+        if (!r0) { if (state.crafts[player].length) craftFailFx(player, '該当する合成レシピがありません'); return; }
+        if (state.usedRecipeIds.has(r0.id)) { craftFailFx(player, `${r0.name} はすでに作成済みです`); return; }
+      }
       if (!requestAction(player, 'craftChemical', {}, fromNetwork)) return;
 
       const recipe = checkRecipeMatch(state.crafts[player]);
       if (!recipe) return;
 
-      if (state.usedRecipeIds.has(recipe.id)) {
-        alert("[重複制限] この化学種はすでに取り出されているか作成されています！");
-        return;
-      }
+      if (state.usedRecipeIds.has(recipe.id)) return;
 
-      const craftBtn = document.getElementById(`craft-p${player}-btn`);
-      if (craftBtn) {
-        const r = craftBtn.getBoundingClientRect();
-        playScoreFxAt(r.left + r.width / 2, r.top, `+${recipe.score}pt!`);
-      }
       playScreenFlash();
 
       state.created[player].push(recipe);
       state.crafts[player] = [];
       updatePlayerArea(player);
 
-      open3DModal(recipe);
+      const chain = state.created[player].length; // このラウンド（ステージ）で何個目の合成か
+      const isNewDex = registerCraft(player, recipe);
+      craftSuccessFx(player, recipe, chain, isNewDex);
+
+      open3DModal(recipe, isNewDex);
       if (onlineRole === 'host') {
-        sendNet({ type: 'show3D', recipeId: recipe.id }); // 相手の画面にも同じ3Dモデルを表示する
+        // 相手の画面にも同じ3Dモデルと演出を出す（player / chain は演出用の追加情報）
+        sendNet({ type: 'show3D', recipeId: recipe.id, player: player, chain: chain });
         broadcastState();
       }
     }
@@ -2802,6 +3291,7 @@ function checkAndSaveHighScore(score, cleared) {
       if (state.phase !== 'BUILD') return;
 
       if (state.gameMode === 'scoreAttack') {
+        mj('sfx', 'stamp');
         showRoundResultModal();
         return;
       }
@@ -2818,7 +3308,11 @@ function checkAndSaveHighScore(score, cleared) {
       }
     }
 
+    let runNewRecord = false; // このスコアアタックの挑戦中に自己ベストを更新したか
     function showRoundResultModal(fromNetwork) {
+      // 演出は「結果モーダルを開く最初の1回」だけ（ゲストは状態同期のたびにここを通るため）
+      const fxNow = !document.getElementById('result-modal').classList.contains('open');
+      let saFx = null;
       // スコア加算は「初めてこのラウンドを集計するとき」だけ行う。
       // オンライン対戦のゲスト側は、ホストから届いた状態を表示に反映するためだけに
       // この関数を呼ぶので、その場合は二重加算しないようスキップする。
@@ -2861,6 +3355,12 @@ function checkAndSaveHighScore(score, cleared) {
         document.getElementById('res-title-p1').innerText = `STAGE ${state.stage} 得点`;
         scoreP1.innerText = `+${p1RoundPts} pt`;
         totalP1.innerText = `目標: ${border}pt | 累計: ${state.scores[1]}pt`;
+
+        if (fxNow) {
+          const done = cleared ? state.stage : state.stage - 1;
+          if (saveRunRecord(done, state.scores[1])) runNewRecord = true;
+          saFx = { cleared, final: !cleared || state.stage >= state.maxStages, pts: p1RoundPts, border, stage: state.stage };
+        }
 
         if (cleared) {
           if (state.stage < state.maxStages) {
@@ -2937,8 +3437,55 @@ function checkAndSaveHighScore(score, cleared) {
         }
       }
 
+      if (state.gameMode === 'scoreAttack') renderTodayCard(state.created[1]);
+      else renderTodayCard(null);
+
       openModal('result-modal');
+      if (fxNow) playResultFx(saFx, p1RoundPts, p2RoundPts);
       if (onlineRole === 'host' && !fromNetwork) broadcastState();
+    }
+
+    // ステージ結果の演出（カットイン・カウントアップ・新記録）
+    function stageRank(pts, border) {
+      const k = border > 0 ? pts / border : 0;
+      if (k >= 1.6) return { rank: 'S', color: '#c8452f' };
+      if (k >= 1.3) return { rank: 'A', color: '#d9a441' };
+      if (k >= 1.1) return { rank: 'B', color: '#2980b9' };
+      return { rank: 'C', color: '#27ae60' };
+    }
+    function playResultFx(sa, p1, p2) {
+      const fmt = (n) => `+${Math.round(n)} pt`;
+      if (!sa) {
+        // 対戦モード：点数のカウントアップと効果音だけ
+        mj('sfx', 'stamp');
+        mj('countUp', document.getElementById('res-score-p1'), p1, { format: fmt });
+        mj('countUp', document.getElementById('res-score-p2'), p2, { format: fmt });
+        return;
+      }
+      const scoreEl = document.getElementById('res-score-p1');
+      const showRecord = () => {
+        if (sa.final && runNewRecord) {
+          mj('banner', '新記録', { color: '#c8452f' });
+        }
+      };
+      if (sa.cleared) {
+        const rk = stageRank(sa.pts, sa.border);
+        const allClear = sa.final;
+        if (scoreEl) scoreEl.innerText = fmt(0);
+        const p = mj('cutin', {
+          title: allClear ? 'ALL STAGES CLEAR' : `STAGE ${sa.stage} CLEAR`,
+          sub: `${sa.pts} pt ／ 目標 ${sa.border} pt`,
+          rank: rk.rank, color: allClear ? '#d9a441' : '#2a7fb8', stampColor: rk.color,
+          sound: allClear ? 'levelup' : 'clear'
+        });
+        const after = () => { mj('countUp', scoreEl, sa.pts, { format: fmt }); showRecord(); };
+        if (p && typeof p.then === 'function') p.then(after); else after();
+      } else {
+        mj('sfx', 'fail');
+        mj('shake', document.querySelector('#result-modal .result-card'), 8);
+        mj('countUp', scoreEl, sa.pts, { format: fmt });
+        setTimeout(showRecord, 500);
+      }
     }
 
     function proceedNextRound(fromNetwork) {
@@ -2994,7 +3541,7 @@ function checkAndSaveHighScore(score, cleared) {
           if (isUsed) {
             craftPreview.innerText = `${recipe.name} (作成済み不可)`;
             craftPreview.style.color = '#ff6b6b';
-            craftBtn.disabled = true;
+            craftBtn.disabled = false; // 押すと「作成済み」の失敗演出
           } else {
             craftPreview.innerText = `合成可能: ${recipe.name} (+${recipe.score}pt)`;
             craftPreview.style.color = '#4ade80';
@@ -3003,7 +3550,7 @@ function checkAndSaveHighScore(score, cleared) {
         } else {
           craftPreview.innerText = state.crafts[p].length > 0 ? '該当する合成レシピなし' : '-';
           craftPreview.style.color = 'var(--text-muted)';
-          craftBtn.disabled = true;
+          craftBtn.disabled = (state.crafts[p].length === 0); // 置いてあれば押せる（合わなければ失敗演出）
         }
       }
 
@@ -3317,9 +3864,9 @@ function checkAndSaveHighScore(score, cleared) {
       if (!animFrameId3d) animate3d();
     }
 
-    function open3DModal(recipe) {
+    function open3DModal(recipe, isNewDex) {
       document.getElementById('title-3d').innerText = `${recipe.name} (${recipe.formula})`;
-      document.getElementById('desc-3d').innerText = `獲得スコア: +${recipe.score}pt`;
+      document.getElementById('desc-3d').innerText = `獲得スコア: +${recipe.score}pt` + (isNewDex ? '　図鑑に新登録' : '');
       openModal('modal-3d');
 
       init3DScene(recipe);
