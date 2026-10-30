@@ -334,6 +334,14 @@
       : Math.round(Math.max(0, Math.min(1, r)) * 10000);
   }
 
+  /* 学年：ゲーム内で選んだ値（manabi-grade:japan-quest）があればそれ、無ければハブの学年 */
+  function jqGrade() {
+    var g = 0;
+    try { g = Number(global.localStorage.getItem('manabi-grade:japan-quest')); } catch (e) {}
+    if (g !== 1 && g !== 2 && g !== 3) g = (global.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3;
+    return g;
+  }
+
   function jqSend(raw) {
     var s;
     try { s = JSON.parse(raw); } catch (e) { return; }
@@ -344,23 +352,29 @@
 
     /* 出来ばえ = Σ(エリアごとの最高正答率/100 × 重み) / Σ重み
        素点 raw = 最高正答率の合計（最大 1200） */
-    var bestMap = s.best || {}, sum = 0, wsum = 0, rawPt = 0;
+    /* 各エリアの記録は、それを取ったときの学年（bestG。無ければ中3＝旧データ）の係数で重みづけ、
+       中3満点（15,000）を基準に換算する。中1だけで全エリア100%なら 10,000。 */
+    var bestMap = s.best || {}, gMap = s.bestG || {}, sum = 0, wsum = 0, rawPt = 0;
+    var GM = { 1: 1.0, 2: 1.2, 3: 1.5 };
+    function gw(k) { var g = Number(gMap[k]); return (GM[g] || 1.5) / 1.5; }
     for (var i = 0; i < JQ_AREAS.length; i++) {
-      var o = Math.max(0, Math.min(100, Number(bestMap[JQ_AREAS[i]]) || 0));
-      var u = Math.max(0, Math.min(100, Number(bestMap['d_' + JQ_AREAS[i]]) || 0));
-      sum += o / 100 * 1.0 + u / 100 * 1.2;
+      var ko = JQ_AREAS[i], ku = 'd_' + JQ_AREAS[i];
+      var o = Math.max(0, Math.min(100, Number(bestMap[ko]) || 0));
+      var u = Math.max(0, Math.min(100, Number(bestMap[ku]) || 0));
+      sum += o / 100 * 1.0 * gw(ko) + u / 100 * 1.2 * gw(ku);
       wsum += 1.0 + 1.2;
       rawPt += o + u;
     }
-    var best = hubScale(wsum ? sum / wsum : 0);
+    var grade = jqGrade();
+    var best = hubScale(wsum ? sum / wsum : 0, { grade: 3 });
     rawPt = Math.round(rawPt);
 
-    var sig = done + '/' + best + '/' + rawPt;
+    var sig = done + '/' + best + '/' + rawPt + '/' + grade;
     if (sig === JQ.sig) return;          /* 変わっていなければ送らない */
     JQ.sig = sig;
 
     global.manabiReport({
-      app: JQ.app, done: done, total: JQ.total, best: best, raw: rawPt,
+      app: JQ.app, done: done, total: JQ.total, best: best, raw: rawPt, grade: grade,
       note: '素点 ' + rawPt + '・御朱印 ' + omote + '/5' + (ura ? '・裏 ' + ura + '/5' : '')
     });
   }
