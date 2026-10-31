@@ -67,7 +67,7 @@
   /* ---------------- CSS ---------------- */
   var css = [
     '.mj-layer{position:fixed;inset:0;pointer-events:none;z-index:2147483000;overflow:hidden}',
-    '.mj-canvas{position:absolute;inset:0;width:100%;height:100%}',
+    '.mj-layer .mj-canvas{position:absolute;inset:0;width:100%;height:100%;background:transparent!important;border:0!important;box-shadow:none!important;margin:0!important;padding:0!important}',
     '.mj-pop{position:absolute;transform:translate(-50%,-50%);font-weight:900;white-space:nowrap;',
     ' text-shadow:0 2px 0 rgba(0,0,0,.45),0 0 12px rgba(0,0,0,.25);letter-spacing:.02em;',
     ' animation:mjPop .9s cubic-bezier(.22,1,.36,1) forwards;font-variant-numeric:tabular-nums}',

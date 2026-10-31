@@ -306,10 +306,64 @@
   }
   .gradeBtn:active{transform:translateY(2px); border-bottom-width:2px;}
   .gradeBtn.on{color:var(--pInk); background:linear-gradient(180deg,#f5edd9,var(--parch2)); border-color:#574733;}
+  /* ---- フェーズ4：分野別法廷・誤答ノート・砕ける分節 ---- */
+  .bigBtn.sub{padding-inline:18px; letter-spacing:.08em; font-size:clamp(13px,3.6vw,15px);}
+  .bigBtn:disabled{opacity:.45; cursor:default; filter:none;}
+  .titleBtns{margin-top:0;}
+  .ovHead{font-size:12px; letter-spacing:.3em; color:var(--faint); font-weight:800; margin:0 0 10px;}
+  #ovField.show .panel,#ovNote.show .panel{animation:panelIn .38s cubic-bezier(.22,1,.36,1) both;}
+  @keyframes panelIn{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
+  .fieldList{display:flex; flex-direction:column; gap:10px; margin-top:6px;}
+  .fieldCard{
+    display:grid; grid-template-columns:1fr auto; align-items:center; gap:2px 12px; text-align:left;
+    color:var(--pInk); background:linear-gradient(180deg,#f5edd9,var(--parch2));
+    border:1.5px solid #574733; border-left:6px solid var(--crim); border-bottom:4px solid #574733; border-radius:6px;
+    padding:12px 16px; min-height:64px; cursor:pointer; touch-action:manipulation;
+    transition:transform .15s ease,filter .15s ease;
+    animation:rowIn .34s cubic-bezier(.22,1,.36,1) both;
+  }
+  .fieldCard:nth-child(2){animation-delay:.1s} .fieldCard:nth-child(3){animation-delay:.2s}
+  .fieldCard:active:not(:disabled){transform:scale(.97);}
+  .fieldCard .fn{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:800; font-size:clamp(17px,4.6vw,20px); letter-spacing:.12em;}
+  .fieldCard .fc{grid-column:1; font-size:12px; color:#5f5140; letter-spacing:.04em;}
+  .fieldCard .fq{grid-column:2; grid-row:1 / span 2; font-weight:800; font-size:14px; color:var(--crim2); font-variant-numeric:tabular-nums;}
+  .fieldCard:disabled{cursor:default; opacity:.42; border-left-color:#7c6f5c; animation-name:rowInDim;}
+  @keyframes rowIn{from{opacity:0; transform:translateY(10px)}to{opacity:1; transform:none}}
+  @keyframes rowInDim{from{opacity:0; transform:translateY(10px)}to{opacity:.42; transform:none}}
+  .noteList{display:flex; flex-direction:column; gap:9px; min-height:372px; text-align:left;}
+  .noteItem{
+    background:linear-gradient(180deg,#f5edd9,var(--parch2)); color:var(--pInk);
+    border:1.5px solid #574733; border-left:5px solid var(--crim); border-radius:4px;
+    padding:9px 12px 10px; animation:rowIn .3s cubic-bezier(.22,1,.36,1) both;
+  }
+  .noteItem:nth-child(2){animation-delay:.1s} .noteItem:nth-child(3){animation-delay:.2s}
+  .noteItem .nh{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .noteItem .nc{background:var(--crim); color:#f6ead9; font-weight:800; font-size:12px; letter-spacing:.08em; padding:2px 9px;}
+  .noteItem .nn{font-size:12px; color:#6b5a44; font-weight:800; font-variant-numeric:tabular-nums;}
+  .noteItem .ns{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:700; font-size:clamp(14px,3.9vw,16px); line-height:1.7; margin-top:5px;}
+  .noteItem .ns u{text-decoration:none; border-bottom:2px solid var(--crim); color:var(--crim2);}
+  .noteItem .nf{font-size:12px; line-height:1.6; color:#4d4031; margin-top:3px;}
+  .noteEmpty{margin:auto; color:var(--dim); font-size:14px; letter-spacing:.1em; text-align:center;}
+  .pager{display:flex; align-items:center; justify-content:center; gap:16px; margin-top:12px;}
+  .pager span{font-variant-numeric:tabular-nums; color:var(--brassL); font-weight:800; font-size:14px; min-width:4em;}
+  .pgBtn{min-width:52px; min-height:44px; border:1.5px solid #574733; border-bottom:4px solid #574733; border-radius:6px; cursor:pointer;
+    background:rgba(14,9,6,.6); color:var(--brassL); font-size:14px; font-weight:800; transition:transform .15s ease,opacity .2s ease;}
+  .pgBtn:active:not(:disabled){transform:scale(.97);}
+  .pgBtn:disabled{opacity:.35; cursor:default;}
+  .seg .shard{display:inline-block; animation:shardFly .52s cubic-bezier(.22,1,.36,1) forwards; will-change:transform,opacity;}
+  @keyframes shardFly{
+    0%{transform:none; opacity:1}
+    22%{transform:translate(calc(var(--dx) * .18),calc(var(--dy) * .18)) rotate(calc(var(--r) * .25)); opacity:1}
+    100%{transform:translate(var(--dx),var(--dy)) rotate(var(--r)); opacity:0}
+  }
+  .seg.mended{animation:mend .3s cubic-bezier(.4,0,.2,1);}
+  @keyframes mend{from{opacity:0}to{opacity:1}}
+  @media (hover:hover){ .fieldCard:hover:not(:disabled),.pgBtn:hover:not(:disabled){filter:brightness(1.08);} }
   @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
 </style>
 <script src="config.js"></script>
 <script src="hub-progress.js"></script>
+<script src="manabi-juice.js"></script>
 <script src="manabi-connect.js"></script>
 </head>
 <body>
@@ -400,7 +454,11 @@
       <button class="gradeBtn" type="button" data-grade="2">中2</button>
       <button class="gradeBtn" type="button" data-grade="3">中3</button>
     </div>
-    <button class="bigBtn" id="btnStart">開廷する</button>
+    <div class="btnRow titleBtns">
+      <button class="bigBtn" id="btnStart">開廷する</button>
+      <button class="bigBtn gray sub" id="btnField" type="button">分野別法廷</button>
+      <button class="bigBtn gray sub" id="btnRetrial" type="button">再審（0件）</button>
+    </div>
     <p id="bestLine" style="font-size:10px;color:var(--faint);letter-spacing:.1em;margin-top:12px"></p>
   </div>
 </div>
@@ -422,9 +480,9 @@
 <!-- 結果 -->
 <div class="overlay hidden" id="ovResult">
   <div class="panel center">
-    <p style="font-size:9px;letter-spacing:.46em;color:var(--faint);font-weight:800;margin:0 0 4px">VERDICT ── 判決・称号認定</p>
+    <p id="resHead" style="font-size:9px;letter-spacing:.46em;color:var(--faint);font-weight:800;margin:0 0 4px">VERDICT ── 判決・称号認定</p>
     <div class="danRow"><span class="danL" id="resDan"></span></div>
-    <div class="scoreRow"><span>攻略した証人</span><b id="resKO"></b></div>
+    <div class="scoreRow"><span id="resKOLabel">攻略した証人</span><b id="resKO"></b></div>
     <div class="scoreRow"><span>異議成立の数</span><b id="resWin"></b></div>
     <div class="scoreRow"><span>論証成立（種類まで正解）</span><b id="resPerfect"></b></div>
     <div class="scoreRow"><span>最大コンボ</span><b id="resCombo"></b></div>
@@ -433,6 +491,30 @@
     <div><span class="newRec" id="resRec" style="display:none">記録更新</span></div>
     <div class="btnRow">
       <button class="bigBtn" id="btnAgain">再び開廷</button>
+      <button class="bigBtn gray sub" id="btnResMiss" type="button">まちがい（0）</button>
+      <button class="bigBtn gray sub" id="btnResTitle" type="button">タイトルへ</button>
+    </div>
+  </div>
+</div>
+
+<!-- 分野別法廷（練習） -->
+<div class="overlay hidden" id="ovField" role="dialog" aria-modal="true" aria-label="分野別法廷">
+  <div class="panel center">
+    <p class="ovHead">PRACTICE ── 分野別法廷</p>
+    <div class="fieldList" id="fieldList"></div>
+    <div class="btnRow"><button class="bigBtn gray" id="btnFieldBack" type="button">もどる</button></div>
+  </div>
+</div>
+
+<!-- 誤答ノート -->
+<div class="overlay hidden" id="ovNote" role="dialog" aria-modal="true" aria-label="誤答ノート">
+  <div class="panel center">
+    <p class="ovHead" id="noteHead">MISTAKE NOTE ── 誤答ノート</p>
+    <div class="noteList" id="noteList"></div>
+    <div class="pager"><button class="pgBtn" id="pgPrev" type="button" aria-label="前のページ">◀</button><span id="pgNum">1 / 1</span><button class="pgBtn" id="pgNext" type="button" aria-label="次のページ">▶</button></div>
+    <div class="btnRow">
+      <button class="bigBtn" id="btnRetrialGo" type="button">再審を開く</button>
+      <button class="bigBtn gray sub" id="btnNoteClose" type="button">もどる</button>
     </div>
   </div>
 </div>
@@ -712,6 +794,23 @@ var CATS=(function(){
 function catOf(q){ return q.type.split("（")[0]; }
 Q.forEach(function(q){ if(q.g!==1&&q.g!==2&&q.g!==3) q.g=GRADE_OF_CAT[catOf(q)]||3; });
 function gradeOK(q){ return q.g<=curGrade; }
+/* 問題ID（誤答ノート用）：分節の文字列から作るので、並べ替えても変わらない */
+var QBYID={};
+Q.forEach(function(q){
+  var s=q.segs.join("|"), h=0;
+  for(var i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; }
+  q.id="q"+(h>>>0).toString(36); QBYID[q.id]=q;
+});
+/* 分野別法廷（練習モード）。cats は GRADE_OF_CAT のカテゴリ名 */
+var FIELDS=[
+  {name:"文法法廷",       cats:["主語と述語のねじれ","接続詞の誤用","重複表現","呼応の乱れ"]},
+  {name:"敬語・根拠法廷", cats:["敬語の誤り","論理の飛躍"]},
+  {name:"論法法廷",       cats:["ずるい論法"]}
+];
+FIELDS.forEach(function(f){ f.g=Math.min.apply(null,f.cats.map(function(c){return GRADE_OF_CAT[c]||3;})); });
+var APP="resba-response";
+function mj(fn){ if(window.MJ){ try{ return fn(window.MJ); }catch(e){} } }
+function reducedMotion(){ try{ return matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; } }
 function setGrade(g){
   g=Number(g); if(g!==1&&g!==2&&g!==3) return;
   curGrade=g; store.set(GRADE_KEY,g); paintGrade();
@@ -726,19 +825,21 @@ function paintGrade(){
 }
 
 /* ---------- 対戦相手 ---------- */
+/* spec＝得意分野の表示名、w＝出題カテゴリの重み（書いていないカテゴリは1）。
+   出題の順番がかたよるだけで、出る問題の範囲（tiers・学年）と配点は変わらない。 */
 var ENEMIES=[
- {name:"あいまいな目撃者", hp:60,  time:14, tiers:[1],     quote:"「私の証言、完ぺきですけど？」"},
- {name:"早口の記者",       hp:80,  time:12, tiers:[1,2],   quote:"「言葉尻をつかまえる気かね？」"},
- {name:"詭弁の商人",       hp:100, time:11, tiers:[2,3],   quote:"「理屈なんて、言い方ひとつですよ」"},
- {name:"沈黙の重役",       hp:120, time:9,  tiers:[2,3],   quote:"「……私の発言に、破綻など無い」"},
- {name:"百戦の検事",       hp:140, time:8,  tiers:[1,2,3], quote:"「その若さで私に異議を唱えるか」"},
- {name:"言論の黒幕",       hp:160, time:7,  tiers:[1,2,3], quote:"「論理そのものが、私に従う」"}
+ {name:"あいまいな目撃者", hp:60,  time:14, tiers:[1],     quote:"「私の証言、完ぺきですけど？」", spec:"ねじれ・重複", w:{"主語と述語のねじれ":2.5,"重複表現":2}},
+ {name:"早口の記者",       hp:80,  time:12, tiers:[1,2],   quote:"「言葉尻をつかまえる気かね？」", spec:"接続詞・呼応", w:{"接続詞の誤用":2.5,"呼応の乱れ":2.5}},
+ {name:"詭弁の商人",       hp:100, time:11, tiers:[2,3],   quote:"「理屈なんて、言い方ひとつですよ」", spec:"ずるい論法", w:{"ずるい論法":3}},
+ {name:"沈黙の重役",       hp:120, time:9,  tiers:[2,3],   quote:"「……私の発言に、破綻など無い」", spec:"敬語", w:{"敬語の誤り":3.5}},
+ {name:"百戦の検事",       hp:140, time:8,  tiers:[1,2,3], quote:"「その若さで私に異議を唱えるか」", spec:"論理の飛躍", w:{"論理の飛躍":3}},
+ {name:"言論の黒幕",       hp:160, time:7,  tiers:[1,2,3], quote:"「論理そのものが、私に従う」", spec:"論理・論法", w:{"ずるい論法":2,"論理の飛躍":2}}
 ];
 function enemyFor(lv){
   var base=ENEMIES[Math.min(lv,ENEMIES.length-1)];
   var extra=Math.max(0,lv-(ENEMIES.length-1));
   return {name:base.name+(extra>0?" 改"+(extra>1?extra:""):""),
-          hp:base.hp+extra*20, time:Math.max(5,base.time-extra), tiers:base.tiers, quote:base.quote};
+          hp:base.hp+extra*20, time:Math.max(5,base.time-extra), tiers:base.tiers, quote:base.quote, spec:base.spec, w:base.w};
 }
 var DAN=["傍聴人","新米弁護士","若手の希望","敏腕弁護士","法廷の雄","無敗の弁護人","伝説の論客","言葉の番人"];
 function danOf(kos){ return DAN[Math.min(kos,DAN.length-1)]; }
@@ -747,10 +848,13 @@ function danOf(kos){ return DAN[Math.min(kos,DAN.length-1)]; }
 var lv=0, enemy=null, enemyHp=0, myHp=100;
 var score=0, combo=0, maxCombo=0, wins=0, kos=0, perfects=0, fastest=null, misses=0;
 var qPool=[], curQ=null, qStart=0, timerRaf=null, limitMs=0, locked=false;
+/* mode: "main"（本編・ハブ送信あり）/"field"（分野別法廷）/"retrial"（再審） */
+var mode="main", field=null, rtQueue=[], rtTotal=0, rtCleared=0, runMiss=[];
 
 function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
 function hubEndless(r){ return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0,Math.min(1,r))*30000); }
 function reportResba(note){
+  if(mode!=="main") return; /* 練習・再審はハブに送らない */
   if(typeof manabiReport!=="function") return;
   var asked=wins+misses, acc=asked>0?wins/asked:0;
   var ratio=Math.min(1,kos/10)*acc;
@@ -790,11 +894,16 @@ function flash(text,cls){
 }
 
 /* ---------- 出題 ---------- */
+function poolOK(q){ return gradeOK(q) && (mode!=="field" || field.cats.indexOf(catOf(q))>=0); }
 function pickQ(){
+  if(mode==="retrial") return rtQueue.pop();
   if(qPool.length===0){
-    qPool=Q.filter(function(q){return enemy.tiers.indexOf(q.tier)>=0 && gradeOK(q);});
-    if(!qPool.length) qPool=Q.filter(gradeOK);
-    for(var i=qPool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=qPool[i];qPool[i]=qPool[j];qPool[j]=t;}
+    qPool=Q.filter(function(q){return enemy.tiers.indexOf(q.tier)>=0 && poolOK(q);});
+    if(!qPool.length) qPool=Q.filter(poolOK);
+    /* 証人の得意分野ほど先に出やすい重み付きシャッフル（末尾から pop） */
+    var w=enemy.w||{};
+    qPool.forEach(function(q){ q._k=Math.pow(Math.random(),1/(w[catOf(q)]||1)); });
+    qPool.sort(function(a,b){ return a._k-b._k; });
   }
   return qPool.pop();
 }
@@ -840,6 +949,11 @@ function showExplain(label,cb){
 }
 function continueAfter(ok){
   refreshHud();
+  if(mode==="retrial"){
+    if(!rtQueue.length) showExplain("再審の結果へ",function(){ gameOver(); });
+    else showExplain(ok?"次の証言へ":"立て直して次の証言へ",function(){ showQ(); });
+    return;
+  }
   if(enemyHp<=0){
     kos++; refreshHud();
     reportResba(enemy.name+" 攻略");
@@ -859,10 +973,12 @@ function answer(i,sp){
     var leftRatio=Math.max(0,1-(t*1000)/limitMs);
     var dmg=15+Math.round(leftRatio*15);
     combo++; maxCombo=Math.max(maxCombo,combo); wins++;
+    shatter(sp);
     if(fastest===null||t<fastest) fastest=t;
     var gain=Math.round(100*(Math.min(lv,5)+1)*(1+leftRatio)*Math.min(3,1+(combo-1)*0.2)*(curQ.tier*0.5+0.5));
     score+=gain;
-    enemyHp-=dmg;
+    if(mode==="retrial"){ enemyHp-=1; rtCleared++; mj(function(M){ M.hit(APP,curQ.id); }); }
+    else enemyHp-=dmg;
     flash(t<1.5?"電光の異議!!":"異議あり!!");
     beep(880,0.1);setTimeout(function(){beep(1320,0.15);},90);
     document.body.classList.remove("shakeBody");void document.body.offsetWidth;document.body.classList.add("shakeBody");
@@ -871,6 +987,7 @@ function answer(i,sp){
     showTypeQuiz(gain);
   }else{
     sp.classList.add("miss");
+    noteMiss(curQ);
     markAnswer();
     selfDamage("そこじゃない。");
   }
@@ -892,7 +1009,7 @@ function showTypeQuiz(baseGain){
       if(c===correct){
         perfects++;
         var bonus=Math.round(baseGain*0.5);
-        score+=bonus; enemyHp-=10;
+        score+=bonus; if(mode!=="retrial") enemyHp-=10;
         flash("論証成立","perfect");
         beep(1100,0.1);setTimeout(function(){beep(1560,0.16);},90);
         el("prompt").innerHTML='論証成立。種類まで見抜いた　<b>+'+bonus+'</b>';
@@ -908,16 +1025,42 @@ function showTypeQuiz(baseGain){
 }
 function timeout(){
   if(locked) return;
-  lockSegs(); markAnswer();
+  lockSegs(); markAnswer(); noteMiss(curQ);
   selfDamage("時間切れ。");
+}
+function noteMiss(q){
+  mj(function(M){ M.miss(APP,q.id,{c:catOf(q)}); });
+  if(runMiss.indexOf(q.id)<0) runMiss.push(q.id);
+}
+/* 異議成立：指摘した分節だけを数個のかけらに割って散らし、0.5秒後に元の文字へもどす */
+function shatter(sp){
+  var txt=sp.textContent;
+  mj(function(M){ M.burst(sp,{count:12,colors:["#b02a37","#e2ba74","#f6ead9"],spread:.7}); });
+  if(reducedMotion()||!txt) return;
+  var size=Math.max(2,Math.ceil(txt.length/7)), n=Math.ceil(txt.length/size), mid=(n-1)/2;
+  sp.textContent="";
+  for(var k=0;k<n;k++){
+    var c=document.createElement("span");
+    c.className="shard"; c.textContent=txt.slice(k*size,(k+1)*size);
+    c.style.setProperty("--dx",Math.round((k-mid)*9+(Math.random()*12-6))+"px");
+    c.style.setProperty("--dy",Math.round(-10-Math.random()*22+(k%2?18:0))+"px");
+    c.style.setProperty("--r",Math.round(Math.random()*50-25)+"deg");
+    c.style.animationDelay=(k*0.015)+"s";
+    sp.appendChild(c);
+  }
+  setTimeout(function(){
+    if(!sp.isConnected) return;
+    sp.textContent=txt; sp.classList.add("mended");
+  },560);
 }
 function markAnswer(){
   var segs=el("enemySay").querySelectorAll(".seg");
   if(segs[curQ.f]) segs[curQ.f].classList.add("answer");
 }
 function selfDamage(msg){
-  combo=0; misses++; myHp-=20;
+  combo=0; misses++; if(mode!=="retrial") myHp-=20;
   flash("異議棄却","self");
+  mj(function(M){ M.flash("#b02a37"); });
   beep(150,0.3,"sawtooth",0.09);
   refreshHud();
   el("prompt").textContent=msg+" 赤枠の部分が証言の破綻だった。";
@@ -932,18 +1075,52 @@ function koEnemy(){
   showVs();
 }
 function showVs(){
-  enemy=enemyFor(lv); enemyHp=enemy.hp;
-  el("vsLv").textContent="第"+(lv+1)+"号証人　発言時間 "+enemy.time+"秒";
+  if(mode==="retrial"){
+    enemy={name:"再審請求", hp:rtTotal, time:14, tiers:[1,2,3], quote:"「その判決、もう一度争おう」"};
+    enemyHp=enemy.hp;
+    el("vsLv").textContent="再審　誤答 "+rtTotal+"件　発言時間 "+enemy.time+"秒";
+    el("vsStat").textContent="正しく異議を唱えた問題は誤答ノートから消える";
+    el("enemyLv").textContent="再審　発言 "+enemy.time+"秒";
+  }else{
+    enemy=enemyFor(lv); enemyHp=enemy.hp;
+    var pre=mode==="field"?field.name+"　":"";
+    el("vsLv").textContent=pre+"第"+(lv+1)+"号証人　発言時間 "+enemy.time+"秒";
+    el("vsStat").textContent="証言の信用度 "+enemy.hp+(mode==="main"&&enemy.spec?"　得意 "+enemy.spec:"");
+    el("enemyLv").textContent=pre+"第"+(lv+1)+"号証人　発言 "+enemy.time+"秒";
+  }
   el("vsName").textContent=enemy.name;
   el("vsQuote").textContent=enemy.quote;
-  el("vsStat").textContent="証言の信用度 "+enemy.hp;
   el("enemyName").textContent=enemy.name;
-  el("enemyLv").textContent="第"+(lv+1)+"号証人　発言 "+enemy.time+"秒";
   qPool=[];
   refreshHud();
   show(ovVs);
 }
 function gameOver(){
+  el("resWin").textContent=wins+"回";
+  el("resPerfect").textContent=perfects+"回";
+  el("resCombo").textContent="×"+maxCombo;
+  el("resFast").textContent=fastest!==null?fastest.toFixed(2)+"秒":"—";
+  el("resScore").textContent=score;
+  var rm=el("btnResMiss"); rm.textContent="まちがい（"+runMiss.length+"）"; rm.disabled=!runMiss.length;
+  if(mode!=="main"){
+    /* 練習・再審：自己ベスト・称号・ハブ送信は本編だけ */
+    el("resRec").style.display="none";
+    if(mode==="retrial"){
+      el("resHead").textContent="RETRIAL ── 再審の記録";
+      el("resDan").textContent="再審 結審";
+      el("resKOLabel").textContent="誤答ノートから消えた問題";
+      el("resKO").textContent=rtCleared+" / "+rtTotal+"件";
+    }else{
+      el("resHead").textContent="PRACTICE ── 練習の記録";
+      el("resDan").textContent=field.name;
+      el("resKOLabel").textContent="攻略した証人";
+      el("resKO").textContent=kos+"人";
+    }
+    show(ovResult);
+    return;
+  }
+  el("resHead").textContent="VERDICT ── 判決・称号認定";
+  el("resKOLabel").textContent="攻略した証人";
   var dan=danOf(kos);
   var best=store.get("resba_best2",{score:0,wins:0,fast:null,kos:0});
   var rec = score>best.score || kos>best.kos;
@@ -955,30 +1132,113 @@ function gameOver(){
   });
   el("resDan").textContent=dan;
   el("resKO").textContent=kos+"人";
-  el("resWin").textContent=wins+"回";
-  el("resPerfect").textContent=perfects+"回";
-  el("resCombo").textContent="×"+maxCombo;
-  el("resFast").textContent=fastest!==null?fastest.toFixed(2)+"秒":"—";
-  el("resScore").textContent=score;
   el("resRec").style.display=rec?"inline-block":"none";
   reportResba("判決 "+danOf(kos)+" "+kos+"人攻略");
+  /* 既存の称号（DAN）をそのままハブのカードへ。最高記録の攻略数で決める */
+  var bestKos=Math.max(best.kos||0,kos);
+  mj(function(M){ M.title(APP,DAN.map(function(n,i){return {min:i,name:n};}),bestKos); });
   show(ovResult);
+  if(rec&&(best.score>0||best.kos>0)) setTimeout(function(){ mj(function(M){ M.banner("新記録",{color:"#b02a37"}); }); },350);
 }
 
-var ovTitle=el("ovTitle"),ovVs=el("ovVs"),ovResult=el("ovResult");
-function show(o){o.classList.remove("hidden");} function hide(o){o.classList.add("hidden");}
+var ovTitle=el("ovTitle"),ovVs=el("ovVs"),ovResult=el("ovResult"),ovField=el("ovField"),ovNote=el("ovNote");
+function show(o){o.classList.remove("hidden"); o.classList.add("show");} function hide(o){o.classList.add("hidden"); o.classList.remove("show");}
 
-function newRun(){
+/* 誤答ノート（問題データにある分だけ）。画面が切り替わるときだけ読む */
+function noteQs(){
+  return (mj(function(M){ return M.misses(APP); })||[]).map(function(m){ return {q:QBYID[m.id], n:m.n}; })
+    .filter(function(x){ return !!x.q; });
+}
+function startRun(m,f){
+  mode=m; field=f||null; runMiss=[];
+  if(m==="retrial"){
+    var list=noteQs().map(function(x){return x.q;});
+    for(var i=list.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=list[i];list[i]=list[j];list[j]=t;}
+    rtQueue=list; rtTotal=list.length; rtCleared=0;
+    if(!rtTotal){ goTitle(); return; }
+  }
   lv=0; myHp=100; score=0; combo=0; maxCombo=0; wins=0; kos=0; perfects=0; fastest=null; misses=0; qPool=[];
-  hide(ovTitle); hide(ovResult);
+  hide(ovTitle); hide(ovResult); hide(ovField); hide(ovNote);
   showVs();
+}
+function newRun(){ startRun("main"); }
+function goTitle(){
+  hide(ovVs); hide(ovResult); hide(ovField); hide(ovNote); refreshBestLine(); show(ovTitle);
 }
 function refreshBestLine(){
   var b=store.get("resba_best2",null);
   el("bestLine").textContent=(b&&b.score)?("自己ベスト "+b.score+" PTS ／ 証人攻略 "+(b.kos||0)+"人 ／ 称号 "+danOf(b.kos||0)+(b.fast?(" ／ 最速 "+b.fast.toFixed(2)+"秒"):"")):"";
+  var n=noteQs().length, r=el("btnRetrial");
+  r.textContent="再審（"+n+"件）"; r.disabled=!n;
 }
+/* 分野別法廷の選択 */
+function openField(){
+  var box=el("fieldList"); box.innerHTML="";
+  FIELDS.forEach(function(f){
+    var cnt=Q.filter(function(q){ return gradeOK(q) && f.cats.indexOf(catOf(q))>=0; }).length;
+    var ok=f.g<=curGrade && cnt>0;
+    var b=document.createElement("button");
+    b.type="button"; b.className="fieldCard"; b.disabled=!ok;
+    b.innerHTML='<span class="fn"></span><span class="fq"></span><span class="fc"></span>';
+    b.querySelector(".fn").textContent=f.name;
+    b.querySelector(".fc").textContent=f.cats.map(function(c){return c.replace("主語と述語の","");}).join("・");
+    b.querySelector(".fq").textContent=ok?(cnt+"問"):("中"+f.g+"から");
+    if(ok) b.addEventListener("click",function(){ startRun("field",f); });
+    box.appendChild(b);
+  });
+  hide(ovTitle); show(ovField);
+}
+/* 誤答ノート（all＝貯まった誤答 / run＝今回まちがえた問題）。1ページ3件のページ送り */
+var NOTE_PER=3, noteItems=[], notePage=0, noteFrom=null;
+function openNote(which,from){
+  noteFrom=from;
+  var all=noteQs();
+  if(which==="run"){
+    var nmap={}; all.forEach(function(x){ nmap[x.q.id]=x.n; });
+    noteItems=runMiss.map(function(id){ return {q:QBYID[id], n:nmap[id]||0}; }).filter(function(x){return !!x.q;});
+    el("noteHead").textContent="THIS TRIAL ── 今回まちがえた問題";
+  }else{
+    noteItems=all;
+    el("noteHead").textContent="MISTAKE NOTE ── 誤答ノート";
+  }
+  var go=el("btnRetrialGo"); go.textContent="再審を開く（"+all.length+"件）"; go.disabled=!all.length;
+  notePage=0; renderNote();
+  hide(from); show(ovNote);
+}
+function renderNote(){
+  var box=el("noteList"); box.innerHTML="";
+  var pages=Math.max(1,Math.ceil(noteItems.length/NOTE_PER));
+  notePage=Math.max(0,Math.min(pages-1,notePage));
+  if(!noteItems.length){
+    var e=document.createElement("p"); e.className="noteEmpty"; e.textContent="誤答はない。";
+    box.appendChild(e);
+  }
+  noteItems.slice(notePage*NOTE_PER,(notePage+1)*NOTE_PER).forEach(function(x){
+    var q=x.q, d=document.createElement("div"); d.className="noteItem";
+    var h=document.createElement("div"); h.className="nh";
+    var c=document.createElement("span"); c.className="nc"; c.textContent=q.type; h.appendChild(c);
+    if(x.n>0){ var n=document.createElement("span"); n.className="nn"; n.textContent="まちがい "+x.n+"回"; h.appendChild(n); }
+    d.appendChild(h);
+    var s=document.createElement("div"); s.className="ns";
+    q.segs.forEach(function(t,i){ var sp=document.createElement(i===q.f?"u":"span"); sp.textContent=t; s.appendChild(sp); });
+    d.appendChild(s);
+    var f=document.createElement("div"); f.className="nf"; f.textContent=q.fix; d.appendChild(f);
+    box.appendChild(d);
+  });
+  el("pgNum").textContent=(notePage+1)+" / "+pages;
+  el("pgPrev").disabled=notePage<=0; el("pgNext").disabled=notePage>=pages-1;
+}
+el("pgPrev").addEventListener("click",function(){ notePage--; renderNote(); });
+el("pgNext").addEventListener("click",function(){ notePage++; renderNote(); });
+el("btnNoteClose").addEventListener("click",function(){ hide(ovNote); if(noteFrom===ovTitle) refreshBestLine(); show(noteFrom||ovTitle); });
+el("btnRetrialGo").addEventListener("click",function(){ startRun("retrial"); });
+el("btnField").addEventListener("click",openField);
+el("btnFieldBack").addEventListener("click",function(){ hide(ovField); show(ovTitle); });
+el("btnRetrial").addEventListener("click",function(){ openNote("all",ovTitle); });
+el("btnResMiss").addEventListener("click",function(){ openNote("run",ovResult); });
+el("btnResTitle").addEventListener("click",goTitle);
 el("btnStart").addEventListener("click",newRun);
-el("btnAgain").addEventListener("click",newRun);
+el("btnAgain").addEventListener("click",function(){ startRun(mode,field); });
 el("btnFight").addEventListener("click",function(){ hide(ovVs); showQ(); });
 
 var quitArmed=false, quitTimer=null;
@@ -990,7 +1250,7 @@ el("btnQuit").addEventListener("click",function(){
     return;
   }
   clearTimeout(quitTimer); quitArmed=false; locked=true; cancelAnimationFrame(timerRaf);
-  b.textContent="退廷"; b.classList.remove("armed"); hide(ovVs); hide(ovResult); refreshBestLine(); show(ovTitle);
+  b.textContent="退廷"; b.classList.remove("armed"); goTitle();
 });
 
 Array.prototype.slice.call(document.querySelectorAll(".gradeBtn")).forEach(function(b){

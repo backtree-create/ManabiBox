@@ -432,11 +432,47 @@
   .gradeBtn.on{color:var(--accInk); background:var(--acc); border-color:var(--acc); border-bottom:3px solid var(--accDeep);}
   .modeCard.locked,.mixBtn.locked{opacity:.38; filter:grayscale(.8); pointer-events:none;}
   .modeCard.locked .mProg small{letter-spacing:.2em;}
+  /* ============ フェーズ4：つり合い演出・手順リプレイ・つまずきメモ ============ */
+  /* つり合った瞬間：針の小さなバウンド（transform のみ）と支点の短い発光（opacity のみ・1回） */
+  .gNeedle.settle{animation:needleBounce .5s cubic-bezier(.22,1,.36,1);}
+  @keyframes needleBounce{
+    0%{transform:translateX(-50%) rotate(0deg)} 28%{transform:translateX(-50%) rotate(-6deg)}
+    56%{transform:translateX(-50%) rotate(3.5deg)} 80%{transform:translateX(-50%) rotate(-1.2deg)}
+    100%{transform:translateX(-50%) rotate(0deg)}}
+  .pivot{position:relative;}
+  .pivot::after{content:""; position:absolute; inset:0; pointer-events:none; opacity:0;
+    box-shadow:0 0 0 3px rgba(255,255,255,.55), 0 0 22px 6px var(--acc);}
+  .pivot.glow::after{animation:pivotGlow .55s cubic-bezier(.4,0,.2,1);}
+  @keyframes pivotGlow{0%{opacity:0} 22%{opacity:1} 100%{opacity:0}}
+  /* 手順リプレイ：既存の表示領域をそのまま使い、テロップ（#modeLabel）と式だけを切り替える */
+  @keyframes telopIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+  #modeLabel.telop{animation:telopIn .4s cubic-bezier(.22,1,.36,1);}
+  #eqText.stepIn,.simEq.stepIn,#facForm.stepIn{animation:telopIn .45s cubic-bezier(.22,1,.36,1);}
+  body.replaying #playWrap, body.replaying #controls{pointer-events:none;}
+  body.replaying #controls{opacity:.35; transition:opacity .3s cubic-bezier(.4,0,.2,1);}
+  body.replaying{cursor:pointer;}
+  /* クリア画面のランク：はんこ */
+  #scRank.hanko{display:inline-block; animation:hanko .5s cubic-bezier(.22,1,.36,1) .25s both;}
+  @keyframes hanko{0%{opacity:0; transform:scale(2.3) rotate(-18deg)} 60%{opacity:1; transform:scale(.9) rotate(-7deg)} 100%{opacity:1; transform:scale(1) rotate(-7deg)}}
+  .atkHanko{display:inline-flex; align-items:center; justify-content:center; width:1.35em; height:1.35em;
+    margin-left:.25em; font-size:.62em; letter-spacing:0; border:3px solid currentColor; border-radius:50%;
+    vertical-align:.1em; transform:rotate(-10deg);}
+  .atkHanko.hanko{animation:hanko2 .5s cubic-bezier(.22,1,.36,1) .3s both;}
+  @keyframes hanko2{0%{opacity:0; transform:scale(2.3) rotate(-24deg)} 60%{opacity:1; transform:scale(.9) rotate(-12deg)} 100%{opacity:1; transform:scale(1) rotate(-10deg)}}
+  /* つまずきメモ：ステージのセル左上に小さな印（レイアウトは変えない） */
+  .stBtn.trip::before{content:""; position:absolute; left:5px; top:5px; width:7px; height:7px; border-radius:50%; background:var(--numneg);}
+  .tripTip{margin:10px auto 0; max-width:30em; text-align:left; padding:7px 12px;
+    font-size:clamp(12px,3.4vw,14px); line-height:1.5; color:var(--paper);
+    background:rgba(232,154,60,.1); border-left:3px solid var(--numneg);}
+  .tripTip b{display:inline-block; margin-right:.6em; font-size:.82em; letter-spacing:.2em; color:var(--numneg);}
+  .tripTip.good{background:rgba(59,189,126,.1); border-left-color:var(--num);}
+  .tripTip.good b{color:var(--num);}
   @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
 </style>
 <script src="config.js"></script>
 <script src="hub-progress.js"></script>
 <script src="manabi-connect.js"></script>
+<script src="manabi-juice.js"></script>
 </head>
 <body>
 
@@ -596,7 +632,9 @@
     <div class="scoreRow"><span>スピード倍率</span><b id="scSpeed"></b></div>
     <div class="total disp"><span id="scTotal"></span><small> PTS</small></div>
     <div><span class="newRec" id="scRec" style="display:none">NEW RECORD</span></div>
+    <div class="tripTip" id="clearTip" style="display:none"></div>
     <div class="btnRow">
+      <button class="bigBtn gray" id="btnReplay">手順を見る</button>
       <button class="bigBtn gray" id="btnRetry">もう一度</button>
       <button class="bigBtn" id="btnNext">次へ</button>
     </div>
@@ -606,7 +644,7 @@
 <!-- スコアアタック結果 -->
 <div class="overlay hidden" id="ovAtk">
   <div class="panelBox center">
-    <div class="stamp"><small>SCORE ATTACK</small><span>TIME UP</span></div>
+    <div class="stamp"><small>SCORE ATTACK</small><span>TIME UP</span><span class="atkHanko disp" id="atkRank" aria-label="ランク"></span></div>
     <div class="scoreRow"><span>解いた問題</span><b id="atkSolved2"></b></div>
     <div class="scoreRow"><span>最高到達レベル</span><b id="atkLv"></b></div>
     <div class="scoreRow"><span>無駄な操作</span><b id="atkWaste"></b></div>
@@ -890,8 +928,59 @@ function showArea(t){
   });
 }
 
+/* ================= フェーズ4：操作ログ（手順リプレイ）・つまずきメモ =================
+   stepLog は「その問題でプレイヤーが行った有効な操作」を、表示用のスナップショット付きで記録する。
+   操作のたびに1回だけ追加するので、タイマーや描画ループには何も足さない。 */
+var APP="equation-balance";
+var stepLog=[], trip={}, lastClear=null, rp=null;
+function resetLog(view){ stepLog=[{label:"問題", view:view}]; trip={}; }
+function logStep(label, view, extra){
+  var e={label:label, view:view}, k;
+  if(extra) for(k in extra) e[k]=extra[k];
+  stepLog.push(e);
+  if(stepLog.length>80) stepLog.splice(1,1);
+  return e;
+}
+function tripAdd(k){ trip[k]=(trip[k]||0)+1; }
+function restartAnim(el,cls){ if(!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+/* つまずきの種類 → 決まったひとこと */
+var TRIP_TIP={
+  lin_div:  "両辺を同じ数でわる前に、移項して x の項と数の項をまとめよう",
+  lin_back: "移項は一度で。x の項は片方の辺、数の項はもう片方の辺に集めよう",
+  lin_neg:  "×(−1) は最後に1回だけ。x の係数がマイナスのときに使おう",
+  lin_over: "x の項は係数が大きい側に集めると、手数が少なくなるよ",
+  sim_fuse: "合体の前に、消したい文字の係数を同じ大きさ・反対の符号にそろえよう",
+  sim_big:  "かける数は小さく。係数の最小公倍数をめざそう",
+  sim_quiz: "代入は「係数 × 値」を先に計算。符号に気をつけよう",
+  sim_over: "どちらの文字を消すか先に決めてから、×2・×3 を使おう",
+  fac_hint: "まず積になる2数の組を書き出し、その中で和を確かめよう",
+  fac_over: "積の符号から決めよう。積がマイナスなら2数は異符号"
+};
+var TRIP_ORDER={ lin:["div","back","neg"], sim:["fuse","big","quiz"], fac:["hint"] };
+function tripPick(type, wasteMoves){
+  if(wasteMoves<=0) return null;
+  var ord=TRIP_ORDER[type]||[], i;
+  for(i=0;i<ord.length;i++) if(trip[ord[i]]) return type+"_"+ord[i];
+  return type+"_over";
+}
+
 /* ================= LAB 01：一次方程式 ================= */
 var linState=null;
+function linView(){ return {t:"lin", L:{xs:linState.L.xs.slice(), c:linState.L.c}, R:{xs:linState.R.xs.slice(), c:linState.R.c}}; }
+function termTxt(kind,val,n){
+  var a=Math.abs(val)*(n||1), s=val<0?"−":"+";
+  return kind==="x" ? s+(a===1?"":a)+"x" : s+a;
+}
+function moveLabel(kind,val,n,to){ return "移項　"+termTxt(kind,val,n)+" を"+(to==="L"?"左辺":"右辺")+"へ"; }
+function logLinMove(from,to,kind,val){
+  var i, last=stepLog[stepLog.length-1];
+  for(i=1;i<stepLog.length;i++){ var m=stepLog[i].mv; if(m && m.kind===kind && m.from===to){ tripAdd("back"); break; } }
+  /* x のコマを1つずつ同じ向きに動かしたときは「2x を移項」のように1手順にまとめる */
+  if(kind==="x" && last.mv && last.mv.kind==="x" && last.mv.from===from && last.mv.val===val){
+    last.mv.n++; last.label=moveLabel(kind,val,last.mv.n,to); last.view=linView(); return;
+  }
+  logStep(moveLabel(kind,val,1,to), linView(), {mv:{kind:kind, from:from, val:val, n:1}});
+}
 var panL=$("panL"), panR=$("panR");
 function newLinState(st){
   function xs(n){ var a=[],i; for(i=0;i<Math.abs(n);i++) a.push(n>0?1:-1); return a; }
@@ -927,15 +1016,20 @@ function makeChip(kind,val){
   d.addEventListener("pointerdown", dragStart);
   return d;
 }
+var needleEl=document.querySelector(".gNeedle"), pivotEl=document.querySelector(".pivot"), settleT=0;
 function wobble(){
   var sgn=(Math.random()<.5?-1:1);
   var root=document.documentElement.style;
+  if(needleEl) needleEl.classList.remove("settle");
+  clearTimeout(settleT);
   root.setProperty("--tilt",(sgn*9)+"deg");
   var row=$("scaleRow"); if(row) row.style.setProperty("--dy",(sgn*7)+"px");
   setTimeout(function(){
     root.setProperty("--tilt","0deg");
     if(row) row.style.setProperty("--dy","0px");
   },300);
+  /* 皿がもどってつり合った瞬間：針の小さなバウンド＋支点の短い発光（各1回だけ） */
+  settleT=setTimeout(function(){ restartAnim(needleEl,"settle"); restartAnim(pivotEl,"glow"); },640);
 }
 var drag=null;
 function dragStart(e){
@@ -984,7 +1078,7 @@ function applyLinMove(fromSide,toSide,kind,val){
     if(j>=0) t.xs.splice(j,1); else t.xs.push(flipped);
   }
   addMove(); wobble(); beep(kind==="n"?520:640,0.12);
-  renderLin(); checkLin();
+  renderLin(); logLinMove(fromSide,toSide,kind,val); checkLin();
 }
 function applyLinOp(op,btn){
   if(!playing||curType!=="lin") return;
@@ -1006,9 +1100,16 @@ function applyLinOp(op,btn){
       rebuild(linState.L); rebuild(linState.R); ok=true;
     }
   }
-  if(ok){ addMove(); wobble(); beep(760,0.12); renderLin(); checkLin(); }
+  if(ok){
+    addMove(); wobble(); beep(760,0.12); renderLin();
+    if(op==="neg"){
+      if(stepLog.some(function(s){ return s.op==="neg"; })) tripAdd("neg");
+      logStep("両辺 × (−1)", linView(), {op:"neg"});
+    }else logStep("両辺 ÷ "+k, linView(), {op:op});
+    checkLin();
+  }
   else{
-    addWaste();
+    addWaste(); tripAdd("div");
     btn.classList.remove("shake"); void btn.offsetWidth; btn.classList.add("shake");
     beep(180,0.2,"sawtooth",0.05);
     toast("わり切れないよ。先に移項して整理しよう");
@@ -1024,6 +1125,7 @@ function checkLin(){
 function startLin(st){
   curType="lin"; curProblem=st; curPar=linPar(st);
   linState=newLinState(st); showArea("lin"); renderLin();
+  resetLog(linView());
 }
 
 /* ================= LAB 02：連立方程式 ================= */
@@ -1034,6 +1136,26 @@ function startSim(st){
   sim={ e1:st.e1.slice(), e2:st.e2.slice(), orig1:st.e1.slice(),
         phase:1, solvedVar:null, solvedVal:null, ph3:null, hist:[], quiz:null };
   showArea("sim"); renderSim();
+  resetLog(simView1());
+}
+/* 手順リプレイ用の表示スナップショット（既存の式カードと同じ部品で組む） */
+function simView1(){ return {t:"sim", eq:"連立方程式", s1:eqRowHTML("1",sim.e1), s2:eqRowHTML("2",sim.e2), sv:""}; }
+function simView2(){
+  var vn=sim.solvedVar, k=sim.ph2k, c=sim.ph2c;
+  return {t:"sim", eq:tTxt(k,vn)+'<span class="eq">＝</span>'+fmtN(c),
+    s1:'<span class="no">＊</span>'+chipC(vn,tTxt(k,vn))+'<span class="chipC op">＝</span>'+chipC("n",fmtN(c)), s2:null, sv:""};
+}
+function simView3(){
+  var o=sim.ph3, other=o.varName, oc=o.coef, h='<span class="no">1</span>', eq;
+  if(!o.moved){
+    var neg=o.left<0, a=Math.abs(o.left);
+    h+=chipC(other,tTxt(oc,other))+'<span class="chipC op">'+(neg?"−":"＋")+'</span>'+chipC("n",""+a)+'<span class="chipC op">＝</span>'+chipC("n",fmtN(o.right));
+    eq=tTxt(oc,other)+(neg?" − ":" + ")+a+'<span class="eq">＝</span>'+fmtN(o.right);
+  }else{
+    h+=chipC(other,tTxt(oc,other))+'<span class="chipC op">＝</span>'+chipC("n",fmtN(o.right));
+    eq=tTxt(oc,other)+'<span class="eq">＝</span>'+fmtN(o.right);
+  }
+  return {t:"sim", eq:eq, s1:h, s2:null, sv:'<span class="solvedTag disp">'+sim.solvedVar+' ＝ '+fmtN(sim.solvedVal)+'</span>'};
 }
 function tTxt(n,v){
   if(n===0) return "";
@@ -1088,9 +1210,9 @@ function renderSim(){
     s1.style.display="flex"; s2.style.display="none";
     s1.innerHTML='<span class="no">＊</span>'+chipC(vn,tTxt(k,vn))+'<span class="chipC op">＝</span>'+chipC("n",fmtN(c));
     if(k<0){
-      b.appendChild(simBtn("×(−1)",function(){ sim.ph2k*=-1; sim.ph2c*=-1; addMove(); beep(760,0.12); renderSim(); simCheck2(); }));
+      b.appendChild(simBtn("×(−1)",function(){ sim.ph2k*=-1; sim.ph2c*=-1; addMove(); beep(760,0.12); logStep("両辺 × (−1)", simView2()); renderSim(); simCheck2(); }));
     }else if(k>1){
-      b.appendChild(simBtn("÷"+k,function(){ sim.ph2c/=sim.ph2k; sim.ph2k=1; addMove(); beep(760,0.12); simCheck2(); }));
+      b.appendChild(simBtn("÷"+k,function(){ sim.ph2c/=sim.ph2k; sim.ph2k=1; addMove(); beep(760,0.12); logStep("両辺 ÷ "+k, simView2()); simCheck2(); }));
     }
     simCheck2();
   }else{
@@ -1122,7 +1244,7 @@ function renderSim(){
       h+=chipC(other,tTxt(oc,other))+'<span class="chipC op">＝</span>'+chipC("n",fmtN(o.right));
       eqText.innerHTML=tTxt(oc,other)+'<span class="eq">＝</span>'+fmtN(o.right);
       if(oc>1) b.appendChild(simBtn("÷"+oc,function(){
-        o.right/=o.coef; o.coef=1; addMove(); beep(760,0.12); renderSim(); simCheck3();
+        o.right/=o.coef; o.coef=1; addMove(); beep(760,0.12); logStep("両辺 ÷ "+oc, simView3()); renderSim(); simCheck3();
       }));
     }
     s1.innerHTML=h;
@@ -1144,6 +1266,8 @@ function simUndo(){
   var h=sim.hist.pop();
   if(!h){ toast("もどす手がないよ"); return; }
   sim.e1=h.e1; sim.e2=h.e2;
+  if(stepLog.length>1) stepLog.pop();
+  tripAdd("undo");
   beep(320,0.08); renderSim();
 }
 function simFlip(which){
@@ -1151,6 +1275,7 @@ function simFlip(which){
   simSnap();
   var e = which===1?sim.e1:sim.e2;
   e[0]*=-1; e[1]*=-1; e[2]*=-1;
+  logStep((which===1?"①":"②")+"の両辺 × (−1)", simView1());
   addMove(); beep(430,0.1,"square",0.06);
   toast("符号がひっくり返った（引き算のかわり）");
   renderSim();
@@ -1158,26 +1283,30 @@ function simFlip(which){
 function simMul(which,f){
   if(!playing) return;
   var e = which===1?sim.e1:sim.e2;
-  if(Math.max(Math.abs(e[0]*f),Math.abs(e[1]*f))>36){ addWaste(); toast("これ以上大きくできないよ"); return; }
+  if(Math.max(Math.abs(e[0]*f),Math.abs(e[1]*f))>36){ addWaste(); tripAdd("big"); toast("これ以上大きくできないよ"); return; }
   simSnap();
   e[0]*=f; e[1]*=f; e[2]*=f;
+  logStep((which===1?"①":"②")+"の両辺 × "+f, simView1());
   addMove(); beep(640,0.1); renderSim();
 }
 function simFuse(){
   if(!playing) return;
   var r=[sim.e1[0]+sim.e2[0], sim.e1[1]+sim.e2[1], sim.e1[2]+sim.e2[2]];
   var xz=r[0]===0, yz=r[1]===0;
-  if(xz&&yz){ addWaste(); beep(180,0.2,"sawtooth",0.05); toast("式そのものが消滅する組み合わせだ（実行できない）"); return; }
+  if(xz&&yz){ addWaste(); tripAdd("fuse"); beep(180,0.2,"sawtooth",0.05); toast("式そのものが消滅する組み合わせだ（実行できない）"); return; }
   simSnap(); addMove();
   if(xz||yz){
     sim.solvedVar = xz ? "y" : "x";
     sim.ph2k = xz ? r[1] : r[0];
     sim.ph2c = r[2];
     sim.phase=2;
+    logStep("① ＋ ② で "+(xz?"x":"y")+" を消去", simView2());
     beep(880,0.12); setTimeout(function(){beep(1180,0.12);},90);
     toast("対消滅！ "+(xz?"x":"y")+" が消えた",true);
   }else{
     sim.e1=r;
+    tripAdd("fuse");
+    logStep("① ＋ ②（どの文字も消えない）", simView1());
     beep(210,0.22,"sawtooth",0.06);
     toast("何も消えなかった…… ①が置き換わった。［もどす］で戻れる");
   }
@@ -1201,6 +1330,7 @@ function simSubstitute(){
   var sc = sim.solvedVar==="x" ? sim.orig1[0] : sim.orig1[1];
   if(sc===1){
     o.left=sim.solvedVal; o.sub=true;
+    logStep(sim.solvedVar+" ＝ "+fmtN(sim.solvedVal)+" を①に代入", simView3());
     addMove(); beep(700,0.1); renderSim(); return;
   }
   showSubQuiz(sc, sim.solvedVal);
@@ -1221,9 +1351,10 @@ function showSubQuiz(a, v){
       if(val===correct){
         var o=sim.ph3;
         o.left=correct; o.sub=true;
+        logStep(sim.solvedVar+" ＝ "+fmtN(sim.solvedVal)+" を①に代入", simView3());
         addMove(); beep(880,0.1); renderSim();
       }else{
-        addWaste(); beep(180,0.2,"sawtooth",0.05);
+        addWaste(); tripAdd("quiz"); beep(180,0.2,"sawtooth",0.05);
         bt.classList.remove("shake"); void bt.offsetWidth; bt.classList.add("shake");
         toast("ちがう。かけ算をもう一度");
       }
@@ -1233,8 +1364,9 @@ function showSubQuiz(a, v){
 }
 function simMoveConst(){
   if(!playing) return;
-  var o=sim.ph3;
+  var o=sim.ph3, lv=o.left;
   o.right -= o.left; o.left=null; o.moved=true;
+  logStep("移項　"+(lv<0?"−"+(-lv):"+"+lv)+" を右辺へ", simView3());
   addMove(); beep(520,0.12); renderSim();
 }
 function simCheck3(){
@@ -1255,6 +1387,7 @@ function startFac(st){
   $("btnFactorHint").disabled=false;
   $("hintPairs").innerHTML="";
   showArea("fac"); renderFac();
+  resetLog({t:"fac", p:0, q:0});
 }
 function fmtQuad(b,c){
   var s="x²";
@@ -1283,7 +1416,7 @@ function updateLock(kind,now,tgt){
 }
 function facHint(){
   if(!fac||fac.done||fac.hinted) return;
-  fac.hinted=true; waste+=2; updateHud();
+  fac.hinted=true; waste+=2; updateHud(); tripAdd("hint");
   $("btnFactorHint").disabled=true;
   var box=$("hintPairs"); box.innerHTML="";
   var seen={};
@@ -1317,6 +1450,8 @@ function facStep(t,d){
     var r1=-fac.p, r2=-fac.q;
     var ans = r1===r2 ? "x ＝ "+fmtN(r1)+"（重解）" : "x ＝ "+fmtN(r1)+"、 "+fmtN(r2);
     var sub="(x "+(fac.p<0?"− "+(-fac.p):"+ "+fac.p)+")(x "+(fac.q<0?"− "+(-fac.q):"+ "+fac.q)+") = 0";
+    /* ダイヤルの1目盛りずつは手順にせず、「2数を見つけて因数分解」の1手順にまとめる */
+    logStep("積 "+fmtN(fac.c)+"・和 "+fmtN(fac.b)+" の2数 → "+fmtN(fac.p)+" と "+fmtN(fac.q), {t:"fac", p:fac.p, q:fac.q, eq:sub});
     setTimeout(function(){ problemCleared(ans, sub); },750);
   }
 }
@@ -1365,6 +1500,31 @@ function clearGrade(answerText, subText){
   $("scSpeed").textContent="×"+speedMult.toFixed(2)+"（"+t.toFixed(1)+"秒）";
   $("scTotal").textContent=total;
   $("scRec").style.display = rec?"inline-block":"none";
+
+  /* --- フェーズ4：はんこ・カウントアップ・自己ベスト（手数／時間）・つまずきメモ --- */
+  lastClear={type:curType, answer:answerText};
+  var MJx=window.MJ||null, stageId="stage:"+key;
+  var rMv=null, rTm=null;
+  if(MJx){
+    rMv=MJx.record(APP,"moves:"+key,moves,{lower:true});
+    rTm=MJx.record(APP,"time:"+key,Math.round(t*10)/10,{lower:true});
+  }
+  var bannerText = (rec&&prev) ? "新記録" : (rMv&&rMv.isNew) ? "最少手数を更新" : (rTm&&rTm.isNew) ? "最速タイムを更新" : "";
+  var tipId=tripPick(curType,wasteMoves), tipEl=$("clearTip");
+  if(tipId){
+    if(MJx) MJx.miss(APP,stageId,{tip:tipId});
+    tipEl.className="tripTip"; tipEl.innerHTML="<b>つまずきメモ</b>"+TRIP_TIP[tipId]; tipEl.style.display="block";
+  }else if(MJx && MJx.hit(APP,stageId)){
+    tipEl.className="tripTip good"; tipEl.innerHTML="<b>こくふく</b>前回のつまずきを乗りこえた"; tipEl.style.display="block";
+  }else tipEl.style.display="none";
+  $("scTotal").textContent="0";
+  restartAnim($("scRank"),"hanko");
+  setTimeout(function(){
+    if(MJx) MJx.countUp($("scTotal"),total,{ms:800,format:function(n){return String(Math.round(n));}});
+    else $("scTotal").textContent=total;
+    if(MJx && bannerText) setTimeout(function(){ MJx.banner(bannerText); },850);
+  },500);
+
   var modeCourses=COURSES.filter(function(c){return c.mode===COURSES[curC].mode;});
   var lastInMode = (COURSES[curC].id===modeCourses[modeCourses.length-1].id && curS===COURSES[curC].stages.length-1);
   var btnNext=$("btnNext");
@@ -1462,10 +1622,80 @@ function endAttack(){
   $("atkSolved2").textContent=atkSolved+" 問";
   $("atkLv").textContent=TIER_NAME[atkMaxTier];
   $("atkWaste").textContent=atkWasteTotal+" 回";
-  $("atkScoreEl").textContent=atkScore;
   $("atkRec").style.display=rec?"inline-block":"none";
+  /* ランクのはんこ（1秒あたりの得点で判定）・カウントアップ・新記録の帯 */
+  var perSec=atkScore/(ATK_TIME[atkKind]||90);
+  var ar=perSec>=30?"S":perSec>=20?"A":perSec>=10?"B":"C";
+  var arEl=$("atkRank"); arEl.textContent=ar; arEl.style.color=RANK_COL[ar];
+  restartAnim(arEl,"hanko");
+  var MJx=window.MJ||null;
+  if(MJx){
+    $("atkScoreEl").textContent="0";
+    MJx.countUp($("atkScoreEl"),atkScore,{ms:900,format:function(n){return String(Math.round(n));}});
+    if(rec && best) setTimeout(function(){ MJx.banner("新記録"); },950);
+  }else $("atkScoreEl").textContent=atkScore;
   show(ovAtk);
 }
+
+/* ================= 手順リプレイ =================
+   クリア画面を閉じ、既存の天びん／式カード／金庫の表示をそのまま使って1手ずつ再生する。
+   テロップは既存の #modeLabel、式は既存の #eqText。画面のどこかをタップすると次の手へ。 */
+function renderView(v){
+  if(v.t==="lin"){
+    linState={L:{xs:v.L.xs.slice(), c:v.L.c}, R:{xs:v.R.xs.slice(), c:v.R.c}};
+    renderLin();
+  }else if(v.t==="sim"){
+    var s1=$("simEq1"), s2=$("simEq2");
+    eqText.innerHTML=v.eq;
+    s1.style.display="flex"; s1.innerHTML=v.s1;
+    s2.style.display=v.s2?"flex":"none"; if(v.s2) s2.innerHTML=v.s2;
+    $("simSolvedLine").innerHTML=v.sv||"";
+  }else if(fac){
+    fac.p=v.p; fac.q=v.q; renderFac();
+  }
+  if(v.eq && v.t!=="sim") eqText.innerHTML=v.eq;
+}
+function replayStart(){
+  if(!lastClear || !stepLog.length) return;
+  var steps=stepLog.slice(), lv=steps[steps.length-1].view, k;
+  var done = lv.t==="lin" && lv.L.xs.length===1 && lv.L.xs[0]===1 && lv.L.c===0 && lv.R.xs.length===0;
+  if(!done){
+    var av={}; for(k in lv) av[k]=lv[k];
+    av.eq=lastClear.answer;
+    steps.push({label:"答え", view:av, ans:true});
+  }
+  rp={steps:steps, i:-1, timer:0, label:$("modeLabel").textContent, n:stepLog.length-1};
+  hideAll(); document.body.classList.add("replaying");
+  showArea(lastClear.type);
+  if(lastClear.type==="sim"){ $("simBtns").innerHTML=""; $("simGuide").textContent=""; }
+  replayNext();
+}
+function replayNext(){
+  if(!rp) return;
+  clearTimeout(rp.timer); rp.i++;
+  if(rp.i>=rp.steps.length){ replayEnd(); return; }
+  var s=rp.steps[rp.i], ml=$("modeLabel");
+  renderView(s.view);
+  ml.textContent = rp.i===0 ? "手順リプレイ ── 問題" : s.ans ? "答え" : "STEP "+rp.i+" / "+rp.n+"　"+s.label;
+  restartAnim(ml,"telop"); restartAnim(eqText,"stepIn");
+  if(lastClear.type==="sim") restartAnim($("simEq1"),"stepIn");
+  if(lastClear.type==="fac") restartAnim($("facForm"),"stepIn");
+  if(lastClear.type==="lin" && rp.i>0 && !s.ans) wobble();
+  rp.timer=setTimeout(replayNext, rp.i===0 ? 1500 : s.ans ? 1600 : 1900);
+}
+function replayEnd(){
+  if(!rp) return;
+  clearTimeout(rp.timer);
+  $("modeLabel").textContent=rp.label;
+  rp=null;
+  document.body.classList.remove("replaying");
+  show(ovClear);
+}
+document.addEventListener("pointerdown",function(e){
+  if(!rp) return;
+  if(e.target && e.target.closest && e.target.closest(".manabiBar")) return;
+  e.preventDefault(); replayNext();
+},true);
 
 /* ================= メニュー ================= */
 var ovTitle=$("ovTitle"), ovHub=$("ovHub"), ovMode=$("ovMode"), ovClear=$("ovClear"), ovAtk=$("ovAtk");
@@ -1515,6 +1745,9 @@ function openMode(m){
   curMode=m; setAccent(m);
   var md=MODES[m];
   var best=store.get("eqb_best3",{});
+  /* つまずきメモは画面を開くときに一度だけ読む */
+  var tripMap={};
+  if(window.MJ) MJ.misses(APP).forEach(function(x){ if(x.id.indexOf("stage:")===0) tripMap[x.id.slice(6)]=x; });
   var body=$("modeBody"); body.innerHTML="";
   var head=document.createElement("div"); head.className="modeHead";
   head.innerHTML=plateHTML(md)+'<div><div class="mGrade">'+md.grade+'</div><h2>'+md.name+'</h2><div class="mDesc">'+md.sub+'</div></div>';
@@ -1540,8 +1773,10 @@ function openMode(m){
     course.stages.forEach(function(st,i){
       var key=course.id+"_"+i;
       var b=document.createElement("button");
-      b.className="stBtn"+(best[key]?" cleared":"");
+      var tp=tripMap[key];
+      b.className="stBtn"+(best[key]?" cleared":"")+(tp?" trip":"");
       b.innerHTML='<b class="disp">'+(i+1)+"</b><small>"+(best[key]?((best[key].rank||"")+" "+best[key].score):"—")+"</small>";
+      if(tp && tp.data && TRIP_TIP[tp.data.tip]){ b.title="つまずきメモ：" + TRIP_TIP[tp.data.tip]; b.setAttribute("aria-label",(i+1)+"問目（つまずきメモあり）"); }
       b.addEventListener("click",function(){ startGrade(c,i); });
       g.appendChild(b);
     });
@@ -1574,6 +1809,7 @@ $("btnReset").addEventListener("click",function(){
   }
 });
 $("btnRetry").addEventListener("click",function(){ startGrade(curC,curS); });
+$("btnReplay").addEventListener("click",replayStart);
 $("btnNext").addEventListener("click",function(){
   if(curS<COURSES[curC].stages.length-1){ startGrade(curC,curS+1); return; }
   for(var c=curC+1;c<COURSES.length;c++){

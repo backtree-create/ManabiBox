@@ -348,10 +348,94 @@
     .volTitle{font-size:clamp(13px,4vw,17px);}
     .pill{padding-inline:8px;min-width:52px;}
   }
+  /* ---- フェーズ4: 完全連鎖の和紙と朱印（既存のクリア画面の中に絶対配置。寸法は変えない） ---- */
+  .washi{display:none; position:absolute; left:-12px; right:-12px; bottom:-3px; height:1.2em; z-index:-1; pointer-events:none;
+    background:
+      repeating-linear-gradient(97deg, rgba(255,255,255,.38) 0 1px, transparent 1px 6px),
+      repeating-linear-gradient(7deg, rgba(140,110,60,.10) 0 1px, transparent 1px 4px),
+      linear-gradient(180deg,#f5e7c4,#ead5a5);
+    border-top:1px solid rgba(143,116,52,.45); border-bottom:1px solid rgba(143,116,52,.45);
+    clip-path:polygon(0 8%,3% 0,22% 6%,48% 0,73% 5%,97% 0,100% 10%,99% 55%,100% 92%,96% 100%,70% 95%,45% 100%,20% 94%,2% 100%,0 90%,1% 50%);
+    transform-origin:left center;}
+  .shuin{display:none; position:absolute; right:7%; top:50%; margin-top:-33px; width:66px; height:66px; border-radius:50%;
+    align-items:center; justify-content:center; text-align:center; pointer-events:none;
+    color:var(--shu); border:3px solid var(--shu);
+    box-shadow:inset 0 0 0 2px #f6efdc, inset 0 0 0 4px rgba(194,58,32,.85);
+    background:radial-gradient(circle at 40% 35%, rgba(194,58,32,.10), rgba(194,58,32,.04) 70%);
+    font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif; font-weight:800;
+    font-size:15px; line-height:1.12; letter-spacing:.06em; transform:rotate(-12deg); opacity:.92;}
+  #ovClear.perfect .washi{display:block;}
+  #ovClear.perfect .shuin{display:flex;}
+  #ovClear.perfect.go .washi{animation:washiIn .5s .15s cubic-bezier(.22,1,.36,1) both;}
+  #ovClear.perfect.go .shuin{animation:shuinIn .42s .55s cubic-bezier(.22,1,.36,1) both;}
+  @keyframes washiIn{from{transform:scaleX(0); opacity:.2;} to{transform:scaleX(1); opacity:1;}}
+  @keyframes shuinIn{0%{opacity:0; transform:rotate(-12deg) scale(1.7);} 65%{opacity:.95; transform:rotate(-12deg) scale(.95);} 100%{opacity:.92; transform:rotate(-12deg) scale(1);}}
+
+  /* ---- フェーズ4: 新しい画面の共通（パネルの出入り） ---- */
+  .p4panel{animation:p4In .38s cubic-bezier(.22,1,.36,1) both;}
+  @keyframes p4In{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+
+  /* ---- フェーズ4: なぜクイズ ---- */
+  .whyPair{display:flex; align-items:center; justify-content:center; gap:8px; margin:4px 0 12px; flex-wrap:wrap;}
+  .whyPair .cardD{flex:0 1 auto; margin:0; min-height:42px; cursor:default; font-size:clamp(13px,3.6vw,15px); box-shadow:2px 2px 0 rgba(76,65,48,.3);}
+  .whyPair .arw{color:var(--gold); font-weight:800; font-size:14px; letter-spacing:.1em; white-space:nowrap;}
+  .whyQ{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:800; font-size:clamp(16px,4.4vw,19px); line-height:1.6; color:var(--ink); text-align:center; margin:0 0 12px;}
+  .whyOpts{display:flex; flex-direction:column; gap:8px;}
+  .whyOpt{display:flex; align-items:center; gap:10px; width:100%; text-align:left; cursor:pointer; min-height:52px;
+    padding:9px 12px; background:var(--card); color:var(--ink); border:1.5px solid var(--ink2); border-left:4px solid var(--gold);
+    font-size:clamp(13px,3.7vw,15px); line-height:1.55;
+    transition:transform .16s ease, background-color .3s cubic-bezier(.4,0,.2,1), border-color .3s cubic-bezier(.4,0,.2,1), opacity .3s cubic-bezier(.4,0,.2,1);}
+  .whyOpt .k{flex:none; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; border:1.5px solid var(--ink2); border-radius:50%; font-weight:800; font-size:13px; color:var(--ink2);}
+  .whyOpt:active{transform:scale(.97);}
+  @media (hover:hover){ .whyOpt:hover:not(:disabled){background:#fffaf0;} }
+  .whyOpt:disabled{cursor:default;}
+  .whyOpt.ok{background:#f3ead0; border-color:var(--gold); border-left-color:var(--gold);}
+  .whyOpt.ok .k{background:var(--gold); color:#fff8ec; border-color:var(--gold);}
+  .whyOpt.ng{background:#f4d4c9; border-color:var(--shu); border-left-color:var(--shu);}
+  .whyOpt.ng .k{background:var(--shu); color:#fff8ec; border-color:var(--shu);}
+  .whyOpt.dim{opacity:.45;}
+  .whyExp{margin-top:12px; background:#241d12; color:#efe6cf; border-left:5px solid var(--shu); padding:10px 14px; font-size:clamp(13px,3.5vw,14px); line-height:1.75; text-align:left;
+    animation:p4In .35s cubic-bezier(.22,1,.36,1) both;}
+  .whyExp b{color:var(--goldL); font-family:"Hiragino Mincho ProN","Yu Mincho",serif; margin-right:6px;}
+  .whyExp.ok{border-left-color:var(--gold);}
+
+  /* ---- フェーズ4: 年表ビュー ---- */
+  #ovChrono .panel{display:flex; flex-direction:column;}
+  .chTabs{display:flex; gap:6px; justify-content:center; margin:0 0 10px;}
+  .chTab{flex:1; max-width:200px; min-height:44px; cursor:pointer; font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:700;
+    font-size:clamp(13px,3.6vw,15px); letter-spacing:.08em; color:var(--ink2); background:var(--card);
+    border:1.5px solid var(--ink2); border-bottom:3px solid var(--ink2);
+    transition:transform .16s ease, background-color .3s cubic-bezier(.4,0,.2,1), color .3s cubic-bezier(.4,0,.2,1);}
+  .chTab:active{transform:scale(.97);}
+  .chTab.on{background:var(--shu); color:#fff8ec; border-color:var(--shu2);}
+  .chHead{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 4px 8px; border-bottom:1px dashed var(--faint); margin-bottom:8px;}
+  .chHead .ttl{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:800; font-size:clamp(15px,4.2vw,18px); color:var(--ink); letter-spacing:.08em;}
+  .chHead .ttl small{display:block; font-family:"Hiragino Kaku Gothic ProN",sans-serif; font-size:12px; color:var(--dim); font-weight:700; letter-spacing:.12em; margin-bottom:2px;}
+  .chHead .cnt{font-size:12px; color:var(--dim); font-weight:700; white-space:nowrap; text-align:right;}
+  .chHead .cnt b{font-size:clamp(16px,4.4vw,20px); color:var(--shu); font-variant-numeric:tabular-nums;}
+  #chList{position:relative; padding-left:16px;}
+  #chList::before{content:""; position:absolute; left:11px; top:6px; bottom:6px; width:2px; background:var(--gold);}
+  #chList.turn{animation:p4In .32s cubic-bezier(.22,1,.36,1) both;}
+  .tlItem{position:relative; padding:4px 0 10px 18px;}
+  .tlItem > .seal{position:absolute; left:-16px; top:4px; width:22px; height:22px; font-size:12px;}
+  .tlName{display:flex; align-items:baseline; gap:8px; font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:800; font-size:clamp(14px,3.9vw,16px); color:var(--ink); line-height:1.4;}
+  .tlName .mk{margin-left:auto; font-family:"Hiragino Kaku Gothic ProN",sans-serif; font-size:12px; font-weight:800; white-space:nowrap; color:var(--dim);}
+  .tlName .mk .r{font-family:"Hiragino Mincho ProN",serif; font-size:15px; margin-right:4px;}
+  .tlName .mk .w{color:var(--gold);}
+  .tlEvs{display:flex; flex-wrap:wrap; align-items:center; gap:4px 2px; margin-top:5px;}
+  .tlEv{font-size:12px; line-height:1.4; padding:3px 8px; background:var(--card); border:1px solid rgba(76,65,48,.45); border-left:3px solid var(--shu); color:var(--ink2); font-weight:700;}
+  .tlStep{display:inline-flex; align-items:center; white-space:nowrap;}
+  .tlArw{font-size:12px; color:var(--gold); padding:0 2px;}
+  .chEmpty{text-align:center; color:var(--dim); font-size:13px; line-height:1.9; padding:26px 8px;}
+  .chPager{display:flex; align-items:center; justify-content:center; gap:14px; margin-top:auto; padding-top:8px;}
+  .chPager .btn.sub{min-height:44px; padding:8px 18px;}
+  .chPager .pg{font-size:13px; color:var(--dim); font-weight:800; font-variant-numeric:tabular-nums; min-width:52px; text-align:center;}
+
   @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
 </style>
 <script src="config.js"></script>
 <script src="hub-progress.js"></script>
+<script src="manabi-juice.js"></script>
 <script src="manabi-connect.js"></script>
 </head>
 <body>
@@ -432,7 +516,7 @@
   <div class="panel">
     <div class="secTitle" id="selTitle"></div>
     <div id="eraList"></div>
-    <div class="center"><button class="backLink" id="btnToVolumes">← 巻選択にもどる</button></div>
+    <div class="center"><button class="backLink" id="btnToVolumes">← 巻選択にもどる</button><button class="backLink" id="btnChrono">年表をひらく →</button></div>
   </div>
 </div>
 
@@ -454,8 +538,8 @@
 <!-- クリア -->
 <div class="overlay hidden" id="ovClear">
   <div class="panel center">
-    <div class="stamp min"><small id="clearWhere"></small><span>完全連鎖</span></div>
-    <div class="rankRow">RANK<span id="scRank" class="rankL"></span></div>
+    <div class="stamp min"><small id="clearWhere"></small><span>完全連鎖</span><i class="washi" aria-hidden="true"></i></div>
+    <div class="rankRow">RANK<span id="scRank" class="rankL"></span><span class="shuin" id="scShuin" role="img" aria-label="一発連鎖の朱印">一発<br>連鎖</span></div>
     <div class="scoreRow"><span>つないだドミノ</span><b id="scChain"></b></div>
     <div class="scoreRow"><span>因果関係の正確性</span><b id="scAcc"></b></div>
     <div class="scoreRow"><span>スピード倍率</span><b id="scSpeed"></b></div>
@@ -477,6 +561,34 @@
     <p class="center" style="margin:-2px 0 10px;color:var(--faint);font-size:10px;letter-spacing:.1em">「なぜ → どうなった」を声に出して説明できたら完ぺき</p>
     <div id="flowList" style="display:flex;flex-direction:column;gap:2px"></div>
     <div class="center"><button class="bigBtn gray" id="btnReviewClose">とじる</button></div>
+  </div>
+</div>
+
+<!-- なぜクイズ（章の完成直後。クリア画面の前に1問） -->
+<div class="overlay hidden" id="ovWhy" role="dialog" aria-modal="true" aria-label="なぜクイズ">
+  <div class="panel p4panel">
+    <div class="secTitle" style="margin-top:0;font-size:12px;letter-spacing:.3em">WHY ── つながりの理由</div>
+    <div class="whyPair" id="whyPair"></div>
+    <p class="whyQ" id="whyQ"></p>
+    <div class="whyOpts" id="whyOpts"></div>
+    <div id="whyExpBox"></div>
+    <div class="center"><button class="bigBtn" id="btnWhyNext" style="display:none">結果を見る</button></div>
+  </div>
+</div>
+
+<!-- 年表ビュー（完成させた章を巻ごとに時代順で） -->
+<div class="overlay hidden" id="ovChrono" role="dialog" aria-modal="true" aria-label="年表">
+  <div class="panel p4panel">
+    <div class="secTitle" style="margin-top:0;font-size:12px;letter-spacing:.3em">CHRONICLE ── 完成させた章の年表</div>
+    <div class="chTabs" id="chTabs" role="tablist"></div>
+    <div class="chHead" id="chHead"></div>
+    <div id="chList"></div>
+    <div class="chPager" id="chPager">
+      <button class="btn sub" id="chPrev" aria-label="前のページ">◀ まえ</button>
+      <span class="pg" id="chPg"></span>
+      <button class="btn sub" id="chNextPg" aria-label="次のページ">つぎ ▶</button>
+    </div>
+    <div class="center"><button class="backLink" id="btnChronoClose">← 章選択にもどる</button></div>
   </div>
 </div>
 
@@ -939,6 +1051,71 @@ var ERAS=[
  ]}
 ];
 
+/* ---------- フェーズ4: なぜクイズ（章の完成直後に1問）----------
+   ERAS の説明文に書かれている因果だけから作った問題。i=章番号, a→b=カード番号（見出しに並べる2枚）。
+   ok=正解、ng=誤答2つ、x=解説。正解するとその章に「★（因果の理解）」が付く（配点・満点は変えない）。 */
+var WHY={
+ 0:{a:0,b:1,q:"稲作が伝わると、なぜ「貧富の差」が生まれた？",ok:"米を蓄えられるようになり、多く持つ者と持たない者が出てきたから",ng:["大陸から金属のお金が伝わり、商売がさかんになったから","狩りの獲物が減り、人々が各地に散らばったから"],x:"稲作で米を蓄えられるようになると、蓄えの多い者と少ない者の差、つまり貧富の差が生まれた。"},
+ 1:{a:0,b:1,q:"聖徳太子は、なぜ「遣隋使」を送った？",ok:"隋の進んだ制度や文化を学び、天皇中心の国づくりに生かすため",ng:["隋に貢ぎ物をして、日本の領土を広げてもらうため","日本の仏教を隋に広めるため"],x:"天皇中心の国を目指した聖徳太子は、小野妹子らを隋へ送り、大陸の進んだ制度や文化を学ばせた。"},
+ 2:{a:1,b:2,q:"聖武天皇は、なぜ「国分寺と大仏」をつくらせた？",ok:"ききんや伝染病、反乱が続き、仏教の力で国を守ろうとしたから",ng:["都を奈良から京都へ移すため","唐から仏教を広めるよう命じられたから"],x:"災いや反乱が続いて社会に不安が広がったため、聖武天皇は仏教の力で国を守ろうと、国分寺と大仏をつくらせた。"},
+ 3:{a:1,b:2,q:"なぜ「遣唐使」は停止された？",ok:"唐がおとろえ、菅原道真が派遣の取りやめを意見したから",ng:["藤原氏が唐との戦争を始めたから","都が平安京に移り、港から遠くなったから"],x:"唐がおとろえたことから、菅原道真の意見で遣唐使の派遣は取りやめになった。その後、日本風の国風文化が育った。"},
+ 4:{a:0,b:1,q:"平清盛は、なぜ武士として初めて太政大臣になれた？",ok:"保元・平治の乱で武士の地位が上がり、平治の乱に勝ったから",ng:["鎌倉に幕府を開き、征夷大将軍になったから","元との戦いで大きな手がらを立てたから"],x:"貴族の争いを武士の力で解決した保元・平治の乱で、武士の地位が大きく上がった。平治の乱に勝った清盛は武士初の太政大臣になった。"},
+ 5:{a:0,b:1,q:"元寇のあと、なぜ「御家人の不満」が高まった？",ok:"外国との戦いで新しい領地が手に入らず、十分な恩賞がもらえなかったから",ng:["元軍に敗れ、鎌倉が占領されたから","幕府が御家人の領地を朝廷に返したから"],x:"元寇は外国との防衛戦だったため、新しい領地が手に入らなかった。命がけで戦った御家人は十分な恩賞をもらえず、不満が高まった。"},
+ 6:{a:0,b:1,q:"建武の新政のあと、なぜ「南北朝の動乱」が起きた？",ok:"新政が武士の不満を招き、足利尊氏が新たな天皇を立てたから",ng:["元が再び攻めてきて、朝廷が二か所に逃れたから","将軍のあとつぎ争いで、大名が東西に分かれたから"],x:"後醍醐天皇の建武の新政は武士の不満を招いた。足利尊氏が新たな天皇を立てたため、朝廷が二つに分かれて争った。"},
+ 7:{a:0,b:1,q:"応仁の乱のあと、なぜ「下剋上」の世になった？",ok:"幕府の力が衰え、実力のある者が身分をこえて力をのばしたから",ng:["朝廷が身分の制度をすべて廃止したから","幕府が全国に新しく守護を置いたから"],x:"11年続いた応仁の乱で幕府の力が衰えた。実力があれば身分をこえられる時代となり、各地に戦国大名が現れた。"},
+ 8:{a:2,b:3,q:"なぜ「島原・天草一揆」が起きた？",ok:"キリシタンへの弾圧と重い年貢に、人々が反発したから",ng:["大阪の陣で豊臣氏が勝ったから","ペリーが来航し、開国を求めたから"],x:"キリシタンへの弾圧と重い年貢に対して大規模な一揆が起きた。この後、幕府はキリスト教の禁止と貿易の制限を強め、鎖国が完成した。"},
+ 9:{a:1,b:2,q:"徳川吉宗は、なぜ「享保の改革」を行った？",ok:"支出が増え、金銀の産出も減って、幕府の財政が苦しくなったから",ng:["外国船が来航し、海の守りを固める必要があったから","大塩平八郎の乱で幕府が攻撃されたから"],x:"幕府の財政が悪化したため、8代将軍・徳川吉宗が倹約や新田開発、目安箱などで立て直しを図った。"},
+ 10:{a:0,b:1,q:"なぜ「大塩平八郎の乱」が起きた？",ok:"天保のききんで苦しむ人々の救済を求めたから",ng:["開国に反対し、外国人を追い払うため","幕府に領地を取り上げられたから"],x:"天保のききんで多くの人が飢えに苦しんだ。元役人の大塩平八郎は人々の救済を求めて大阪で兵をあげ、幕府に衝撃を与えた。"},
+ 11:{a:0,b:1,q:"日米修好通商条約のあと、なぜ「尊王攘夷運動」が高まった？",ok:"朝廷の許可なく調印し、貿易で物価が上がって生活が苦しくなったから",ng:["幕府が政権を朝廷に返したから","薩摩藩と長州藩が同盟を結んだから"],x:"幕府は朝廷の許可なく条約に調印した。貿易が始まると物価が上がって生活が苦しくなり、天皇を敬い外国を追い払おうとする運動が盛んになった。"},
+ 12:{a:2,b:3,q:"なぜ「西南戦争」が起きた？",ok:"明治政府の改革に不満をもつ士族が、西郷隆盛を中心に反乱を起こしたから",ng:["外国が鹿児島を占領しようとしたから","憲法の発布に反対する農民が立ち上がったから"],x:"改革に不満をもつ士族が西郷隆盛を中心に反乱を起こしたが、鎮圧された。この後、武力ではなく言論で政治を変える時代へ進んだ。"},
+ 13:{a:1,b:2,q:"なぜ日本は「日英同盟」を結んだ？",ok:"南下するロシアに対抗するため",ng:["清と戦うための軍艦を手に入れるため","韓国を併合することをイギリスに認めてもらうため"],x:"三国干渉でロシアへの対抗心が高まった。ロシアの南下に対抗するため、日本はイギリスと同盟を結んだ。"},
+ 14:{a:2,b:3,q:"なぜ「米騒動」が全国に広がった？",ok:"シベリア出兵を見こした米の買い占めで、米の値段が急に上がったから",ng:["大戦に負けて、米が輸入できなくなったから","ききんで稲がまったく育たなかったから"],x:"大戦景気で物価が上がる中、シベリア出兵を見こした米の買い占めで米価が急上昇し、騒動が全国に広がった。"},
+ 15:{a:3,b:4,q:"普通選挙法と同じころ、なぜ「治安維持法」がつくられた？",ok:"社会運動への取りしまりを強めるため",ng:["選挙権を女性にも広げるため","労働者の権利を守るため"],x:"25歳以上のすべての男子に選挙権が認められたのと同時に、治安維持法がつくられ、社会運動への取りしまりが強められた。"},
+ 16:{a:1,b:2,q:"なぜ日本は「国際連盟」を脱退した？",ok:"満州事変で建てた満州国が、国際連盟に認められなかったから",ng:["世界恐慌で、連盟の費用が払えなくなったから","アメリカが連盟を使って日本を攻撃したから"],x:"満州国は国際連盟に認められず、日本は連盟を脱退した。日本は国際社会で孤立していった。"},
+ 17:{a:0,b:1,q:"なぜ日本の都市への「空襲」が本格化した？",ok:"サイパン島が占領され、日本本土が爆撃機の届く範囲に入ったから",ng:["日本が国際連盟を脱退したから","沖縄戦で日本が勝ったから"],x:"ミッドウェー海戦の敗北で戦局が変わり、やがてサイパン島が占領された。ここを基地に、日本の都市への空襲が本格化した。"},
+ 18:{a:0,b:1,q:"朝鮮戦争のころ、なぜ日本の経済は復興のきっかけをつかんだ？",ok:"戦争に必要な物資の注文が日本に増えたから（特需景気）",ng:["日本が朝鮮半島に新しい領土を得たから","財閥が復活して輸出を独占したから"],x:"朝鮮戦争が始まると、軍需物資の注文が日本に増えた。この特需景気が、日本経済の復興のきっかけになった。"},
+ 19:{a:1,b:2,q:"なぜ国は「公害対策」に乗り出し、環境庁を置いた？",ok:"四大公害病などが深刻になり、世論の批判が高まったから",ng:["石油危機で石油が使えなくなったから","国際連合に加盟する条件だったから"],x:"高度経済成長のひずみとして四大公害病などの公害が深刻化した。世論の批判を受け、国は本格的な公害対策に乗り出した。"},
+ 20:{a:1,b:2,q:"なぜ人々は「たて穴住居」に定住するようになった？",ok:"土器で煮たきや保存ができ、食料が安定したから",ng:["鉄器で大きな城を築けるようになったから","大和政権が住む場所を決めたから"],x:"土器の発明で煮たきや保存ができるようになり、くらしが安定した。食料が安定したことで、たて穴住居に定住するむらが生まれた。"},
+ 21:{a:1,b:2,q:"なぜ日本で「漢字」が使われるようになった？",ok:"朝鮮半島から移り住んだ渡来人が伝えたから",ng:["遣唐使が初めて持ち帰ったから","日本の中で独自に発明されたから"],x:"朝鮮半島から多くの渡来人が移り住み、漢字や儒教をもたらした。漢字によって記録ができるようになった。"},
+ 22:{a:0,b:1,q:"なぜ平城京には「西アジアの品々」まで集まった？",ok:"遣唐使が唐と行き来し、シルクロードを通じた品々がもたらされたから",ng:["日本の商人が直接、西アジアへ航海したから","ポルトガル人が貿易に来たから"],x:"遣唐使の往来で唐の文物がもたらされた。唐にはシルクロードを通じて西アジアの品々も集まっており、それが平城京まで届いた。"},
+ 23:{a:0,b:1,q:"遣唐使の停止のあと、なぜ「日本風の文化」が育った？",ok:"それまでの大陸の文化を消化し、日本の風土に合わせていったから",ng:["唐の文化を取り入れることが法律で禁じられたから","武士が政治の中心になったから"],x:"遣唐使の停止後、大陸の文化を消化して日本の風土に合った文化が育った。かな文字や女流文学がその代表である。"},
+ 24:{a:0,b:1,q:"鎌倉時代には、なぜ「力強い文化」が好まれた？",ok:"政治の中心が武士に移り、素朴で力強いものを好む気風が広がったから",ng:["遣唐使によって唐の文化が新しく伝わったから","町人が経済力をもち、文化のにない手になったから"],x:"政治の中心が貴族から武士に移り、素朴で力強いものを好む武士らしい文化が求められた。運慶らの金剛力士像がその例である。"},
+ 25:{a:0,b:1,q:"室町時代には、なぜ武家と公家の文化がまじり合った？",ok:"幕府が京都に置かれ、武士と公家が近くでくらしたから",ng:["武士が貴族の位をすべて取り上げたから","ヨーロッパの文化が伝わったから"],x:"京都に幕府が置かれ、武家文化と公家文化がまじり合った。金閣（義満）や銀閣（義政）にその特色が表れている。"},
+ 26:{a:1,b:2,q:"なぜ「戦い方と城のつくり」が変わった？",ok:"鉄砲が国内でつくられて急速に広まり、足軽鉄砲隊が主力になったから",ng:["元軍が新しい武器を伝えたから","キリスト教によって戦いが禁じられたから"],x:"種子島に伝わった鉄砲は堺や国友で国産化され、急速に広まった。足軽鉄砲隊が主力となり、城のつくりも変わっていった。"},
+ 27:{a:1,b:2,q:"なぜ安土城や大阪城のような「壮大な天守」が築かれた？",ok:"統一を進めた武将が、富と権力を形で示そうとしたから",ng:["外国の軍隊の上陸に備えるため","参勤交代で大名が泊まる宿にするため"],x:"天下統一をなしとげた武将たちは富と権力を形で示そうとし、権力の象徴として壮大な城を築いた。"},
+ 28:{a:0,b:1,q:"なぜ元禄文化は「上方の町人」がにない手になった？",ok:"戦乱のない世が続き、商業の発達で町人が経済力をつけたから",ng:["幕府が武士の文化を禁止したから","開国して外国の文化が入ってきたから"],x:"平和が続いて商業が発達し、経済力をもった上方（大阪・京都）の町人が文化のにない手となった。"},
+ 29:{a:1,b:2,q:"なぜ北斎や広重の「錦絵」は庶民の手に届いた？",ok:"大量に刷られ、庶民が文化のにない手になっていたから",ng:["幕府が無料で配ったから","一枚ずつ手描きされた高級品だったから"],x:"化政文化では庶民が文化のにない手となった。錦絵は大量に刷られたので、庶民でも手に入れることができた。"},
+ 30:{a:2,b:3,q:"なぜ杉田玄白らは西洋の解剖書を翻訳できた？",ok:"オランダ語を通じて西洋の学問を学ぶ蘭学が広まっていたから",ng:["ポルトガル人の宣教師が日本語に訳したから","朱子学の本に解剖の知識がのっていたから"],x:"オランダ語を通じて西洋の学問を学ぶ蘭学が広まり、杉田玄白らが『解体新書』を翻訳した。これが蘭学の基礎となった。"},
+ 31:{a:1,b:2,q:"江戸時代に、なぜ「寺子屋」が広まった？",ok:"商業が発達し、町人や農民にも読み書きと計算の力が必要になったから",ng:["幕府が全国に学校をつくることを義務にしたから","オランダ語を学ぶ必要があったから"],x:"商業の発達で契約や帳簿など文字を使う場面が増え、庶民にも読み書きそろばんが必要になった。そのため町や村に寺子屋が開かれた。"},
+ 32:{a:1,b:2,q:"明治時代に、なぜ「ざんぎり頭と洋服」が広まった？",ok:"欧米に追いつく改革の中で欧米の文化が入り、文明開化の象徴とされたから",ng:["江戸幕府が洋服を着るよう命じたから","太陽暦を使うために必要だったから"],x:"欧米に追いつくための改革が始まり、衣食住に欧米の文化が入ってきた。まげを切り洋服を着ることが文明開化の象徴とされた。"},
+ 33:{a:1,b:2,q:"なぜ「自由民権思想」が広まった？",ok:"自由や権利の考え方が紹介され、『学問のすゝめ』で人間の平等が説かれたから",ng:["大日本帝国憲法で全国民に選挙権が与えられたから","寺子屋で朱子学が教えられたから"],x:"欧米の自由や権利の考え方が紹介され、福沢諭吉の『学問のすゝめ』が人間の平等を説いた。国民が政治に参加する権利を求める考えが広まった。"},
+ 34:{a:1,b:2,q:"なぜ「八幡製鉄所」をつくることができた？",ok:"日清戦争で得た賠償金を使ったから",ng:["足尾銅山の利益をすべて使ったから","アメリカからの援助金を使ったから"],x:"紡績・製糸などの軽工業に続き、日清戦争の賠償金で八幡製鉄所がつくられ、重工業が始まった。"},
+ 35:{a:0,b:1,q:"大正時代に、なぜ「サラリーマンや職業婦人」が増えた？",ok:"産業が発展して都市に人が集まり、会社などで働く人が増えたから",ng:["農地改革で農地を失った人が多かったから","戦争で働き手の男性がいなくなったから"],x:"産業の発展で都市に人が集まり、会社勤めの人々や働く女性が増え、新しいくらしが生まれた。"},
+ 36:{a:0,b:1,q:"なぜ「国家総動員法」がつくられた？",ok:"日中戦争が長引き、国の力をすべて戦争に注ぐ体制が求められたから",ng:["世界恐慌で失業した人に仕事を与えるため","普通選挙を実施するため"],x:"日中戦争が長引き、政府は議会の承認なしに人や物資を戦争に動員できる国家総動員法を定めた。"},
+ 37:{a:3,b:4,q:"なぜ1964年の「東京オリンピック」は大きな意味をもった？",ok:"新幹線の開通とともに、復興をとげた日本の姿を世界に示したから",ng:["日本が国際連合に加盟するための条件だったから","戦争の賠償金を集めるために開かれたから"],x:"焼け跡から出発した日本は、家電が普及するほど豊かになった。1964年の五輪と新幹線開通が、復興をとげた日本を世界に示した。"},
+ 38:{a:0,b:1,q:"高度経済成長期に、なぜ農村で「過疎」が進んだ？",ok:"仕事を求めて、多くの人が都市へ移ったから",ng:["農地改革で農地が取り上げられたから","公害で農業がまったくできなくなったから"],x:"経済の急成長で都市に仕事が増え、人々が農村から都市へ移った。都市では人口が集中し、農村では過疎が進んだ。"},
+ 39:{a:0,b:1,q:"なぜ日本と外国の間に「貿易摩擦」が生まれた？",ok:"日本の家電や自動車が世界中に大量に輸出されたから",ng:["日本が外国製品の輸入を全面禁止したから","石油危機で日本の輸出が止まったから"],x:"石油危機の後も日本は高い技術力で成長し、家電や自動車が世界中で使われるようになった。その一方で、輸出先の国との貿易摩擦も生まれた。"},
+ 40:{a:3,b:4,q:"なぜ卑弥呼は「親魏倭王」の称号を授けられた？",ok:"魏に使いを送ったから",ng:["漢の皇帝から金印をうばったから","大和政権の大王として古墳をつくったから"],x:"邪馬台国の女王・卑弥呼は魏に使いを送り、魏の皇帝から「親魏倭王」の称号と銅鏡を授けられて、権威を高めた。"},
+ 41:{a:3,b:4,q:"なぜ日本は唐にも使節（遣唐使）を送り続けた？",ok:"唐の進んだ制度や文化を学び、律令国家づくりに生かすため",ng:["唐と戦争をするための情報を集めるため","唐に日本の仏教を伝えるため"],x:"隋にかわった唐へも使節を送り続けた。持ち帰った知識は、律令国家づくりや天平文化の土台となった。"},
+ 42:{a:2,b:3,q:"なぜ九州に「防人」が置かれ、山城が築かれた？",ok:"白村江の戦いで大敗し、唐や新羅の来襲に備えたから",ng:["元軍が二度襲来したから","倭寇が九州をおそったから"],x:"百済の復興を助けようとした日本軍は白村江で大敗した。唐などの来襲に備え、九州に防人を置き、山城を築いた。"},
+ 43:{a:1,b:2,q:"なぜ平清盛は大輪田泊（神戸の港）を整備した？",ok:"宋との貿易の利益に注目したから",ng:["元の襲来に備えるため","遣唐使の船を出すため"],x:"博多に宋の商船が来航していた。清盛は日宋貿易の利益に注目して大輪田泊を整備し、貿易は平氏の重要な収入源となった。"},
+ 44:{a:3,b:4,q:"なぜ元軍は日本に襲来した？",ok:"フビライの服属の要求を、鎌倉幕府が退けたから",ng:["日本が高麗に攻めこんだから","日本が宋銭の輸出を止めたから"],x:"フビライは日本にも従うよう求めたが、執権・北条時宗は要求を退けた。そのため元軍は文永・弘安の役で二度襲来した。"},
+ 45:{a:3,b:4,q:"なぜ日明貿易では「勘合」が使われた？",ok:"正式な貿易船と倭寇を区別するため",ng:["関税を安くするため","船の大きさを決めるため"],x:"明は倭寇の取りしまりを求めていた。足利義満は明と国交を結び、倭寇と区別するための勘合を用いて貿易を行った。"},
+ 46:{a:0,b:1,q:"なぜヨーロッパの人々は「新しい航路」を切り開いた？",ok:"アジアの香辛料を直接手に入れたかったから",ng:["日本の鉄砲を買うため","産業革命の原料を求めたから"],x:"ヨーロッパの人々はアジアの香辛料を直接手に入れたがった。コロンブスやバスコ・ダ・ガマらが新しい航路を切り開いた。"},
+ 47:{a:2,b:3,q:"なぜ幕府は「禁教令」を強めた？",ok:"キリスト教の信者が増え、幕府の支配のさまたげになると考えたから",ng:["オランダがキリスト教の禁止を求めたから","朱印船貿易の利益が減ったから"],x:"貿易とともにキリスト教の信者が増えた。幕府は支配のさまたげになると考え、キリスト教を禁じて宣教師や信者を取りしまった。"},
+ 48:{a:1,b:2,q:"なぜ幕府はオランダに「風説書」を出させた？",ok:"海外の情報を報告させ、世界の動きを知るため",ng:["キリスト教を日本に広めるため","オランダ語を全国に広めるため"],x:"鎖国中もオランダは長崎の出島で貿易を許されていた。幕府はオランダから海外情報を報告させ、世界の動きを知った。"},
+ 49:{a:1,b:2,q:"なぜ綿や菜種などの「商品作物」が育てられるようになった？",ok:"農具の進歩や新田開発で生産力が上がり、米以外を育てる余裕が生まれたから",ng:["幕府が米づくりを禁止したから","条約で外国へ輸出するよう決められたから"],x:"備中ぐわや千歯こきの普及、新田開発で農業生産が向上し、売るための作物を育てる余裕が生まれた。"},
+ 50:{a:3,b:4,q:"なぜ欧米諸国は「アジアへ進出」した？",ok:"産業革命で力をつけ、原料と製品の市場を求めたから",ng:["日本から鉄砲を買うため","香辛料の航路を初めて探すため"],x:"イギリスで始まった産業革命で力をつけた欧米は、原料と市場を求めてアジアへ向かった。"},
+ 51:{a:3,b:4,q:"なぜ幕府は、異国船の「打払い」をゆるめた？",ok:"大国の清がアヘン戦争でイギリスに敗れたと知り、危機感をもったから",ng:["ペリーと結んだ条約で決められたから","オランダが打払いをやめるよう命じたから"],x:"アヘン戦争で清が敗れたという知らせは幕府に危機感を与えた。幕府は打払いをゆるめ、まきや水を与える方針に改めた。"},
+ 52:{a:1,b:2,q:"なぜ「条約改正」を求める世論が高まった？",ok:"ノルマントン号事件で日本人乗客だけが見捨てられ、不平等条約への不満が高まったから",ng:["鹿鳴館の舞踏会が原因で欧米と戦争になったから","関税自主権がすでに回復していたから"],x:"ノルマントン号事件で日本人乗客だけが見捨てられ、領事裁判権を認める不平等条約の改正を求める世論が高まった。"},
+ 53:{a:1,b:2,q:"なぜ列強は「アフリカ・アジア」を植民地にしていった？",ok:"工業化で増えた製品の売り先と、原料の産地を求めたから",ng:["国際連盟が植民地を分け与えたから","冷戦で米ソが対立していたから"],x:"工業化が進んだ列強は、資源の産地と製品の売り先を海外に求め、軍事力を背景にアフリカ・アジアを植民地にしていった。"},
+ 54:{a:0,b:2,q:"なぜ「国際連盟」がつくられた？",ok:"大戦でかつてない犠牲が出て、二度と大戦を起こさないようにするため",ng:["世界恐慌から経済を立て直すため","冷戦を終わらせるため"],x:"第一次世界大戦は新兵器が使われた総力戦で、かつてない犠牲が出た。二度と大戦を起こさないため、世界初の国際平和機構として国際連盟がつくられた。"},
+ 55:{a:1,b:2,q:"なぜイギリスやフランスは「ブロック経済」を行った？",ok:"世界恐慌の中、植民地との貿易を優先して自国の経済を守るため",ng:["国際連盟から脱退したため","植民地をすべて独立させるため"],x:"世界恐慌で不況が世界に連鎖した。植民地の多いイギリスやフランスは、植民地との貿易を優先して他国の商品を閉め出した。"},
+ 56:{a:1,b:2,q:"なぜ「ドイツ」は東西に分かれた？",ok:"戦後、資本主義のアメリカと社会主義のソ連が対立したから",ng:["ドイツが第一次世界大戦に敗れたから","ベルリンの壁がこわされたから"],x:"第二次大戦後、アメリカとソ連が対立して世界を二分した。ドイツは東西に分かれ、対立の最前線となった。"},
+ 57:{a:0,b:1,q:"なぜ日本は「国際連合」に加盟できた？",ok:"日ソ共同宣言でソ連との国交が回復したから",ng:["サンフランシスコ平和条約にソ連も調印したから","沖縄が日本に復帰したから"],x:"サンフランシスコ平和条約で独立を回復した後、日ソ共同宣言でソ連との国交が回復し、国際連合への加盟が実現した。"},
+ 58:{a:0,b:1,q:"なぜ「東ヨーロッパの民主化」が進んだ？",ok:"ソ連の改革がきっかけになったから",ng:["国際連盟が選挙を命じたから","東ヨーロッパがアメリカに占領されたから"],x:"軍拡の負担に苦しんだ米ソは軍縮交渉を始めた。ソ連の改革をきっかけに東ヨーロッパで民主化が進み、ベルリンの壁崩壊へつながった。"},
+ 59:{a:0,b:1,q:"冷戦が終わったあと、なぜ各地で「紛争やテロ」が起きた？",ok:"民族や宗教の対立が表に出てきたから",ng:["米ソが再び核兵器の開発を競ったから","国際連合が解散したから"],x:"大国の対立は終わったが、民族や宗教の対立から各地で地域紛争やテロが起きるようになった。"}
+};
 
 
 var curEra=0, hand=[], slots=[], selected=null, t0=0, timerId=null;
@@ -1138,12 +1315,14 @@ $("btnRun").addEventListener("click",function(){
       cardEl.classList.add("fall");
       caption.innerHTML="<span><b>"+chain[i].t+"</b>　"+chain[i].e+"</span>";
       beep(400+i*80,0.12,"triangle",0.08);
+      if(mode!=="attack" && MJ) MJ.burst(cardEl,{count:12,spread:.7,colors:["#e3c887","#c23a20","#fbf6e9"]});
       i++;
       setTimeout(step, mode==="attack"?650:950);
     }else{
       cardEl.classList.add("wrong");
       caption.innerHTML="<span>── 因果が切れた ──　「"+chain[placed].t+"」はここじゃない。並べ直して再挑戦。</span>";
       beep(140,0.35,"sawtooth",0.09);
+      if(mode!=="attack" && MJ) MJ.flash("#c23a20");
       retries++;
       setTimeout(function(){
         running=false;
@@ -1204,8 +1383,165 @@ function finishClear(combo){
   $("scTotal").textContent=total;
   $("scRec").style.display=rec?"inline-block":"none";
   $("btnNext").style.display=(curEra<ERAS.length-1 && ERAS[curEra+1].vol===ERAS[curEra].vol && inGrade(curEra+1))?"inline-block":"none";
-  setTimeout(function(){ show(ovClear); running=false; },900);
+  var perfect=(retries===0);
+  ovClear.classList.remove("go"); ovClear.classList.toggle("perfect",perfect);
+  p4Rewards(perfect);
+  var ei=curEra;
+  setTimeout(function(){ running=false; if(WHY[ei]) openWhy(ei); else showClear(); },900);
 }
+/* 完成画面を出す（ミスなしなら和紙の帯と朱印を押す。カットインは重ねない） */
+var stampTimer=null;
+function showClear(){
+  hide(ovWhy); show(ovClear);
+  clearTimeout(stampTimer);
+  if(ovClear.classList.contains("perfect")){
+    void ovClear.offsetWidth; ovClear.classList.add("go");
+    var rm=false; try{ rm=matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
+    stampTimer=setTimeout(function(){ if(MJ) MJ.sfx("stamp"); }, rm?0:800);
+  }
+}
+
+/* ---------- フェーズ4: 称号・実績（章が完成したときに一度だけ読む） ---------- */
+var MJ=window.MJ||null, APP="chrono-domino";
+var MAIN_TITLES=[{min:1,name:"因果の見習い"},{min:5,name:"つながり探し"},{min:15,name:"因果の読み手"},{min:30,name:"歴史の語り部"},{min:60,name:"クロノ・マスター"}];
+var VOL_TITLES={
+  "政治の流れ":["政の見習い","政の記録係","政の語り手","政道の史家","政道の大史家"],
+  "文化とくらし":["文化の見習い","文化の記録係","文化の語り手","文化の史家","文化の大史家"],
+  "世界と日本":["外交の見習い","外交の記録係","世界の語り手","世界史の史家","世界史の大史家"]
+};
+function volTitle(v,done,total){
+  var n=VOL_TITLES[v]||VOL_TITLES["政治の流れ"];
+  if(!done||!total) return "";
+  var r=done/total;
+  return r>=1?n[4]:r>=0.75?n[3]:r>=0.5?n[2]:r>=0.25?n[1]:n[0];
+}
+function p4Rewards(perfect){
+  var best=store.get("chrono_best4",{});
+  var p4=store.get("chrono_p4",{perfect:0});
+  if(perfect){ p4.perfect=(p4.perfect||0)+1; store.set("chrono_p4",p4); }
+  if(!MJ) return;
+  MJ.title(APP, MAIN_TITLES, Object.keys(best).length);
+  MJ.achieve(APP,"first","はじめての完全連鎖");
+  if(perfect) MJ.achieve(APP,"perfect1","はじめての一発連鎖");
+  if((p4.perfect||0)>=10) MJ.achieve(APP,"perfect10","一発連鎖 10回");
+  var v=ERAS[curEra].vol, st=volStats(v), vi=VOLS.indexOf(v);
+  if(st.total && st.done>=st.total) MJ.achieve(APP,"vol"+vi+"_g"+grade, v+" 完成"+(grade<3?"（"+GRADE_LABEL[grade]+"まで）":""));
+}
+
+/* ---------- フェーズ4: なぜクイズ ---------- */
+var ovWhy=$("ovWhy"), whyCur=null;
+function openWhy(i){
+  var w=WHY[i], ch=ERAS[i].chain; whyCur=i;
+  $("whyPair").innerHTML='<span class="cardD">'+ch[w.a].t+'</span><span class="arw">─▶</span><span class="cardD">'+ch[w.b].t+'</span>';
+  $("whyQ").textContent=w.q;
+  var opts=shuffle([{t:w.ok,ok:true},{t:w.ng[0]},{t:w.ng[1]}]);
+  var box=$("whyOpts"); box.innerHTML="";
+  opts.forEach(function(o,k){
+    var b=document.createElement("button");
+    b.type="button"; b.className="whyOpt";
+    b.innerHTML='<span class="k">'+["ア","イ","ウ"][k]+'</span><span></span>';
+    b.lastChild.textContent=o.t;
+    b.addEventListener("click",function(){ answerWhy(b,o.ok); });
+    box.appendChild(b);
+  });
+  $("whyExpBox").innerHTML="";
+  $("btnWhyNext").style.display="none";
+  show(ovWhy);
+  ovWhy.querySelector(".panel").scrollTop=0;
+}
+function answerWhy(btn,ok){
+  var w=WHY[whyCur];
+  var all=Array.prototype.slice.call($("whyOpts").children);
+  all.forEach(function(b){ b.disabled=true; });
+  var okBtn=null;
+  all.forEach(function(b){ if(b.lastChild.textContent===w.ok) okBtn=b; });
+  if(okBtn) okBtn.classList.add("ok");
+  all.forEach(function(b){ if(b!==okBtn && b!==btn) b.classList.add("dim"); });
+  var exp=document.createElement("div");
+  if(ok){
+    exp.className="whyExp ok";
+    exp.innerHTML='<b>正解 ★因果ボーナス</b><span></span>';
+    if(MJ){ MJ.sfx("ok"); MJ.burst(btn,{count:14,spread:.7,colors:["#e3c887","#8f7434","#fbf6e9"]}); MJ.pop(btn,"★ 因果",{color:"#8f7434",size:22}); }
+    var why=store.get("chrono_why1",{});
+    why[whyCur]=1; store.set("chrono_why1",why);
+    if(MJ && Object.keys(why).length>=10) MJ.achieve(APP,"why10","なぜクイズ 10章正解");
+  }else{
+    btn.classList.add("ng");
+    exp.className="whyExp";
+    exp.innerHTML='<b>解説</b><span></span>';
+    if(MJ){ MJ.sfx("ng"); MJ.shake(btn,5); }
+  }
+  exp.lastChild.textContent=w.x;
+  $("whyExpBox").appendChild(exp);
+  $("btnWhyNext").style.display="inline-block";
+}
+$("btnWhyNext").addEventListener("click",function(){ showClear(); });
+
+/* ---------- フェーズ4: 巻ごとの年表ビュー ---------- */
+var ovChrono=$("ovChrono"), chVol=null, chPage=0, chPer=4, chItems=[], chBest={}, chWhy={};
+function openChrono(vol){
+  chBest=store.get("chrono_best4",{}); chWhy=store.get("chrono_why1",{});
+  chVol=vol||curVol||VOLS[0]; chPage=0;
+  var tabs=$("chTabs"); tabs.innerHTML="";
+  VOLS.forEach(function(v){
+    var b=document.createElement("button");
+    b.type="button"; b.className="chTab"; b.textContent=v; b.setAttribute("role","tab");
+    b.addEventListener("click",function(){ if(chVol===v) return; chVol=v; chPage=0; renderChrono(true); });
+    tabs.appendChild(b);
+  });
+  hide(ovSelect); show(ovChrono);
+  chPer=fitPer();
+  renderChrono(false);
+}
+/* 1ページに入る章の数を、画面を開いたときに一度だけ決める（内部スクロールさせない） */
+function fitPer(){
+  var w=window.innerWidth, h=window.innerHeight;
+  var per = h>=1000 ? 6 : h>=760 ? 4 : 3;
+  if(w<560) per=Math.max(2,per-1);
+  return per;
+}
+function renderChrono(turn){
+  Array.prototype.slice.call($("chTabs").children).forEach(function(b){
+    var on=b.textContent===chVol; b.classList.toggle("on",on); b.setAttribute("aria-selected",on?"true":"false");
+  });
+  var st=volStats(chVol);
+  chItems=[];
+  ERAS.forEach(function(e,i){ if(e.vol===chVol && inGrade(i) && chBest[i]) chItems.push(i); });
+  var ttl=volTitle(chVol,st.done,st.total);
+  $("chHead").innerHTML='<div class="ttl"><small>巻の称号</small><span></span></div>'+
+    '<div class="cnt">完成 <b>'+st.done+'</b> / '+st.total+' 章'+(grade===3?'':'<br>'+GRADE_LABEL[grade]+'まで')+'</div>';
+  $("chHead").querySelector(".ttl span").textContent=ttl||"まだなし";
+  var pages=Math.max(1,Math.ceil(chItems.length/chPer));
+  if(chPage>=pages) chPage=pages-1;
+  var list=$("chList"); list.innerHTML="";
+  if(!chItems.length){
+    list.innerHTML='<div class="chEmpty">この巻で完成させた章は、まだありません。<br>章を完成させると、出来事がここに年表として並びます。</div>';
+  }
+  chItems.slice(chPage*chPer, chPage*chPer+chPer).forEach(function(i){
+    var e=ERAS[i], b=chBest[i];
+    var it=document.createElement("div"); it.className="tlItem";
+    var mk='<span class="mk"><span class="r" style="color:'+RANK_COL[b.rank||"C"]+'">'+(b.rank||"")+'</span>'+(chWhy[i]?'<span class="w">★</span>':'')+'</span>';
+    it.innerHTML=kanSeal(volNo(i))+'<div class="tlName"><span>'+e.name+'</span>'+mk+'</div><div class="tlEvs"></div>';
+    var evs=it.querySelector(".tlEvs");
+    e.chain.forEach(function(c,k){
+      /* 矢印は前のカードにくっつけて、行頭に矢印だけが来ないようにする */
+      var g=document.createElement("span"); g.className="tlStep";
+      var s=document.createElement("span"); s.className="tlEv"; s.textContent=c.t; g.appendChild(s);
+      if(k<e.chain.length-1){ var a=document.createElement("span"); a.className="tlArw"; a.textContent="▶"; g.appendChild(a); }
+      evs.appendChild(g);
+    });
+    list.appendChild(it);
+  });
+  if(turn){ list.classList.remove("turn"); void list.offsetWidth; list.classList.add("turn"); }
+  $("chPg").textContent=(chPage+1)+" / "+pages;
+  $("chPrev").disabled=chPage<=0;
+  $("chNextPg").disabled=chPage>=pages-1;
+  $("chPager").style.visibility=pages>1?"visible":"hidden";
+}
+$("chPrev").addEventListener("click",function(){ if(chPage>0){ chPage--; beep(500,0.05); renderChrono(true); } });
+$("chNextPg").addEventListener("click",function(){ chPage++; beep(500,0.05); renderChrono(true); });
+$("btnChrono").addEventListener("click",function(){ openChrono(curVol); });
+$("btnChronoClose").addEventListener("click",function(){ hide(ovChrono); if(curVol) buildSelect(curVol); show(ovSelect); });
 
 /* ---------- 進行 ---------- */
 function startEra(i){
@@ -1229,7 +1565,7 @@ function startEra(i){
     timerId=setInterval(function(){ $("hudTime").textContent=Math.floor((Date.now()-t0)/1000); },250);
   }
   render();
-  hide(ovTitle);hide(ovVolumes);hide(ovSelect);hide(ovClear);hide(ovReview);hide(ovAtk);
+  hide(ovTitle);hide(ovVolumes);hide(ovSelect);hide(ovClear);hide(ovReview);hide(ovAtk);hide(ovWhy);hide(ovChrono);
 }
 
 var ovTitle=$("ovTitle"),ovVolumes=$("ovVolumes"),ovSelect=$("ovSelect"),ovClear=$("ovClear"),ovReview=$("ovReview"),ovAtk=$("ovAtk");
