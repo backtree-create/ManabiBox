@@ -2,11 +2,12 @@
    方針を変更：本体（HTML・JS）は「通信を先に試し、だめなら保存済みを使う」方式にした。
    これによりファイルを更新すれば、次に開いたときに必ず新しい版が表示される。
    通信がないときだけ保存済みで動くので、オフラインで遊べる点は変わらない。 */
-const CACHE = "nihon-isshu-quest-v10";
+const CACHE = "nihon-isshu-quest-v11";
 const ASSETS = [
   "./",
   "./index.html",
   "./questions.js",
+  "../../manabi-juice.js",
   "./manifest.webmanifest",
   "./icon-192-v2.png",
   "./icon-512-v2.png",

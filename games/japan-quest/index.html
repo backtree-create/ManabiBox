@@ -4,6 +4,7 @@
 <script src="../../config.js"></script>
 <script src="../../hub-progress.js"></script>
 <script src="../../manabi-connect.js"></script>
+<script src="../../manabi-juice.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>日本一周クエスト 〜五教科の御朱印〜</title>
@@ -47,7 +48,7 @@ svg{shape-rendering:crispEdges}
 #app{width:100%;max-width:760px;padding:14px 14px 40px;position:relative}
 /* ハブの「もどる」ボタン（左上固定）と見出しが重ならないように（左余白が狭いときだけ） */
 @media (max-width:1009px){
-  #map .bar,#battle .bar,#zukan .bar{padding-top:34px}
+  #map .bar,#battle .bar,#zukan .bar,#goshuin .bar{padding-top:34px}
   #result .win{padding-top:40px}
 }
 .screen{display:none}
@@ -202,6 +203,40 @@ body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
 .zcard svg{width:78%;height:auto}
 .zcard b{display:block;font-size:11px;margin-top:4px;font-weight:400}
 .zcard span{font-size:10px;color:#93a3c2}
+/* ── 御朱印帳（地図の「御朱印」から開く） ── */
+#goshuin.on{animation:gsIn .4s cubic-bezier(.22,1,.36,1)}
+@keyframes gsIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.gs-head{display:flex;align-items:center;justify-content:space-between;gap:8px 14px;flex-wrap:wrap;margin-bottom:4px}
+.gs-title{font-size:18px;line-height:1.4;color:var(--kinari)}
+.gs-title small{font-size:12px;color:var(--kin);letter-spacing:.24em;margin-right:10px}
+.gs-ach{display:flex;gap:6px;flex-wrap:wrap}
+.gs-ach span{font-size:12px;line-height:1.5;border:2px solid #3a4258;color:#6f7c98;padding:2px 8px;
+  transition:border-color .3s cubic-bezier(.4,0,.2,1),color .3s cubic-bezier(.4,0,.2,1)}
+.gs-ach span.on{border-color:var(--shu);color:#f3b2a3}
+.gs-side{font-size:12px;letter-spacing:.3em;color:var(--kin);margin:12px 0 6px}
+.gs-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.gs{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  min-height:150px;padding:8px 4px 8px;text-align:center;font-size:12px;line-height:1.45;
+  border:2px dashed #3a4258;color:#6f7c98;background:var(--ai)}
+.gs .nm{font-size:13px;letter-spacing:.08em}
+.gs .seal{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:24px;border:2px dashed #3a4258;color:#3a4258}
+.gs.got{background:var(--kinari);color:var(--sumi2);border:2px solid var(--kin-d);
+  box-shadow:inset 0 0 0 3px var(--kinari),inset 0 0 0 4px rgba(138,106,36,.55),3px 3px 0 var(--sumi2)}
+.gs.got .seal{border:3px solid var(--shu);color:var(--shu);background:rgba(200,66,46,.08);
+  box-shadow:0 0 0 2px var(--kinari),0 0 0 4px rgba(200,66,46,.75);transform:rotate(-10deg);
+  animation:sealIn .45s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--d,0s)}
+@keyframes sealIn{0%{opacity:0;transform:scale(1.7) rotate(-10deg)}70%{opacity:1;transform:scale(.94) rotate(-10deg)}100%{opacity:1;transform:rotate(-10deg)}}
+.gs.got .nm{color:var(--sumi2)}
+.gs .rec{font-variant-numeric:tabular-nums}
+.gs .rec b{font-weight:400;color:var(--shu);font-size:14px}
+.gs.lock{opacity:.5}
+body.dark .gs.got{border-color:#1d6b4d}
+@media (max-width:560px){.gs-row{grid-template-columns:repeat(3,1fr)}}
+@media (prefers-reduced-motion:reduce){#goshuin.on,.gs.got .seal{animation:none}}
+/* 復習：教科しぼりこみ（復習中だけ表示） */
+select.icobtn{appearance:none;-webkit-appearance:none;padding:5px 26px 5px 10px;
+  background:var(--ai) linear-gradient(135deg,transparent 50%,var(--kin) 50%) no-repeat right 10px center/6px 6px}
 /* iPad 横向きなど背の低い画面：1画面に収める */
 @media (orientation:landscape) and (max-height:860px){
   #app{padding-bottom:14px}
@@ -260,6 +295,7 @@ body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
     <div class="tools">
       <button class="icobtn" id="mReview">復習 0</button>
       <button class="icobtn" id="mSide">裏へ</button>
+      <button class="icobtn" id="mBook">御朱印</button>
       <button class="icobtn" id="mSnd">♪</button>
       <button class="icobtn" id="mFs">⛶</button>
       <button class="icobtn" id="mTitle">タイトル</button>
@@ -285,6 +321,7 @@ body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
   <div class="bar">
     <h2 class="mincho" id="areaTitle">－</h2>
     <div class="tools">
+      <select class="icobtn" id="bRevSel" aria-label="復習する教科" hidden></select>
       <button class="icobtn" id="bSnd">♪</button>
       <button class="icobtn" id="bBack">退く</button>
     </div>
@@ -317,6 +354,24 @@ body.dark h1{text-shadow:4px 4px 0 #1d6b4d}
     <div class="tools"><button class="icobtn" id="zBack">もどる</button></div>
   </div>
   <div class="zgrid" id="zgrid"></div>
+</section>
+
+<!-- 御朱印帳 -->
+<section id="goshuin" class="screen">
+  <div class="bar">
+    <h2 class="mincho">御朱印帳</h2>
+    <div class="tools"><button class="icobtn" id="gBack">もどる</button></div>
+  </div>
+  <div class="win">
+    <div class="gs-head">
+      <div class="gs-title mincho"><small>称号</small><span id="gsTitle">旅の始まり</span></div>
+      <div class="gs-ach" id="gsAch"></div>
+    </div>
+    <div class="gs-side">表 ── 日本列島</div>
+    <div class="gs-row" id="gsLight"></div>
+    <div class="gs-side">裏 ── 闇に染まった日本</div>
+    <div class="gs-row" id="gsDark"></div>
+  </div>
 </section>
 
 <!-- 結果 -->
@@ -635,7 +690,8 @@ const SFX={
  down(){ [520,392,330,262].forEach((f,i)=>tone(f,.2,"triangle",.08,i*0.11)); },
  clear(){ [523,659,784,1047,784,1047].forEach((f,i)=>tone(f,.24,"square",.07,i*0.16)); },
  over(){ [392,349,294,196].forEach((f,i)=>tone(f,.4,"triangle",.07,i*0.26)); },
- sel(){ tone(880,.06,"square",.05,0); }
+ sel(){ tone(880,.06,"square",.05,0); },
+ crit(){ tone(1568,.08,"square",.07,0); tone(2093,.12,"square",.06,.07); tone(98,.22,"square",.1,.02); }
 };
 const THEMES={
  map:[523,0,659,0,784,0,659,0,587,0,698,0,880,0],
@@ -661,6 +717,7 @@ function toggleSound(){
  ["mSnd","bSnd"].forEach(id=>{
    const e=document.getElementById(id); if(e) e.textContent=soundOn?"♪":"♪×";
  });
+ if(window.MJ) MJ.setMuted(!soundOn);
  if(!soundOn){ stopBgm(); return; }
  ac();                                   /* ボタン押下の中で音源を起動（iPad対策） */
  if(cur==="map") bgm("map");
@@ -990,7 +1047,7 @@ function enter(key){
       enemies:[{name:dark?"闇王トウキョウ":"学王トウキョウ",hp:8,boss:true,final:true,art:"tokyo_final"}],
       qs:src.slice(0,Math.min(src.length,24)),qi:0,ei:0,hp:5,   /* pool は学年順に並べ済み */
       omamori:(dark?save.dark.length:save.cleared.length),
-      wrong:[],asked:0,correct:0,dark:dark};
+      wrong:[],asked:0,correct:0,dark:dark,streak:0,crit:0};
    bgm("boss");
  }else{
    const a=AREAS[key],src=pool(a.sub,MODE);
@@ -1001,9 +1058,10 @@ function enter(key){
                {name:dark?darkName(a.zako[2]):a.zako[2],hp:2,art:key+"_z2"},
                {name:dark?darkName(a.boss):a.boss,hp:3,boss:true,art:key+"_boss"}],
       qs:src,qi:0,ei:0,hp:5,omamori:0,   /* pool は学年順に並べ済み */
-      wrong:[],asked:0,correct:0,dark:dark};
+      wrong:[],asked:0,correct:0,dark:dark,streak:0,crit:0};
    bgm("battle");
  }
+ document.getElementById("bRevSel").hidden=true;
  document.getElementById("areaTitle").textContent=
    (dark?"裏 ":"")+S.area.name+" ／ "+S.area.subject;
  show("battle");
@@ -1011,16 +1069,42 @@ function enter(key){
  msg(S.enemies[0].name+" が あらわれた！");
  ask();
 }
-function enterReview(){
- const list=reviewList();
- if(!list.length){ alert("まちがえた問題はまだない。"); return; }
+/* ===== 復習を教科でしぼる ===== */
+const SUBJ_ORDER=["kokugo","sugaku","rika","shakai","eigo"];
+const SUBJ_NAME={kokugo:"国語",sugaku:"数学",rika:"理科",shakai:"社会",eigo:"英語"};
+let SUBJ_OF=null, revFilter="all";
+/* 東京（五教科まぜ）でまちがえた問題も、どの教科の問題かを引き当てる */
+function subjOf(item){
+ if(item.sub!=="tokyo") return item.sub;
+ if(!SUBJ_OF){
+   SUBJ_OF=new Map();
+   if(QD) for(const k of Object.keys(QD)) ["basic","adv"].forEach(m=>((QD[k]||{})[m]||[]).forEach(x=>{ if(!SUBJ_OF.has(x.q)) SUBJ_OF.set(x.q,k); }));
+ }
+ return SUBJ_OF.get(item.q.q)||"tokyo";
+}
+function fillRevSel(list){
+ const sel=document.getElementById("bRevSel"), cnt={all:list.length};
+ list.forEach(it=>{ const k=it.subj; cnt[k]=(cnt[k]||0)+1; });
+ sel.innerHTML='<option value="all">全教科 '+list.length+'</option>'+
+   SUBJ_ORDER.map(k=>'<option value="'+k+'"'+(cnt[k]?"":" disabled")+'>'+SUBJ_NAME[k]+' '+(cnt[k]||0)+'</option>').join("");
+ sel.value=revFilter;
+ sel.hidden=false;
+}
+function enterReview(filter){
+ const all=reviewList();
+ if(!all.length){ alert("まちがえた問題はまだない。"); return; }
+ all.forEach(it=>{ it.subj=subjOf(it); });
+ if(typeof filter==="string") revFilter=filter;
+ let list=revFilter==="all"?all:all.filter(it=>it.subj===revFilter);
+ if(!list.length){ revFilter="all"; list=all; }
  SFX.sel(); stopBgm();
  S={key:"review",review:true,dark:isDark(),
     area:{name:"復習",subject:"まちがえた問題"},
     items:pick(list,list.length),qs:[],qi:0,hp:99,omamori:0,
     wrong:[],asked:0,correct:0,fixed:0};
  S.qs=S.items.map(x=>x.q);
- document.getElementById("areaTitle").textContent="復習 ／ まちがえた問題 "+list.length+"問";
+ fillRevSel(all);
+ document.getElementById("areaTitle").textContent="復習 ／ "+(revFilter==="all"?"まちがえた問題":SUBJ_NAME[revFilter])+" "+list.length+"問";
  document.querySelector(".field").style.display="none";
  show("battle");
  msg("まちがえた問題をもう一度。正解できたら記録から消える。");
@@ -1048,7 +1132,11 @@ function updHud(){
  document.getElementById("hearts").innerHTML=
    Array.from({length:5},(_,i)=>'<i class="'+(i<S.hp?"":"off")+'"></i>').join("");
  document.getElementById("omamori").textContent=S.omamori>0?"お守り ×"+S.omamori+"（まちがい1回を打ち消す）":"";
- document.getElementById("progress").textContent="敵 "+(S.ei+1)+" / "+S.enemies.length+"　正答 "+S.correct+"／"+S.asked;
+ /* 復習中は敵がいないので「何問目か」を出す（以前はここで止まり、問題が出なかった） */
+ document.getElementById("progress").textContent=S.review
+   ?"復習 "+Math.min(S.qi+1,S.qs.length)+" / "+S.qs.length+"　正答 "+S.correct+"／"+S.asked
+   :"敵 "+(S.ei+1)+" / "+S.enemies.length+"　正答 "+S.correct+"／"+S.asked+
+   (S.streak>=2?"　連続 "+S.streak:"");
 }
 function msg(t){ document.getElementById("msg").innerHTML=t; }
 function ask(){
@@ -1092,13 +1180,28 @@ function answer(right,q,btn,order,marks){
  }
  const e=S.enemies[S.ei];
  if(right){
-   S.correct++; btn.classList.add("right"); SFX.ok(); SFX.hit();
-   e.hp--;
+   S.correct++; btn.classList.add("right");
+   /* 5問連続で正解するたびに「会心の一撃」：ダメージ+1 */
+   S.streak=(S.streak||0)+1;
+   const crit=S.streak%5===0;
+   SFX.ok(); if(crit) SFX.crit(); else SFX.hit();
+   e.hp=Math.max(0,e.hp-(crit?2:1));
    renderEnemy();
    const el=document.getElementById("enemy"); el.classList.add("hit");
    setTimeout(()=>el.classList.remove("hit"),320);
-   msg('<span class="ok">せいかい！</span> '+e.name+' に こうげき！<br><span class="note">'+q.e+'</span>');
+   if(crit){
+     S.crit=(S.crit||0)+1;
+     if(window.MJ){
+       MJ.pop(el,"会心！",{color:"#ffd166",size:30});
+       MJ.burst(el,{count:16,color:"#d8a94a",color2:"#f3ede0"});
+       MJ.achieve("japan-quest","kaishin","会心の一撃");
+     }
+     msg('<span class="ok">会心の一撃！</span> '+S.streak+'問連続正解。'+e.name+' に 2ダメージ！<br><span class="note">'+q.e+'</span>');
+   }else{
+     msg('<span class="ok">せいかい！</span> '+e.name+' に こうげき！<br><span class="note">'+q.e+'</span>');
+   }
  }else{
+   S.streak=0;
    btn.classList.add("wrong");
    if(S.omamori>0){
      S.omamori--; SFX.ng();
@@ -1142,6 +1245,7 @@ async function finish(win){
  if(S.review){
    document.querySelector(".field").style.display="";
    SFX.clear(); await persist();
+   if(S.fixed>=5&&window.MJ) MJ.achieve("japan-quest","fukushu","復習の達人");
    document.getElementById("rTitle").textContent="復習おわり";
    document.getElementById("rSub").textContent=
      S.fixed+"問を記録から消した。残り "+save.wrong.length+"問。正答率 "+rate+"％。";
@@ -1163,18 +1267,27 @@ async function finish(win){
    const bk=(dk?"d_":"")+S.key, GM={1:1,2:1.2,3:1.5};
    if(!save.bestG) save.bestG={};
    const b=(save.best[bk]||0)*GM[save.bestG[bk]||3];
-   if(rate*GM[GRADE]>b){ save.best[bk]=rate; save.bestG[bk]=GRADE; }
+   if(!save.bestAt) save.bestAt={};
+   if(rate*GM[GRADE]>b){ save.best[bk]=rate; save.bestG[bk]=GRADE; save.bestAt[bk]=today(); S.newBest=b>0; }
    if(S.key==="tokyo"){ if(dk) save.darkTokyo=true; else save.tokyo=true; }
    await persist();
+   if(window.MJ){
+     if(S.hp>=5) MJ.achieve("japan-quest","mukizu","無傷の旅");
+     if(save.tokyo&&save.cleared.length>=5) MJ.achieve("japan-quest","isshu","日本一周");
+     if(save.darkTokyo&&save.dark.length>=5) MJ.achieve("japan-quest","yoake","夜明けの旅人");
+   }
+   updTitle();
  }else SFX.over();
 
- document.getElementById("rTitle").textContent=
-   win?(S.key==="tokyo"?"日本一周、成る":S.area.name+" 制覇！"):"力つきた…";
+ const rt=document.getElementById("rTitle");
+ rt.textContent=win?(S.key==="tokyo"?"日本一周、成る":S.area.name+" 制覇！"):"力つきた…";
+ if(win&&TITLE_NOW){ const tg=document.createElement("span"); tg.className="gtag"; tg.textContent="称号 "+TITLE_NOW; rt.appendChild(tg); }
+ const extra=(S.crit?"会心 "+S.crit+"回。":"")+(win&&S.newBest?"自己ベスト更新！":"");
  document.getElementById("rSub").textContent=
-   win?(S.key==="tokyo"
+   (win?(S.key==="tokyo"
       ?"学王トウキョウを倒した。五教科の御朱印がすべてそろった。"
       :"「"+S.area.item+"」を手に入れた。正答率 "+rate+"％。")
-     :"HPが0になった。同じ地に、いつでも挑み直せる。正答率 "+rate+"％。";
+     :"HPが0になった。同じ地に、いつでも挑み直せる。正答率 "+rate+"％。")+extra;
 
  const stp=document.getElementById("rStamps");
  stp.innerHTML=ORDER.map(k=>{
@@ -1191,6 +1304,50 @@ async function finish(win){
  }
  show("result");
 }
+
+/* ============ 称号・御朱印帳 ============ */
+const TITLES=[{min:0,name:"旅の始まり"},{min:1,name:"御朱印の旅人"},{min:2,name:"日本一周"},{min:3,name:"夜明けの旅人"}];
+const ACH=[["kaishin","会心の一撃"],["mukizu","無傷の旅"],["isshu","日本一周"],["yoake","夜明けの旅人"],["fukushu","復習の達人"]];
+let TITLE_NOW="";
+function today(){ const d=new Date(); return d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate(); }
+function titleTier(){
+ let t=0;
+ if(save.cleared.length>=1) t=1;
+ if(save.tokyo&&save.cleared.length>=5) t=2;
+ if(save.darkTokyo&&save.dark.length>=5) t=3;
+ return t;
+}
+/* 画面が切り替わるときだけ呼ぶ（称号は下がらない） */
+function updTitle(){
+ if(!window.MJ){ TITLE_NOW=TITLES[titleTier()].name; return; }
+ const was=TITLES.findIndex(d=>d.name===MJ.titleOf("japan-quest"));
+ TITLE_NOW=MJ.title("japan-quest",TITLES,Math.max(titleTier(),was));
+}
+function sealCard(k,dark,i){
+ const tk=k==="tokyo", a=tk?null:AREAS[k];
+ const name=(dark?"裏 ":"")+(tk?"東京":a.name);
+ const got=tk?(dark?save.darkTokyo:save.tokyo):(dark?save.dark:save.cleared).includes(k);
+ const bk=(dark?"d_":"")+k, b=save.best[bk], g=(save.bestG||{})[bk], at=(save.bestAt||{})[bk];
+ const ch=tk?"五":a.subject.charAt(0);
+ const locked=dark&&!darkOpen();
+ if(!got) return '<div class="gs'+(locked?" lock":"")+'"><span class="nm">'+name+'</span><span class="seal">'+(locked?"鍵":"未")+'</span><span>'+(tk?"五教科":a.subject)+'</span></div>';
+ return '<div class="gs got" style="--d:'+(i*0.06).toFixed(2)+'s"><span class="nm">'+name+'</span>'+
+   '<span class="seal mincho">'+ch+'</span>'+
+   '<span class="rec">最高 <b>'+(b!=null?b+"%":"－")+'</b><br>'+(g?GRADE_LABEL[g]+"で達成":"－")+'<br>'+(at||"－")+'</span></div>';
+}
+function drawGoshuin(){
+ updTitle();
+ document.getElementById("gsTitle").textContent=TITLE_NOW||TITLES[0].name;
+ const got=window.MJ?MJ.achievements("japan-quest"):{};
+ document.getElementById("gsAch").innerHTML=ACH.map(([id,l])=>'<span class="'+(got[id]?"on":"")+'">'+(got[id]?"★ ":"")+l+'</span>').join("");
+ const keys=ORDER.concat(["tokyo"]);
+ let n=0;
+ document.getElementById("gsLight").innerHTML=keys.map(k=>sealCard(k,false,n++)).join("");
+ document.getElementById("gsDark").innerHTML=keys.map(k=>sealCard(k,true,n++)).join("");
+}
+document.getElementById("mBook").addEventListener("click",()=>{ SFX.sel(); drawGoshuin(); show("goshuin"); });
+document.getElementById("gBack").addEventListener("click",()=>{ SFX.sel(); show("map"); });
+document.getElementById("bRevSel").addEventListener("change",e=>{ enterReview(e.target.value); });
 
 /* ============ 起動 ============ */
 function drawZukan(){
@@ -1234,7 +1391,7 @@ function toMap(){
 }
 document.getElementById("startBtn").addEventListener("click",()=>{ ac(); toMap(); });
 document.getElementById("mTitle").addEventListener("click",()=>{ stopBgm(); show("title"); });
-document.getElementById("mReview").addEventListener("click",enterReview);
+document.getElementById("mReview").addEventListener("click",()=>enterReview());
 document.getElementById("mSide").addEventListener("click",()=>{
  if(!isDark()&&!darkOpen()){
    alert("裏面は、表面で東京の学王トウキョウを倒すと開かれる。");
@@ -1284,6 +1441,8 @@ if("serviceWorker" in navigator){
  });
 }
 load().then(()=>{
+ if(window.MJ) MJ.setMuted(!soundOn);
+ updTitle();
  buildPix();
  drawMap();
  loadGeo().then(ok=>{
