@@ -81,7 +81,43 @@ function reportToHub(){
 function hubBackLink(){
   const c = window.MANABI_CONFIG;
   if(!(window.LearnHub && c && c.backLink && c.hubUrl)) return "";
-  return `<div class="center" style="margin-top:10px"><a href="${esc(c.hubUrl)}" style="color:var(--dim); font-size:12px">🏫 まなびの基板にもどる</a></div>`;
+  return `<div class="center" style="margin-top:10px"><a href="${esc(c.hubUrl)}" style="color:var(--dim); font-size:12px">◀ まなびの基板にもどる</a></div>`;
+}
+
+/* ---------------- 実績・称号(共通スクリプト manabi-juice.js の MJ) ----------------
+   進行データ(S)を読んで判定するだけ。画面が切りかわるときと、研究成功・ボス撃破・仲間救出のときに呼ぶ。
+   MJ が読み込めない環境(単体配布など)では何もしない。 */
+const TITLE_DEFS = [
+  { min:0,  name:"見習い科学者" },
+  { min:3,  name:"石器の発明家" },
+  { min:7,  name:"金属の技術者" },
+  { min:12, name:"エネルギー博士" },
+  { min:14, name:"科学王国の王" },
+];
+const ACH_DEFS = [
+  { id:"era1",    label:"石器の文明 完成",     short:"石器",     test:()=>eraComplete(1) },
+  { id:"era2",    label:"金属の文明 完成",     short:"金属",     test:()=>eraComplete(2) },
+  { id:"era3",    label:"エネルギーの文明 完成", short:"エネルギー", test:()=>eraComplete(3) },
+  { id:"era4",    label:"情報の文明 完成",     short:"情報",     test:()=>eraComplete(4) },
+  { id:"bosses",  label:"全ボス撃破",          short:"全ボス",   test:()=>AREAS.every(a=>(S.bosses||[]).includes(a.boss)) },
+  { id:"friends", label:"仲間10人救出",        short:"仲間10人", test:()=>S.statues >= 10 },
+  { id:"perfect", label:"ノーミス研究",        short:"ノーミス", test:()=>false },   /* 研究クイズ3問全問正解のときに直接解除 */
+];
+function checkAchievements(){
+  if(!window.MJ || !S) return;
+  try{
+    for(const a of ACH_DEFS) if(a.test()) MJ.achieve(MANABI_APP_KEY, a.id, a.label);
+    MJ.title(MANABI_APP_KEY, TITLE_DEFS, S.techs.length);
+  }catch(e){}
+}
+/* 拠点の記録欄に出す「称号・実績」(画面を開くときに1回だけ読む) */
+function rewardText(){
+  if(!window.MJ) return "";
+  try{
+    const t = MJ.titleOf(MANABI_APP_KEY);
+    const got = ACH_DEFS.filter(a=>MJ.achievements(MANABI_APP_KEY)[a.id]).length;
+    return `${t ? `　|　称号: ${esc(t)}` : ""}　|　実績 ${got}/${ACH_DEFS.length}`;
+  }catch(e){ return ""; }
 }
 
 /* ---------------- 定数 ---------------- */
@@ -438,6 +474,7 @@ function newState(){
     inv:{}, items:{ medicine:0, revival:0 },
     techs:[], hp:PLAYER_BASE.maxhp,
     statues:0, defeated:0,
+    bosses:[],               /* たおしたボスの id(実績「全ボス撃破」用) */
     quiz:{},
     gear:{ weapons:["club"], armors:["cloth"], weapon:"club", armor:"cloth" },
   };
@@ -480,6 +517,7 @@ function loadSave(){
     s.gear  = Object.assign({ weapons:["club"], armors:["cloth"], weapon:"club", armor:"cloth" }, s.gear);
     if(!s.gear.weapons.includes("club")) s.gear.weapons.push("club");
     if(!s.gear.armors.includes("cloth")) s.gear.armors.push("cloth");
+    if(!Array.isArray(s.bosses)) s.bosses = [];
     return s;
   }catch(e){ return null; }
 }
@@ -535,8 +573,16 @@ G.toggleMute = function(){
   muted = !muted;
   try{ localStorage.setItem("sq_muted", muted ? "1" : "0"); }catch(e){}
   if(masterGain) masterGain.gain.value = muted ? 0 : 1;
-  document.getElementById("muteBtn").textContent = muted ? "🔇" : "🔊";
+  applyMuteUI();
 };
+/* 消音ボタンの見た目(絵文字を使わず「音」に取り消し線)。共通演出 MJ の消音も合わせる */
+function applyMuteUI(){
+  const b = document.getElementById("muteBtn");
+  b.classList.toggle("off", muted);
+  b.setAttribute("aria-pressed", String(muted));
+  b.title = muted ? "音:OFF(押すとON)" : "音:ON(押すとOFF)";
+  if(window.MJ) MJ.setMuted(muted);
+}
 
 /* ================= タイトル ================= */
 G.showTitle = function(){
@@ -597,20 +643,23 @@ G.showCamp = function(){
   const st = stats();
   S.hp = st.maxhp;
   save(); updateSide();
+  checkAchievements();
+  const nMiss = reviewList().length;
   const stage = CIV_STAGES[completedEras()];
   showOverlay(`
-    <h2>⛺ 科学王国の拠点 <span class="tag">いまの文明:${esc(stage)}</span>${gradeTag()}</h2>
+    <h2>▲ 科学王国の拠点 <span class="tag">いまの文明:${esc(stage)}</span>${gradeTag()}</h2>
     <p class="dim">拠点にもどると HP は全回復する。研究を進めて文明度100%を目指そう!<br>
-    ⚠ ダンジョンでたおれると<b>持ち物の半分</b>を落としてしまうぞ。準備はしっかりと。</p>
+    ！ ダンジョンでたおれると<b>持ち物の半分</b>を落としてしまうぞ。準備はしっかりと。</p>
     <div class="btns" style="margin-bottom:14px">
-      <button class="primary" onclick="G.showResearch()">🔬 研究する(科学ロードマップ)</button>
-      <button onclick="G.showWorkshop()">⚒ そうび工房</button>
-      <button onclick="G.showAreas()">🗺 ダンジョンへ出発</button>
-      <button onclick="G.showCraft()">🛠 道具づくり</button>
-      <button onclick="G.showRecord()">📖 学習のきろく</button>
-      <button onclick="G.showHelp('camp')">❓ あそびかた</button>
+      <button class="primary" onclick="G.showResearch()">◆ 研究する(科学ロードマップ)</button>
+      <button onclick="G.showWorkshop()">■ そうび工房</button>
+      <button onclick="G.showAreas()">▶ ダンジョンへ出発</button>
+      <button onclick="G.showCraft()">● 道具づくり</button>
+      <button onclick="G.showRecord()">≡ 学習のきろく</button>
+      <button onclick="G.showHelp('camp')">？ あそびかた</button>
+      <button onclick="G.showReview()">◇ ふりかえり研究${nMiss ? ` <span class="missCt">${nMiss}</span>` : ""}</button>
     </div>
-    <p class="dim">研究ずみ: ${S.techs.length} / ${TECHS.length}　|　復活させた人: ${S.statues}人　|　たおした敵: ${S.defeated}体</p>
+    <p class="dim">研究ずみ: ${S.techs.length} / ${TECHS.length}　|　復活させた人: ${S.statues}人　|　たおした敵: ${S.defeated}体${rewardText()}</p>
     <div class="center" style="margin-top:8px"><button onclick="G.confirmReset()">データをはじめから</button></div>
     ${hubBackLink()}`);
 };
@@ -631,10 +680,10 @@ function canAfford(cost){ return Object.entries(cost).every(([k,n]) => (S.inv[k]
 
 G.showResearch = function(){
   const eraNames = {1:"時代1:石器の文明", 2:"時代2:農耕と金属の文明", 3:"時代3:エネルギーの文明", 4:"時代4:情報の文明"};
-  let html = `<h2>🔬 科学ロードマップ <span class="tag">研究には素材と「理科の知識」(クイズ3問中2問正解)が必要</span>${gradeTag()}</h2>`;
+  let html = `<h2>◆ 科学ロードマップ <span class="tag">研究には素材と「理科の知識」(クイズ3問中2問正解)が必要</span>${gradeTag()}</h2>`;
   for(let era=1; era<=4; era++){
     const open = era===1 || eraComplete(era-1);
-    html += `<div class="eraHead">${eraNames[era]} ${open?"":"🔒(前の時代をすべて研究すると解放)"}</div>`;
+    html += `<div class="eraHead">${eraNames[era]} ${open?"":"□(前の時代をすべて研究すると解放)"}</div>`;
     for(const t of TECHS.filter(t=>t.era===era)){
       const done = S.techs.includes(t.id);
       const reqOk = !t.req || S.techs.includes(t.req);
@@ -645,7 +694,7 @@ G.showResearch = function(){
           ? "前の時代の研究をすべて終えると、見えてくるようだ…"
           : `「${esc(reqName)}」を研究すると、見えてくるようだ…`;
         html += `<div class="techCard mystery">
-          <div class="tname">❓ ？？？</div>
+          <div class="tname">□ ？？？</div>
           <div class="tdesc">${hint}</div>
         </div>`;
         continue;
@@ -653,7 +702,7 @@ G.showResearch = function(){
       const afford = canAfford(t.cost);
       const rec = S.quiz[t.id];
       html += `<div class="techCard ${done?"done":""}">
-        <div class="tname">${done?"✅":"🧪"} ${esc(t.name)}<span class="topic">【${esc(techTopic(t))}】</span></div>
+        <div class="tname">${done?"◆":"◇"} ${esc(t.name)}<span class="topic">【${esc(techTopic(t))}】</span></div>
         <div class="tdesc">${esc(t.desc)}</div>
         <div class="tcost">必要な素材: ${costHtml(t.cost)}</div>
         ${rec ? `<div class="tdesc">これまでのクイズ正答: ${rec.correct}/${rec.total}問</div>` : ""}
@@ -673,7 +722,7 @@ function gearCardHtml(kind, id, def){
   /* 解放前は ??? 表記(必要な研究のみ表示) */
   if(!unlocked){
     return `<div class="techCard mystery">
-      <div class="tname">❓ ？？？</div>
+      <div class="tname">□ ？？？</div>
       <div class="tdesc"><span class="ng">要研究:${esc(techName)}</span></div>
     </div>`;
   }
@@ -684,13 +733,13 @@ function gearCardHtml(kind, id, def){
     ? `こうげき+${def.atk}　[${weaponTypeLabel(def)}]`
     : `ぼうぎょ+${def.def}`;
   let action = "";
-  if(equipped)   action = `<span style="color:var(--good)">✔ そうび中</span>`;
+  if(equipped)   action = `<span style="color:var(--good)">● そうび中</span>`;
   else if(owned) action = `<button class="primary" onclick="G.equipGear('${kind}','${id}')">そうびする</button>`;
   else action = canAfford(def.cost||{})
       ? `<button onclick="G.craftGear('${kind}','${id}')">作る</button>`
       : `<button disabled>素材が足りない</button>`;
   return `<div class="techCard ${equipped?"done":""}">
-    <div class="tname">${equipped?"🟢":owned?"⚪":"🔨"} ${esc(def.name)}
+    <div class="tname">${equipped?"●":owned?"○":"△"} ${esc(def.name)}
       <span class="topic">${statText}</span></div>
     <div class="tdesc">${esc(def.desc)}</div>
     ${(!owned && def.cost) ? `<div class="tcost">材料: ${costHtml(def.cost)}</div>` : ""}
@@ -699,7 +748,7 @@ function gearCardHtml(kind, id, def){
 }
 
 G.showWorkshop = function(){
-  let html = `<h2>⚒ そうび工房 <span class="tag">研究した技術で武器・防具を作り、そうびを切りかえよう</span></h2>
+  let html = `<h2>■ そうび工房 <span class="tag">研究した技術で武器・防具を作り、そうびを切りかえよう</span></h2>
     <p class="dim">武器には3タイプある。<b>近接</b>=ぶつかって攻撃 /
     <b>とどく</b>=スペースキーで2マス先まで攻撃 /
     <b>遠距離</b>=スペースキーで向いている方向に矢を放つ(接近戦は威力半分)。</p>
@@ -736,25 +785,75 @@ G.equipGear = function(kind, id){
 };
 
 /* ================= クイズ ================= */
+/* 問題の目じるし「技術:学年:番号」(data.js の並びから引く。ふりかえり研究と再挑戦の判定に使う) */
+function quizRef(t, item){
+  if(Array.isArray(t.quiz)){ const i = t.quiz.indexOf(item); return { g:0, i, key:`${t.id}:0:${i}` }; }
+  for(const g of [1,2,3]){
+    const arr = (t.quiz && (t.quiz[g] || t.quiz[String(g)])) || [];
+    const i = arr.indexOf(item);
+    if(i >= 0) return { g, i, key:`${t.id}:${g}:${i}` };
+  }
+  return { g:0, i:-1, key:`${t.id}:?:${item.q}` };
+}
+/* 前回の挑戦(この画面を開いている間だけ覚える): 技術ごとの出題順とまちがえた問題、問題ごとの選択肢の並び */
+const lastTry = {};
+const lastChoice = {};
+/* 再挑戦: 前回まちがえた問題を先に、残りはシャッフル。前回とまったく同じ順にはしない */
+function orderForRetry(t, picked){
+  const prev = lastTry[t.id];
+  if(!prev || picked.length < 2) return picked;
+  const keyOf = it => quizRef(t, it).key;
+  const same = list => list.map(keyOf).join("|") === prev.keys.join("|");
+  let best = picked;
+  for(let n=0; n<12; n++){
+    const wrong = shuffled(picked.filter(it=>prev.wrong.includes(keyOf(it))));
+    const rest  = shuffled(picked.filter(it=>!prev.wrong.includes(keyOf(it))));
+    best = wrong.concat(rest);
+    if(!same(best)) return best;
+  }
+  /* まちがえた問題が1問だけ・残り1問などで順が決まってしまうときは、後ろの2問を入れかえる */
+  if(best.length >= 2){ const b = best.slice(); [b[b.length-1], b[b.length-2]] = [b[b.length-2], b[b.length-1]]; return b; }
+  return best;
+}
 G.startResearch = function(techId){
   const t = TECHS.find(x=>x.id===techId);
   if(!t || S.techs.includes(t.id) || !canAfford(t.cost)) return;
-  const picked = pickQuiz(t, 3);
+  const picked = orderForRetry(t, pickQuiz(t, 3));
   if(picked.length < 3) return;
-  Q = { tech:t, list:picked, idx:0, correct:0, answered:false };
+  Q = { tech:t, list:picked, idx:0, correct:0, answered:false, wrong:[] };
   if(!S.quiz[t.id]) S.quiz[t.id] = { tries:0, correct:0, total:0 };
   S.quiz[t.id].tries++;
   renderQuizQuestion();
 };
 
+/* 選択肢の並び: 同じ問題が前回と同じ並びにならないようにシャッフル */
+function choiceOrder(key){
+  let order = shuffled([0,1,2,3]);
+  for(let n=0; n<8 && lastChoice[key] === order.join(""); n++) order = shuffled([0,1,2,3]);
+  lastChoice[key] = order.join("");
+  return order;
+}
+/* 正解・不正解の手ごたえ(控えめ)。MJ が無い環境では何もしない */
+function quizJuice(good){
+  if(!window.MJ) return;
+  try{
+    const el = obox.querySelector(".qResult");
+    if(good){
+      MJ.burst(el || obox, { count:14, colors:["#7fd08f","#f0c34e","#ffffff"] });
+      MJ.pop(el || obox, "正解", { color:"#7fd08f", size:22 });
+    } else {
+      MJ.flash("#e05555");
+    }
+  }catch(e){}
+}
 function renderQuizQuestion(){
   const t = Q.tech;
   const item = Q.list[Q.idx];
-  const order = shuffled([0,1,2,3]);
+  const order = choiceOrder(quizRef(t, item).key);
   Q.order = order;
   Q.answered = false;
   showOverlay(`
-    <h2>🧪 研究:${esc(t.name)} <span class="tag">【${esc(techTopic(t))}】</span>${gradeTag()}</h2>
+    <h2>◆ 研究:${esc(t.name)} <span class="tag">【${esc(techTopic(t))}】</span>${gradeTag()}</h2>
     <p class="dim">研究を成功させるには、3問中2問以上の正解が必要だ。</p>
     <div class="qProg">第${Q.idx+1}問 / 3問(いままでの正解:${Q.correct})</div>
     <p style="font-size:15px; line-height:1.9"><b>Q. ${esc(item.q)}</b></p>
@@ -772,46 +871,56 @@ G.answer = function(choiceIdx){
   S.quiz[Q.tech.id].total++;
   if(good) S.quiz[Q.tech.id].correct++;
   save();
+  const ref = quizRef(Q.tech, item);
+  if(!good){
+    Q.wrong.push(ref.key);
+    /* まちがえた問題を「ふりかえり研究」用に端末に貯める */
+    if(window.MJ){ try{ MJ.miss(MANABI_APP_KEY, ref.key, { t:Q.tech.id, g:ref.g, i:ref.i }); }catch(e){} }
+  }
   if(good) SFX.gather();
   const last = (Q.idx === 2);
   showOverlay(`
-    <h2>🧪 研究:${esc(Q.tech.name)}</h2>
+    <h2>◆ 研究:${esc(Q.tech.name)}</h2>
     <div class="qProg">第${Q.idx+1}問 / 3問</div>
     <p><b>Q. ${esc(item.q)}</b></p>
-    <div class="qResult ${good?'good':'bad'}">${good ? "⭕ 正解!" : "❌ ざんねん…　正解は「" + esc(item.a[item.c]) + "」"}</div>
-    <div class="qExpl">💡 ${esc(item.ex)}</div>
+    <div class="qResult ${good?'good':'bad'}">${good ? "○ 正解!" : "× ざんねん…　正解は「" + esc(item.a[item.c]) + "」"}</div>
+    <div class="qExpl">▶ ${esc(item.ex)}</div>
     <div class="center"><button class="primary" onclick="G.quizNext()">${last ? "研究の結果を見る" : "次の問題へ"}</button></div>`);
+  quizJuice(good);
 };
 
 G.quizNext = function(){
   Q.idx++;
   if(Q.idx < 3){ renderQuizQuestion(); return; }
   const t = Q.tech;
+  lastTry[t.id] = { keys:Q.list.map(it=>quizRef(t, it).key), wrong:Q.wrong.slice() };
   if(Q.correct >= 2){
     for(const [k,n] of Object.entries(t.cost)) S.inv[k] -= n;
     S.techs.push(t.id);
     const st = stats();
     S.hp = clamp(S.hp, 0, st.maxhp);
     save(); updateSide();
+    if(Q.correct === 3 && window.MJ){ try{ MJ.achieve(MANABI_APP_KEY, "perfect", "ノーミス研究"); }catch(e){} }
+    checkAchievements();
     if(t.id === "computer"){ showEnding(); return; }
     reportToHub();
     SFX.research();
     let unlockMsg = "";
     for(let i=1; i<AREAS.length; i++){
       if(eraComplete(i) && TECHS.filter(x=>x.era===i).some(x=>x.id===t.id)){
-        unlockMsg = `<p style="color:var(--gold)">🗺 新エリア「${esc(AREAS[i].name)}」が解放された!</p>`;
+        unlockMsg = `<p style="color:var(--gold)">▶ 新エリア「${esc(AREAS[i].name)}」が解放された!</p>`;
       }
     }
     const newGear = [...Object.values(WEAPONS), ...Object.values(ARMORS)].some(g=>g.tech===t.id);
     log(`研究成功!「${t.name}」を手に入れた!`);
     showOverlay(`
-      <h2>🎉 研究成功!</h2>
+      <h2>◆ 研究成功!</h2>
       <p style="font-size:16px; color:var(--gold)">「${esc(t.name)}」を発明した!</p>
       <p>${esc(t.flavor || "文明がまた一歩進んだ!")}</p>
       ${unlockMsg}
       <p class="dim">クイズの成績: ${Q.correct}/3問正解(文明度 ${civPercent()}%)</p>
       <div class="center">
-        ${newGear ? `<button class="primary" onclick="G.showWorkshop()">⚒ そうび工房へ</button>` : ""}
+        ${newGear ? `<button class="primary" onclick="G.showWorkshop()">■ そうび工房へ</button>` : ""}
         <button class="${newGear?"":"primary"}" onclick="G.showResearch()">研究をつづける</button>
         <button onclick="G.showCamp()">拠点にもどる</button>
       </div>`);
@@ -829,9 +938,87 @@ G.quizNext = function(){
   }
 };
 
+/* ================= ふりかえり研究(まちがえた問題の復習) =================
+   研究クイズでまちがえた問題だけを出す。いまの学年設定までの問題に限る。
+   正解すると一覧から消える。ゲームの進行(素材・研究・正答記録)とハブ送信には影響しない。 */
+let R = null;
+function reviewList(){
+  if(!window.MJ) return [];
+  try{
+    return MJ.misses(MANABI_APP_KEY).map(m=>{
+      const d = m.data || {};
+      const t = TECHS.find(x=>x.id===d.t);
+      if(!t) return null;
+      const g = Number(d.g) || 0;
+      if(g > GRADE) return null;
+      const arr = g ? quizPool(t, g) : (Array.isArray(t.quiz) ? t.quiz : []);
+      const item = arr[d.i];
+      if(!item) return null;
+      return { id:m.id, t, g, item };
+    }).filter(Boolean);
+  }catch(e){ return []; }
+}
+G.showReview = function(){
+  const list = reviewList();
+  if(!list.length){
+    showOverlay(`
+      <h2>◇ ふりかえり研究${gradeTag()}</h2>
+      <p>${GRADE_LABEL[GRADE]}までの問題で、まちがえた問題はいまありません。</p>
+      <p class="dim">研究クイズでまちがえた問題が、ここにたまります。正解すると消えます。</p>
+      <div class="center"><button class="primary" onclick="G.showCamp()">拠点にもどる</button></div>`);
+    return;
+  }
+  R = { list:shuffled(list), idx:0, ok:0 };
+  renderReview();
+};
+function reviewHead(it){
+  const topic = (it.t.topics && it.t.topics[it.g]) || it.t.topic || "";
+  return `<h2>◇ ふりかえり研究 <span class="tag">${esc(it.t.name)}【${esc(topic)}】</span>${gradeTag()}</h2>`;
+}
+function renderReview(){
+  const it = R.list[R.idx];
+  const order = choiceOrder(it.id);
+  R.answered = false;
+  showOverlay(`
+    ${reviewHead(it)}
+    <p class="dim">前にまちがえた問題。正解すると、ふりかえりの一覧から消える。</p>
+    <div class="qProg">${R.idx+1}問目 / ${R.list.length}問</div>
+    <p style="font-size:15px; line-height:1.9"><b>Q. ${esc(it.item.q)}</b></p>
+    <div id="qChoices">
+      ${order.map((oi,i)=>`<button class="qChoice" onclick="G.reviewAnswer(${oi})">${["ア","イ","ウ","エ"][i]}. ${esc(it.item.a[oi])}</button>`).join("")}
+    </div>`);
+}
+G.reviewAnswer = function(choiceIdx){
+  if(!R || R.answered) return;
+  R.answered = true;
+  const it = R.list[R.idx];
+  const good = (choiceIdx === it.item.c);
+  if(good){ R.ok++; SFX.gather(); if(window.MJ){ try{ MJ.hit(MANABI_APP_KEY, it.id); }catch(e){} } }
+  const last = (R.idx === R.list.length - 1);
+  showOverlay(`
+    ${reviewHead(it)}
+    <div class="qProg">${R.idx+1}問目 / ${R.list.length}問</div>
+    <p><b>Q. ${esc(it.item.q)}</b></p>
+    <div class="qResult ${good?'good':'bad'}">${good ? "○ 正解! ふりかえりの一覧から消えた" : "× ざんねん…　正解は「" + esc(it.item.a[it.item.c]) + "」"}</div>
+    <div class="qExpl">▶ ${esc(it.item.ex)}</div>
+    <div class="center">
+      ${last ? `<button class="primary" onclick="G.reviewDone()">ふりかえりを終える</button>`
+             : `<button class="primary" onclick="G.reviewNext()">次の問題へ</button>`}
+      ${last ? "" : `<button onclick="G.reviewDone()">ここでやめる</button>`}
+    </div>`);
+  quizJuice(good);
+};
+G.reviewNext = function(){ if(!R) return; R.idx++; renderReview(); };
+G.reviewDone = function(){
+  const n = R ? R.idx + (R.answered ? 1 : 0) : 0, ok = R ? R.ok : 0;
+  R = null;
+  if(n) log(`ふりかえり研究: ${n}問中${ok}問正解。`);
+  G.showCamp();
+};
+
 /* ================= 道具づくり ================= */
 G.showCraft = function(){
-  let html = `<h2>🛠 道具づくり</h2><p class="dim">研究した技術のレシピで道具を作れる。薬草はダンジョンで採取しよう。</p>`;
+  let html = `<h2>● 道具づくり</h2><p class="dim">研究した技術のレシピで道具を作れる。薬草はダンジョンで採取しよう。</p>`;
   let any = false;
   for(const [id,def] of Object.entries(ITEM_DEFS)){
     if(!S.techs.includes(def.tech)) continue;
@@ -866,7 +1053,7 @@ G.showRecord = function(){
   for(const t of TECHS){
     const r = S.quiz[t.id];
     rows += `<tr>
-      <td>${S.techs.includes(t.id)?"✅":"　"} ${esc(t.name)}</td>
+      <td>${S.techs.includes(t.id)?"◆":"　"} ${esc(t.name)}</td>
       <td>${esc(techTopic(t))}</td>
       <td>${r ? `${r.correct}/${r.total}問` : "―"}</td>
     </tr>`;
@@ -874,42 +1061,53 @@ G.showRecord = function(){
   const total = Object.values(S.quiz).reduce((a,r)=>a+r.total,0);
   const correct = Object.values(S.quiz).reduce((a,r)=>a+r.correct,0);
   showOverlay(`
-    <h2>📖 学習のきろく</h2>
+    <h2>≡ 学習のきろく</h2>
     <p class="dim">クイズの正答記録。苦手な単元は教科書やノートで確認してから再挑戦しよう!</p>
     <table class="rec">
       <tr><th>技術</th><th>理科の単元</th><th>正答</th></tr>
       ${rows}
     </table>
-    <p style="margin-top:10px">合計: ${correct} / ${total}問 正解 ${total? "(正答率 " + Math.round(correct/total*100) + "%)" : ""}</p>
+    <p style="margin-top:10px">合計: ${correct} / ${total}問 正解 ${total? "(正答率 " + Math.round(correct/total*100) + "%)" : ""}${achLine()}</p>
     <div class="center"><button onclick="G.showCamp()">もどる</button></div>`);
 };
+
+/* 学習のきろくの「合計」の行の後ろにつける実績(とった実績だけ ◆ で並べる) */
+function achLine(){
+  if(!window.MJ) return "";
+  try{
+    const got = MJ.achievements(MANABI_APP_KEY);
+    const names = ACH_DEFS.filter(a=>got[a.id]).map(a=>"◆" + esc(a.short));
+    /* 1行に収める(行を増やさない)。とった実績は短い名前で並べる */
+    return `<span class="dim" style="white-space:nowrap">　実績 ${names.length}/${ACH_DEFS.length}${names.length ? " " + names.join("") : ""}</span>`;
+  }catch(e){ return ""; }
+}
 
 /* ================= あそびかた ================= */
 G.showHelp = function(from){
   showOverlay(`
-    <h2>❓ あそびかた</h2>
+    <h2>？ あそびかた</h2>
     <p>
-      🗺 <b>ダンジョンで素材あつめ</b>:矢印キーかWASDで移動。素材にぶつかると採取、敵にぶつかると攻撃だ。<br><br>
-      ⚔ <b>武器のタイプ</b>:<b>スペースキー(またはZ)</b>で「向いている方向」に武器攻撃!
+      ▶ <b>ダンジョンで素材あつめ</b>:矢印キーかWASDで移動。素材にぶつかると採取、敵にぶつかると攻撃だ。<br><br>
+      ▶ <b>武器のタイプ</b>:<b>スペースキー(またはZ)</b>で「向いている方向」に武器攻撃!
       やり系は2マス先まで、弓系は遠くまで届く(そのかわり接近戦は威力半分)。
       向いている方向は、キャラの横の黄色い矢印マークでわかるぞ。<br><br>
-      🔬 <b>拠点で研究</b>:集めた素材で新しい技術を研究する。研究には<b style="color:var(--gold)">理科クイズ(3問中2問正解)</b>が必要。まちがえても解説を読んで何度でも挑戦できる。<br><br>
-      ⚒ <b>そうび工房</b>:研究で解放されたレシピから武器・防具を作ってそうびする。そうびは見た目にも反映される!<br><br>
-      📈 <b>文明を進める</b>:同じ時代の技術をすべて研究すると、次の時代とダンジョンが解放される。最終目標は<b style="color:var(--accent)">「コンピュータ」を発明して現代文明に到達</b>すること!<br><br>
-      🗿 <b>石化した人</b>:ダンジョンには石になった人がいる。「復活液」を研究して助けよう。仲間が増えると最大HPが上がる。<br><br>
-      ⚠ <b>注意</b>:HPが0になると拠点に運ばれ、<b style="color:var(--bad)">持ち物(素材・道具)の半分を落としてしまう</b>。薬草や薬を持って、無理せず「拠点にもどる」も大事な作戦だ。
+      ▶ <b>拠点で研究</b>:集めた素材で新しい技術を研究する。研究には<b style="color:var(--gold)">理科クイズ(3問中2問正解)</b>が必要。まちがえても解説を読んで何度でも挑戦できる。<br><br>
+      ▶ <b>そうび工房</b>:研究で解放されたレシピから武器・防具を作ってそうびする。そうびは見た目にも反映される!<br><br>
+      ▶ <b>文明を進める</b>:同じ時代の技術をすべて研究すると、次の時代とダンジョンが解放される。最終目標は<b style="color:var(--accent)">「コンピュータ」を発明して現代文明に到達</b>すること!<br><br>
+      ▶ <b>石化した人</b>:ダンジョンには石になった人がいる。「復活液」を研究して助けよう。仲間が増えると最大HPが上がる。<br><br>
+      ！ <b>注意</b>:HPが0になると拠点に運ばれ、<b style="color:var(--bad)">持ち物(素材・道具)の半分を落としてしまう</b>。薬草や薬を持って、無理せず「拠点にもどる」も大事な作戦だ。
     </p>
     <div class="center"><button class="primary" onclick="${from==='title' ? "G.showTitle()" : "G.showCamp()"}">もどる</button></div>`);
 };
 
 /* ================= エリア選択 ================= */
 G.showAreas = function(){
-  let html = `<h2>🗺 ダンジョンへ出発</h2>`;
+  let html = `<h2>▶ ダンジョンへ出発</h2>`;
   AREAS.forEach((a,i)=>{
     const open = areaUnlocked(i);
     html += `<div class="areaCard ${open?"":"locked"}">
       <div>
-        <div class="aname">${open?"":"🔒"} ${esc(a.name)}(地下${a.floors}階)</div>
+        <div class="aname">${open?"":"□"} ${esc(a.name)}(地下${a.floors}階)</div>
         <div class="adesc">${esc(a.desc)}<br>手に入る素材: ${a.mats.map(m=>esc(MATERIALS[m].name)).join("・")}</div>
       </div>
       ${open ? `<button class="primary" onclick="G.enterDungeon(${i})">出発</button>`
@@ -1122,10 +1320,12 @@ function attackEnemy(e, isBump){
         names.push(`${MATERIALS[k].name}×${n}`);
       }
       D.ents.push({ t:"portal", x:e.x, y:e.y });
+      if(!S.bosses.includes(e.id)) S.bosses.push(e.id);
       SFX.fanfare();
       log(`ボスをたおした!${names.join("・")}を手に入れた!出口の光が現れた!`);
     }
     save();
+    if(e.boss) checkAchievements();
   } else {
     log(`${e.name}に${dmg}ダメージ!(のこりHP ${e.hp})`);
   }
@@ -1152,6 +1352,7 @@ function touchStatue(e){
     SFX.research();
     log(`復活液をかけた…石化した人がよみがえった!仲間になって最大HP+10!(仲間 ${S.statues}人)`);
     save();
+    checkAchievements();
   } else {
     log("石になった人がいる…。「復活液」を研究して作れば助けられそうだ。");
   }
@@ -1211,7 +1412,7 @@ function playerDown(){
   const lostText = lost.length ? lost.join("・") : "なし";
   log(`気を失った…。持ち物の半分を落としてしまった!(${lostText})`);
   showOverlay(`
-    <h2>😵 力つきた…</h2>
+    <h2>× 力つきた…</h2>
     <p>気がつくと拠点で寝かされていた。仲間が運んでくれたようだ。<br>
     しかし、にげる途中で<b style="color:var(--bad)">持ち物の半分</b>を落としてしまった…。</p>
     <p class="dim">失ったもの: ${esc(lostText)}</p>
@@ -1266,7 +1467,7 @@ function showEnding(){
       教室で学ぶ理科は、人類が何万年もかけて積み上げてきた「文明の設計図」そのものなんだ。
     </p>
     <p class="dim">
-      📊 冒険のきろく<br>
+      ≡ 冒険のきろく<br>
       ・研究した技術: ${S.techs.length} / ${TECHS.length}<br>
       ・理科クイズ: ${correct} / ${total}問 正解${total ? "(正答率 " + Math.round(correct/total*100) + "%)" : ""}<br>
       ・復活させた仲間: ${S.statues}人<br>
@@ -1535,7 +1736,7 @@ function drawCamp(t){
   }
   ctx.fillStyle = "#9ab0c4";
   ctx.font = "14px 'MS Gothic', monospace";
-  ctx.fillText("⛺ 科学王国の拠点", 20, 30);
+  ctx.fillText("▲ 科学王国の拠点", 20, 30);
 }
 
 /* 描画ループ */
@@ -1569,7 +1770,7 @@ const IS_TOUCH = (window.matchMedia && matchMedia("(pointer: coarse)").matches) 
 if(IS_TOUCH){
   document.body.classList.add("touch");
   document.getElementById("keyHint").innerHTML =
-    "<b>十字ボタン</b> 移動・ぶつかって攻撃/採取　<b>⚔</b> 向いている方向に武器こうげき　<b>🌿💊</b> 回復";
+    "<b>十字ボタン</b> 移動・ぶつかって攻撃/採取　<b>攻</b> 向いている方向に武器こうげき　<b>草</b><b>薬</b> 回復";
 }
 (function(){
   const DIRS = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] };
@@ -1602,7 +1803,7 @@ if(IS_TOUCH){
 
 /* ---------------- 起動 ---------------- */
 S = newState();
-document.getElementById("muteBtn").textContent = muted ? "🔇" : "🔊";
+applyMuteUI();
 /* まなびの基板が読み込めていれば、ヘッダーに「もどる」ボタンを出す */
 (function(){
   const c = window.MANABI_CONFIG;

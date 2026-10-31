@@ -78,6 +78,7 @@
   @media (hover:hover){
     #muteBtn:hover, #hubBtn:hover{ border-color:var(--accent); color:var(--accent); }
   }
+  #muteBtn.off{ color:var(--dim); text-decoration:line-through; }
   #hubBtn{
     font-size:12px; text-decoration:none;
     display:none; align-items:center; gap:5px; padding:6px 10px;
@@ -91,7 +92,7 @@
     position:relative; flex:0 0 auto; border-radius:4px; overflow:hidden;
     border:2px solid var(--edge); box-shadow:0 6px 0 rgba(0,0,0,.4);
   }
-  canvas{ background:#000; display:block; image-rendering:pixelated; }
+  #cv{ background:#000; display:block; image-rendering:pixelated; }
   #cvWrap::after{
     content:""; position:absolute; inset:0; pointer-events:none;
     background:repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 2px, transparent 2px 4px);
@@ -240,6 +241,15 @@
     border-radius:0 4px 4px 0; padding:12px; font-size:13px; line-height:1.9; margin-bottom:12px;
   }
   .qProg{ font-size:12px; color:var(--dim); margin-bottom:10px; }
+  /* 正誤の表示と解説は、ふわっと出す(1回だけ・軽い opacity+translateY) */
+  .qResult, .qExpl{ animation:qIn .35s cubic-bezier(.22,1,.36,1) both; }
+  .qExpl{ animation-delay:.1s; }
+  @keyframes qIn{ from{ opacity:0; transform:translateY(6px); } }
+  /* ふりかえり研究ボタンの、のこり問題数 */
+  .missCt{ color:var(--gold); }
+  @media (prefers-reduced-motion: reduce){
+    .qResult, .qExpl, #obox, .titleLogo .big{ animation:none; }
+  }
 
   table.rec{ width:100%; border-collapse:collapse; font-size:12px; }
   table.rec th, table.rec td{ border:1px solid var(--edge); padding:6px 9px; text-align:left; }
@@ -288,14 +298,14 @@
   /* 横幅がキャンバス+サイドバーに足りない場合(タブレット横向き等)はキャンバスを縮める */
   @media (max-width:1300px){
     #cvWrap{ flex:1 1 auto; min-width:0; }
-    canvas{ width:100%; height:auto; }
+    #cv{ width:100%; height:auto; }
     aside{ flex:0 0 280px; }
   }
   @media (max-width:1000px){
     #main{ flex-direction:column; }
     #main > div:first-child{ flex-shrink:0; }
     aside{ flex:1 1 auto; }
-    canvas{ width:100%; height:auto; }
+    #cv{ width:100%; height:auto; }
     header{ flex-wrap:wrap; row-gap:8px; padding:8px 10px; }
     header h1{ font-size:18px; }
     #civ{ width:100%; margin-left:0; }
@@ -316,8 +326,8 @@
       <span id="eraName">原始時代</span>
       <div id="civBar"><div id="civFill"></div></div>
       <span id="civPct">0%</span>
-      <button id="muteBtn" onclick="G.toggleMute()" title="音のON/OFF">🔊</button>
-      <a id="hubBtn" title="まなびの基板にもどる">🏫 基板にもどる</a>
+      <button id="muteBtn" onclick="G.toggleMute()" title="音のON/OFF" aria-label="音のON/OFF">音</button>
+      <a id="hubBtn" title="まなびの基板にもどる">◀ 基板にもどる</a>
     </div>
   </header>
   <div id="main">
@@ -331,9 +341,9 @@
             <button class="d" data-dir="down" aria-label="下">▼</button>
           </div>
           <div id="sideBtns">
-            <button id="padHerb" class="mini" aria-label="薬草をつかう">🌿</button>
-            <button id="padMed" class="mini" aria-label="薬をつかう">💊</button>
-            <button id="atkBtn" aria-label="武器こうげき">⚔</button>
+            <button id="padHerb" class="mini" aria-label="薬草をつかう">草</button>
+            <button id="padMed" class="mini" aria-label="薬をつかう">薬</button>
+            <button id="atkBtn" aria-label="武器こうげき">攻</button>
           </div>
         </div>
       </div>
@@ -349,7 +359,7 @@
         <div class="btns" id="dgBtns">
           <button onclick="G.useHerb()">薬草をつかう <span id="herbCt"></span></button>
           <button onclick="G.useMedicine()">薬をつかう <span id="medCt"></span></button>
-          <button onclick="G.leaveDungeon()" id="leaveBtn">⛺ 拠点にもどる</button>
+          <button onclick="G.leaveDungeon()" id="leaveBtn">▲ 拠点にもどる</button>
         </div>
       </div>
       <div class="panel">
@@ -369,6 +379,7 @@
 <!-- まなびの基板(ManabiBox)連携。オフラインや単体配布でも読み込み失敗するだけでゲームは動く -->
 <script src="../../config.js"></script>
 <script src="../../hub-progress.js"></script>
+<script src="../../manabi-juice.js"></script>
 <script src="../../manabi-connect.js"></script>
 <script src="data.js"></script>
 <script src="game.js"></script>
