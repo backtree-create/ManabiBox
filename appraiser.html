@@ -183,6 +183,110 @@ button{font-family:inherit}
   #hintBtn{top:auto;bottom:178px;bottom:calc(178px + env(safe-area-inset-bottom));right:12px}
   #hintToast{top:auto;bottom:236px;bottom:calc(236px + env(safe-area-inset-bottom))}
 }
+
+/* ==================== フェーズ4: 図鑑・拡大鏡・見比べ ==================== */
+.mini-frame{position:relative}
+.pframe{position:relative}
+#pImg,.cmp-frame img{touch-action:none;-webkit-user-drag:none;cursor:zoom-in}
+/* 拡大鏡(1要素。ポインタ操作のときだけ位置を更新し、描画ループには入れない) */
+#loupe{position:fixed;left:0;top:0;width:136px;height:136px;border-radius:50%;z-index:70;pointer-events:none;display:none;
+  border:3px solid var(--gold-light);background-color:#0a0705;background-repeat:no-repeat;
+  box-shadow:0 0 0 2px #3a2c08,0 10px 26px rgba(0,0,0,.6);will-change:transform}
+#loupe.on{display:block}
+.loupe-hint{position:absolute;right:8px;bottom:0;font-size:12px;line-height:14px;letter-spacing:.06em;
+  color:var(--gold-light);opacity:.85;pointer-events:none;transition:opacity .4s cubic-bezier(.4,0,.2,1)}
+.loupe-hint.off{opacity:0}
+/* 図鑑登録の札(クリア画面の額の角に重ねる。行は増やさない) */
+.zk-newtag{position:absolute;right:-10px;top:-12px;z-index:2;display:none;
+  background:var(--wine);color:var(--gold-hi);border:2px solid var(--gold);font-family:var(--serif);
+  font-size:12px;line-height:1.3;letter-spacing:.08em;padding:4px 9px;transform:rotate(4deg);box-shadow:0 3px 0 #0c0806}
+.zk-newtag.on{display:block;animation:zkTag .42s cubic-bezier(.22,1,.36,1) .5s both}
+@keyframes zkTag{from{opacity:0;transform:translateY(-8px) rotate(4deg) scale(1.3)}to{opacity:1;transform:rotate(4deg)}}
+.btn:active,.p-arrow:active{transform:translateY(3px) scale(.97)}
+.p-arrow:disabled{opacity:.3;pointer-events:none}
+
+/* ---- 見比べ ---- */
+#cmpOv,#zukanOv{background:#0c0807}
+#cmpOv .eyebrow,#zukanOv .eyebrow{font-size:12px}
+#cmpOv{z-index:45;overflow:hidden}
+.cmp-in{display:flex;flex-direction:column;align-items:center;width:100%;animation:zkIn .4s cubic-bezier(.22,1,.36,1) both}
+.cmp-title{font-family:var(--serif);font-weight:800;font-size:clamp(1.2rem,3.2vmin,1.6rem);letter-spacing:.14em;margin:4px 0 12px}
+.cmp-row{display:flex;gap:clamp(10px,2.4vw,28px);justify-content:center;align-items:flex-start}
+.cmp-fig{display:flex;flex-direction:column;align-items:center;gap:8px;margin:0}
+.cmp-fig figcaption{font-family:var(--serif);font-size:.9rem;letter-spacing:.14em;padding:3px 14px;border:2px solid}
+.cmp-fig figcaption.real{color:var(--gold-light);border-color:var(--gold)}
+.cmp-fig figcaption.fake{color:#ff9a8c;border-color:var(--danger)}
+.cmp-frame{background:#0a0705;padding:8px;border:5px solid transparent;
+  border-image:linear-gradient(135deg,#8a6d15,#f2dc9b 28%,#a8842a 55%,#f0d98f 80%,#8a6d15) 1;
+  box-shadow:0 12px 30px rgba(0,0,0,.6)}
+.cmp-frame img{display:block;width:min(42vw,400px);height:min(52vh,52dvh,460px);object-fit:contain}
+.cmp-note{margin-top:12px;width:min(92vw,720px);font-size:.88rem;line-height:1.8;text-align:center;
+  background:rgba(10,7,6,.6);border-top:1px solid rgba(201,162,39,.5);border-bottom:1px solid rgba(201,162,39,.5);padding:8px 14px}
+.cmp-note b{color:var(--gold-light)}
+#cmpOv .p-nav{margin-top:12px}
+
+/* ---- 鑑定図鑑 ---- */
+#zukanOv{z-index:45;overflow:hidden;padding:14px 16px calc(14px + env(safe-area-inset-bottom))}
+#zukanOv::before,#zukanOv::after{display:none}
+.zk-wrap{position:relative;width:min(96vw,1120px);height:100%;display:flex;flex-direction:column;align-items:stretch;gap:10px;
+  animation:zkIn .42s cubic-bezier(.22,1,.36,1) both}
+@keyframes zkIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.zk-head{text-align:center}
+.zk-title{font-family:var(--serif);font-weight:800;font-size:clamp(1.5rem,4vmin,2.1rem);letter-spacing:.16em;line-height:1.25}
+.zk-stat{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;font-family:var(--serif);font-size:.9rem;letter-spacing:.1em;margin-top:2px}
+.zk-stat b{color:var(--gold-light);font-size:1.02rem}
+#zkClose{position:absolute;right:0;top:0;width:48px;height:48px;font-size:1.3rem}
+.zk-tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.zk-tab{min-height:44px;padding:0 16px;font-family:var(--serif);font-size:.88rem;letter-spacing:.08em;cursor:pointer;
+  background:#1a100d;color:var(--gold-light);border:2px solid rgba(201,162,39,.6);box-shadow:0 3px 0 #0c0806;
+  transition:background-color .25s cubic-bezier(.4,0,.2,1),color .25s cubic-bezier(.4,0,.2,1)}
+.zk-tab small{font-size:.75rem;opacity:.8;margin-left:6px}
+.zk-tab.sel{background:var(--gold);color:var(--ink);border-color:#5c460e}
+.zk-tab:active{transform:translateY(2px) scale(.97);box-shadow:0 1px 0 #0c0806}
+.zk-body{position:relative;flex:1;min-height:0}
+.zk-grid{position:absolute;inset:0;display:grid;gap:10px;grid-template-columns:repeat(var(--zc,4),minmax(0,1fr));grid-template-rows:repeat(var(--zr,2),minmax(0,1fr))}
+.zk-grid.turn{animation:zkFade .3s cubic-bezier(.4,0,.2,1)}
+@keyframes zkFade{from{opacity:0}to{opacity:1}}
+.zk-card{display:flex;flex-direction:column;min-height:0;padding:8px;gap:4px;cursor:pointer;text-align:center;font-family:var(--sans);color:var(--parchment);
+  background:linear-gradient(180deg,rgba(46,20,23,.85),rgba(24,12,13,.85));border:2px solid rgba(201,162,39,.55);
+  transition:transform .2s cubic-bezier(.4,0,.2,1),border-color .2s cubic-bezier(.4,0,.2,1)}
+.zk-card:active{transform:scale(.97)}
+@media(hover:hover){.zk-card.on:hover{border-color:var(--gold-hi);transform:scale(1.03)}}
+.zk-card.off{cursor:default;background:rgba(20,14,11,.7);border-style:dashed;border-color:rgba(201,162,39,.3)}
+.zk-th{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#0a0705;border:1px solid rgba(201,162,39,.25);overflow:hidden}
+.zk-th img{width:100%;height:100%;object-fit:contain;display:block}
+.zk-q{font-family:var(--serif);font-size:clamp(1.6rem,5vmin,2.6rem);color:rgba(201,162,39,.45)}
+.zk-ph{font-size:12px;opacity:.7;letter-spacing:.06em;padding:4px;line-height:1.5}
+.zk-no{font-size:12px;color:var(--gold);letter-spacing:.12em;font-family:var(--serif)}
+.zk-nm{font-family:var(--serif);font-size:.86rem;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zk-ar{font-size:.75rem;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zk-pager{display:flex;gap:16px;align-items:center;justify-content:center}
+.zk-pager span{font-family:var(--serif);font-size:.95rem;letter-spacing:.12em;min-width:5em;text-align:center}
+/* 図鑑の詳細 */
+.zk-detail{position:absolute;inset:0;display:none;gap:18px;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:stretch}
+.zk-detail.open{display:grid;animation:zkIn .38s cubic-bezier(.22,1,.36,1) both}
+.zk-dimg{min-height:0;display:flex;align-items:center;justify-content:center;background:#0a0705;padding:10px;border:6px solid transparent;
+  border-image:linear-gradient(135deg,#8a6d15,#f2dc9b 28%,#a8842a 55%,#f0d98f 80%,#8a6d15) 1}
+.zk-dimg img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.zk-dtext{min-height:0;display:flex;flex-direction:column;justify-content:center;text-align:left;font-size:.9rem;line-height:1.8;
+  background:linear-gradient(180deg,#f5ecd9,#e9dcc2);color:var(--ink);border:3px solid #5a4632;padding:16px 20px}
+.zk-dera{font-family:var(--serif);font-size:.78rem;letter-spacing:.2em;color:#7a1f1f}
+.zk-dname{font-family:var(--serif);font-weight:800;font-size:clamp(1.2rem,3.4vmin,1.6rem);line-height:1.35;margin:2px 0 6px;color:#3a1a12}
+.zk-dl{display:grid;grid-template-columns:4.5em 1fr;gap:0 8px;font-size:.86rem;border-top:1px dashed rgba(36,28,20,.3);padding-top:4px}
+.zk-dl dt{font-weight:700;color:#5a4632}
+.zk-dtext p{margin-top:8px;font-size:.86rem}
+.zk-dtext .trv{border-top:1px dashed rgba(36,28,20,.3);padding-top:6px}
+.zk-dtext .trv b{color:#7a1f1f}
+#zkBack{align-self:flex-start;margin-top:10px}
+@media(orientation:portrait){
+  .zk-detail{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
+}
+@media(max-height:560px){.zk-dtext{font-size:.8rem;line-height:1.6;padding:10px 14px}.zk-dtext p,.zk-dl{font-size:.78rem}}
+@media(max-width:560px){.cmp-frame img{width:44vw;height:min(40vh,40dvh)}.zk-tab{padding:0 10px;font-size:.8rem}}
+@media(prefers-reduced-motion:reduce){
+  .zk-wrap,.cmp-in,.zk-detail.open,.zk-grid.turn,.zk-newtag.on{animation:none}
+  .zk-card,.zk-tab,.loupe-hint{transition:none}
+}
 </style>
 </head>
 <body>
@@ -219,6 +323,7 @@ button{font-family:inherit}
   <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
     <button class="btn" id="startBtn">鑑定を始める</button>
     <button class="btn ghost" id="expertBtn">エキスパート</button>
+    <button class="btn ghost" id="zukanBtn">鑑定図鑑</button>
   </div>
   <div style="margin-top:10px;font-size:.72rem;opacity:.78">エキスパートは、色調の違いだけで見分ける従来ルールの上級モード</div>
 </div>
@@ -240,7 +345,7 @@ button{font-family:inherit}
   <button id="pClose">✕</button>
   <div id="pLot">LOT</div>
   <div id="pLabel" class="gold-text"></div>
-  <div class="pframe"><img id="pImg" alt="鑑定対象の作品"></div>
+  <div class="pframe"><img id="pImg" alt="鑑定対象の作品" draggable="false"><span class="loupe-hint" id="loupeHint">押さえるとルーペ</span></div>
   <div class="p-nav" id="pNav">
     <button class="p-arrow" id="pPrev">‹</button>
     <button class="btn" id="pPick">本物と鑑定する</button>
@@ -268,14 +373,14 @@ button{font-family:inherit}
   <div class="eyebrow">SOLD</div>
   <div class="rank gold-text">落札!</div>
   <div class="card" style="margin-top:14px">
-    <div class="mini-frame"><img id="cImg" alt="落札作品"></div>
+    <div class="mini-frame"><img id="cImg" alt="落札作品"><span class="zk-newtag" id="cNewTag"></span></div>
     『<span id="cName"></span>』<br>
     <span style="font-family:var(--serif);font-size:1.5rem;font-weight:800" class="gold-text" id="cPrice"></span><br>
     <span id="cPts" style="color:var(--gold-light);font-size:1.05rem"></span><br>
     <span style="font-size:.83rem;opacity:.85" id="cBonus"></span>
     <div class="trivia"><b>◆ 鑑定士の豆知識</b><br><span id="cTrivia"></span></div>
   </div>
-  <div style="margin-top:20px"><button class="btn" id="nextBtn">次の依頼へ</button></div>
+  <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center"><button class="btn ghost" id="cmpBtnC">見比べる</button><button class="btn" id="nextBtn">次の依頼へ</button></div>
 </div>
 
 <!-- ゲームオーバー -->
@@ -289,6 +394,7 @@ button{font-family:inherit}
       <b>◆ 見破りのポイント</b><br><span id="goHint"></span></div>
   </div>
   <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+    <button class="btn ghost" id="cmpBtnG">見比べる</button>
     <button class="btn" id="retryBtn">同じ依頼に再挑戦</button>
     <button class="btn ghost" id="reloadBtn">タイトルへ</button>
   </div>
@@ -307,8 +413,55 @@ button{font-family:inherit}
     <span class="rank gold-text" id="finalRank"></span><br>
     <span style="font-size:.83rem;opacity:.85" id="finalComment"></span>
   </div>
-  <div style="margin-top:20px"><button class="btn" id="againBtn">もう一度挑戦する</button></div>
+  <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center"><button class="btn ghost" id="cmpBtnE">見比べる</button><button class="btn" id="againBtn">もう一度挑戦する</button></div>
 </div>
+
+<!-- 見比べ(判定後に本物と贋作を左右に並べる) -->
+<div class="overlay" id="cmpOv">
+  <div class="cmp-in">
+    <div class="eyebrow">COMPARE</div>
+    <div class="cmp-title gold-text">本物と贋作を見比べる</div>
+    <div class="cmp-row">
+      <figure class="cmp-fig"><figcaption class="real" id="cmpACap">本物</figcaption><div class="cmp-frame"><img id="cmpA" alt="本物" draggable="false"></div></figure>
+      <figure class="cmp-fig"><figcaption class="fake" id="cmpBCap">贋作</figcaption><div class="cmp-frame"><img id="cmpB" alt="贋作" draggable="false"></div></figure>
+    </div>
+    <div class="cmp-note" id="cmpNote"></div>
+    <div class="p-nav">
+      <button class="p-arrow" id="cmpPrev" aria-label="前の贋作">‹</button>
+      <button class="btn" id="cmpClose">もどる</button>
+      <button class="p-arrow" id="cmpNext" aria-label="次の贋作">›</button>
+    </div>
+  </div>
+</div>
+
+<!-- 鑑定図鑑 -->
+<div class="overlay" id="zukanOv">
+  <div class="zk-wrap">
+    <div class="zk-head">
+      <div class="eyebrow">CATALOGUE RAISONNE</div>
+      <div class="zk-title gold-text">鑑定図鑑</div>
+      <div class="zk-stat"><span>登録 <b id="zkCount">0</b> / 31</span><span>称号 <b id="zkTitle"></b></span></div>
+      <button class="p-arrow" id="zkClose" aria-label="閉じる">✕</button>
+    </div>
+    <div class="zk-tabs" id="zkTabs"></div>
+    <div class="zk-body">
+      <div class="zk-grid" id="zkGrid"></div>
+      <div class="zk-detail" id="zkDetail">
+        <div class="zk-dimg" id="zkDImgBox"></div>
+        <div class="zk-dtext">
+          <div class="zk-dera" id="zkDEra"></div>
+          <div class="zk-dname" id="zkDName"></div>
+          <dl class="zk-dl"><dt>作者</dt><dd id="zkDArtist"></dd><dt>制作年</dt><dd id="zkDYear"></dd><dt>技法</dt><dd id="zkDMedium"></dd><dt>所蔵</dt><dd id="zkDMuseum"></dd></dl>
+          <p id="zkDStory"></p>
+          <p class="trv"><b>◆ 豆知識</b> <span id="zkDTrivia"></span></p>
+          <button class="btn ghost sm" id="zkBack">一覧へ戻る</button>
+        </div>
+      </div>
+    </div>
+    <div class="zk-pager" id="zkPager"><button class="p-arrow" id="zkPrev" aria-label="前のページ">‹</button><span id="zkPage">1 / 1</span><button class="p-arrow" id="zkNext" aria-label="次のページ">›</button></div>
+  </div>
+</div>
+<div id="loupe" aria-hidden="true"></div>
 
 <div class="stamp" id="stamp"></div>
 <div id="fadeVeil"></div>
@@ -316,6 +469,7 @@ button{font-family:inherit}
 <script src="config.js"></script>
 <script src="hub-progress.js"></script>
 <script src="manabi-connect.js"></script>
+<script src="manabi-juice.js"></script>
 <script src="lib/three/three.r128.min.js"></script>
 <script>
 "use strict";
@@ -1221,7 +1375,7 @@ async function prepareStage(){
       else{trick={...tricks[fi%tricks.length]};adj={...col,trick};}
       fi++;
     }
-    cands.push({real,trick});
+    cands.push({real,trick,adj});
     stageCanvases.push(img?adjustCanvas(img,adj):placeholderCanvas(S.name));
   }
   exhibits.forEach(e=>gallery.remove(e));exhibits=[];paintGroups=[];
@@ -1347,7 +1501,7 @@ function aucTick(){
     const shout=(!expertMode&&cands[pickedIdx].trick)?TRICK_SHOUTS[cands[pickedIdx].trick.t]:"色が本物と違う!";
     setTimeout(()=>{
       addLog("「これは贋作だ!"+shout+"」",true);
-      stampShow("贋作","fake");gavel();
+      stampShow("贋作","fake");gavel();J("flash","#b3362f");
       setTimeout(()=>{
         $("aucUI").classList.remove("on");
         const pk=cands[pickedIdx];
@@ -1386,6 +1540,7 @@ $("hammerBtn").onclick=()=>{
   addLog("―― 落札!!");
   a.price=a.finalPrice;$("priceBoard").textContent=fmtYen(a.price);
   stampShow("真作","real");
+  setTimeout(()=>{J("burst",$("stamp"),{count:20,colors:["#f2dc9b","#c9a227","#ffffff"]});applause();},260);
   setTimeout(()=>{
     total+=a.finalPrice;
     const pts=(stage+1)*1000;
@@ -1398,8 +1553,18 @@ $("hammerBtn").onclick=()=>{
     $("cBonus").textContent=`鑑定時間 ${Math.floor(a.sec)}秒(ボーナス+${Math.round(a.timeBonus*100)}%)`+(usedHint?" / 専門家相談 −30%":" / 独力鑑定ボーナス");
     $("cTrivia").textContent=a.S.trivia;
     mode="result";
-    if(stage===runList.length-1){showEnding();openOv("endOv");}
-    else openOv("clearOv");
+    if(usedHint)runHintUsed=true;
+    const zk=zukanUnlock(a.S);
+    const isLast=stage===runList.length-1;
+    const tag=$("cNewTag");tag.classList.remove("on");
+    if(zk.isNew){
+      if(isLast)J("toast",`図鑑に登録『${a.S.name}』 ${zk.count}/31`,{color:"#4a1f24"});
+      else{tag.textContent=`図鑑に登録 ${zk.count}/31`;void tag.offsetWidth;tag.classList.add("on");}
+    }
+    if(isLast){showEnding();openOv("endOv");}
+    else{openOv("clearOv");J("countUp",$("cPrice"),a.finalPrice,{ms:900,format:n=>fmtYen(n)+" で落札"});}
+    J("record","appraiser","pts",points);
+    if(!bestShown&&runPrevBest>0&&points>runPrevBest){bestShown=true;setTimeout(()=>J("banner","自己ベスト更新",{color:"#8a6d15"}),isLast?1300:500);}
   },1800);
 };
 function showEnding(){
@@ -1412,10 +1577,14 @@ function showEnding(){
   else if(r>.45){rank="頼れる目利き";com="確かな腕前。さらなる高値を目指せ。";}
   else{rank="駆け出し鑑定士";com="真作は見抜けた。次はスピードと独力鑑定で高値を狙おう。";}
   $("finalRank").textContent=rank;$("finalComment").textContent=com;
+  J("countUp",$("finalTotal"),total,{ms:1100,format:fmtYen});
+  J("countUp",$("endPts"),points,{ms:1100,format:n=>`${Math.round(n).toLocaleString()} / 21,000pt`});
+  zukanRunClear();
 }
 
 /* ==================== 画面遷移 ==================== */
 function beginRun(ex){expertMode=ex;closeOv("titleOv");stage=0;total=0;points=0;fakeCount=0;
+  runPrevBest=loadRec().best||0;bestShown=false;runHintUsed=false;
   $("hudPts").textContent="0";
   runList=[...ARTWORKS].sort(()=>Math.random()-.5).slice(0,RUN_LENGTH);
   prepareStage();}
@@ -1429,6 +1598,218 @@ $("retryBtn").onclick=()=>{closeOv("goOv");
   $("fadeVeil").style.opacity=1;setTimeout(()=>{$("fadeVeil").style.opacity=0;prepareStage();},600);};
 $("reloadBtn").onclick=()=>location.reload();
 $("againBtn").onclick=()=>location.reload();
+
+/* ==================== フェーズ4: 演出・図鑑・拡大鏡・見比べ ====================
+   どれも画面の切り替え・ボタン・ポインタ操作のときだけ動く。毎フレームの描画ループには入れない。 */
+function J(f,...a){try{if(window.MJ&&typeof MJ[f]==="function")return MJ[f](...a);}catch(e){}}
+let runPrevBest=0,bestShown=false,runHintUsed=false;
+
+/* ---- 拍手(短いノイズを何度か。既存の木槌と同じ AudioContext を使う) ---- */
+function applause(){
+  try{
+    const ac=gavel.ac||(gavel.ac=new (window.AudioContext||window.webkitAudioContext)());
+    if(ac.state==="suspended")ac.resume();
+    if(!applause.buf){
+      const n=Math.floor(ac.sampleRate*.05),b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);
+      for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3);
+      applause.buf=b;
+    }
+    const t0=ac.currentTime+.02,out=ac.createGain();
+    out.gain.setValueAtTime(.55,t0);out.gain.linearRampToValueAtTime(.55,t0+.9);out.gain.exponentialRampToValueAtTime(.001,t0+1.9);
+    out.connect(ac.destination);
+    for(let i=0;i<24;i++){
+      const t=t0+Math.pow(Math.random(),1.4)*1.6;
+      const s=ac.createBufferSource();s.buffer=applause.buf;s.playbackRate.value=.8+Math.random()*.5;
+      const f=ac.createBiquadFilter();f.type="bandpass";f.frequency.value=900+Math.random()*1600;f.Q.value=.9;
+      const g=ac.createGain();g.gain.value=.18+Math.random()*.22;
+      s.connect(f);f.connect(g);g.connect(out);s.start(t);
+    }
+  }catch(e){}
+}
+
+/* ---- 鑑定図鑑の記録(端末に保存。読むのは起動時の1回だけ) ---- */
+const ZK_KEY="manabi-appraiser:zukan";
+const ERAS=[{id:"古典",label:"古典"},{id:"日本",label:"日本"},{id:"近世・近代",label:"近世・近代"},{id:"近代以降・抽象",label:"近代以降"}];
+const ZK_LIST=ERAS.flatMap(e=>ARTWORKS.filter(a=>a.era===e.id)).concat(ARTWORKS.filter(a=>!ERAS.some(e=>e.id===a.era)));
+const ZK_TITLES=[{min:0,name:"駆け出し"},{min:1,name:"目利き"},{min:2,name:"鑑定士"},{min:3,name:"名鑑定士"},{min:4,name:"伝説の鑑定士"}];
+let ZK=(()=>{try{const z=JSON.parse(localStorage.getItem(ZK_KEY));if(z&&z.got)return z;}catch(e){}return{got:{},clear:0,exClear:0};})();
+function zkSave(){try{localStorage.setItem(ZK_KEY,JSON.stringify(ZK));}catch(e){}}
+function zkCount(){return ZK_LIST.filter(a=>ZK.got[a.name]).length;}
+function zkLevel(){const n=zkCount(),ex=(ZK.exClear||0)>0;
+  if(n>=ZK_LIST.length&&ex)return 4; if(n>=20||ex)return 3; if(n>=12)return 2; if(n>=5)return 1; return 0;}
+let zkTitleName=J("title","appraiser",ZK_TITLES,zkLevel())||ZK_TITLES[zkLevel()].name;
+function zkRefreshTitle(){zkTitleName=J("title","appraiser",ZK_TITLES,zkLevel())||ZK_TITLES[zkLevel()].name;}
+function zukanUnlock(art){
+  const g=ZK.got[art.name],isNew=!g;
+  ZK.got[art.name]={n:(g?g.n:0)+1,at:g?g.at:Date.now()};
+  zkSave();
+  const count=zkCount();
+  if(isNew){
+    if(count===1)J("achieve","appraiser","first","はじめての真作落札");
+    if(count>=10)J("achieve","appraiser","zk10","図鑑に10作品");
+    if(count>=ZK_LIST.length)J("achieve","appraiser","zkall","鑑定図鑑コンプリート");
+    if(ERAS.every(e=>ZK_LIST.some(a=>a.era===e.id&&ZK.got[a.name])))J("achieve","appraiser","eras","4つの時代を鑑定");
+    zkRefreshTitle();
+  }
+  return {isNew,count};
+}
+function zukanRunClear(){
+  ZK.clear=(ZK.clear||0)+1;if(expertMode)ZK.exClear=(ZK.exClear||0)+1;zkSave();
+  J("achieve","appraiser","clear","6作品すべて落札");
+  if(fakeCount===0)J("achieve","appraiser","nomiss","贋作をつかまず全作品落札");
+  if(!runHintUsed)J("achieve","appraiser","nohint","専門家に頼らず全作品落札");
+  if(expertMode)J("achieve","appraiser","expert","エキスパートで全作品落札");
+  zkRefreshTitle();
+}
+
+/* ---- 作品画像(読み込みは開いたページの分だけ。失敗時は文字の代替表示) ---- */
+function artThumb(box,art,token){
+  box.innerHTML='<span class="zk-ph">読み込み中</span>';
+  loadArtImage(art).then(img=>{
+    if(token&&token!==zk.token)return;
+    if(img&&img.src){const el=new Image();el.alt=art.name;el.draggable=false;el.decoding="async";
+      el.onerror=()=>{box.innerHTML='<span class="zk-ph">画像を読み込めません</span>';};
+      el.src=img.src;box.innerHTML="";box.appendChild(el);}
+    else box.innerHTML='<span class="zk-ph">画像を読み込めません</span>';
+  });
+}
+
+/* ---- 図鑑の画面 ---- */
+const zk={era:"all",page:0,token:0,cols:4,rows:2};
+function zkLayout(){
+  const w=innerWidth,h=innerHeight;
+  if(w<560){zk.cols=2;zk.rows=3;}
+  else if(w>=h){zk.cols=h<600?5:4;zk.rows=2;}
+  else{zk.cols=3;zk.rows=3;}
+}
+function zkItems(){return zk.era==="all"?ZK_LIST:ZK_LIST.filter(a=>a.era===zk.era);}
+function zkRenderTabs(){
+  const tabs=[{id:"all",label:"すべて"}].concat(ERAS);
+  $("zkTabs").innerHTML="";
+  tabs.forEach(t=>{
+    const list=t.id==="all"?ZK_LIST:ZK_LIST.filter(a=>a.era===t.id);
+    const got=list.filter(a=>ZK.got[a.name]).length;
+    const b=document.createElement("button");b.className="zk-tab"+(zk.era===t.id?" sel":"");b.dataset.era=t.id;
+    b.innerHTML=`${t.label}<small>${got}/${list.length}</small>`;
+    b.onclick=()=>{if(zk.era===t.id)return;zk.era=t.id;zk.page=0;J("sfx","tap");zkRenderTabs();zkRender(true);};
+    $("zkTabs").appendChild(b);
+  });
+}
+function zkRender(turn){
+  zkLayout();
+  const items=zkItems(),per=zk.cols*zk.rows,pages=Math.max(1,Math.ceil(items.length/per));
+  zk.page=Math.max(0,Math.min(pages-1,zk.page));
+  const grid=$("zkGrid");grid.style.setProperty("--zc",zk.cols);grid.style.setProperty("--zr",zk.rows);
+  grid.innerHTML="";zk.token++;
+  const tk=zk.token;
+  items.slice(zk.page*per,zk.page*per+per).forEach(art=>{
+    const no=ZK_LIST.indexOf(art)+1,got=ZK.got[art.name];
+    const c=document.createElement("button");c.className="zk-card "+(got?"on":"off");
+    const th=document.createElement("div");th.className="zk-th";
+    c.innerHTML=`<span class="zk-no">No.${String(no).padStart(2,"0")}</span>`;
+    c.appendChild(th);
+    const nm=document.createElement("div");nm.className="zk-nm";
+    const ar=document.createElement("div");ar.className="zk-ar";
+    if(got){nm.textContent=art.name;ar.textContent=art.artist;artThumb(th,art,tk);c.onclick=()=>zkOpenDetail(art);}
+    else{th.innerHTML='<span class="zk-q">？</span>';nm.textContent="？？？";ar.textContent=(ERAS.find(e=>e.id===art.era)||{label:""}).label;}
+    c.appendChild(nm);c.appendChild(ar);grid.appendChild(c);
+  });
+  $("zkPage").textContent=`${zk.page+1} / ${pages}`;
+  $("zkPrev").disabled=zk.page<=0;$("zkNext").disabled=zk.page>=pages-1;
+  if(turn){grid.classList.remove("turn");void grid.offsetWidth;grid.classList.add("turn");}
+}
+function zkOpenDetail(art){
+  const g=ZK.got[art.name];if(!g)return;
+  J("sfx","page");
+  $("zkDEra").textContent=`${(ERAS.find(e=>e.id===art.era)||{label:art.era}).label}  ◆  落札 ${g.n}回`;
+  $("zkDName").textContent=`『${art.name}』`;
+  $("zkDArtist").textContent=art.artist;$("zkDYear").textContent=art.year;
+  $("zkDMedium").textContent=art.medium;$("zkDMuseum").textContent=art.museum;
+  $("zkDStory").textContent=art.story;$("zkDTrivia").textContent=art.trivia;
+  zk.token++;artThumb($("zkDImgBox"),art,zk.token);
+  $("zkGrid").style.visibility="hidden";$("zkPager").style.visibility="hidden";
+  $("zkDetail").classList.add("open");
+}
+function zkCloseDetail(){
+  $("zkDetail").classList.remove("open");
+  $("zkGrid").style.visibility="";$("zkPager").style.visibility="";
+}
+function zukanOpen(){
+  zk.page=0;zkCloseDetail();
+  $("zkCount").textContent=zkCount();$("zkTitle").textContent=zkTitleName;
+  zkRenderTabs();zkRender(false);openOv("zukanOv");
+}
+$("zukanBtn").onclick=zukanOpen;
+$("zkClose").onclick=()=>{zk.token++;closeOv("zukanOv");};
+$("zkBack").onclick=zkCloseDetail;
+$("zkPrev").onclick=()=>{zk.page--;J("sfx","page");zkRender(true);};
+$("zkNext").onclick=()=>{zk.page++;J("sfx","page");zkRender(true);};
+addEventListener("resize",()=>{if($("zukanOv").classList.contains("open")&&!$("zkDetail").classList.contains("open")){const c=zk.cols,r=zk.rows;zkLayout();if(c!==zk.cols||r!==zk.rows)zkRender(false);}});
+
+/* ---- 拡大鏡(タップ/ドラッグした位置を円形に2倍表示) ---- */
+const loupe=$("loupe"),LOUPE_Z=2;
+let loupeImg=null,loupeId=null;
+function loupeMove(e){
+  const img=loupeImg;if(!img)return;
+  const r=img.getBoundingClientRect(),nw=img.naturalWidth,nh=img.naturalHeight;
+  if(!nw||!nh||!r.width)return;
+  const s=Math.min(r.width/nw,r.height/nh),cw=nw*s,ch=nh*s,cx=r.left+(r.width-cw)/2,cy=r.top+(r.height-ch)/2;
+  const x=Math.max(0,Math.min(cw,e.clientX-cx)),y=Math.max(0,Math.min(ch,e.clientY-cy));
+  const L=loupe.offsetWidth||136;
+  loupe.style.backgroundSize=`${cw*LOUPE_Z}px ${ch*LOUPE_Z}px`;
+  loupe.style.backgroundPosition=`${L/2-x*LOUPE_Z}px ${L/2-y*LOUPE_Z}px`;
+  const up=e.pointerType==="mouse"?0:L*.72;
+  loupe.style.transform=`translate(${Math.round(e.clientX-L/2)}px,${Math.round(e.clientY-L/2-up)}px)`;
+}
+function loupeEnd(e){if(loupeImg&&(!e||e.pointerId===loupeId)){loupeImg=null;loupeId=null;loupe.classList.remove("on");}}
+function attachLoupe(img){
+  img.addEventListener("pointerdown",e=>{
+    if(!img.src||!img.naturalWidth)return;
+    e.preventDefault();
+    loupeImg=img;loupeId=e.pointerId;
+    try{img.setPointerCapture(e.pointerId);}catch(_){}
+    loupe.style.backgroundImage=`url("${img.src}")`;
+    loupe.classList.add("on");loupeMove(e);
+    $("loupeHint").classList.add("off");
+  });
+  img.addEventListener("pointermove",e=>{if(loupeImg===img&&e.pointerId===loupeId)loupeMove(e);});
+  ["pointerup","pointercancel","lostpointercapture"].forEach(ev=>img.addEventListener(ev,loupeEnd));
+}
+[$("pImg"),$("cmpA"),$("cmpB")].forEach(attachLoupe);
+
+/* ---- 見比べ(判定後:本物と贋作を左右に並べ、色調のずれと仕掛けを言葉で示す) ---- */
+const cmp={fakes:[],i:0};
+function pct(v){const d=Math.round((v-1)*100);return (d>0?"+":"")+d+"%";}
+function diffText(c){
+  const a=c.adj||{},out=[];
+  if(a.hue){out.push(`色味が${Math.abs(a.hue)>=20?"大きく":"わずかに"}ずれている(色相 ${a.hue>0?"+":""}${a.hue}°)`);}
+  if(a.sat!==undefined&&a.sat!==1)out.push(a.sat<1?`色がくすんでいる(あざやかさ ${pct(a.sat)})`:`色があざやかすぎる(あざやかさ ${pct(a.sat)})`);
+  if(a.bri!==undefined&&a.bri!==1)out.push(a.bri>1?`明るすぎる(明るさ ${pct(a.bri)})`:`暗い(明るさ ${pct(a.bri)})`);
+  let t=out.length?`<b>色調</b> ${out.join(" / ")}`:"";
+  if(c.trick)t+=(t?"<br>":"")+`<b>仕掛け</b> ${TRICK_NAMES[c.trick.t]}——${TRICK_HINTS[c.trick.t]}`;
+  return t||"違いの記録がありません";
+}
+function cmpSrc(i){try{return stageCanvases[i].toDataURL("image/jpeg",.9);}catch(e){try{return placeholderCanvas(runList[stage].name).toDataURL();}catch(_){return "";}}}
+function cmpShow(){
+  const fi=cmp.fakes[cmp.i];
+  $("cmpB").src=cmpSrc(fi);
+  $("cmpBCap").textContent=`贋作 No.${fi+1}${fi===pickedIdx&&!cands[fi].real?"(出品)":""}`;
+  $("cmpNote").innerHTML=diffText(cands[fi]);
+  const many=cmp.fakes.length>1;
+  $("cmpPrev").style.visibility=many?"":"hidden";$("cmpNext").style.visibility=many?"":"hidden";
+}
+function cmpOpen(){
+  const ri=cands.findIndex(c=>c.real);if(ri<0)return;
+  cmp.fakes=cands.map((c,i)=>c.real?-1:i).filter(i=>i>=0);
+  if(!cmp.fakes.length)return;
+  cmp.i=Math.max(0,cmp.fakes.indexOf(pickedIdx));
+  $("cmpA").src=cmpSrc(ri);$("cmpACap").textContent=`本物 No.${ri+1}`;
+  cmpShow();J("sfx","page");openOv("cmpOv");
+}
+["cmpBtnC","cmpBtnG","cmpBtnE"].forEach(id=>$(id).onclick=cmpOpen);
+$("cmpClose").onclick=()=>{loupeEnd();closeOv("cmpOv");};
+$("cmpPrev").onclick=()=>{cmp.i=(cmp.i-1+cmp.fakes.length)%cmp.fakes.length;cmpShow();};
+$("cmpNext").onclick=()=>{cmp.i=(cmp.i+1)%cmp.fakes.length;cmpShow();};
 
 /* ==================== メインループ ==================== */
 const clock=new THREE.Clock();

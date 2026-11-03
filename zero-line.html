@@ -8,6 +8,7 @@
   <script src="config.js"></script>
   <script src="hub-progress.js"></script>
   <script src="manabi-connect.js"></script>
+  <script src="manabi-juice.js"></script>
   <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@500;600;700&display=swap');
 
@@ -260,6 +261,41 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
 .result-grid strong { color: var(--text); font: 500 22px "IBM Plex Mono", monospace; }
 .new-record { color: var(--green); font: 500 10px "IBM Plex Mono", monospace; letter-spacing: .2em; text-shadow: 0 0 12px rgba(128,255,189,.4); }
 
+/* ---- フェーズ4: ゴースト着地・矢印解説・ゼロの残光・練習・ミス一覧 ---- */
+.ghost, .ghost-band, .miss-arrow { position: absolute; pointer-events: none; opacity: 0; transition: opacity .2s cubic-bezier(.4, 0, .2, 1); }
+.ghost { top: 20px; left: 0; width: 42px; height: 42px; transform: translateX(-50%); border-radius: 50%; border: 2px dashed var(--green); background: rgba(128, 255, 189, .12); }
+.ghost::after { content: ""; position: absolute; inset: 15px; transform: rotate(45deg); background: rgba(128, 255, 189, .55); }
+.ghost-band { top: 26px; height: 30px; border: 1px dashed var(--green); background: rgba(128, 255, 189, .1); }
+.miss-arrow { top: -12px; height: 2px; background: linear-gradient(90deg, var(--red), var(--green)); }
+.miss-arrow::after { content: ""; position: absolute; top: -5px; right: -2px; border: 6px solid transparent; border-right: 0; border-left: 9px solid var(--green); }
+.miss-arrow.to-left { background: linear-gradient(270deg, var(--red), var(--green)); }
+.miss-arrow.to-left::after { right: auto; left: -2px; border-left: 0; border-right: 9px solid var(--green); }
+.ghost.on, .ghost-band.on, .miss-arrow.on { opacity: .9; }
+.hint.is-explain, .app-shell.rank-3 .hint.is-explain { color: #ffd2da; }
+.tick.is-zero.glow::before { animation: zeroGlow .4s cubic-bezier(.4, 0, .2, 1); }
+.tick.is-zero.glow span { animation: zeroGlowText .4s cubic-bezier(.4, 0, .2, 1); }
+@keyframes zeroGlow { 0% { background: var(--cyan); opacity: 1; } 100% { background: #0a2736; } }
+@keyframes zeroGlowText { 0% { color: #fff; } 100% { color: var(--cyan); } }
+.mode-pill { margin-left: 10px; }
+.mode-pill.is-on { border-color: var(--green); color: var(--green); background: rgba(128, 255, 189, .1); box-shadow: none; }
+.reset-button:active, .launch-button:active, .miss-pager button:active { transform: scale(.97); }
+.result-kicker-title { margin-left: 12px; color: #eaf7ff; font: 600 12px "Manrope", sans-serif; letter-spacing: .06em; }
+.result-kicker-title:empty { display: none; }
+.miss-review { margin: -14px 0 22px; text-align: left; animation: reviewIn .4s cubic-bezier(.22, 1, .36, 1) both; }
+.miss-review[hidden] { display: none; }
+@keyframes reviewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.miss-head { display: flex; align-items: center; justify-content: space-between; min-height: 44px; color: #ffb3c0; font: 600 13px "Manrope", sans-serif; }
+.miss-pager { display: flex; align-items: center; gap: 8px; color: #91a6b9; font: 500 12px "IBM Plex Mono", monospace; }
+.miss-pager[hidden] { display: none; }
+.miss-pager button { min-width: 44px; min-height: 44px; padding: 0; border: 1px solid rgba(120, 169, 203, .35); background: rgba(16, 37, 58, .64); color: #b6c9d9; font: 500 12px "IBM Plex Mono", monospace; cursor: pointer; }
+.miss-pager button:disabled { opacity: .35; cursor: default; }
+.miss-table { width: 100%; border-collapse: collapse; font: 500 14px "IBM Plex Mono", monospace; }
+.miss-table th { padding: 0 8px 4px; color: #71869a; font: 500 12px "Manrope", sans-serif; text-align: left; }
+.miss-table td { padding: 5px 8px; border-top: 1px solid var(--line); white-space: nowrap; }
+.miss-table td:nth-child(2) { color: var(--green); }
+.miss-table td:nth-child(3) { color: var(--red); }
+.new-record:not([hidden]) { animation: reviewIn .4s cubic-bezier(.22, 1, .36, 1) both; }
+
 .app-shell.rank-2 .move-instruction { color: #b7c8d6; }
 .app-shell.rank-3 .move-instruction { visibility: hidden; }
 .app-shell.rank-3 .hint { color: #63798d; }
@@ -356,6 +392,9 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
             <div class="zero-beam" id="zeroBeam"></div>
             <div class="ticks" id="ticks"></div>
             <div class="start-marker" id="startMarker"><span>START</span></div>
+            <div class="ghost-band" id="ghostBand" aria-hidden="true"></div>
+            <div class="ghost" id="ghost" aria-hidden="true"></div>
+            <div class="miss-arrow" id="missArrow" aria-hidden="true"></div>
             <div class="core" id="core" aria-hidden="true">
               <span class="core-ring"></span><span class="core-center"></span>
             </div>
@@ -391,6 +430,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
           <span class="grade-row-label">GRADE</span>
           <button class="reset-button grade-pill" type="button" data-grade="1">中1・2</button>
           <button class="reset-button grade-pill" type="button" data-grade="3">中3</button>
+          <button class="reset-button grade-pill mode-pill" id="practicePill" type="button" aria-pressed="false" title="時間無制限・まちがえても続けられる（記録は残らない）">練習</button>
         </div>
         <button class="launch-button" id="startButton" type="button">START ZERO RUSH</button>
         <p class="best-label">HIGH SCORE <strong id="bestScore">0000</strong></p>
@@ -399,12 +439,22 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
 
     <section class="screen-overlay result-screen" id="resultScreen" aria-labelledby="resultTitle" hidden>
       <div class="overlay-panel">
-        <p class="overlay-kicker">RUN COMPLETE</p>
+        <p class="overlay-kicker"><span id="resultKicker">RUN COMPLETE</span><span class="result-kicker-title" id="chainTitle"></span></p>
         <h2 id="resultTitle">ZERO<br><span>RESULT</span></h2>
         <div class="result-grid">
           <div><span>SCORE</span><strong id="finalScore">0000</strong></div>
           <div><span>CLEARED</span><strong id="clearedCount">00</strong></div>
           <div><span>MAX CHAIN</span><strong id="maxCombo">00</strong></div>
+        </div>
+        <div class="miss-review" id="missReview" hidden>
+          <div class="miss-head">
+            <span id="missHead">今回まちがえた式</span>
+            <span class="miss-pager" id="missPager"><button type="button" id="missPrev" aria-label="前のページ">◀</button><span id="missPage">1/1</span><button type="button" id="missNext" aria-label="次のページ">▶</button></span>
+          </div>
+          <table class="miss-table">
+            <thead><tr><th>式</th><th>正解</th><th>あなたの答え</th></tr></thead>
+            <tbody id="missBody"></tbody>
+          </table>
         </div>
         <p class="new-record" id="newRecord" hidden>NEW HIGH SCORE</p>
         <button class="launch-button" id="retryButton" type="button">RETRY</button>
@@ -465,8 +515,24 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     "dragDirection", "stepCount", "feedback", "scorePop", "multiplier", "timerBar",
     "resetButton", "startScreen", "startButton", "bestScore", "resultScreen",
     "finalScore", "clearedCount", "maxCombo", "newRecord", "retryButton",
-    "gradeHud", "gradeHudValue", "gradeRow", "gradeTag"
+    "gradeHud", "gradeHudValue", "gradeRow", "gradeTag",
+    "ghost", "ghostBand", "missArrow", "practicePill", "resultKicker", "chainTitle",
+    "missReview", "missHead", "missPager", "missPrev", "missNext", "missPage", "missBody"
   ].map(id => [id, document.getElementById(id)]));
+
+  /* ---- フェーズ4: 共通演出（manabi-juice.js）。無ければ何もしない ---- */
+  const J = window.MJ || null;
+  const CHAIN_TITLES = [
+    { min: 0, name: "ライン見習い" }, { min: 5, name: "ベクトル使い" },
+    { min: 10, name: "ゼロ・ランナー" }, { min: 20, name: "ゼロラインマスター" }
+  ];
+  const MISS_PAGE = 3;
+  let practiceMode = false;   // 練習（時間無制限・ハブ送信なし）
+  let zeroTick = null;        // 0 の目盛（setLine で控える）
+  let ghostTimer = 0, glowTimer = 0;
+  let missIds = new Set();    // 端末に貯まっている誤答の id（開始時に一度だけ読む）
+  let practiceQueue = [];     // 練習で優先して出す誤答
+  let missPage = 0;
 
   const state = {
     score: 0, combo: 0, maxCombo: 0, cleared: 0, mission: 0, lives: 3,
@@ -474,7 +540,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     kind: "int", expr: "",
     dragging: false, resolved: true, playing: false, crossedZero: false,
     lastProblem: "", frame: 0, lastTick: 0, problemStarted: 0,
-    transitionTimer: 0, audio: null
+    transitionTimer: 0, audio: null, practice: false, missList: []
   };
 
   function r1(n) { return Math.round(n * 10) / 10; }
@@ -531,6 +597,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
       fragment.append(tick);
     }
     el.ticks.append(fragment);
+    zeroTick = el.ticks.querySelector(".is-zero");
     el.numberLine.setAttribute("aria-valuemin", String(line.min));
     el.numberLine.setAttribute("aria-valuemax", String(line.max));
   }
@@ -599,6 +666,11 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     return { kind: "root", line: "tenth", start: 0, move: root.value, target: root.value, key: `r${root.expr}`, expr: root.expr, exact: root.exact };
   }
   function generate() {
+    /* 練習: 端末に貯まった誤答を優先して出す（7割） */
+    if (state.practice && practiceQueue.length && Math.random() < .7) {
+      const i = practiceQueue.findIndex(q => q.key !== state.lastProblem);
+      if (i >= 0) return practiceQueue.splice(i, 1)[0];
+    }
     let p, guard = 0;
     do {
       const kind = pickKind();
@@ -624,6 +696,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     const p = generate();
     setLine(p.line);
     state.lastProblem = p.key;
+    state.problem = p;
     state.kind = p.kind;
     state.expr = p.expr || "";
     state.exact = p.exact;
@@ -649,7 +722,92 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     }
     el.numberLine.setAttribute("aria-disabled", String(state.resolved));
     el.gamePanel.classList.remove("zero-crossed", "hit");
+    el.hint.classList.remove("is-explain");
+    hideGhost();
     renderPosition(false);
+  }
+
+  /* ---- ミス時のゴースト着地と矢印解説 ---- */
+  function shownEquation() {
+    if (state.kind === "abs" || state.kind === "root") return state.expr;
+    return `${el.startValue.textContent} ${el.operator.textContent} ${el.moveValue.textContent}`;
+  }
+  function answerText() { return state.kind === "root" ? `目盛 ${minus(state.target, 1)}` : state.kind === "abs" ? fmt(state.target) : signed(state.target); }
+  function explainText(you) {
+    if (state.kind === "abs") return `${state.expr} は 0 からの距離 → ${fmt(state.target)}`;
+    if (state.kind === "root") {
+      const lo = Math.floor(state.exact);
+      const inside = you >= lo && you <= lo + 1;
+      /* 近似値は正解後に見せる仕様なので、ここでは「どの整数の間か」と向きだけ */
+      return `${state.expr} は ${rootBetween()} の間` + (inside ? `。もう少し${state.exact > you ? "右" : "左"}` : "");
+    }
+    const n = fmt(Math.abs(state.move));
+    const walk = `${signed(state.start)} から${state.move > 0 ? "右" : "左"}へ ${n} → ${signed(state.target)}`;
+    const q = shownEquation();
+    if (el.operator.textContent === "−") return `${q} は ${signed(state.start)} ${state.move > 0 ? "+" : "−"} ${n}。${walk}`;
+    return `${q} は ${walk}`;
+  }
+  function hideGhost() {
+    window.clearTimeout(ghostTimer);
+    el.ghost.classList.remove("on");
+    el.ghostBand.classList.remove("on");
+    el.missArrow.classList.remove("on");
+  }
+  function showGhost(you) {
+    hideGhost();
+    const fromP = percent(you);
+    let toP = null;
+    if (state.kind === "root") {
+      const lo = Math.floor(state.exact);
+      const a = percent(Math.max(line.min, lo)), b = percent(Math.min(line.max, lo + 1));
+      el.ghostBand.style.left = `${a}%`;
+      el.ghostBand.style.width = `${b - a}%`;
+      el.ghostBand.classList.add("on");
+      if (you < lo) toP = a; else if (you > lo + 1) toP = b;
+    } else {
+      toP = percent(state.target);
+      el.ghost.style.left = `${toP}%`;
+      el.ghost.classList.add("on");
+    }
+    if (toP !== null) {
+      el.missArrow.style.left = `${Math.min(fromP, toP)}%`;
+      el.missArrow.style.width = `${Math.abs(toP - fromP)}%`;
+      el.missArrow.classList.toggle("to-left", toP < fromP);
+      el.missArrow.classList.add("on");
+    }
+    ghostTimer = window.setTimeout(hideGhost, 1300);
+  }
+  function glowZero() {
+    if (!zeroTick) return;
+    window.clearTimeout(glowTimer);
+    zeroTick.classList.remove("glow");
+    void zeroTick.offsetWidth;
+    zeroTick.classList.add("glow");
+    glowTimer = window.setTimeout(() => zeroTick && zeroTick.classList.remove("glow"), 420);
+  }
+
+  /* ---- 結果画面: 今回まちがえた式（ページ送り） ---- */
+  function renderMissReview(page) {
+    const list = state.missList;
+    el.missReview.hidden = list.length === 0;
+    if (!list.length) return;
+    const pages = Math.ceil(list.length / MISS_PAGE);
+    missPage = Math.max(0, Math.min(pages - 1, page));
+    el.missHead.textContent = `今回まちがえた式 ${list.length}`;
+    el.missPager.hidden = pages <= 1;
+    el.missPage.textContent = `${missPage + 1}/${pages}`;
+    el.missPrev.disabled = missPage === 0;
+    el.missNext.disabled = missPage >= pages - 1;
+    el.missBody.innerHTML = "";
+    const rows = pages > 1 ? MISS_PAGE : list.length;
+    for (let i = 0; i < rows; i++) {
+      const m = list[missPage * MISS_PAGE + i];
+      const tr = document.createElement("tr");
+      [m ? m.q : " ", m ? m.answer : "", m ? m.you : ""].forEach(text => {
+        const td = document.createElement("td"); td.textContent = text; tr.append(td);
+      });
+      el.missBody.append(tr);
+    }
   }
 
   function renderPosition(announce = true) {
@@ -673,6 +831,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
       void el.zeroBeam.offsetWidth;
       el.zeroBeam.classList.add("pulse");
       el.gamePanel.classList.add("zero-crossed");
+      glowZero();
       tone(620, .12, .035);
       tone(930, .14, .025, .06);
       if (navigator.vibrate) navigator.vibrate(20);
@@ -739,22 +898,47 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
       if (state.combo % 5 === 0) state.time = Math.min(ROUND_SECONDS, state.time + 1.5);
       el.answer.textContent = signed(state.target);
       el.hint.textContent = solvedText();
+      el.hint.classList.remove("is-explain");
       showPoints(points, state.crossedZero ? "  ZERO BONUS" : fast ? "  QUICK" : "");
       showFeedback(true, state.combo >= 3 ? `${state.combo} CHAIN` : "LINE COMPLETE");
       tone(520, .09, .04);
       tone(780, .13, .035, .07);
+      if (J) {
+        J.burst(el.core, { count: 14, colors: ["#65e9ff", "#ffffff", "#80ffbd"] });
+        if (state.combo === 5 || state.combo === 10 || state.combo === 20) {
+          J.pop(el.core, `${state.combo} CHAIN!`, { color: state.combo >= 20 ? "#ffd166" : state.combo >= 10 ? "#80ffbd" : "#65e9ff", size: 22 + state.combo / 2 });
+        }
+        if (missIds.has(state.lastProblem)) { J.hit(APP, state.lastProblem); missIds.delete(state.lastProblem); }
+      }
       updateHud();
       state.transitionTimer = window.setTimeout(() => { if (state.playing) createProblem(); }, 520);
     } else {
-      state.lives -= 1;
+      const you = state.current;
+      if (!state.practice) {
+        state.lives -= 1;
+        state.time = Math.max(0, state.time - 2);
+      }
       state.combo = 0;
-      state.time = Math.max(0, state.time - 2);
       el.gamePanel.classList.remove("hit");
       void el.gamePanel.offsetWidth;
       el.gamePanel.classList.add("hit");
-      showFeedback(false, "CORE LOST  −2.0 SEC");
+      showFeedback(false, state.practice ? "MISS" : "CORE LOST  −2.0 SEC");
       tone(150, .22, .05);
       if (navigator.vibrate) navigator.vibrate([45, 30, 45]);
+      /* ゴースト着地＋矢印＋1行解説（解説は次の問題まで既存のヒント欄に残す） */
+      showGhost(you);
+      el.hint.textContent = explainText(you);
+      el.hint.classList.add("is-explain");
+      const key = state.lastProblem;
+      if (!state.missList.some(m => m.key === key)) {
+        state.missList.push({ key, q: shownEquation(), answer: answerText(), you: state.kind === "root" ? minus(you, 1) : state.kind === "abs" ? fmt(you) : signed(you) });
+      }
+      if (J) {
+        J.flash("rgba(255, 97, 125, .55)");
+        const { kind, line: ln, start, move, target, expr, exact } = state.problem || {};
+        J.miss(APP, key, { kind, line: ln, start, move, target, key, expr, exact, grade: GRADE });
+        missIds.add(key);
+      }
       updateHud();
       if (state.lives <= 0 || state.time <= 0) {
         state.transitionTimer = window.setTimeout(endGame, 650);
@@ -765,7 +949,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
           state.crossedZero = false;
           state.resolved = false;
           el.gamePanel.classList.remove("zero-crossed", "hit");
-          el.hint.textContent = state.rank === 1 ? `もう一度、${targetHint()}` : "同じ式にもう一度挑戦しよう";
+          /* ヒント欄には直前の解説（explainText）を残したまま、同じ式にもう一度 */
           renderPosition(false);
         }, 600);
       }
@@ -796,16 +980,24 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     Object.assign(state, {
       score: 0, combo: 0, maxCombo: 0, cleared: 0, mission: 0, lives: 3,
       time: ROUND_SECONDS, rank: 1, playing: true, resolved: false,
-      dragging: false, lastProblem: "", lastTick: 0
+      dragging: false, lastProblem: "", lastTick: 0,
+      practice: practiceMode, missList: []
     });
+    /* 誤答の記録は画面が切り替わるこのときに一度だけ読む */
+    const stored = J ? J.misses(APP) : [];
+    missIds = new Set(stored.map(m => m.id));
+    const kinds = new Set((MIX[GRADE] || MIX[3]).map(k => k[0]));
+    practiceQueue = state.practice ? stored.map(m => m.data).filter(d => d && d.key && kinds.has(d.kind) && LINES[d.line]) : [];
+    hideGhost();
     el.startScreen.hidden = true;
     el.resultScreen.hidden = true;
-    el.time.textContent = ROUND_SECONDS.toFixed(1);
+    el.time.textContent = state.practice ? "FREE" : ROUND_SECONDS.toFixed(1);
     el.timerBar.style.transform = "scaleX(1)";
     el.time.parentElement.classList.remove("danger");
+    setResetLabel(state.practice ? "END" : "RESET");
     updateHud();
     createProblem();
-    state.frame = requestAnimationFrame(tick);
+    if (!state.practice) state.frame = requestAnimationFrame(tick);
     el.numberLine.focus({ preventScroll: true });
     tone(330, .08, .03);
     tone(660, .16, .03, .08);
@@ -820,17 +1012,39 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     cancelAnimationFrame(state.frame);
     window.clearTimeout(state.transitionTimer);
     el.numberLine.classList.remove("is-dragging");
+    hideGhost();
+    setResetLabel("RESET");
+    const practice = state.practice;
     const previousBest = readBest();
-    const isRecord = state.score > previousBest;
+    const isRecord = !practice && state.score > previousBest;
     if (isRecord) saveBest(state.score);
-    el.finalScore.textContent = pad(state.score);
-    el.clearedCount.textContent = pad(state.cleared, 2);
-    el.maxCombo.textContent = pad(state.maxCombo, 2);
+    el.finalScore.textContent = pad(0);
+    el.clearedCount.textContent = pad(0, 2);
+    el.maxCombo.textContent = pad(0, 2);
+    if (J) {
+      J.countUp(el.finalScore, state.score, { ms: 900, format: n => pad(Math.round(n)) });
+      J.countUp(el.clearedCount, state.cleared, { ms: 700, format: n => pad(Math.round(n), 2) });
+      J.countUp(el.maxCombo, state.maxCombo, { ms: 700, format: n => pad(Math.round(n), 2) });
+    } else {
+      el.finalScore.textContent = pad(state.score);
+      el.clearedCount.textContent = pad(state.cleared, 2);
+      el.maxCombo.textContent = pad(state.maxCombo, 2);
+    }
     el.newRecord.hidden = !isRecord;
-    el.bestScore.textContent = pad(Math.max(previousBest, state.score));
+    el.bestScore.textContent = pad(Math.max(previousBest, state.score * (practice ? 0 : 1)));
+    /* 連鎖称号: 60秒モードの最高連鎖で決める（練習は時間無制限なので数えない） */
+    let chainTitle = J ? (J.titleOf ? J.titleOf(APP) : "") : "";
+    if (J && !practice) {
+      J.record(APP, "chain", state.maxCombo);
+      chainTitle = J.title(APP, CHAIN_TITLES, J.best(APP, "chain") || 0);
+    }
+    el.resultKicker.textContent = practice ? "PRACTICE COMPLETE" : "RUN COMPLETE";
+    el.chainTitle.textContent = chainTitle ? `称号 ${chainTitle}` : "";
+    el.retryButton.textContent = practice ? "BACK TO MENU" : "RETRY";
+    renderMissReview(0);
     el.resultScreen.hidden = false;
     el.retryButton.focus({ preventScroll: true });
-    if (typeof window.manabiReport === "function") {
+    if (!practice && typeof window.manabiReport === "function") {
       window.manabiReport({
         app: APP,
         done: Math.min(20, state.cleared),
@@ -850,7 +1064,7 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     g = normGrade(g);
     GRADE = g;
     if (save) saveGrade(g);
-    el.gradeRow.querySelectorAll(".grade-pill").forEach(b => {
+    el.gradeRow.querySelectorAll(".grade-pill[data-grade]").forEach(b => {
       const on = Number(b.dataset.grade) === g;
       b.classList.toggle("is-on", on);
       b.setAttribute("aria-pressed", String(on));
@@ -861,7 +1075,19 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
     app.classList.toggle("grade-on", g !== 3);
     if (!state.playing) { state.lastProblem = ""; createProblem(true); }
   }
+  function setResetLabel(text) {
+    if (el.resetButton.textContent === text) return;
+    if (!el.resetButton.style.minWidth) el.resetButton.style.minWidth = `${el.resetButton.offsetWidth}px`;
+    el.resetButton.textContent = text;
+  }
+  function applyPractice(on) {
+    practiceMode = on;
+    el.practicePill.classList.toggle("is-on", on);
+    el.practicePill.setAttribute("aria-pressed", String(on));
+    el.startButton.textContent = on ? "START PRACTICE" : "START ZERO RUSH";
+  }
   el.gradeRow.addEventListener("click", event => {
+    if (event.target.closest(".mode-pill")) { applyPractice(!practiceMode); tone(440, .05, .02); return; }
     const button = event.target.closest(".grade-pill");
     if (!button) return;
     applyGrade(Number(button.dataset.grade), true);
@@ -912,14 +1138,19 @@ kbd { display: inline-grid; place-items: center; min-width: 23px; height: 23px; 
   });
 
   el.startButton.addEventListener("click", startGame);
-  el.retryButton.addEventListener("click", startGame);
-  el.resetButton.addEventListener("click", startGame);
+  el.retryButton.addEventListener("click", () => {
+    if (state.practice) { el.resultScreen.hidden = true; el.startScreen.hidden = false; el.startButton.focus({ preventScroll: true }); return; }
+    startGame();
+  });
+  el.resetButton.addEventListener("click", () => { if (state.playing && state.practice) endGame(); else startGame(); });
+  el.missPrev.addEventListener("click", () => { renderMissReview(missPage - 1); tone(440, .04, .02); });
+  el.missNext.addEventListener("click", () => { renderMissReview(missPage + 1); tone(440, .04, .02); });
   window.addEventListener("resize", () => renderPosition(false));
   setLine("int");
   el.bestScore.textContent = pad(readBest());
   applyGrade(GRADE, false);
   updateHud();
-  window.__ZERO = { state, get grade() { return GRADE; }, setGrade: g => applyGrade(g, true), createProblem, evaluate, moveTo, endGame, startGame };
+  window.__ZERO = { state, get grade() { return GRADE; }, setGrade: g => applyGrade(g, true), createProblem, evaluate, moveTo, endGame, startGame, setPractice: applyPractice };
 })();
 
   </script>

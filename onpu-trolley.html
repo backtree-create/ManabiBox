@@ -46,6 +46,7 @@
 <script src="config.js"></script>
 <script src="hub-progress.js"></script>
 <script src="manabi-connect.js"></script>
+<script src="manabi-juice.js"></script>
 </head>
 <body>
 <div id="wrap"><canvas id="game" width="960" height="540"></canvas></div>
@@ -106,6 +107,20 @@ if(save.stages.treble||save.stages.bass||save.stages.mixed){
   ['treble','bass','mixed'].forEach(k=>{ save.stages[lv][k]=save.stages[lv][k]||{best:0,acc:0,stars:0,cleared:false}; });
 });
 save.endless = save.endless||{best:0,score:0};
+/* 坑道の順次解放（中級・上級）: ト音 → ヘ音 → ふかまる → はてなき。段階ごとに save.unlocked[段階][坑道] で持つ。
+   これまでの記録でクリア済み・挑戦済みの坑道とその次の坑道、遊んだことのある はてなき坑道 は開いた状態から始める */
+const ORDER=['treble','bass','mixed','endless'];
+save.unlocked=save.unlocked||{};
+[2,3].forEach(lv=>{
+  const u=save.unlocked[lv]=save.unlocked[lv]||{};
+  u.treble=true;
+  ORDER.forEach((k,i)=>{
+    const rec=(k==='endless')?null:save.stages[lv][k];
+    if(rec&&(rec.cleared||rec.best>0)) u[k]=true;
+    if(rec&&rec.cleared&&ORDER[i+1]) u[ORDER[i+1]]=true;
+  });
+  if((save.endless.best||0)>0) u.endless=true;
+});
 function persist(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }catch(e){} }
 
 /* ================= 楽典ヘルパー ================= */
@@ -113,15 +128,19 @@ const LETTERS=['C','D','E','F','G','A','B'];
 const DOREMI=['ド','レ','ミ','ファ','ソ','ラ','シ'];
 const SEMI={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
 function noteFromIdx(i){ return {letter:LETTERS[((i%7)+7)%7], octave:Math.floor(i/7)}; }
-function noteName(i){
+/* acc: 臨時記号（1=♯ / -1=♭ / 0=なし） */
+function noteName(i,acc){
   const n=noteFromIdx(i);
-  return save.notation==='doremi' ? DOREMI[LETTERS.indexOf(n.letter)] : n.letter;
+  return (save.notation==='doremi' ? DOREMI[LETTERS.indexOf(n.letter)] : n.letter)+(acc>0?'♯':acc<0?'♭':'');
 }
-function noteFreq(i){
+function noteFreq(i,acc){
   const n=noteFromIdx(i);
-  const m=(n.octave+1)*12+SEMI[n.letter];
+  const m=(n.octave+1)*12+SEMI[n.letter]+(acc||0);
   return 440*Math.pow(2,(m-69)/12);
 }
+/* 出題する臨時記号は、白鍵の重なり（ミ♯・シ♯・ファ♭・ド♭）を避ける */
+const SHARP_OK={C:1,D:1,F:1,G:1,A:1}, FLAT_OK={D:1,E:1,G:1,A:1,B:1};
+function accOk(i,acc){ if(!acc) return true; const L=noteFromIdx(i).letter; return acc>0?!!SHARP_OK[L]:!!FLAT_OK[L]; }
 // 五線上の段位置: ト音記号 上線=F5(idx38) / ヘ音記号 上線=A3(idx26)
 const CLEF_TOP={treble:38, bass:26};
 
@@ -160,13 +179,15 @@ function setLevel(lv){ lv=Number(lv); if(lv!==1&&lv!==2&&lv!==3) return; level=l
 function stageOpen(st){ const L=LEVELS[level]; return !L.only || L.only.indexOf(st.key)>=0; }
 /* いまの段階で遊べる記録つき坑道（はてなき以外）のキー */
 function openKeys(){ return STAGES.filter(st=>!st.endless&&stageOpen(st)).map(st=>st.key); }
+/* 順次解放で開いているか（初級は stageOpen だけで決まる。ハブの分母には使わない） */
+function stageUnlocked(st){ if(level===1) return true; const u=save.unlocked[level]; return !!(u&&u[st.key]); }
 /* いまの段階の記録 */
 function recOf(k){ return save.stages[level][k]; }
 /* いまの段階で実際に使う坑道設定（元の STAGES は書きかえない） */
 function stageFor(st){
   const L=LEVELS[level];
   const eff=Object.assign({ledger:(st.key==='mixed'||st.key==='endless')?2:0}, st);
-  if(L.wide && (st.key==='mixed'||st.key==='endless')) Object.assign(eff, L.wide);
+  if(L.wide && (st.key==='mixed'||st.key==='endless')) Object.assign(eff, L.wide, {acc:0.3});   // 上級は約3割で ♯・♭ つき
   if(L.sub[st.key]) eff.sub=L.sub[st.key];
   return eff;
 }
@@ -190,7 +211,8 @@ function auInit(){
   AU.timer=setInterval(schedule,30);
   AU.started=true;
 }
-function setSound(on){ save.sound=on; persist(); if(AU.master) AU.master.gain.value=on?0.55:0; }
+function setSound(on){ save.sound=on; persist(); if(AU.master) AU.master.gain.value=on?0.55:0; if(window.MJ) MJ.setMuted(!on); }
+if(window.MJ) MJ.setMuted(!save.sound);
 function setIntensity(v){ AU.intensity=v; if(AU.lead) AU.lead.gain.setTargetAtTime(v?0.5:0.0, AU.ctx?AU.ctx.currentTime:0, 0.2); }
 function fq(letter,oct){ return 440*Math.pow(2,(((oct+1)*12+SEMI[letter])-69)/12); }
 // コード進行 Am F G Am(walk)
@@ -642,7 +664,35 @@ function drawBassClef(cx,yTop,u){
   ctx.beginPath(); ctx.arc(X(1.55),Y(1.5),u*0.15,0,7); ctx.fill();
   ctx.restore();
 }
-function drawStaffNote(x,y,w,u,clef,idx,inkAlpha){
+/* 臨時記号（♯・♭）を Canvas の線で描く。ax,ay＝記号の中心 */
+function drawAccidental(ax,ay,u,acc){
+  ctx.save();
+  ctx.strokeStyle='#241a10'; ctx.lineCap='butt';
+  if(acc>0){
+    ctx.lineWidth=Math.max(1,u*0.11);
+    ctx.beginPath();
+    ctx.moveTo(ax-u*0.27,ay-u*1.25); ctx.lineTo(ax-u*0.27,ay+u*1.4);
+    ctx.moveTo(ax+u*0.27,ay-u*1.4); ctx.lineTo(ax+u*0.27,ay+u*1.25);
+    ctx.stroke();
+    ctx.lineWidth=u*0.3;
+    ctx.beginPath();
+    ctx.moveTo(ax-u*0.6,ay-u*0.22); ctx.lineTo(ax+u*0.6,ay-u*0.52);
+    ctx.moveTo(ax-u*0.6,ay+u*0.52); ctx.lineTo(ax+u*0.6,ay+u*0.22);
+    ctx.stroke();
+  }else if(acc<0){
+    ctx.lineWidth=Math.max(1,u*0.13); ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(ax-u*0.38,ay-u*2.1); ctx.lineTo(ax-u*0.38,ay+u*0.52); ctx.stroke();
+    ctx.lineWidth=u*0.24;
+    ctx.beginPath();
+    ctx.moveTo(ax-u*0.38,ay-u*0.05);
+    ctx.bezierCurveTo(ax+u*0.05,ay-u*0.62, ax+u*0.78,ay-u*0.42, ax+u*0.5,ay+u*0.02);
+    ctx.lineTo(ax-u*0.38,ay+u*0.52);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+/* acc: 臨時記号 / hl: 線・間の強調の濃さ（0〜1。誤答のとき正解の音符の位置を示す） */
+function drawStaffNote(x,y,w,u,clef,idx,inkAlpha,acc,hl){
   ctx.save(); ctx.globalAlpha=(inkAlpha===undefined)?1:inkAlpha;
   ctx.strokeStyle='#3d2f1e'; ctx.lineWidth=1.6;
   for(let i=0;i<5;i++){
@@ -656,6 +706,21 @@ function drawStaffNote(x,y,w,u,clef,idx,inkAlpha){
   const steps=topIdx-idx;
   if(steps<0){ for(let k=-2;k>=steps;k-=2){ const ly=y+k*u/2; ctx.beginPath(); ctx.moveTo(nx-u*1.15,ly); ctx.lineTo(nx+u*1.15,ly); ctx.stroke(); } }
   if(steps>8){ for(let k=10;k<=steps;k+=2){ const ly=y+k*u/2; ctx.beginPath(); ctx.moveTo(nx-u*1.15,ly); ctx.lineTo(nx+u*1.15,ly); ctx.stroke(); } }
+  if(hl>0){
+    // 下から何本目の線／何番目の間か: 線は色と太さ、間は色の帯（五線の外は音符のまわりだけ）
+    const inStaff=(steps>=0&&steps<=8);
+    const x1=inStaff?x:nx-u*1.15, x2=inStaff?x+w:nx+u*1.15;
+    ctx.save(); ctx.globalAlpha*=hl;
+    if(Math.abs(steps)%2===0){
+      ctx.strokeStyle='#2f6fd6'; ctx.lineWidth=3.4;
+      ctx.beginPath(); ctx.moveTo(x1,stepY); ctx.lineTo(x2,stepY); ctx.stroke();
+    }else{
+      ctx.fillStyle='rgba(47,111,214,0.3)';
+      ctx.fillRect(x1,stepY-u/2+1.2,x2-x1,u-2.4);
+    }
+    ctx.restore();
+  }
+  if(acc) drawAccidental(nx-u*2.1,stepY,u,acc);
   ctx.fillStyle='#241a10';
   ctx.save(); ctx.translate(nx,stepY); ctx.rotate(-0.32);
   ctx.beginPath(); ctx.ellipse(0,0,u*0.68,u*0.5,0,0,7); ctx.fill(); ctx.restore();
@@ -676,7 +741,7 @@ function drawSign(sx,sy,sw,sh,clef,idx,opt){
   ctx.fillStyle='#f2e6c8'; rr(sx+9,sy+9,sw-18,sh-18,6); ctx.fill();
   if(opt.dim){ ctx.globalAlpha=0.45; }
   const u=opt.u||13, staffW=sw-96, staffX=sx+30, staffY=sy+(sh-4*u)/2;
-  drawStaffNote(staffX,staffY,staffW,u,clef,idx);
+  drawStaffNote(staffX,staffY,staffW,u,clef,idx,undefined,opt.acc,opt.hl);
   if(opt.clefName){
     txt(clef==='treble'?'ト音記号':'ヘ音記号', sx+sw-46, sy+18, 12, '#8a7350','center');
   }
@@ -702,8 +767,13 @@ let toast=null;
 let pressFx=null; // タップ時のリップル/押し込みアニメーション
 
 function startStage(stage){
+  if(stage.review){ startReview(); return; }
   if(!stageOpen(stage)) return;   // ロック中の坑道（初級ではト音の坑道のみ）
+  if(!stageUnlocked(stage)) return;   // 順次解放でまだ開いていない坑道
   stage=stageFor(stage);
+  beginRun(stage);
+}
+function beginRun(stage){
   G={stage:stage, endless:!!stage.endless, qIndex:0, asked:0, correct:0, score:0, combo:0,
      maxCombo:0, lives:3, misses:[], phase:'run', phaseT:0, scroll:0, speed:900,
      q:null, zB:0, goalZ:0, shake:0, flash:0, fade:0, sparks:[], lastTarget:-99, done:false};
@@ -711,14 +781,55 @@ function startStage(stage){
   screen='play';
   setIntensity(1);
 }
+/* ================= 復習（まちがえた音符だけ） =================
+   まちがえた音符は MJ.miss に貯める（id＝音名＋音部記号＋高さ）。復習で正解すると MJ.hit で消える。
+   復習はハブに送信しない・坑道の記録にも入れない。 */
+const STAFF_RANGE={treble:[29,39], bass:[17,27]}, MID_RANGE={treble:[26,42], bass:[14,30]}, WIDE_RANGE={treble:[24,44], bass:[12,32]};
+function missId(clef,idx,acc){ return noteFromIdx(idx).letter+(acc>0?'#':acc<0?'b':'')+'-'+clef+'-'+idx; }
+function recordMiss(q){ try{ if(window.MJ) MJ.miss(APP_KEY, missId(q.clef,q.target,q.tAcc), {clef:q.clef, idx:q.target, acc:q.tAcc||0}); }catch(e){} }
+function reviewRange(clef,idx){
+  for(const R of [STAFF_RANGE,MID_RANGE,WIDE_RANGE]){ const r=R[clef]; if(idx>=r[0]&&idx<=r[1]) return r; }
+  return WIDE_RANGE[clef];
+}
+function reviewList(){
+  if(!window.MJ) return [];
+  return MJ.misses(APP_KEY).map(m=>m.data)
+    .filter(d=>d&&CLEF_TOP[d.clef]!==undefined&&typeof d.idx==='number');
+}
+function startReview(){
+  const list=reviewList();
+  if(!list.length){
+    if(window.MJ) MJ.toast('まちがえた音符は もうありません'); else toast={msg:'まちがえた音符は もうありません',t:2};
+    if(screen!=='select') goSelect();
+    return;
+  }
+  for(let i=list.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=list[i]; list[i]=list[j]; list[j]=t; }
+  const queue=list.slice(0,10);
+  const wide=queue.some(m=>reviewRange(m.clef,m.idx)===WIDE_RANGE[m.clef]);
+  beginRun({key:'review', name:'復習の坑道', sub:'', clefs:[], review:true, n:queue.length, time:8,
+    showClefName:true, ledger:wide?3:2});
+  G.queue=queue;
+}
 function pickQuestion(){
   const st=G.stage;
-  const clef=st.clefs[Math.floor(Math.random()*st.clefs.length)];
-  const range=st.range[clef];
-  let target;
+  let clef, range, target, tAcc=0;
   let guard=0;
-  do{ target=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)); guard++; }
-  while(guard<20 && (target===G.lastTarget || LETTERS[((target%7)+7)%7]===LETTERS[((G.lastTarget%7)+7)%7]));
+  if(st.review){
+    const m=G.queue[G.qIndex%G.queue.length];
+    clef=m.clef; target=m.idx; tAcc=accOk(m.idx,m.acc)?(m.acc||0):0;
+    range=reviewRange(clef,target);
+  }else{
+    clef=st.clefs[Math.floor(Math.random()*st.clefs.length)];
+    range=st.range[clef];
+    do{ target=range[0]+Math.floor(Math.random()*(range[1]-range[0]+1)); guard++; }
+    while(guard<20 && (target===G.lastTarget || LETTERS[((target%7)+7)%7]===LETTERS[((G.lastTarget%7)+7)%7]));
+    // 上級の ふかまる・はてなき: 一部の音符に ♯・♭
+    if(st.acc && Math.random()<st.acc){
+      let a=Math.random()<0.5?1:-1;
+      if(!accOk(target,a)) a=-a;
+      if(accOk(target,a)) tAcc=a;
+    }
+  }
   G.lastTarget=target;
   guard=0;
   let other;
@@ -729,12 +840,19 @@ function pickQuestion(){
   }while(guard<30 && (other<range[0]||other>range[1]||other===target));
   if(other<range[0]) other=target+Math.abs(other-target);
   if(other>range[1]) other=target-Math.abs(other-target);
+  // 臨時記号の問題: もう一方は「同じ位置で記号なし」か「近くの音（同じ記号）」
+  let oAcc=0;
+  if(tAcc){
+    if(Math.random()<0.5){ other=target; oAcc=0; }
+    else oAcc=accOk(other,tAcc)?tAcc:0;
+  }
   const side=Math.random()<0.5?0:1;
   let tl;
   if(G.endless) tl=Math.max(3, 7-0.12*G.qIndex);
   else tl=st.time;
-  G.q={clef:clef, target:target, other:other, correctSide:side,
-       timeLimit:tl, timeLeft:tl, chosen:null, wasCorrect:null, zB0:0};
+  G.q={clef:clef, target:target, other:other, tAcc:tAcc, oAcc:oAcc, correctSide:side,
+       timeLimit:tl, timeLeft:tl, chosen:null, wasCorrect:null, zB0:0,
+       hint:posHint(clef,target)+'＝'+noteName(target,tAcc)};
   G.zB=2100;
 }
 function answer(side){
@@ -749,17 +867,44 @@ function answer(side){
     G.correct++; G.combo++; G.maxCombo=Math.max(G.maxCombo,G.combo);
     const bonus=Math.floor(q.timeLeft/q.timeLimit*100);
     G.score+=100+bonus+Math.min(G.combo,10)*10;
-    sfxCorrect(noteFreq(q.target));
+    sfxCorrect(noteFreq(q.target,q.tAcc));
     spawnSparks(true);
+    if(window.MJ){
+      const p=toClient(VPX,H-110);
+      MJ.burst(p,{count:14, colors:['#ffd24d','#fff3c4','#ff9d2e']});
+      if(G.stage.review) MJ.hit(APP_KEY, missId(q.clef,q.target,q.tAcc));
+      if(q.tAcc) MJ.achieve(APP_KEY,'accidental','♯・♭の音符に正解');
+    }
   }else{
     G.combo=0;
-    G.misses.push({clef:q.clef, idx:q.target});
+    G.misses.push({clef:q.clef, idx:q.target, acc:q.tAcc});
+    recordMiss(q);
     if(G.endless) G.lives--;
-    G.flash=1;
+    wrongFlash();
     sfxWrong();
-    setTimeout(()=>{ sfxNote(noteFreq(q.target)); },600);
+    setTimeout(()=>{ sfxNote(noteFreq(q.target,q.tAcc)); },600);
   }
   G.phase='resolve'; G.phaseT=0;
+}
+/* 誤答の赤フラッシュ: 共通の MJ.flash に一本化（ゲーム内の赤い重ね塗りとは重ねない） */
+function wrongFlash(){ if(window.MJ&&!(MJ.reduced&&MJ.reduced())) MJ.flash('#e63946'); else G.flash=1; }
+/* キャンバス上の座標 → 画面の座標（縦持ちの回転にも対応） */
+function toClient(x,y){
+  const r=cv.getBoundingClientRect();
+  if(ROT) return {x:r.left+(1-y/H)*r.width, y:r.top+x/W*r.height};
+  return {x:r.left+x/W*r.width, y:r.top+y/H*r.height};
+}
+/* 正解の音符が「下から何本目の線／何番目の間」か */
+function posHint(clef,idx){
+  const b=idx-(CLEF_TOP[clef]-8);   // 0＝第1線（いちばん下の線）
+  if(b>=0&&b<=8) return (b%2===0)?('下から'+(b/2+1)+'本目の線'):('下から'+((b+1)/2)+'番目の間');
+  if(b<0){
+    if(b%2===0) return '下の加線'+(-b/2)+'本目';
+    return (b===-1)?'五線のすぐ下':('下の加線'+((-b-1)/2)+'本目の下');
+  }
+  const a=b-8;
+  if(a%2===0) return '上の加線'+(a/2)+'本目';
+  return (a===1)?'五線のすぐ上':('上の加線'+((a-1)/2)+'本目の上');
 }
 function spawnSparks(gold){
   for(let i=0;i<26;i++){
@@ -773,24 +918,59 @@ function finishStage(cleared){
   let stars=acc>=90?3:acc>=70?2:1;
   if(!cleared) stars=0;
   const st=G.stage;
-  if(!G.endless){
+  let opened=null;
+  if(st.review){
+    // 復習はきろく・送信なし
+  }else if(!G.endless){
     const rec=recOf(st.key);
     rec.best=Math.max(rec.best,G.score);
     rec.acc=Math.max(rec.acc,acc);
     rec.stars=Math.max(rec.stars,stars);
     if(cleared) rec.cleared=true;
+    // 順次解放: クリアで次の坑道が開く（中級・上級）
+    const nx=ORDER[ORDER.indexOf(st.key)+1];
+    if(cleared && level>=2 && nx && !save.unlocked[level][nx]){ save.unlocked[level][nx]=true; opened=nx; }
   }else{
     save.endless.best=Math.max(save.endless.best,G.correct);
     save.endless.score=Math.max(save.endless.score,G.score);
   }
   persist();
-  sendReport(cleared,acc);
+  if(!st.review) sendReport(cleared,acc);
   G.result={cleared:cleared, acc:acc, stars:stars};
+  if(window.MJ){
+    if(opened) MJ.toast('「'+STAGES[ORDER.indexOf(opened)].name+'」が ひらいた', {color:'#c8781e'});
+    if(st.review){
+      if(cleared&&G.misses.length===0&&G.asked>0) MJ.achieve(APP_KEY,'review-perfect','復習をノーミスで');
+    }else if(G.endless){
+      if(G.correct>=30) MJ.achieve(APP_KEY,'endless-30','はてなき坑道で30問');
+    }else if(cleared){
+      MJ.achieve(APP_KEY,'first-goal','はじめてのゴール');
+      if(G.misses.length===0) MJ.achieve(APP_KEY,'nomiss','ノーミスでゴール');
+      if(allCleared(2)) MJ.achieve(APP_KEY,'all-mid','中級の坑道をすべてクリア');
+      if(allCleared(3)) MJ.achieve(APP_KEY,'all-hard','上級の坑道をすべてクリア');
+    }
+  }
+  refreshMeta();
   screen='result';
   setIntensity(0);
   camX=0;
   if(cleared||G.endless) sfxFanfare();
 }
+/* ================= 称号（坑夫 → 親方 → 名人） =================
+   中級の3坑道をすべてクリアで「親方」、上級の3坑道をすべてクリアで「名人」。
+   称号と復習の数は画面が切りかわるときだけ読み、毎フレームの描画では変数を使う。 */
+const TITLE_DEFS=[{min:0,name:'坑夫'},{min:1,name:'親方'},{min:2,name:'名人'}];
+function allCleared(lv){ return ['treble','bass','mixed'].every(k=>save.stages[lv][k].cleared); }
+function titleValue(){ return allCleared(3)?2:allCleared(2)?1:0; }
+let titleName='', missCount=0;
+function refreshMeta(){
+  try{
+    if(!window.MJ) return;
+    titleName=MJ.title(APP_KEY,TITLE_DEFS,titleValue());
+    missCount=MJ.misses(APP_KEY).length;
+  }catch(e){}
+}
+function goSelect(){ refreshMeta(); screen='select'; }
 /*
   送信仕様:
   - done=いまの段階で遊べる坑道のクリア数 / total=その坑道数（初級1・中級以上3）
@@ -851,11 +1031,12 @@ function update(dt){
       if(q.timeLeft<=0){
         q.timeLeft=0; q.chosen=-1; q.wasCorrect=false; q.zB0=G.zB;
         G.asked++; G.combo=0;
-        G.misses.push({clef:q.clef, idx:q.target});
+        G.misses.push({clef:q.clef, idx:q.target, acc:q.tAcc});
+        recordMiss(q);
         if(G.endless) G.lives--;
-        G.flash=1; G.shake=1;
+        wrongFlash(); G.shake=1;
         sfxWrong();
-        setTimeout(()=>{ sfxNote(noteFreq(G.q?G.q.target:60)); },600);
+        setTimeout(()=>{ sfxNote(G.q?noteFreq(G.q.target,G.q.tAcc):noteFreq(60)); },600);
         G.phase='resolve'; G.phaseT=0;
       }
     }
@@ -956,7 +1137,7 @@ function renderTitle(dt){
   ctx.restore();
   head('〜 ともしびの洞窟 〜',W/2,182,23,'#e8b96a');
   txt('トロッコに乗って 五線譜の音階をおぼえよう!',W/2,226,16,'#d9c9a8');
-  button(W/2-130,268,260,56,'ぼうけんに出発',()=>{ sfxClick(); screen='select'; },{size:22});
+  button(W/2-130,268,260,56,'ぼうけんに出発',()=>{ sfxClick(); goSelect(); },{size:22});
   const nlabel='音名: '+(save.notation==='doremi'?'ドレミ':'C D E');
   button(W/2-225,352,210,42,nlabel,()=>{ save.notation=(save.notation==='doremi')?'abc':'doremi'; persist(); sfxClick(); },{bg:'#4a3a26',border:'#a8905e',size:15});
   const slabel='サウンド: '+(save.sound?'ON':'OFF');
@@ -981,7 +1162,7 @@ function renderSelect(dt){
   const x0=(W-(cw*4+gap*3))/2, y0=120;
   STAGES.forEach((st,i)=>{
     const x=x0+i*(cw+gap);
-    const open=stageOpen(st);
+    const lvOpen=stageOpen(st), open=lvOpen&&stageUnlocked(st);
     ctx.save();
     if(!open) ctx.globalAlpha=0.55;
     ctx.fillStyle='rgba(38,24,14,0.92)';
@@ -1001,7 +1182,8 @@ function renderSelect(dt){
       ctx.fillStyle='rgba(20,12,6,0.9)'; rr(x+30,y0+186,cw-60,40,10); ctx.fill();
       ctx.strokeStyle='#8d7a5c'; ctx.lineWidth=1.5; rr(x+30,y0+186,cw-60,40,10); ctx.stroke();
       head('ロック',tx,y0+200,13,'#d9c9a8');
-      txt('中級で解放',tx,y0+217,11,'#a89272');
+      if(!lvOpen) txt('中級で解放',tx,y0+217,11,'#a89272');
+      else txt(STAGES[i-1].name+'をクリア',tx,y0+217,12,'#a89272');
     }else if(!st.endless){
       const rec=recOf(st.key);
       let stStr=''; for(let k=0;k<3;k++) stStr+=(k<rec.stars?'★':'☆');
@@ -1013,8 +1195,10 @@ function renderSelect(dt){
     ctx.restore();
     if(open) clickables.push({x:x,y:y0,w:cw,h:chh,fn:()=>{ sfxClick(); startStage(st); }});
   });
+  button(W-280,24,120,40,'復習 '+missCount,()=>{ sfxClick(); startReview(); },
+    {bg:'#4a3a26',border:missCount?'#a8905e':'#6b5a40',size:14,color:missCount?'#fff8ec':'#a89272'});
   button(W-150,24,120,40,'タイトルへ',()=>{ sfxClick(); screen='title'; },{bg:'#4a3a26',border:'#a8905e',size:14});
-  txt('段階: '+LEVELS[level].name+'  /  えらんでタップ / クリック',W/2,H-40,14,'#8d7a5c');
+  txt('段階: '+LEVELS[level].name+(titleName?'  /  称号: '+titleName:'')+'  /  えらんでタップ / クリック',W/2,H-40,14,'#8d7a5c');
 }
 /* プレイ */
 function renderPlay(dt){
@@ -1056,20 +1240,23 @@ function drawQuestionUI(t){
   const lX=64, rXx=W-64-swd;
   const lNote=(q.correctSide===0)?q.target:q.other;
   const rNote=(q.correctSide===1)?q.target:q.other;
+  const lAcc=(q.correctSide===0)?q.tAcc:q.oAcc, rAcc=(q.correctSide===1)?q.tAcc:q.oAcc;
+  // 誤答のときだけ、正解の音符の線・間を強調（すぐ浮かび上がって残る）
+  const hl=(q.chosen!==null&&!q.wasCorrect)?Math.min(1,G.phaseT*5):0;
   const revealed=(q.chosen!==null);
   const stName=G.stage.showClefName;
   const su=(G.stage.ledger>=3)?12:13;   // 加線3本のときは少し小さく描いて看板に収める
   drawSign(lX,syy,swd,shh,q.clef,lNote,{
-    clefName:stName, u:su,
-    reveal:revealed?noteName(lNote):null,
+    clefName:stName, u:su, acc:lAcc, hl:(q.correctSide===0)?hl:0,
+    reveal:revealed?noteName(lNote,lAcc):null,
     correct:revealed&&q.correctSide===0,
     dim:revealed&&q.correctSide!==0,
     ring:revealed?(q.correctSide===0?'#59d97a':(q.chosen===0?'#e05545':null)):null,
     glow:(!revealed)?'rgba(255,180,80,0.25)':null
   });
   drawSign(rXx,syy,swd,shh,q.clef,rNote,{
-    clefName:stName, u:su,
-    reveal:revealed?noteName(rNote):null,
+    clefName:stName, u:su, acc:rAcc, hl:(q.correctSide===1)?hl:0,
+    reveal:revealed?noteName(rNote,rAcc):null,
     correct:revealed&&q.correctSide===1,
     dim:revealed&&q.correctSide!==1,
     ring:revealed?(q.correctSide===1?'#59d97a':(q.chosen===1?'#e05545':null)):null,
@@ -1089,13 +1276,15 @@ function drawQuestionUI(t){
   ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=8;
   rr(bx,by,bw,bh,12); ctx.fill(); ctx.shadowBlur=0;
   ctx.strokeStyle='#c8781e'; ctx.lineWidth=2; rr(bx,by,bw,bh,12); ctx.stroke();
-  const nm=noteName(q.target);
+  const nm=noteName(q.target,q.tAcc);
   if(!revealed){
     head('「'+nm+'」はどっち?',bx+bw/2,by+bh/2+1,24,'#ffe6b0');
   }else if(q.wasCorrect){
     head('せいかい!',bx+bw/2,by+bh/2+1,24,'#7ce89a');
   }else{
-    head('こたえは「'+nm+'」',bx+bw/2,by+bh/2+1,22,'#ff9d8a');
+    // 同じ欄に1行足す: 下から何本目の線／何番目の間か
+    head('こたえは「'+nm+'」',bx+bw/2,by+20,20,'#ff9d8a');
+    txt(q.hint,bx+bw/2,by+42,14,'#ffd9c9');
   }
   ctx.restore();
   // タイマー(導火線)
@@ -1173,7 +1362,7 @@ function renderResult(dt){
   if(G.misses.length>0){
     txt('もういちど かくにん',W/2,232,15,'#e8b96a');
     const uniq=[]; const seen={};
-    G.misses.forEach(m=>{ const k=m.clef+m.idx; if(!seen[k]){seen[k]=1; uniq.push(m);} });
+    G.misses.forEach(m=>{ const k=m.clef+m.idx+'/'+(m.acc||0); if(!seen[k]){seen[k]=1; uniq.push(m);} });
     const show=uniq.slice(0,4);
     const mw=150, mh=86, gap=10;
     const x0=W/2-(show.length*(mw+gap)-gap)/2;
@@ -1181,16 +1370,17 @@ function renderResult(dt){
       const x=x0+i*(mw+gap), y=252;
       ctx.fillStyle='#f2e6c8'; rr(x,y,mw,mh,8); ctx.fill();
       ctx.strokeStyle='#5d3f22'; ctx.lineWidth=2; rr(x,y,mw,mh,8); ctx.stroke();
-      drawStaffNote(x+12,y+18,mw-48,9,m.clef,m.idx);
-      ctx.fillStyle='#8a3d2c'; rr(x+mw-40,y+mh-28,32,20,10); ctx.fill();
-      head(noteName(m.idx),x+mw-24,y+mh-17,11,'#fff');
+      drawStaffNote(x+12,y+18,mw-48,9,m.clef,m.idx,undefined,m.acc);
+      const pw=m.acc?44:32;   // ♯・♭つきは名札を少し広く
+      ctx.fillStyle='#8a3d2c'; rr(x+mw-8-pw,y+mh-28,pw,20,10); ctx.fill();
+      head(noteName(m.idx,m.acc),x+mw-8-pw/2,y+mh-17,11,'#fff');
     });
   }else{
     head('パーフェクト!',W/2,270,22,'#7ce89a');
   }
   button(W/2-230,H-130,220,52,'もういちど',()=>{ sfxClick(); startStage(G.stage); },{size:18});
-  button(W/2+10,H-130,220,52,'坑道をえらぶ',()=>{ sfxClick(); screen='select'; },{bg:'#4a3a26',border:'#a8905e',size:18});
-  txt('きろくを ManabiBox に送信しました',W/2,H-56,13,'#8d7a5c');
+  button(W/2+10,H-130,220,52,'坑道をえらぶ',()=>{ sfxClick(); goSelect(); },{bg:'#4a3a26',border:'#a8905e',size:18});
+  txt((G.stage.review?'復習は きろくに ふくみません':'きろくを ManabiBox に送信しました')+(titleName?'  /  称号: '+titleName:''),W/2,H-56,13,'#8d7a5c');
 }
 
 /* ================= 入力 ================= */
@@ -1239,7 +1429,7 @@ window.addEventListener('keydown',e=>{
   if(screen==='play'){
     if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A'){ answer(0); e.preventDefault(); }
     if(e.key==='ArrowRight'||e.key==='d'||e.key==='D'){ answer(1); e.preventDefault(); }
-  }else if(screen==='title'&&(e.key==='Enter'||e.key===' ')){ screen='select'; }
+  }else if(screen==='title'&&(e.key==='Enter'||e.key===' ')){ goSelect(); }
 });
 
 /* ================= もどるボタン =================
@@ -1278,7 +1468,7 @@ setTimeout(startLoop,900);
 
 /* デバッグ/テスト用フック */
 window.__ONPU={
-  go:function(s){ screen=s; },
+  go:function(s){ if(s==='select') goSelect(); else screen=s; },
   demoStart:function(i){ startStage(STAGES[i||0]); },
   demoQuestion:function(stageIdx){
     startStage(STAGES[stageIdx===undefined?0:stageIdx]);
@@ -1294,8 +1484,12 @@ window.__ONPU={
   /* 段階モードの確認用 */
   level:function(){ return level; }, setLevel:setLevel, stageFor:stageFor, stageOpen:stageOpen, openKeys:openKeys, save:function(){ return save; }, STAGES:STAGES, CLEF_TOP:CLEF_TOP,
   pick:function(){ pickQuestion(); return G.q; }, clickables:function(){ return clickables; },
-  report:function(){ sendReport(true,90); }
+  report:function(){ sendReport(true,90); },
+  /* フェーズ4の確認用 */
+  stageUnlocked:stageUnlocked, startReview:startReview, posHint:posHint, missId:missId,
+  meta:function(){ return {titleName:titleName, missCount:missCount}; }
 };
+refreshMeta();
 })();
 </script>
 </body>
