@@ -207,6 +207,21 @@ table.res td:last-child{text-align:right;font-family:'DotGothic16',monospace;col
 .stBtn .st{color:var(--amber);font-size:clamp(10px,1.9vmin,14px);letter-spacing:.1em}
 .stBtn .bs{color:#C9BFA8;font-size:clamp(9px,1.7vmin,12px)}
 .stBtn .th{color:var(--amber-dim);font-size:clamp(9px,1.7vmin,12px);line-height:1.2}
+/* 面セレクト：その面の最高ランク（ボタンの寸法・並びは変えず、角に重ねる） */
+.stBtn{position:relative}
+.stBtn .rk{position:absolute;top:.35em;right:.4em;font-size:clamp(12px,2vmin,14px);line-height:1;
+  padding:.25em .45em;border-radius:3px;background:var(--amber);color:#211502;letter-spacing:.05em;
+  box-shadow:0 2px 0 #6d5212}
+/* 面クリア：称号・累計・実績の1行（ランクの下の空きに置く） */
+.fdTot{text-align:center;font-size:clamp(12px,2.1vmin,14px);color:#C9BFA8;margin-top:.5em;line-height:1.5;
+  animation:fdIn .45s cubic-bezier(.22,1,.36,1) .25s both}
+.fdTot b{color:var(--amber);font-family:'DotGothic16',monospace;font-weight:400;font-size:1.1em}
+.fdTot .fdTitle,.fdTitle{display:inline-block;font-family:'DotGothic16',monospace;font-weight:400;
+  font-size:clamp(12px,2vmin,14px);color:#211502;background:var(--amber);border-radius:3px;padding:.1em .55em;
+  margin-right:.5em;vertical-align:middle}
+table.res td .fdTitle{margin:0 0 0 .6em}
+.fdTot .sep{color:#5a4a2a;margin:0 .45em}
+@keyframes fdIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 #calibRing{width:clamp(90px,20vmin,150px);height:clamp(90px,20vmin,150px);margin:1em auto;position:relative}
 #calibRing svg{width:100%;height:100%;transform:rotate(-90deg)}
 #calibPct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -272,6 +287,7 @@ body:has(#manabi-back) #homeBtn{display:none}
 
 <script src="../../config.js"></script>
 <script src="../../hub-progress.js"></script>
+<script src="../../manabi-juice.js"></script>
 <script src="../../manabi-connect.js"></script>
 <script type="module">
 "use strict";
@@ -348,6 +364,36 @@ function hubReport(stage, rank, score){
   if(window.LearnHub && typeof LearnHub.report==='function'){
     try{ LearnHub.report({app:HUB.key, done, total:HUB.total, best, raw:score, grade:hubGrade(),
       note:`${stage}面 ランク${rank} 素点 ${score}`}); }catch(e){}
+  }
+}
+
+/* ---------------- ごほうび（manabi-juice.js）・累計 ----------------
+   称号＝全8面の最高ランク点の合計（S:1.0 A:0.8 B:0.6 C:0.4、最大8.0）。読み書きは面の終わりにだけ行う（毎フレームでは触らない） */
+const MJx=()=>window.MJ||null;
+const TITLE_DEFS=[{min:0,name:'見習い冒険者'},{min:3.2,name:'冒険者'},{min:6.4,name:'熟練冒険者'},{min:8,name:'ダンジョンマスター'}];
+const ACH={first:'初クリア',all:'全8面クリア',nodmg:'ノーダメージクリア',quizall:'保健クイズ全問正解',step1000:'累計1000歩',squat300:'累計スクワット300回'};
+const TOT_KEY='manabi-fitness-dungeon:tot';
+function loadTotals(){ try{ const o=JSON.parse(localStorage.getItem(TOT_KEY)||'{}'); return {step:o.step|0,squat:o.squat|0,jump:o.jump|0}; }catch(e){ return {step:0,squat:0,jump:0}; } }
+/* 面の終わり（クリア・ゲームオーバー・対戦結果）で、その面の回数を端末の累計に足す */
+function addTotals(){
+  const t=loadTotals();
+  for(let pi=0;pi<S.np;pi++){ const r=S.p[pi].reps; t.step+=r.step|0; t.squat+=r.squat|0; t.jump+=r.jump|0; }
+  try{ localStorage.setItem(TOT_KEY, JSON.stringify(t)); }catch(e){}
+  return t;
+}
+function rankSum(){ const st=hubLoad().stages||{}; let s=0,n=0; for(const k in st){ s+=rankPt(st[k]); n++; } return {sum:s,n}; }
+function achCount(){ const M=MJx(); if(!M) return 0; return Object.keys(M.achievements(HUB.key)).length; }
+/* 保健クイズで正解した問題の集合（全30問そろえば実績） */
+const QUIZ_OK_KEY='manabi-fitness-dungeon:quizOk';
+const quizOk=new Set((()=>{ try{ return JSON.parse(localStorage.getItem(QUIZ_OK_KEY)||'[]'); }catch(e){ return []; } })().filter(i=>Number.isInteger(i)));
+function quizResult(qi,ok,Q){
+  const M=MJx(); if(!M) return;
+  if(ok){
+    M.hit(HUB.key,qi); quizOk.add(qi);
+    try{ localStorage.setItem(QUIZ_OK_KEY, JSON.stringify([...quizOk])); }catch(e){}
+    if([...quizOk].filter(i=>i>=0&&i<HQ.length).length>=HQ.length) M.achieve(HUB.key,'quizall',ACH.quizall);
+  } else {
+    M.miss(HUB.key,qi,{q:Q.q,a:Q.c[Q.a],e:Q.e,g:Q.g});
   }
 }
 
@@ -1346,8 +1392,10 @@ function screenStageSelect(){
   ovl.style.display='flex';
   const stars=n=>'★'.repeat(STAGES[n-1].stars)+'☆'.repeat(4-STAGES[n-1].stars);
   let grid='';
+  const rks=hubLoad().stages||{};   // 面ごとの最高ランク（既存の保存データ）
   for(let i=1;i<=8;i++){
-    grid+=`<button class="stBtn" data-st="${i}"><span class="no">${i}面</span><span class="th">${THEMES[i-1].name}</span><span class="st">${stars(i)}</span><span class="bs">${i===8?'ラスボス':'中ボス'}</span></button>`;
+    const rk=RANK_PT[rks[i]]?`<span class="rk" title="最高ランク">${rks[i]}</span>`:'';
+    grid+=`<button class="stBtn" data-st="${i}"><span class="no">${i}面</span><span class="th">${THEMES[i-1].name}</span><span class="st">${stars(i)}</span><span class="bs">${i===8?'ラスボス':'中ボス'}</span>${rk}</button>`;
   }
   ovl.innerHTML=`
    <div class="panel">
@@ -1521,19 +1569,44 @@ function finishRun(){
   addScore(S.hearts*150,null);
   $('#task').style.display='none';$('#practiceBar').style.display='none';$('#streak').style.display='none';
   $('#vsHud').style.display='none';$('#topHud').style.display='none';
-  if(S.np>1){ vsResult(); return; }
+  if(S.np>1){ addTotals(); vsResult(); return; }
   const[rk,msg]=rankOf(S.score,S.stage);
   hubReport(S.stage, rk, S.score);
+  /* ごほうび：累計・自己ベスト・称号・実績（面の終わりに一度だけ読み書き） */
+  const tot=addTotals();
+  const M=MJx();
+  const rec=M?M.record(HUB.key,'st'+S.stage,S.score):null;
+  const rs=rankSum();
+  const titleName=M?M.title(HUB.key,TITLE_DEFS,rs.sum):'';
+  if(M){
+    M.achieve(HUB.key,'first',ACH.first);
+    if(S.miss===0) M.achieve(HUB.key,'nodmg',ACH.nodmg);
+    if(rs.n>=HUB.total) M.achieve(HUB.key,'all',ACH.all);
+    if(tot.step>=1000) M.achieve(HUB.key,'step1000',ACH.step1000);
+    if(tot.squat>=300) M.achieve(HUB.key,'squat300',ACH.squat300);
+  }
+  const achN=achCount(), achAll=Object.keys(ACH).length;
+  const final=S.stage>=8;
+  /* 8面の画面は1列で高さに余裕がないので、累計は既存の行に括弧書き・称号はSCORE行に。それ以外はランクの下に1行 */
+  const totStep=final?`（累計 ${tot.step}）`:'', totSquat=final?`（累計 ${tot.squat}）`:'';
+  const titleTag=titleName?`<span class="fdTitle">称号 ${titleName}</span>`:'';
   const table=`<table class="res">
        <tr><td>クリアタイム</td><td>${S.t.toFixed(1)} 秒</td></tr>
-       <tr><td>もも上げ足踏み（最大テンポ連続 ${S.maxStreak}）</td><td>${S.reps.step} 歩</td></tr>
-       <tr><td>スクワット</td><td>${S.reps.squat} 回</td></tr>
+       <tr><td>もも上げ足踏み（最大テンポ連続 ${S.maxStreak}）</td><td>${S.reps.step} 歩${totStep}</td></tr>
+       <tr><td>スクワット</td><td>${S.reps.squat} 回${totSquat}</td></tr>
        <tr><td>ジャンプ／回避成功</td><td>${S.reps.jump} 回 ／ ${S.dodges} 回</td></tr>
        <tr><td>残りハートボーナス</td><td>${S.hearts} × 150</td></tr>
-       <tr><td><b>SCORE</b></td><td>${S.score}</td></tr>
+       <tr><td><b>SCORE</b>${final?titleTag:''}</td><td id="fdScore">${S.score}</td></tr>
      </table>`;
+  const totLine=final?'':`<div class="fdTot">${titleTag}累計 <b>${tot.step}</b>歩／<b>${tot.squat}</b>回<span class="sep">｜</span>実績 <b>${achN}</b>/${achAll}</div>`;
+  /* クリア演出：数字のカウントアップ・控えめなパーティクル・自己ベスト更新の帯（既存の宝箱音はそのまま） */
+  const juice=()=>{ if(!M) return;
+    const sc=$('#fdScore'); if(sc) M.countUp(sc,S.score,{ms:900,format:n=>String(Math.round(n))});
+    setTimeout(()=>{ const r=ovl.querySelector('.rank'); if(r&&S.scene==='clear') M.burst(r,{count:14,spread:.8,color:'#FFC53D',color2:'#FF8A3D'}); },350);
+    if(rec&&rec.isNew) setTimeout(()=>{ if(S.scene==='clear') M.banner('新記録！ '+S.stage+'面 '+S.score+'点',{color:'#FFC53D'}); },700);
+  };
   ovl.style.display='flex';
-  if(S.stage>=8){
+  if(final){
     ovl.innerHTML=`
      <div class="panel">
        <div class="eyebrow">ALL STAGES CLEAR</div>
@@ -1548,9 +1621,10 @@ function finishRun(){
      </div>`;
     $('#goSel').onclick=()=>screenStageSelect();
     $('#goMenu').onclick=()=>screenMenu();
+    juice();
   } else {
     /* 休憩＝保健クイズ1問。正解で次の面のハート+1、不正解でも解説を読んで進める */
-    const Q=pickQuiz();
+    const Q=pickQuiz(), qi=HQ.indexOf(Q);
     const K=['A','B','C','D'];
     /* 選択肢は毎回並べかえる（データ上の正解位置に偏りがあっても、画面では偏らない） */
     const ORD=[0,1,2,3];
@@ -1562,7 +1636,7 @@ function finishRun(){
        <div class="clearGrid">
          <div>
            ${table}
-           <div class="rankWrap"><div class="rank">RANK ${rk}</div><div class="rankMsg">${msg}</div></div>
+           <div class="rankWrap"><div class="rank">RANK ${rk}</div><div class="rankMsg">${msg}</div>${totLine}</div>
          </div>
          <div class="quizBox" id="quizBox">
            <div class="qh"><span>休憩の保健クイズ</span><span class="qg">${GRADE_LABEL[Q.g]}　正解でハート+1</span></div>
@@ -1595,12 +1669,14 @@ function finishRun(){
         }
         res.style.display='block';
         $('#clearBtns').classList.remove('wait');
+        quizResult(qi,ok,Q);   // 誤答は復習用に貯める・正解は消す（解説は上で表示済み）
       };
     });
     S.quizDone=false;
     $('#goNext').onclick=()=>startRun(S.stage+1);
     $('#goSel').onclick=()=>screenStageSelect();
     $('#goMenu').onclick=()=>screenMenu();
+    juice();
   }
 }
 function vsResult(){
@@ -1637,6 +1713,7 @@ function gameOver(){
   if(S.scene!=='play')return;
   S.scene='over';SFX.down();
   hideHome(false);
+  addTotals();   // 途中までの運動量も累計に足す（画面の赤表示は既存のものをそのまま使う）
   $('#depthMeter').style.display='none';
   $('#task').style.display='none';$('#practiceBar').style.display='none';$('#streak').style.display='none';
   $('#vsHud').style.display='none';$('#topHud').style.display='none';
