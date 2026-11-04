@@ -87,6 +87,11 @@
     var d = COUNTRIES[cid];
     return !!d && GRADE_CONT[curGrade].indexOf(d[2]) >= 0;
   }
+  /* 州限定モード（練習）。region に州名が入っているあいだは、その州だけが対象。ハブには送らない */
+  var region = null;
+  function inRange(cid) {
+    return gradeOK(cid) && (!region || COUNTRIES[cid][2] === region);
+  }
   /* いまの学年範囲にある国の数（配点の分母）。地図に描画済みなら mapIds、未描画なら COUNTRIES から数える */
   function gradeCount() {
     var ids = mapIds.length ? mapIds : Object.keys(COUNTRIES);
@@ -95,9 +100,29 @@
     return n || 1;
   }
 
+  /* ---------- 共通演出・ごほうび（manabi-juice.js）。無くても動く ---------- */
+  var J = window.MJ || null;
+  var APP = 'world-conquest';
+  var TITLES = [{ min: 0, name: '探検家' }, { min: 20, name: '領主' }, { min: 60, name: '皇帝' }];
+  var ACH = [
+    ['first', 'はじめての占領'], ['steal', 'はじめて領地をうばった'],
+    ['combo5', '5連続正解'], ['combo10', '10連続正解'],
+    ['trivia5', 'ちしき問題を5連続正解'], ['speed10', 'スピード回答10回'],
+    ['contアジア', 'アジア州 完全制覇'], ['contヨーロッパ', 'ヨーロッパ州 完全制覇'],
+    ['contアフリカ', 'アフリカ州 完全制覇'], ['cont北アメリカ', '北アメリカ州 完全制覇'],
+    ['cont南アメリカ', '南アメリカ州 完全制覇'], ['contオセアニア', 'オセアニア州 完全制覇'],
+    ['zukan50', '図鑑に50か国'], ['zukan100', '図鑑に100か国'], ['world', '全世界を占領したことがある']
+  ];
+  function achieve(id) {
+    var a = null;
+    for (var i = 0; i < ACH.length; i++) if (ACH[i][0] === id) a = ACH[i];
+    if (J && a) J.achieve(APP, a[0], a[1]);
+  }
+
   /* ---------- 効果音（WebAudio・外部ファイルなし） ---------- */
   var AC = null;
   function beep(freqs, dur, type, gain) {
+    if (J && J.muted()) return;          // 共通の消音設定と連動
     try {
       if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
       if (AC.state === 'suspended') AC.resume();   // iOS Safari: タップのたびに再開しないと鳴らない
@@ -398,7 +423,7 @@
   function colorOf(cid) {
     var c = claims[cid];
     if (c) tmpColor.set(c[1]);
-    else tmpColor.copy(gradeOK(cid) ? COL.base : COL.gray);
+    else tmpColor.copy(inRange(cid) ? COL.base : COL.gray);
     if (cid === selectedCid) tmpColor.lerp(new THREE.Color(0xffffff), 0.28);
     else if (cid === hoverCid) tmpColor.lerp(new THREE.Color(0xffffff), 0.16);
     return tmpColor;
@@ -458,7 +483,7 @@
           var prev = hoverCid; hoverCid = cid;
           if (prev) paintOne(prev);
           if (cid) paintOne(cid);
-          el.style.cursor = (ud && ud.known && gradeOK(ud.cid)) ? 'pointer' : '';
+          el.style.cursor = (ud && ud.known && inRange(ud.cid)) ? 'pointer' : '';
         }
         return;
       }
@@ -551,6 +576,15 @@
       card.classList.add('show');
       return;
     }
+    if (!inRange(cid)) {
+      card.innerHTML =
+        '<div class="i-head"><div class="i-flagbox i-flag-secret">–</div>' +
+        '<div><div class="i-name">' + esc(d[0]) + '</div>' +
+        '<span class="i-cont">' + esc(d[2]) + '州</span></div></div>' +
+        '<div class="i-sub">いまは「' + esc(region) + '州」だけで練習中です</div>';
+      card.classList.add('show');
+      return;
+    }
     var own = ownerName(cid);
     var mine = own && own.pid === me.pid;
     var lockLeft = Math.max(0, (locks[cid] || 0) - Date.now());
@@ -563,9 +597,9 @@
       : '<div class="i-flagbox i-flag-secret">？<small>ひみつ</small></div>';
 
     var status;
-    if (mine) status = '<span class="tag tag-mine">🚩 あなたの領地</span>';
+    if (mine) status = '<span class="tag tag-mine">あなたの領地</span>';
     else if (own) status = '<span class="tag" style="background:' + own.color + '">' + esc(own.nick) + ' の領地</span>';
-    else status = '<span class="tag tag-free">✨ まだ誰のものでもない</span>';
+    else status = '<span class="tag tag-free">まだ誰のものでもない</span>';
 
     var html =
       '<div class="i-head">' + flagHtml +
@@ -576,14 +610,14 @@
     if (mine) {
       html += '<div class="i-sub">' + (d[1] ? '首都: ' + esc(d[1]) + '　' : '') + 'この国はあなたの色。守りぬこう!</div>';
     } else if (timeUp) {
-      html += '<div class="i-sub">⏰ 時間が終わりました。おつかれさま!</div>';
+      html += '<div class="i-sub">時間が終わりました。おつかれさま!</div>';
     } else if (protLeft > 0) {
-      html += '<div class="i-sub">🛡 占領直後のため保護中（あと' + Math.ceil(protLeft / 1000) + '秒）</div>';
+      html += '<div class="i-sub">占領直後のため保護中（あと' + Math.ceil(protLeft / 1000) + '秒）</div>';
     } else if (lockLeft > 0) {
-      html += '<div class="i-sub">⏳ 不正解のため休けい中（あと' + Math.ceil(lockLeft / 1000) + '秒）</div>';
+      html += '<div class="i-sub">不正解のため休けい中（あと' + Math.ceil(lockLeft / 1000) + '秒）</div>';
     } else {
       html += '<button class="btn btn-go pulse" id="btn-challenge">' +
-        (own ? '⚔️ うばいに行く' : '🚩 クイズに挑戦して占領する') + '</button>';
+        (own ? 'うばいに行く' : 'クイズに挑戦して占領する') + '</button>';
     }
     card.innerHTML = html;
     card.classList.add('show');
@@ -619,11 +653,13 @@
     if (type === 'trivia') {
       var tv = trivia[Math.floor(Math.random() * trivia.length)];
       q.text = tv.q; q.type = 'ちしき';
+      q.ex = tv.ex || ('正解は「' + tv.c[0] + '」。');
       var order = shuffle([0, 1, 2, 3]);
       q.choices = order.map(function (i) { return { label: tv.c[i] }; });
       q.correct = order.indexOf(0);
     } else if (type === 'capital') {
       q.text = '「' + d[0] + '」の首都はどこ?'; q.type = '首都';
+      q.ex = '「' + d[0] + '」の首都は' + d[1] + '。';
       var caps = pick(near.filter(function (id) { return COUNTRIES[id][1] && COUNTRIES[id][1] !== d[1]; }), 3)
         .map(function (id) { return COUNTRIES[id][1]; });
       q.choices = shuffle([d[1]].concat(caps)).map(function (c) { return { label: c }; });
@@ -642,7 +678,7 @@
   var quizCid = null, quizSteal = false, quizQ = null, answered = false;
 
   function startQuiz(cid, isSteal) {
-    if (timeUp || !gradeOK(cid)) return;
+    if (timeUp || !inRange(cid)) return;
     hideInfo();
     quizCid = cid; quizSteal = isSteal; answered = false;
     quizQ = makeQuestion(cid, isSteal);
@@ -692,6 +728,10 @@
     if (kids[quizQ.correct]) kids[quizQ.correct].classList.add('right');
     if (!ok && btn) btn.classList.add('wrongC');
     for (var k = 0; k < kids.length; k++) kids[k].disabled = true;
+    if (J) {
+      if (ok) J.burst(btn || kids[quizQ.correct], { count: 14, color: '#34d17b', color2: '#ffd54d' });
+      else J.flash('#ff5f6b');
+    }
 
     setTimeout(function () {
       closeQuiz();
@@ -712,14 +752,18 @@
     var lines = [], pts = 100;
     lines.push(['占領成功!', 100]);
 
-    if (elapsed <= 7) { pts += 30; lines.push(['⚡ スピード回答', 30]); }
+    if (elapsed <= 7) { pts += 30; lines.push(['スピード回答', 30]); if (++speedHits === 10) achieve('speed10'); }
+    if (quizQ.type === 'ちしき') { if (++triviaStreak === 5) achieve('trivia5'); } else triviaStreak = 0;
+    if (combo === 5) achieve('combo5');
+    if (combo === 10) achieve('combo10');
+    if (quizSteal) achieve('steal');
     if (combo >= 2) {
       var cb = 20 * Math.min(combo - 1, 5);
-      pts += cb; lines.push(['🔥 ' + combo + '連続正解', cb]);
+      pts += cb; lines.push([combo + '連続正解', cb]);
     }
     var adj = (neighborsOf[cid] || []).some(function (n) { return mine.indexOf(n) >= 0; });
-    if (adj) { pts += 50; lines.push(['🧩 つなげ塗り（隣接）', 50]); }
-    if (quizSteal) { pts += 100; lines.push(['⚔️ 領地をうばった', 100]); }
+    if (adj) { pts += 50; lines.push(['つなげ塗り（隣接）', 50]); }
+    if (quizSteal) { pts += 100; lines.push(['領地をうばった', 100]); }
 
     // 占領を反映（楽観的更新 → サーバー確認）
     claims[cid] = [me.pid, me.color, Date.now()];
@@ -727,7 +771,7 @@
     sessionCaptures++;
     var total = mine.length + 1;
 
-    if (total % 5 === 0) { pts += 200; lines.push(['🏅 ' + total + 'か国達成', 200]); }
+    if (total % 5 === 0) { pts += 200; lines.push([total + 'か国達成', 200]); }
 
     // 州ボーナス
     var cont = d[2];
@@ -735,32 +779,39 @@
     var contAll = mapIds.filter(function (id) { return COUNTRIES[id][2] === cont; }).length;
     [5, 10, 15].forEach(function (th) {
       var key = 'c' + cont + th;
-      if (contMine >= th && !earned[key]) { earned[key] = 1; pts += 300; lines.push(['🌏 ' + cont + '州で' + th + 'か国', 300]); }
+      if (contMine >= th && !earned[key]) { earned[key] = 1; pts += 300; lines.push([cont + '州で' + th + 'か国', 300]); }
     });
     if (contMine >= contAll && !earned['full' + cont]) {
-      earned['full' + cont] = 1; pts += 1000; lines.push(['👑 ' + cont + '州 完全制覇!!', 1000]);
-      banner('👑 ' + cont + '州 完全制覇! +1000');
+      earned['full' + cont] = 1; pts += 1000; lines.push([cont + '州 完全制覇!!', 1000]);
+      banner(cont + '州 完全制覇! +1000');
+      achieve('cont' + cont);
     }
 
     earnedScore += pts;
     score = baseScore + earnedScore;
     (pts >= 300 ? SND.big : SND.ok)();
-    resultToast(d, lines, pts, true);
+    resultToast(d, lines, pts, true, quizQ.ex);
     paintAll();
     sendClaim(cid);
     saveCaptured(cid);
     maybeReport(false);
+    if (J) J.hit(APP, quizCid);
   }
 
   function onWrong() {
     wrong++;
-    combo = 0;
+    combo = 0; triviaStreak = 0;
     locks[quizCid] = Date.now() + LOCK_MS;
     SND.ng();
     var d = COUNTRIES[quizCid];
-    resultToast(d, [['ざんねん! 30秒たつと再挑戦できます', 0]], 0, false);
+    /* まちがえたときは解説を出す。国旗の問題は正解の国旗を見せる（学習用） */
+    var ex = quizQ.ex || ('これが「' + d[0] + '」の国旗。');
+    var flagImg = quizQ.type === '国旗' ? '<img src="' + FLAG(d[3], 80) + '" alt="" onerror="this.remove()">' : '';
+    resultToast(d, [['ざんねん! 30秒たつと再挑戦できます', 0]], 0, false, ex, flagImg);
+    if (J) J.miss(APP, quizCid, { name: d[0], type: quizQ.type });
     updateHud();
   }
+  var speedHits = 0, triviaStreak = 0;
 
   /* ---------- 通信 ---------- */
   function api(params, body) {
@@ -832,7 +883,7 @@
       var o = ownerName(id);
       if (o && o.pid !== me.pid) {
         SND.steal();
-        toast('😱 ' + esc(o.nick) + ' に「' + esc(COUNTRIES[id][0]) + '」をうばわれた!', 'ng');
+        toast(esc(o.nick) + ' に「' + esc(COUNTRIES[id][0]) + '」をうばわれた!', 'ng');
       }
     });
     paintAll();
@@ -846,15 +897,15 @@
         delete pending[cid];                        // 返事が来たので待ちを解除
         if (r.ok) applyState(r.state, seq);
         else if (r.err === 'protected') {
-          toast('🛡 一歩おそかった! この国は保護中です（あと' + (r.wait || '?') + '秒）', 'ng');
+          toast('一歩おそかった! この国は保護中です（あと' + (r.wait || '?') + '秒）', 'ng');
           applyState(r.state, seq, cid);            // ここでは「うばわれた」を出さない
         } else {
-          toast('⚠ この占領は記録できませんでした', 'ng');
+          toast('この占領は記録できませんでした', 'ng');
         }
       })
       .catch(function () {
         delete pending[cid];
-        toast('⚠ 通信エラー: この占領は記録できませんでした', 'ng');
+        toast('通信エラー: この占領は記録できませんでした', 'ng');
       });
   }
 
@@ -883,11 +934,11 @@
     $('hud-score').textContent = score;
     $('hud-count').textContent = myCids().length;
     var cEl = $('hud-combo');
-    cEl.textContent = combo >= 2 ? '🔥' + combo : '-';
+    cEl.textContent = combo >= 2 ? '×' + combo : '-';
     cEl.className = 'hud-v' + (combo >= 2 ? ' hot' : '');
   }
 
-  var MEDAL = ['🥇', '🥈', '🥉'];
+  var MEDAL = ['rk-m1', 'rk-m2', 'rk-m3'];
   var RANK_SHOW = 12;
 
   /* 順位表を作る。
@@ -927,9 +978,9 @@
   }
 
   function rankRow(p) {
-    var pos = p.rank <= 3 ? MEDAL[p.rank - 1] : p.rank;
+    var medal = p.rank <= 3 ? ' ' + MEDAL[p.rank - 1] : '';
     return '<div class="rk-row' + (p.pid === me.pid ? ' rk-me' : '') + '">' +
-      '<span class="rk-pos">' + pos + '</span>' +
+      '<span class="rk-pos' + medal + '">' + p.rank + '</span>' +
       '<span class="rk-dot" style="background:' + p.color + ';color:' + p.color + '"></span>' +
       '<span class="rk-nick">' + esc(p.nick) + '</span>' +
       '<span class="rk-cnt">' + p.cnt + '国</span>' +
@@ -951,16 +1002,17 @@
     $('rank-count').textContent = list.length >= 2 ? '(' + list.length + '人)' : '';
   }
 
-  function toast(html, kind) {
+  function toast(html, kind, ms) {
     var t = document.createElement('div');
     t.className = 'toast' + (kind ? ' t-' + kind : '');
     t.innerHTML = html;
     $('toasts').appendChild(t);
-    setTimeout(function () { t.classList.add('out'); }, 3600);
-    setTimeout(function () { t.remove(); }, 4200);
+    ms = ms || 3600;
+    setTimeout(function () { t.classList.add('out'); }, ms);
+    setTimeout(function () { t.remove(); }, ms + 600);
   }
 
-  function resultToast(d, lines, pts, ok) {
+  function resultToast(d, lines, pts, ok, ex, flagImg) {
     var rows = lines.map(function (l) {
       return '<div class="rt-row"><span>' + esc(l[0]) + '</span>' +
         (l[1] ? '<b>+' + l[1] + '</b>' : '') + '</div>';
@@ -968,10 +1020,12 @@
     /* 正解したら国旗と首都を見せる（学習用のごほうび） */
     var head = ok
       ? '<div class="rt-head rt-ok"><img src="' + FLAG(d[3], 80) + '" alt="" onerror="this.remove()">' + esc(d[0]) + '</div>'
-      : '<div class="rt-head rt-ng">❌ ' + esc(d[0]) + '</div>';
+      : '<div class="rt-head rt-ng">' + (flagImg || '× ') + esc(d[0]) + '</div>';
     var learn = (ok && d[1]) ? '<div class="rt-learn">首都: ' + esc(d[1]) + '</div>' : '';
-    toast(head + rows + (pts ? '<div class="rt-total">合計 +' + pts + 'pt</div>' : '') + learn,
-      ok ? 'ok' : 'ng');
+    /* 解説（ちしき・首都の問題、まちがえたとき）。読める時間だけ長く出す */
+    var exHtml = ex ? '<div class="rt-ex">' + esc(ex) + '</div>' : '';
+    toast(head + rows + (pts ? '<div class="rt-total">合計 +' + pts + 'pt</div>' : '') + learn + exHtml,
+      ok ? 'ok' : 'ng', ex ? (ok ? 5000 : 6500) : 0);
   }
 
   function banner(text) {
@@ -984,18 +1038,27 @@
   }
 
   /* ---------- まなびの基盤への送信 ---------- */
+  function capturedList() {
+    try { return JSON.parse(store('captured') || '[]'); } catch (e) { return []; }
+  }
   function saveCaptured(cid) {
-    try {
-      var set = JSON.parse(store('captured') || '[]');
-      if (set.indexOf(cid) < 0) { set.push(cid); store('captured', JSON.stringify(set)); }
-    } catch (e) { }
+    var set = capturedList();
+    if (set.indexOf(cid) < 0) { set.push(cid); store('captured', JSON.stringify(set)); }
+    /* 称号（累計占領数）と図鑑の実績。占領のたびに1回だけ読む（毎フレームでは呼ばない） */
+    if (!J) return;
+    J.title(APP, TITLES, set.length);
+    achieve('first');
+    if (set.length >= 50) achieve('zukan50');
+    if (set.length >= 100) achieve('zukan100');
+    if (mapIds.length && set.length >= mapIds.length &&
+      mapIds.every(function (id) { return set.indexOf(id) >= 0; })) achieve('world');
   }
   /* ハブ配点換算（古い hub-progress.js 向けフォールバック付き） */
   function hubScale(r, o) { return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0, Math.min(1, r)) * 10000); }
   var lastReportSig = '';
   function maybeReport(force) {
-    var cum = [];
-    try { cum = JSON.parse(store('captured') || '[]'); } catch (e) { }
+    if (region) return;                              // 州限定の練習はハブに送らない
+    var cum = capturedList();
     var acc = (correct + wrong) ? Math.round(correct / (correct + wrong) * 100) : 0;
     if (!force && sessionCaptures % 5 !== 0) return;   // 5か国ごと＋終了時に送信
     var sig = cum.length + '/' + acc + '/' + score;
@@ -1032,9 +1095,9 @@
     return PALETTE[h % PALETTE.length];
   }
 
-  function begin(isOnline) {
+  function begin(isOnline, regionName) {
     if (isBlocked()) {          // 時間ちょうどに押されたときの用心
-      toast('⏰ いまは ' + fmtHM(BLOCK_FROM) + '〜' + fmtHM(BLOCK_TO) + ' で使えません', 'ng');
+      toast('いまは ' + fmtHM(BLOCK_FROM) + '〜' + fmtHM(BLOCK_TO) + ' で使えません', 'ng');
       return;
     }
     var nick = $('in-nick').value.trim().slice(0, 10);
@@ -1044,14 +1107,20 @@
     store('nick', nick); store('room', room);
     me.color = myColor(nick);
     online = isOnline;
+    region = regionName || null;
 
     started = true;
     $('start').classList.remove('show');
     $('hud').style.display = 'flex';
+    if (region) {   /* 学年の欄を借りて、いまの州を出す */
+      $('hud-grade-wrap').style.display = '';
+      $('hud-grade-wrap').querySelector('.hud-k').textContent = 'しゅう';
+      $('hud-grade').textContent = region;
+    }
     var whoHtml =
       '<span class="rk-dot" style="display:inline-block;vertical-align:-1px;background:' + me.color + ';color:' + me.color + '"></span> ' +
       '<b>' + esc(me.nick) + '</b>';
-    var modeHtml = online ? '🌐 ' + esc(room) : '📴 練習';
+    var modeHtml = online ? 'ルーム ' + esc(room) : (region ? esc(region) + '州で練習' : '練習');
     $('room-badge').style.display = 'block';
     $('room-badge').innerHTML = whoHtml + '　' + modeHtml;
     /* スマホでは右上のバッジを隠すので、同じ情報をランキングの中にも出す */
@@ -1068,13 +1137,13 @@
     zoomTo(camFitZ, 900);
 
     startClock();
-    if (BLOCK_ON) toast('⏰ <b>' + fmtHM(BLOCK_FROM) + '</b> まで あそべます');
+    if (BLOCK_ON) toast('<b>' + fmtHM(BLOCK_FROM) + '</b> まで あそべます');
 
     if (online) {
       var joinSeq = ++reqSeq;
       api(null, { m: 'join', pid: me.pid, nick: me.nick, color: me.color, score: 0 })
         .then(function (r) { if (r.ok) applyState(r.state, joinSeq); })
-        .catch(function () { toast('⚠ サーバーに接続できません。練習モードとして続けます', 'ng'); online = false; });
+        .catch(function () { toast('サーバーに接続できません。練習モードとして続けます', 'ng'); online = false; });
       startPolling();
     }
   }
@@ -1103,13 +1172,14 @@
       var blocked = isBlocked();
       $('btn-solo').disabled = blocked;
       $('btn-online').disabled = blocked || !ENDPOINT;
-      $('btn-solo').textContent = blocked ? '⏰ いまは おやすみ時間' : '📴 ひとりで練習';
-      if (!blocked && !ENDPOINT) $('btn-online').textContent = '🌐 みんなで対戦（先生の設定待ち）';
-      else if (!blocked) $('btn-online').textContent = '🌐 みんなで対戦';
+      $('btn-solo').textContent = blocked ? 'いまは おやすみ時間' : 'ひとりで練習';
+      $('btn-region').disabled = blocked;
+      if (!blocked && !ENDPOINT) $('btn-online').textContent = 'みんなで対戦（先生の設定待ち）';
+      else if (!blocked) $('btn-online').textContent = 'みんなで対戦';
       $('gate-msg').innerHTML = blocked
-        ? '⏰ <b>' + fmtHM(BLOCK_FROM) + '〜' + fmtHM(BLOCK_TO) + '</b> は使えません。<br>' +
+        ? '<b>' + fmtHM(BLOCK_FROM) + '〜' + fmtHM(BLOCK_TO) + '</b> は使えません。<br>' +
           fmtHM(BLOCK_TO) + ' になったら、また来てね!'
-        : (BLOCK_ON ? '⏰ ' + fmtHM(BLOCK_FROM) + ' まで あそべます' : '');
+        : (BLOCK_ON ? fmtHM(BLOCK_FROM) + ' まで あそべます' : '');
       $('gate-msg').className = blocked ? 'gate-msg blocked' : 'gate-msg';
     }
     refreshGate();
@@ -1119,11 +1189,46 @@
     }
     $('btn-online').addEventListener('click', function () { begin(true); });
     $('btn-solo').addEventListener('click', function () { begin(false); });
+
+    /* 州限定モードのドロップダウン（学年の範囲内の州だけ） */
+    var rmenu = $('region-menu'), rbtn = $('btn-region');
+    function closeRegionMenu() { rmenu.classList.remove('open'); rbtn.setAttribute('aria-expanded', 'false'); }
+    rbtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (rmenu.classList.contains('open')) { closeRegionMenu(); return; }
+      SND.tap();
+      rmenu.innerHTML = GRADE_CONT[curGrade].map(function (c) {
+        return '<button type="button" role="option" data-c="' + esc(c) + '">' + esc(c) + '</button>';
+      }).join('') + '<div class="rm-note">1つの州だけで練習（記録は送りません）</div>';
+      rmenu.classList.add('open'); rbtn.setAttribute('aria-expanded', 'true');
+      if (J) J.sfx('page');
+    });
+    rmenu.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-c]');
+      if (!b) return;
+      e.stopPropagation();
+      closeRegionMenu();
+      begin(false, b.getAttribute('data-c'));
+    });
+    document.addEventListener('pointerdown', function (e) {
+      if (rmenu.classList.contains('open') && !rmenu.contains(e.target) && e.target !== rbtn && !rbtn.contains(e.target)) closeRegionMenu();
+    });
+
+    /* 国旗図鑑 */
+    $('btn-zukan').addEventListener('click', openZukan);
+    $('z-close').addEventListener('click', closeZukan);
+    $('z-prev').addEventListener('click', function () { if (Z.page > 0) { Z.page--; renderZukan(); if (J) J.sfx('page'); } });
+    $('z-next').addEventListener('click', function () { if (Z.page < Z.pages - 1) { Z.page++; renderZukan(); if (J) J.sfx('page'); } });
+    $('z-tabs').addEventListener('click', function (e) {
+      var b = e.target.closest('.z-tab');
+      if (!b || b.classList.contains('on')) return;
+      Z.tab = Number(b.getAttribute('data-i')); Z.page = 0; renderZukan(); SND.tap();
+    });
     $('btn-help').addEventListener('click', function () { $('help').classList.add('show'); });
     $('btn-help-close').addEventListener('click', function () { $('help').classList.remove('show'); });
     $('btn-finish').addEventListener('click', function () {
       maybeReport(true);
-      banner('📤 きろくを送信しました! スコア ' + score + 'pt');
+      banner('きろくを送信しました! スコア ' + score + 'pt');
     });
     $('btn-rank').addEventListener('click', function () { $('side').classList.toggle('open'); });
     $('side-close').addEventListener('click', function () { $('side').classList.remove('open'); });
@@ -1159,7 +1264,7 @@
       if (s <= w && !warned[w]) {
         warned[w] = 1;
         SND.steal();
-        toast('⏰ あと' + (w / 60) + '分で ' + fmtHM(BLOCK_FROM) + ' です', 'ng');
+        toast('あと' + (w / 60) + '分で ' + fmtHM(BLOCK_FROM) + ' です', 'ng');
       }
     });
   }
@@ -1183,14 +1288,30 @@
       total = list.length;
       list.forEach(function (p) { if (p.pid === me.pid) rank = p.rank; });
     }
+    /* 自己ベスト（スコア）と称号。画面を出すときに1回だけ読む */
+    var rec = null, titleName = '', cum = capturedList().length;
+    if (J) {
+      rec = J.record(APP, 'score', score);
+      titleName = J.title(APP, TITLES, cum);
+    }
+    var bestLine = J
+      ? '<br>称号「<b>' + esc(titleName) + '</b>」　累計 <b>' + cum + '</b>か国　自己ベスト <b>' + (J.best(APP, 'score') || 0) + '</b>pt'
+      : '';
     $('r-sub').innerHTML =
       (BLOCK_ON ? fmtHM(BLOCK_FROM) + ' になりました。つづきは ' + fmtHM(BLOCK_TO) + ' から!<br>' : '') +
-      esc(me.nick) + ' の記録を「まなびの基盤」に送りました。' +
-      (rank ? '<br>' + total + '人中 <b>' + rank + '位</b>' : '');
+      (region ? esc(region) + '州だけの練習なので、記録は送っていません。' : esc(me.nick) + ' の記録を「まなびの基盤」に送りました。') +
+      (rank ? '<br>' + total + '人中 <b>' + rank + '位</b>' : '') + bestLine;
     $('r-grid').innerHTML =
       '<div class="r-cell"><b>' + score + '</b><span>スコア</span></div>' +
       '<div class="r-cell"><b>' + mine.length + '</b><span>りょうち</span></div>' +
       '<div class="r-cell"><b>' + acc + '%</b><span>せいとうりつ</span></div>';
+    if (J) {
+      var cells = $('r-grid').querySelectorAll('b');
+      J.countUp(cells[0], score, { ms: 900 });
+      J.countUp(cells[1], mine.length, { ms: 700 });
+      J.countUp(cells[2], acc, { ms: 800, format: function (n) { return Math.round(n) + '%'; } });
+      if (rec && rec.isNew && score > 0) setTimeout(function () { J.banner('新記録!', { color: '#c48a12' }); }, 500);
+    }
     /* 州ごとの内訳（地理の復習になるように） */
     $('r-conts').innerHTML = CONTINENTS.map(function (c) {
       var got = mine.filter(function (id) { return COUNTRIES[id][2] === c; }).length;
@@ -1199,6 +1320,74 @@
     }).join('');
     $('r-hub').href = (window.MANABI_CONFIG || {}).hubUrl || '../';
     $('result').classList.add('show');
+  }
+
+  /* ---------- 国旗図鑑 ----------
+     占領したことのある国（端末の cq_captured）を州ごとに見る。
+     1ページ12か国のページ送りで1画面に収める。国旗画像は開いたページの分だけ読み込む。 */
+  var Z = { tab: 0, page: 0, pages: 1, set: {}, ach: {}, title: '' };
+  var Z_PER = 12;
+  var Z_TABS = CONTINENTS.concat(['実績']);
+  function zukanIds(cont) {
+    var ids = mapIds.length ? mapIds : Object.keys(COUNTRIES);
+    return ids.filter(function (id) { return COUNTRIES[id] && COUNTRIES[id][2] === cont; })
+      .sort(function (a, b) { return COUNTRIES[a][0].localeCompare(COUNTRIES[b][0], 'ja'); });
+  }
+  function openZukan() {
+    Z.set = {};
+    capturedList().forEach(function (id) { Z.set[id] = 1; });
+    Z.ach = J ? J.achievements(APP) : {};
+    Z.title = J ? J.title(APP, TITLES, Object.keys(Z.set).length) : '';
+    /* いまの州のタブから開く（州限定モードならその州） */
+    var first = region || (selectedCid && COUNTRIES[selectedCid] ? COUNTRIES[selectedCid][2] : CONTINENTS[0]);
+    Z.tab = Math.max(0, CONTINENTS.indexOf(first)); Z.page = 0;
+    $('z-tabs').innerHTML = Z_TABS.map(function (c, i) {
+      return '<button type="button" class="z-tab" data-i="' + i + '">' + esc(c) + '</button>';
+    }).join('');
+    renderZukan();
+    $('zukan').classList.add('show');
+    if (J) J.sfx('page'); else SND.tap();
+  }
+  function closeZukan() { $('zukan').classList.remove('show'); }
+  function renderZukan() {
+    var tabs = $('z-tabs').children;
+    for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('on', i === Z.tab);
+    var all = mapIds.length ? mapIds : Object.keys(COUNTRIES);
+    var got = Object.keys(Z.set).filter(function (id) { return COUNTRIES[id]; }).length;
+    $('z-stat').innerHTML = (Z.title ? '称号 <b>' + esc(Z.title) + '</b>　' : '') + '<b>' + got + '</b> / ' + all.length + 'か国';
+    var body = $('z-body');
+    if (Z.tab >= CONTINENTS.length) {   /* 実績タブ */
+      $('z-foot').style.display = 'none';
+      var html = '<div class="z-titles">' + TITLES.map(function (t) {
+        return '<div class="' + (t.name === Z.title ? 'now' : '') + '"><b>' + esc(t.name) + '</b>' +
+          (t.min ? '累計' + t.min + 'か国〜' : '最初の称号') + '</div>';
+      }).join('') + '</div><div class="z-ach">' + ACH.map(function (a, i) {
+        var on = !!Z.ach[a[0]];
+        return '<div class="' + (on ? 'got' : '') + '" style="animation-delay:' + Math.min(i * 30, 400) + 'ms">' +
+          '<span class="z-mark">' + (on ? '◆' : '－') + '</span><span>' + esc(a[1]) + '</span></div>';
+      }).join('') + '</div>';
+      body.innerHTML = html;
+      return;
+    }
+    $('z-foot').style.display = '';
+    var cont = CONTINENTS[Z.tab], ids = zukanIds(cont);
+    Z.pages = Math.max(1, Math.ceil(ids.length / Z_PER));
+    Z.page = Math.min(Z.page, Z.pages - 1);
+    var slice = ids.slice(Z.page * Z_PER, Z.page * Z_PER + Z_PER);
+    var contGot = ids.filter(function (id) { return Z.set[id]; }).length;
+    body.innerHTML = '<div class="z-grid">' + slice.map(function (id, i) {
+      var d = COUNTRIES[id], own = !!Z.set[id];
+      var flag = own
+        ? '<div class="z-flag"><img src="' + FLAG(d[3], 160) + '" alt="' + esc(d[0]) + '" loading="lazy" ' +
+          'onerror="var p=this.parentNode;p.className=\'z-flag z-alt\';p.textContent=this.alt"></div>'
+        : '<div class="z-flag z-q">？</div>';
+      return '<div class="z-card' + (own ? '' : ' z-off') + '" style="animation-delay:' + i * 30 + 'ms" title="' + esc(d[0]) + '">' +
+        flag + '<div class="z-name">' + esc(d[0]) + '</div>' +
+        '<div class="z-cap">' + (own ? (d[1] ? '首都 ' + esc(d[1]) : '　') : '？') + '</div></div>';
+    }).join('') + '</div>';
+    $('z-page').textContent = cont + ' ' + contGot + '/' + ids.length + '　' + (Z.page + 1) + '/' + Z.pages;
+    $('z-prev').disabled = Z.page <= 0;
+    $('z-next').disabled = Z.page >= Z.pages - 1;
   }
 
   /* ---------- まなびの基盤にもどるボタン ----------
@@ -1264,7 +1453,8 @@
           neighborsSample: neighborsOf['392'] };
       },
       tap: tapAt, quiz: startQuiz, claims: function () { return claims; },
-      grade: function () { return curGrade; }, setGrade: setGrade, gradeOK: gradeOK,
+      grade: function () { return curGrade; }, setGrade: setGrade, gradeOK: gradeOK, inRange: inRange,
+      region: function () { return region; }, begin: begin, openZukan: openZukan, showResult: showResult,
       mapIds: function () { return mapIds.slice(); },
       correctIndex: function () { return quizQ ? quizQ.correct : -1; },
       question: function () { return quizQ; },

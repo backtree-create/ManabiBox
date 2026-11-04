@@ -24,6 +24,7 @@ window.GAME_CONFIG = {
 <!-- ▼ まなびの基盤（ManabiBox）との連携。ローカルで開くときは読み込めなくてもOK -->
 <script src="../config.js"></script>
 <script src="../hub-progress.js"></script>
+<script src="../manabi-juice.js"></script>
 <script src="../manabi-connect.js"></script>
 
 <!-- ▼ ライブラリ（three.js / TopoJSON）とフォント -->
@@ -307,7 +308,9 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
 .choice-flag { padding: 9px; background: rgba(255,255,255,.92); border-color: rgba(255,255,255,.25); }
 .choice-flag img { display: block; width: 100%; max-width: 160px; height: auto; margin: 0 auto; border-radius: 5px; }
 .choice.right { background: rgba(52,209,123,.22); border-color: var(--ok); box-shadow: 0 0 0 3px rgba(52,209,123,.2); }
-.choice.right::after { content: "⭕"; position: absolute; top: -10px; right: -6px; font-size: 20px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
+.choice.right::after { content: ""; position: absolute; top: -9px; right: -7px; width: 20px; height: 20px; border-radius: 50%;
+  border: 4px solid var(--ok); background: var(--panel-solid); box-shadow: 0 2px 6px rgba(0,0,0,.6); animation: ringin .3s cubic-bezier(.22,1,.36,1) both; }
+@keyframes ringin { from { transform: scale(.3); opacity: 0; } }
 .choice.wrongC { background: rgba(255,95,107,.2); border-color: var(--ng); animation: shake .35s; }
 @keyframes shake { 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-3px); } }
 /* せまい画面では文字の選択肢だけ1列にする（国旗は2列のままが見やすい） */
@@ -335,6 +338,7 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
 .rt-row b { color: var(--gold); font-weight: 800; }
 .rt-total { margin-top: 5px; padding-top: 5px; border-top: 1px dashed var(--line); text-align: right; font-weight: 800; color: var(--gold); }
 .rt-learn { margin-top: 4px; color: var(--faint); font-size: 11px; font-weight: 400; }
+.rt-ex { margin-top: 5px; padding-top: 5px; border-top: 1px dashed var(--line); color: var(--sub); font-size: 12px; font-weight: 400; line-height: 1.6; }
 
 /* ============ 大型バナー ============ */
 #banner {
@@ -420,6 +424,122 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
   .hud-v { font-size: 14.5px; }
   #room-badge { display: none !important; }
 }
+/* ============ 絵文字のかわり（CSSの図形・記号） ============ */
+.globe {
+  display: inline-block; width: 1em; height: 1em; border-radius: 50%; position: relative; vertical-align: top;
+  background: radial-gradient(circle at 36% 30%, #b8e4ff 0%, #58b6ff 32%, #2360c9 68%, #122f66 100%);
+  box-shadow: inset -0.12em -0.12em 0.22em rgba(0,0,0,.4), 0 0 0 2px rgba(255,255,255,.1);
+}
+.globe::before {   /* 緯線 */
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: repeating-linear-gradient(0deg, transparent 0 21%, rgba(255,255,255,.26) 21% 24%);
+}
+.globe::after {    /* 経線 */
+  content: ""; position: absolute; left: 30%; top: 0; bottom: 0; width: 40%; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.3);
+}
+.bi { font-weight: 800; width: 18px; text-align: center; }
+.bi-speed { color: var(--gold); } .bi-combo { color: #ff9d4d; } .bi-adj { color: var(--ok); }
+.bi-steal { color: var(--ng); } .bi-five { color: var(--acc); } .bi-cont { color: #4dd9e8; } .bi-full { color: var(--gold); }
+.fab-txt { font-size: 12.5px; letter-spacing: .02em; line-height: 1; }
+.rk-pos.rk-m1 { color: var(--gold); font-weight: 800; font-size: 12px; }
+.rk-pos.rk-m2 { color: #d6dfea; font-weight: 800; font-size: 12px; }
+.rk-pos.rk-m3 { color: #e0a46b; font-weight: 800; font-size: 12px; }
+
+/* ============ 州限定モード（「ひとりで練習」の横のドロップダウン） ============ */
+.st-row { display: flex; gap: 8px; position: relative; }
+.st-row #btn-solo { flex: 1; min-width: 0; }
+#btn-region { width: auto; flex: none; padding: 15px 14px; white-space: nowrap; }
+#btn-region .caret { font-size: 12px; opacity: .8; transition: transform .25s cubic-bezier(.4,0,.2,1); }
+#btn-region[aria-expanded="true"] .caret { transform: rotate(180deg); }
+.region-menu {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 5; display: none;
+  grid-template-columns: 1fr 1fr 1fr; gap: 6px; padding: 8px;
+  background: var(--panel-solid); border: 1px solid var(--line-hi); border-radius: var(--r-md); box-shadow: var(--shadow);
+}
+.region-menu.open { display: grid; animation: menuin .3s cubic-bezier(.22,1,.36,1) both; }
+@keyframes menuin { from { opacity: 0; transform: translateY(-8px); } }
+.region-menu button {
+  min-height: 44px; padding: 8px 4px; font-size: 14px; color: var(--tx);
+  background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 10px;
+  transition: transform .1s, background .2s cubic-bezier(.4,0,.2,1), border-color .2s;
+}
+@media (hover: hover) { .region-menu button:hover { background: rgba(88,182,255,.16); border-color: var(--line-hi); } }
+.region-menu button:active { transform: scale(.97); }
+.region-menu .rm-note { grid-column: 1 / -1; font-size: 12px; color: var(--faint); text-align: center; padding: 2px 0 0; }
+
+/* ============ 国旗図鑑 ============ */
+#zukan {
+  position: fixed; inset: 0; z-index: 56; display: none; align-items: center; justify-content: center;
+  background: rgba(3,8,17,.8); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); padding: 14px;
+}
+#zukan.show { display: flex; }
+.z-box {
+  width: min(720px, 100%); max-height: calc(100dvh - 28px); display: flex; flex-direction: column;
+  background: var(--panel-solid); border: 1px solid var(--line-hi); border-radius: 22px; padding: 16px 18px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.6); animation: qin .3s cubic-bezier(.22,1,.36,1) both; overflow: auto;
+}
+.z-head { display: flex; align-items: center; gap: 10px; }
+.z-head h2 { font-size: 17px; letter-spacing: .04em; white-space: nowrap; }
+.z-stat { margin-left: auto; font-size: 12.5px; color: var(--sub); white-space: nowrap; }
+.z-stat b { color: var(--gold); font-weight: 800; }
+.z-close { background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 10px; color: var(--sub); font-size: 15px; padding: 5px 10px; min-width: 44px; min-height: 40px; }
+.z-tabs { display: flex; gap: 6px; margin: 12px 0 10px; }
+.z-tab {
+  flex: 1; min-height: 40px; padding: 6px 2px; font-size: 12.5px; color: var(--sub);
+  background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 10px;
+  transition: background .25s cubic-bezier(.4,0,.2,1), color .25s, transform .1s;
+}
+.z-tab.on { color: #fff; background: linear-gradient(135deg, #2f6fe0, #58b6ff); border-color: transparent; }
+.z-tab:active { transform: scale(.97); }
+.z-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.z-card {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; min-width: 0;
+  background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 12px; text-align: center;
+  animation: zin .35s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes zin { from { opacity: 0; transform: translateY(8px); } }
+.z-card.z-off { opacity: .55; }
+.z-flag {
+  width: 72px; height: 48px; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  background: #1a2a48; box-shadow: 0 3px 10px rgba(0,0,0,.5);
+}
+.z-flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.z-flag.z-q { border: 1px dashed var(--line-hi); color: var(--faint); font-size: 20px; background: linear-gradient(135deg, #22375c, #101d36); box-shadow: none; }
+.z-flag.z-alt { font-size: 12px; color: var(--sub); line-height: 1.3; padding: 4px; background: rgba(255,255,255,.08); }
+.z-name { font-size: 13px; font-weight: 800; line-height: 1.3; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.z-cap { font-size: 12px; color: var(--sub); line-height: 1.3; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.z-foot { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
+.z-foot button {
+  min-width: 88px; min-height: 44px; font-size: 13.5px; color: var(--tx);
+  background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 12px; transition: transform .1s;
+}
+.z-foot button:active { transform: scale(.97); }
+.z-foot button:disabled { opacity: .3; }
+.z-page { font-size: 12.5px; color: var(--sub); min-width: 70px; text-align: center; }
+/* 実績タブ */
+.z-titles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.z-titles div { padding: 10px 6px; text-align: center; background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 12px; color: var(--faint); font-size: 12px; line-height: 1.5; }
+.z-titles div b { display: block; font-size: 16px; color: var(--sub); }
+.z-titles div.now { border-color: rgba(255,213,77,.55); background: rgba(255,213,77,.1); color: var(--sub); }
+.z-titles div.now b { color: var(--gold); }
+.z-ach { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.z-ach div {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px; font-size: 12.5px; line-height: 1.4; color: var(--faint);
+  background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 12px; animation: zin .35s cubic-bezier(.22,1,.36,1) both;
+}
+.z-ach .z-mark { flex: none; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; background: rgba(255,255,255,.08); color: var(--faint); }
+.z-ach .got { color: var(--tx); border-color: rgba(255,213,77,.4); background: rgba(255,213,77,.07); }
+.z-ach .got .z-mark { background: var(--gold); color: #241a00; }
+@media (max-width: 560px) {
+  .z-grid { grid-template-columns: repeat(3, 1fr); }
+  .z-tab { font-size: 12px; }
+  .z-ach { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .z-card, .z-ach div, .region-menu.open, .z-box, .load-globe, .st-globe { animation: none !important; }
+}
+
 /* 画面が低いとき（横向きスマホ）はボーナス一覧を省いて操作部を優先 */
 @media (max-height: 460px) {
   .st-bonus { display: none; }
@@ -434,7 +554,7 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
 
 <!-- 読み込み -->
 <div id="loading">
-  <div class="load-globe">🌍</div>
+  <div class="load-globe"><i class="globe"></i></div>
   <div class="load-bar"><i></i></div>
   <div id="load-msg">世界地図データを読み込んでいます…</div>
 </div>
@@ -442,7 +562,7 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
 <!-- スタート画面 -->
 <div id="start">
   <div class="st-box">
-    <div class="st-globe">🌍</div>
+    <div class="st-globe"><i class="globe"></i></div>
     <div class="st-title">世界陣取りクエスト</div>
     <div class="st-sub">国旗クイズに正解して、世界地図を自分の色にぬりつくせ!</div>
 
@@ -460,20 +580,24 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
       </div>
 
       <div id="gate-msg" class="gate-msg"></div>
-      <button id="btn-online" class="btn">🌐 みんなで対戦</button>
-      <button id="btn-solo" class="btn btn-sub">📴 ひとりで練習</button>
+      <button id="btn-online" class="btn">みんなで対戦</button>
+      <div class="st-row">
+        <button id="btn-solo" class="btn btn-sub">ひとりで練習</button>
+        <button id="btn-region" class="btn btn-sub" aria-haspopup="listbox" aria-expanded="false">州限定 <span class="caret">▾</span></button>
+        <div id="region-menu" class="region-menu" role="listbox" aria-label="州をえらぶ"></div>
+      </div>
     </div>
 
     <div class="st-bonus">
       <h3>— BONUS —</h3>
       <div class="bonus-grid">
-        <div class="bonus-chip"><span class="bi">⚡</span><span>7秒以内に正解<br><b>+30</b></span></div>
-        <div class="bonus-chip"><span class="bi">🔥</span><span>連続正解<br><b>最大+100</b></span></div>
-        <div class="bonus-chip"><span class="bi">🧩</span><span>領地のとなりをぬる<br><b>+50</b></span></div>
-        <div class="bonus-chip"><span class="bi">⚔️</span><span>人の領地をうばう<br><b>+100</b></span></div>
-        <div class="bonus-chip"><span class="bi">🏅</span><span>5か国ごと<br><b>+200</b></span></div>
-        <div class="bonus-chip"><span class="bi">🌏</span><span>同じ州で5か国ごと<br><b>+300</b></span></div>
-        <div class="bonus-chip wide"><span class="bi">👑</span><span>州を完全制覇 <b>+1000</b>　※まちがえた国は30秒おやすみ・占領直後45秒は保護</span></div>
+        <div class="bonus-chip"><span class="bi bi-speed">»</span><span>7秒以内に正解<br><b>+30</b></span></div>
+        <div class="bonus-chip"><span class="bi bi-combo">×</span><span>連続正解<br><b>最大+100</b></span></div>
+        <div class="bonus-chip"><span class="bi bi-adj">▦</span><span>領地のとなりをぬる<br><b>+50</b></span></div>
+        <div class="bonus-chip"><span class="bi bi-steal">◆</span><span>人の領地をうばう<br><b>+100</b></span></div>
+        <div class="bonus-chip"><span class="bi bi-five">◎</span><span>5か国ごと<br><b>+200</b></span></div>
+        <div class="bonus-chip"><span class="bi bi-cont">●</span><span>同じ州で5か国ごと<br><b>+300</b></span></div>
+        <div class="bonus-chip wide"><span class="bi bi-full">▲</span><span>州を完全制覇 <b>+1000</b>　※まちがえた国は30秒おやすみ・占領直後45秒は保護</span></div>
       </div>
     </div>
   </div>
@@ -491,7 +615,7 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
 
 <!-- ランキング -->
 <div id="side">
-  <div class="side-head"><span>🏆 ランキング <i id="rank-count"></i></span><button id="side-close">✕</button></div>
+  <div class="side-head"><span>ランキング <i id="rank-count"></i></span><button id="side-close">×</button></div>
   <div id="side-me"></div>
   <div id="rank-list"></div>
 </div>
@@ -500,12 +624,13 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
 <div class="fabs" id="fabs-l">
   <button class="fab fab-zoom" id="btn-zin" title="ズームイン">＋</button>
   <button class="fab fab-zoom" id="btn-zout" title="ズームアウト">－</button>
-  <button class="fab" id="btn-home" title="世界全体を表示">🌍</button>
+  <button class="fab fab-txt" id="btn-home" title="世界全体を表示">全体</button>
 </div>
 <div class="fabs" id="fabs-r">
-  <button class="fab" id="btn-rank" title="ランキング">🏆</button>
-  <button class="fab" id="btn-help" title="ルール">❓</button>
-  <button class="fab" id="btn-finish" title="きろくを送信">📤</button>
+  <button class="fab fab-txt" id="btn-rank" title="ランキング">順位</button>
+  <button class="fab fab-txt" id="btn-zukan" title="国旗図鑑">図鑑</button>
+  <button class="fab fab-txt" id="btn-help" title="ルール">ルール</button>
+  <button class="fab fab-txt" id="btn-finish" title="きろくを送信">送信</button>
 </div>
 
 <!-- 国情報カード -->
@@ -516,7 +641,7 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
   <div class="q-box">
     <div class="q-top">
       <div class="q-meta"><span id="q-type"></span><span id="q-country"></span></div>
-      <button id="q-close">✕</button>
+      <button id="q-close">×</button>
     </div>
     <div class="q-barwrap"><div id="q-bar"></div></div>
     <div id="q-text"></div>
@@ -531,19 +656,37 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
 <!-- 時間切れのリザルト -->
 <div id="result">
   <div class="r-box">
-    <div class="r-title">⏰ おしまい!</div>
+    <div class="r-title">おしまい!</div>
     <div class="r-sub" id="r-sub"></div>
     <div class="r-grid" id="r-grid"></div>
     <div class="r-conts" id="r-conts"></div>
-    <a class="btn" id="r-hub">🏠 まなびの基盤にもどる</a>
+    <a class="btn" id="r-hub">まなびの基盤にもどる</a>
     <button class="btn btn-sub" id="r-close">地図を見る</button>
+  </div>
+</div>
+
+<!-- 国旗図鑑（占領したことのある国を端末に記録） -->
+<div id="zukan">
+  <div class="z-box">
+    <div class="z-head">
+      <h2>国旗図鑑</h2>
+      <span class="z-stat" id="z-stat"></span>
+      <button class="z-close" id="z-close">×</button>
+    </div>
+    <div class="z-tabs" id="z-tabs"></div>
+    <div id="z-body"></div>
+    <div class="z-foot" id="z-foot">
+      <button id="z-prev">◀ 前へ</button>
+      <span class="z-page" id="z-page"></span>
+      <button id="z-next">次へ ▶</button>
+    </div>
   </div>
 </div>
 
 <!-- ヘルプ -->
 <div id="help">
   <div class="h-box">
-    <h2>🌍 あそびかた</h2>
+    <h2>あそびかた</h2>
     <div class="h-lead">
       国をタップ → クイズに正解 → 占領!（+100）<br>
       問題は<b>その国の国旗</b>が中心。首都や特色の問題も出るよ。<br>
@@ -551,15 +694,15 @@ button { font-family: inherit; font-weight: 700; cursor: pointer; touch-action: 
       まちがえた国は30秒間、再挑戦できない。
     </div>
     <div class="bonus-grid">
-      <div class="bonus-chip"><span class="bi">⚡</span><span>7秒以内に正解<br><b>+30</b></span></div>
-      <div class="bonus-chip"><span class="bi">🔥</span><span>連続正解<br><b>最大+100</b></span></div>
-      <div class="bonus-chip"><span class="bi">🧩</span><span>領地のとなりをぬる<br><b>+50</b></span></div>
-      <div class="bonus-chip"><span class="bi">⚔️</span><span>人の領地をうばう<br><b>+100</b></span></div>
-      <div class="bonus-chip"><span class="bi">🏅</span><span>5か国ごと<br><b>+200</b></span></div>
-      <div class="bonus-chip"><span class="bi">🌏</span><span>同じ州で5か国ごと<br><b>+300</b></span></div>
-      <div class="bonus-chip wide"><span class="bi">👑</span><span>州を完全制覇で <b>+1000</b></span></div>
+      <div class="bonus-chip"><span class="bi bi-speed">»</span><span>7秒以内に正解<br><b>+30</b></span></div>
+      <div class="bonus-chip"><span class="bi bi-combo">×</span><span>連続正解<br><b>最大+100</b></span></div>
+      <div class="bonus-chip"><span class="bi bi-adj">▦</span><span>領地のとなりをぬる<br><b>+50</b></span></div>
+      <div class="bonus-chip"><span class="bi bi-steal">◆</span><span>人の領地をうばう<br><b>+100</b></span></div>
+      <div class="bonus-chip"><span class="bi bi-five">◎</span><span>5か国ごと<br><b>+200</b></span></div>
+      <div class="bonus-chip"><span class="bi bi-cont">●</span><span>同じ州で5か国ごと<br><b>+300</b></span></div>
+      <div class="bonus-chip wide"><span class="bi bi-full">▲</span><span>州を完全制覇で <b>+1000</b></span></div>
     </div>
-    <div class="h-lead" style="margin-top:12px">📤ボタンで、これまでの記録を「まなびの基盤」に送れます。</div>
+    <div class="h-lead" style="margin-top:12px">「送信」ボタンで、これまでの記録を「まなびの基盤」に送れます。</div>
     <button class="btn" id="btn-help-close">とじる</button>
   </div>
 </div>
