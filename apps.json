@@ -92,9 +92,9 @@
     "name": "数式ラボ",
     "subject": "数学",
     "file": "https://backtree-create.github.io/ManabiBox/equation-balance.html",
-    "desc": "一次方程式・連立方程式・因数分解を、操作とスコアアタックで攻略する数式ゲーム。",
+    "desc": "一次方程式・比例式・連立方程式・一次関数・因数分解・平方根を、操作とスコアアタックで攻略する数式ゲーム。",
     "unit": "ステージ",
-    "total": 64,
+    "total": 112,
     "color": "#F0B429",
     "icon": "bolt"
   },
@@ -114,9 +114,9 @@
     "name": "図形設計室",
     "subject": "数学",
     "file": "https://backtree-create.github.io/ManabiBox/geometry-forge.html",
-    "desc": "平面変換、積み木の空間把握、立方体の展開図を3種類の操作で攻略する図形ゲーム。",
+    "desc": "平面変換・空間把握・展開図に、角度（中2）と相似・三平方（中3）を加えた5分野の図形ゲーム。",
     "unit": "問題",
-    "total": 84,
+    "total": 132,
     "color": "#48D4D0",
     "icon": "cube"
   },

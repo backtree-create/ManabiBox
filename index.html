@@ -238,14 +238,14 @@ const DEFAULT_APPS = [
     desc:'歴史上の出来事を原因から結果へ並べ、全60章の因果関係をつなぐ歴史ゲーム。',
     unit:'章', total:60, color:'#C23A20', icon:'clock' },
   { key:'equation-balance', name:'数式ラボ', subject:'数学', file:'equation-balance.html',
-    desc:'一次方程式・連立方程式・因数分解を、操作とスコアアタックで攻略する数式ゲーム。',
-    unit:'ステージ', total:64, color:'#F0B429', icon:'bolt' },
+    desc:'一次方程式・比例式・連立方程式・一次関数・因数分解・平方根を、操作とスコアアタックで攻略する数式ゲーム。',
+    unit:'ステージ', total:112, color:'#F0B429', icon:'bolt' },
   { key:'resba-response', name:'レスバ・レスポンス', subject:'国語', file:'resba-response.html',
     desc:'証言の文法・敬語・論理の破綻を見抜き、異議を唱えて証人を攻略する国語ゲーム。',
     unit:'証人', total:6, color:'#BD8C3F', icon:'pen' },
   { key:'geometry-forge', name:'図形設計室', subject:'数学', file:'geometry-forge.html',
-    desc:'平面変換、積み木の空間把握、立方体の展開図を3種類の操作で攻略する図形ゲーム。',
-    unit:'問題', total:84, color:'#48D4D0', icon:'cube' },
+    desc:'平面変換・空間把握・展開図に、角度（中2）と相似・三平方（中3）を加えた5分野の図形ゲーム。',
+    unit:'問題', total:132, color:'#48D4D0', icon:'cube' },
   { key:'algorithm-factory', name:'ロジック鉄道', subject:'情報', file:'algorithm-factory.html',
     desc:'命令を運行表へ並べ、順次・反復・条件分岐で列車を全駅経由の終着駅へ導くプログラミングゲーム。',
     unit:'路線', total:18, color:'#FFD24A', icon:'bolt' },
@@ -347,9 +347,11 @@ function render(){
 
   $('grid').innerHTML = APPS.map(app => {
     const rec  = saved[app.key] || { done:0, best:0 };
-    const done = Math.min(rec.done || 0, app.total);
-    doneSum += done; totalSum += app.total;
-    const w = app.total ? done / app.total * 100 : 0;
+    /* 学年モードで範囲が変わるゲームは、ゲームが送ってきた total を優先する */
+    const total = (rec.total > 0) ? rec.total : app.total;
+    const done = Math.min(rec.done || 0, total);
+    doneSum += done; totalSum += total;
+    const w = total ? done / total * 100 : 0;
 
     return `<a class="card" style="--accent:${esc(app.color)}" href="${esc(app.file)}">
       <div class="card-top">
@@ -363,10 +365,10 @@ function render(){
       ${titles[app.key] ? `<span class="ctitle">称号　${esc(titles[app.key])}</span>` : ''}
       <div class="marker"><i data-w="${w}"></i></div>
       <div class="meta">
-        <span>${done} / ${app.total} ${esc(app.unit)}</span>
+        <span>${done} / ${total} ${esc(app.unit)}</span>
         <span>${rec.best ? '最高 ' + rec.best : 'まだ記録なし'}</span>
       </div>
-      <span class="cta">${isLocked() ? 'ニックネームが必要' : label(done, app.total)}${ARROW}</span>
+      <span class="cta">${isLocked() ? 'ニックネームが必要' : label(done, total)}${ARROW}</span>
     </a>`;
   }).join('');
 
@@ -385,8 +387,9 @@ function render(){
 function renderNext(saved){
   const scored = APPS.map(a => {
     const r = saved[a.key] || { done:0 };
-    const done = Math.min(r.done || 0, a.total);
-    return { app:a, done, ratio: a.total ? done / a.total : 1 };
+    const total = (r.total > 0) ? r.total : a.total;
+    const done = Math.min(r.done || 0, total);
+    return { app:a, done, total, ratio: total ? done / total : 1 };
   });
   const inProgress = scored.filter(s => s.ratio > 0 && s.ratio < 1).sort((a,b) => b.ratio - a.ratio)[0];
   const fresh = scored.filter(s => s.ratio === 0)[0];
@@ -397,7 +400,7 @@ function renderNext(saved){
     <span class="lbl">${inProgress ? 'とちゅうまで進んでいます' : 'まだ手をつけていません'}</span>
     <span class="ttl">${esc(pick.app.name)}</span>
     <a class="btn" style="--accent:${esc(pick.app.color)}" href="${esc(pick.app.file)}">
-      ${isLocked() ? 'ニックネームが必要' : label(pick.done, pick.app.total)}</a>`;
+      ${isLocked() ? 'ニックネームが必要' : label(pick.done, pick.total)}</a>`;
 }
 
 function renderLog(saved){
@@ -414,7 +417,7 @@ function renderLog(saved){
       const r = saved[app.key], d = new Date(r.updated || Date.now());
       return `<tr><td class="head">${esc(app.name)}${r.note
           ? '<br><small style="color:var(--muted)">' + esc(r.note) + '</small>' : ''}</td>
-        <td class="num">${Math.min(r.done || 0, app.total)}/${app.total}</td>
+        <td class="num">${Math.min(r.done || 0, (r.total > 0 ? r.total : app.total))}/${r.total > 0 ? r.total : app.total}</td>
         <td class="num">${r.best ? r.best + (r.grade ? '<small style="color:var(--muted)"> 中' + r.grade + '</small>' : '') : '—'}</td>
         <td class="num">${r.plays}</td>
         <td class="num">${(d.getMonth()+1)}/${d.getDate()}</td></tr>`;
