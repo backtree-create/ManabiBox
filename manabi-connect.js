@@ -316,10 +316,24 @@
     } else if (st.screen === 'result') {
       note = '第' + st.chapter + '章 終了';
     }
+    /* 知識カードを使った回数も残す（ビルド済みのゲームなので、演出はハブ側の表示だけ） */
+    var use = Math.max(Number(rec.knowledgeUseCount) || 0, Number(st.knowledgeUseCount) || 0);
     global.manabiReport({
       app: RM.app, done: done, total: RM.total, best: best, raw: score,
-      note: note + '・知識 ' + got + '/' + RM.cards
+      note: note + '・知識 ' + got + '/' + RM.cards + (use ? '・活用' + use + '回' : '')
     });
+    /* 称号：人生を最後まで歩いたときの最終ランク（下がらない） */
+    if (rank && rank !== 'D') {
+      try {
+        var ORDER = ['C', 'B', 'A', 'S', 'SSS'];
+        var T = JSON.parse(global.localStorage.getItem('manabi-board:titles:v1') || '{}') || {};
+        var cur = String(T[RM.app] || '').replace('最終ランク', '');
+        if (ORDER.indexOf(rank) > ORDER.indexOf(cur)) {
+          T[RM.app] = '最終ランク' + rank;
+          global.localStorage.setItem('manabi-board:titles:v1', JSON.stringify(T));
+        }
+      } catch (e) {}
+    }
   });
 
   /* ---- 6. 日本一周クエストのアダプター ---------------------- */

@@ -100,7 +100,8 @@ p.sub{color:#B9C2D8;font-size:clamp(12px,2.2vmin,17px);line-height:1.8;margin:1e
   font-size:clamp(15px,3vmin,22px);padding:.7em 2.2em;margin:.4em;
   background:var(--amber);color:#211502;box-shadow:0 5px 0 #A67C1B}
 .btn:active{transform:translateY(3px);box-shadow:0 2px 0 #A67C1B}
-.btn.ghost{background:transparent;color:var(--white);border:2px solid rgba(242,233,220,.5);box-shadow:none}
+.btn.ghost{background:transparent;color:var(--white);border:2px solid rgba(242,233,220,.5);box-shadow:none;padding:.7em 1.5em}
+.btn.ghost.small{font-size:clamp(13px,2.4vmin,17px);padding:.6em 1.2em;vertical-align:middle}
 .btn.ghost:active{transform:translateY(2px)}
 .evList{display:grid;grid-template-columns:repeat(4,1fr);gap:2%;margin:1.4em 0}
 .evCard{background:rgba(179,59,39,.14);border:1px solid rgba(179,59,39,.55);border-radius:10px;padding:6% 2%}
@@ -117,6 +118,17 @@ p.sub{color:#B9C2D8;font-size:clamp(12px,2.2vmin,17px);line-height:1.8;margin:1e
 .bigNum small{font-size:.35em;letter-spacing:.1em;color:var(--amber-dim)}
 .ptRow{font-weight:900;font-size:clamp(15px,3.2vmin,24px);color:var(--white)}
 .ptRow span{color:var(--amber)}
+/* 自己ベスト（種目結果の獲得ポイント行・最終結果のTOTAL行の既存の欄に入れる） */
+.ptRow .pb{font-size:clamp(12px,2.2vmin,16px);font-weight:700;color:#B9C2D8;margin-left:1.2em;white-space:nowrap}
+.ptRow .pb.new,table.res .pb.new{color:var(--good)}
+table.res .pb{font-family:'Zen Kaku Gothic New';font-size:clamp(12px,2vmin,15px);font-weight:700;color:#B9C2D8;
+  letter-spacing:0;white-space:nowrap}
+/* 給水・クールダウンのひとこと（クイズ画面のバッジと同じ行） */
+.qTip{display:inline-block;margin-left:1em;font-size:clamp(12px,2vmin,14px);font-weight:700;color:#8FB79E;vertical-align:middle}
+.qTip b{color:var(--good);margin-right:.4em}
+/* 復習モード: 誤答だけを解く。正解で消える */
+.qBadge.rev{background:var(--amber);color:#211502}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
 
 /* 横向きスマホなど高さが小さい画面: 1画面に収める */
 @media (max-height:480px){
@@ -193,6 +205,7 @@ table.res tr.total td{border-top:2px solid var(--amber-dim);border-bottom:none;
 
 <script src="config.js"></script>
 <script src="hub-progress.js"></script>
+<script src="manabi-juice.js"></script>
 <script src="manabi-connect.js"></script>
 <script>
 "use strict";
@@ -385,6 +398,37 @@ function hubReport(doneEvents, totalPt, note){
   btn.onclick=()=>{ location.href=url; };
 })();
 
+/* ---------------- 共通演出 manabi-juice（無くても動く） ---------------- */
+const MJX = window.MJ || null;
+const mj = (fn)=>{ if(!MJX) return undefined; try{ return fn(MJX); }catch(e){ return undefined; } };
+/* 称号: 合計点の自己ベストで決まる（配点の式は変えない。ランクB=1900 / A=2500 / S=3100 に揃える） */
+const TITLE_DEFS = [
+  {min:0,    name:'地区大会選手'},
+  {min:1900, name:'県大会選手'},
+  {min:2500, name:'全国大会選手'},
+  {min:3100, name:'世界大会選手'},
+];
+/* 給水・クールダウンのひとこと（保健の内容。クイズ画面のバッジの横に日替わりで1つ） */
+const TIPS = [
+  ['給水','運動中はのどが渇く前に、こまめに水分をとる'],
+  ['給水','汗をたくさんかいたら、水だけでなく塩分も補給する'],
+  ['給水','運動の前にもコップ1杯ほどの水分をとっておく'],
+  ['給水','尿の色がいつもより濃いときは水分不足のサイン'],
+  ['給水','飲み物は5〜15℃くらいに冷やしたものが吸収されやすい'],
+  ['クールダウン','運動後はすぐ座らず、軽く歩いて心拍数をゆっくり下げる'],
+  ['クールダウン','運動後のストレッチは反動をつけず、ゆっくり伸ばす'],
+  ['クールダウン','運動のあとは食事と睡眠で体を回復させる'],
+  ['熱中症予防','暑い日は帽子や日かげを使い、休けいをこまめにとる'],
+  ['熱中症予防','体を冷やすときは首・わきの下・足のつけ根が効果的'],
+];
+function tipHtml(i){
+  const day=Math.floor(Date.now()/864e5);
+  const t=TIPS[(day+i)%TIPS.length];
+  return `<span class="qTip"><b>${t[0]}</b>${t[1]}</span>`;
+}
+/* 種目の記録表示（数値＋単位）。countUp 用に数値を別に持つ */
+const fmt2 = n=>n.toFixed(2);
+
 /* ---------------- 種目定義 ---------------- */
 const EVENTS = [
  {id:'sprint', no:'EVENT 1', name:'100m走', lbl:'TIME',
@@ -413,6 +457,8 @@ const S = {
   results:[],            // {name, record(str), pts}
   quizGood:0,
   quizPool:[],
+  newBest:0,             // 今大会で自己ベストを更新した種目数（実績用）
+  flags:{},              // 実績用の種目フラグ（nohurdle / nofoul）
 };
 let R = null;            // 実行中種目のランタイム状態
 let lastT = performance.now();
@@ -611,6 +657,8 @@ function hud(on){
   $('#controls').style.display = on?'block':'none';
   const hb=$('#homeBtn');
   if(hb && !hb.hidden) hb.style.visibility = on?'hidden':'visible';
+  /* 競技中は共通演出の全画面レイヤーを外しておく（毎フレームの合成を軽くする。画面切替時に1回だけ） */
+  const mjl=document.querySelector('.mj-layer'); if(mjl) mjl.style.display = on?'none':'';
 }
 function setHud(evName, lbl){ $('#hEvent').textContent=evName; $('#hMainLbl').textContent=lbl; }
 function updHud(mainVal, v, vMax, st){
@@ -640,8 +688,15 @@ function screenMenu(){
      種目の合間には保健クイズが3問。正解するとスタミナの最大値が上がり、ボーナス点も入る。</p>
      <button class="btn" id="goStart">大会にエントリー</button>
      <button class="btn ghost" id="goFull">全画面表示</button>
+     <button class="btn ghost small" id="goReview">復習</button>
    </div>`;
+  /* 復習: 保健クイズの誤答だけを解き直す（画面が切り替わるときに一度だけ読む） */
+  const missN = (mj(M=>M.misses(HUB.key))||[]).length;
+  const rb=$('#goReview');
+  if(missN){ rb.onclick=()=>{ ac(); SFX.ding(); screenReview(); }; }   // ボタン列を1行に収めるため文字は「復習」のまま（誤答が無いときは押せない）
+  else{ rb.disabled=true; }
   $('#goStart').onclick = ()=>{ ac(); SFX.ding(); S.evIndex=0; S.staminaMax=100; S.results=[]; S.quizGood=0;
+      S.newBest=0; S.flags={};
       S.quizPool=buildQuizPool(3); screenIntro(); };
   $('#goFull').onclick = ()=>{ const el=document.documentElement;
       if(!document.fullscreenElement){ (el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el); }
@@ -661,31 +716,56 @@ function screenIntro(){
    </div>`;
   $('#goEv').onclick = ()=>{ ac(); startEvent(ev); };
 }
-function screenEventResult(ev, recordStr, pts, note){
+/* val: 記録の数値（秒 or m）, unit: '秒' / 'm', lower: 小さいほど良い（走種目） */
+function screenEventResult(ev, val, unit, pts, note, lower){
   hud(false); S.scene='evres';
+  const recordStr = fmt2(val)+' '+unit;
   S.results.push({name:ev.name, record:recordStr, pts});
   hubReport(S.results.length,
     S.results.reduce((a,r)=>a+r.pts,0)+S.quizGood*100,
     `素点 ${S.results.reduce((a,r)=>a+r.pts,0)+S.quizGood*100} / ${ev.name}まで ${S.results.length}/4種目`);
+  /* 種目別自己ベスト（記録値と点）。ファウルのみ(0m)は記録にしない */
+  let pbHtml='', rec=null;
+  if(MJX && !(unit==='m' && val<=0)){
+    rec = mj(M=>M.record(HUB.key, ev.id, val, {lower:!!lower}));
+    mj(M=>M.record(HUB.key, ev.id+':pt', pts));
+    const best = mj(M=>M.best(HUB.key, ev.id));
+    if(rec && rec.isNew){ S.newBest++; pbHtml=`<span class="pb new">大会記録更新！ ${fmt2(val)} ${unit}</span>`; }
+    else if(best!=null) pbHtml=`<span class="pb">自己ベスト ${fmt2(best)} ${unit}</span>`;
+  }
   ovl.innerHTML = `
    <div class="panel">
      <div class="eyebrow">${ev.no} RESULT</div>
      <h2>${ev.name}</h2>
-     <div class="bigNum">${recordStr}</div>
+     <div class="bigNum"><span id="bigVal">${recordStr}</span></div>
      ${note?`<p class="sub">${note}</p>`:''}
-     <div class="ptRow">獲得ポイント <span>${pts}</span> pt</div>
+     <div class="ptRow">獲得ポイント <span id="ptVal">${pts}</span> pt${pbHtml}</div>
      <br><button class="btn" id="goNext">${S.evIndex<3?'次へ':'最終結果へ'}</button>
    </div>`;
   $('#goNext').onclick = ()=>{
     if(S.evIndex<3){ screenQuiz(); } else { screenFinal(); }
   };
+  /* 演出: 数字のカウントアップ → 良い記録で控えめなパーティクル → 更新なら帯を1回 */
+  mj(M=>{
+    M.countUp($('#bigVal'), val, {ms:700, format:n=>fmt2(n)+' '+unit});
+    M.countUp($('#ptVal'), pts, {ms:700, format:n=>String(Math.round(n))});
+    if(rec && rec.isNew){
+      setTimeout(()=>{ M.banner('大会記録更新', {color:'#B33B27'}); M.burst($('#bigVal'), {count:16, color:'#FFC53D', color2:'#E5533C'}); }, 750);
+    } else if(pts>=900){
+      setTimeout(()=>M.burst($('#bigVal'), {count:12, color:'#FFC53D', color2:'#5AD38A'}), 750);
+    }
+    /* 実績 */
+    if(ev.id==='hurdle' && S.flags.nohurdle) M.achieve(HUB.key, 'nohurdle', '全ハードルクリア');
+    if(ev.id==='sprint' && val<12.5) M.achieve(HUB.key, 'sprint125', '100m 12秒5切り');
+    if(ev.id==='shot' && val>10) M.achieve(HUB.key, 'shot10', '砲丸 10m超え');
+  });
 }
 function screenQuiz(){
   S.scene='quiz'; hud(false);
   const q = S.quizPool[S.evIndex];
   ovl.innerHTML = `
    <div class="panel">
-     <div class="qBadge">保健クイズ ${S.evIndex+1} / 3</div>
+     <div><span class="qBadge">保健クイズ ${S.evIndex+1} / 3</span>${tipHtml(S.evIndex)}</div>
      <p class="qText">${q.q}</p>
      <div class="choices">
        ${q.c.map((c,i)=>`<button class="choice" data-i="${i}">${c}</button>`).join('')}
@@ -698,8 +778,8 @@ function screenQuiz(){
       const i=+b.dataset.i, ok=(i===q.a);
       ovl.querySelectorAll('.choice')[q.a].classList.add('correct');
       if(!ok) b.classList.add('wrong');
-      if(ok){ SFX.ding(); S.quizGood++; S.staminaMax+=15; }
-      else{ SFX.buzz(); }
+      if(ok){ SFX.ding(); S.quizGood++; S.staminaMax+=15; mj(M=>M.burst(b,{count:14,color:'#5AD38A'})); }
+      else{ SFX.buzz(); mj(M=>{ M.flash('#E5533C'); M.shake(b); M.miss(HUB.key, QUIZ.indexOf(q), {q:q.q}); }); }
       $('#qres').innerHTML = `
         <div class="expl">${ok
           ? '<b>正解！</b> スタミナ最大値 +15、ボーナス +100pt。<br>'
@@ -709,7 +789,54 @@ function screenQuiz(){
     };
   });
 }
-window.__ATH={ get grade(){return hubGrade();}, QUIZ, buildQuizPool, S, screenMenu, screenQuiz, screenEventResult, screenFinal, EVENTS };
+/* 復習モード: 貯めた誤答だけを出題（ハブには送らない）。正解で消える */
+function screenReview(){
+  S.scene='review'; hud(false);
+  const list = (mj(M=>M.misses(HUB.key))||[]).map(m=>+m.id).filter(i=>QUIZ[i]);
+  const total = list.length;
+  let pos = 0, cleared = 0;
+  const show = ()=>{
+    if(pos>=total){
+      ovl.innerHTML = `
+       <div class="panel">
+         <div><span class="qBadge rev">復習 おわり</span></div>
+         <p class="qText">${total}問中 ${cleared}問クリア。${cleared===total?'誤答がすべて消えた！':'まちがえた問題はまた復習に残る。'}</p>
+         <button class="btn" id="qBack">メニューへ</button>
+       </div>`;
+      if(cleared===total && total>0) mj(M=>M.achieve(HUB.key,'review','復習で誤答をすべて消した'));
+      $('#qBack').onclick = screenMenu;
+      return;
+    }
+    const qi=list[pos], q=QUIZ[qi];
+    ovl.innerHTML = `
+     <div class="panel">
+       <div><span class="qBadge rev">復習 ${pos+1} / ${total}</span>${tipHtml(pos)}</div>
+       <p class="qText">${q.q}</p>
+       <div class="choices">
+         ${q.c.map((c,i)=>`<button class="choice" data-i="${i}">${c}</button>`).join('')}
+       </div>
+       <div id="qres"></div>
+     </div>`;
+    ovl.querySelectorAll('.choice').forEach(b=>{
+      b.onclick = ()=>{
+        ovl.querySelectorAll('.choice').forEach(x=>x.disabled=true);
+        const i=+b.dataset.i, ok=(i===q.a);
+        ovl.querySelectorAll('.choice')[q.a].classList.add('correct');
+        if(!ok) b.classList.add('wrong');
+        if(ok){ SFX.ding(); cleared++; mj(M=>{ M.hit(HUB.key, qi); M.burst(b,{count:14,color:'#5AD38A'}); }); }
+        else{ SFX.buzz(); mj(M=>{ M.flash('#E5533C'); M.shake(b); }); }
+        $('#qres').innerHTML = `
+          <div class="expl">${ok
+            ? '<b>正解！</b> この問題は復習リストから消えた。<br>'
+            : '<b>残念…</b> 正解は「'+q.c[q.a]+'」。<br>'}${q.e}</div>
+          <button class="btn" id="qNext" style="margin-top:1em">${pos+1<total?'次の問題へ':'おわる'}</button>`;
+        $('#qNext').onclick = ()=>{ pos++; show(); };
+      };
+    });
+  };
+  show();
+}
+window.__ATH={ get grade(){return hubGrade();}, QUIZ, buildQuizPool, S, screenMenu, screenQuiz, screenEventResult, screenFinal, screenReview, EVENTS, TIPS, get R(){return R;} };
 function rankOf(total){
   if(total>=3100) return ['S','伝説の選手爆誕。オリンピックが君を待っている。'];
   if(total>=2500) return ['A','大会MVP級！ 全種目ハイレベルにまとめた。'];
@@ -724,6 +851,15 @@ function screenFinal(){
   const [rk,msg] = rankOf(total);
   hubReport(4, total, `素点 ${total} / RANK ${rk}`);
   SFX.fanfare(); SFX.cheer();
+  /* 合計点の自己ベスト・称号・実績（画面を作るときに一度だけ読む） */
+  let totHtml='', rec=null, ttl='';
+  if(MJX){
+    rec = mj(M=>M.record(HUB.key, 'total', total));
+    const best = mj(M=>M.best(HUB.key, 'total'));
+    ttl = mj(M=>M.title(HUB.key, TITLE_DEFS, best||total)) || '';
+    totHtml = (rec && rec.isNew) ? `<span class="pb new">大会記録更新！</span>` : `<span class="pb">自己ベスト ${best} pt</span>`;
+    if(ttl) totHtml += `<span class="pb"> ／ 称号 ${ttl}</span>`;
+  }
   ovl.innerHTML = `
    <div class="panel">
      <div class="eyebrow">FINAL RESULT</div>
@@ -731,13 +867,25 @@ function screenFinal(){
      <table class="res">
        ${S.results.map(r=>`<tr><td>${r.name}</td><td style="text-align:center;color:#B9C2D8">${r.record}</td><td>${r.pts} pt</td></tr>`).join('')}
        <tr><td>保健クイズボーナス</td><td style="text-align:center;color:#B9C2D8">${S.quizGood} / 3 問正解</td><td>${bonus} pt</td></tr>
-       <tr class="total"><td>TOTAL</td><td></td><td>${total} pt</td></tr>
+       <tr class="total"><td>TOTAL</td><td style="text-align:center">${totHtml}</td><td><span id="totVal">${total}</span> pt</td></tr>
      </table>
      <div class="rank">RANK ${rk}</div>
      <div class="rankMsg">${msg}</div>
      <br><button class="btn" id="goRetry">もう一度挑戦</button>
    </div>`;
   $('#goRetry').onclick = screenMenu;
+  mj(M=>{
+    M.countUp($('#totVal'), total, {ms:900, format:n=>String(Math.round(n))});
+    /* ファンファーレが鳴っているので帯は無音で */
+    if(rec && rec.isNew) setTimeout(()=>{ M.banner('大会記録更新', {color:'#B33B27', sound:'none'}); M.burst($('#totVal'), {count:16, color:'#FFC53D', color2:'#E5533C'}); }, 950);
+    else if(rk==='S'||rk==='A') setTimeout(()=>M.burst($('#totVal'), {count:12, color:'#FFC53D', color2:'#5AD38A'}), 950);
+    /* 実績 */
+    M.achieve(HUB.key, 'finish', '四種競技を完走');
+    if(S.quizGood>=3) M.achieve(HUB.key, 'quiz3', '保健クイズ全問正解');
+    if(S.newBest>=4) M.achieve(HUB.key, 'allbest', '全種目で自己ベスト更新');
+    if(S.flags.nofoul) M.achieve(HUB.key, 'nofoul', '幅跳び ファウルなし');
+    if(rk==='S') M.achieve(HUB.key, 'rankS', 'RANK S');
+  });
 }
 
 /* ---------------- 種目：走系（100m / 110mH） ---------------- */
@@ -833,7 +981,8 @@ function updateRun(dt){
                : R.finT<19 ? `倒したハードル ${hit} 台。それでも好タイム！`
                : `倒したハードル ${hit} 台。黄色いゾーンでジャンプしよう。`;
         }
-        screenEventResult(ev, R.finT.toFixed(2)+' 秒', pts, note);
+        if(ev.id==='hurdle') S.flags.nohurdle = (R.fallen.size===0);
+        screenEventResult(ev, R.finT, '秒', pts, note, true);
       }, 1200);
     }
   }
@@ -994,7 +1143,8 @@ function updateLJ(dt){
         const note = R.best<=0 ? '2回ともファウル…次は板の手前で跳ぼう。'
           : R.best>5.4 ? '大ジャンプ！ 助走と角度が完璧！'
           : 'いい跳躍！ 角度40度前後を極めよう。';
-        screenEventResult(ev, R.best.toFixed(2)+' m', pts, note);
+        S.flags.nofoul = R.records.length===2 && R.records.every(x=>x!==null);
+        screenEventResult(ev, R.best, 'm', pts, note, false);
       }
     }
   }
@@ -1153,7 +1303,7 @@ function updateShot(dt){
         const ev=R.ev;
         const pts=Math.min(1100, Math.round(R.best*82));
         const note=R.best>10?'ミートポイント完璧の大遠投！':R.best>7?'力強い一投！':'パワーゲージを満タン近くまで！';
-        screenEventResult(ev, R.best.toFixed(2)+' m', pts, note);
+        screenEventResult(ev, R.best, 'm', pts, note, false);
       }
     }
   }
