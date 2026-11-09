@@ -1,0 +1,2598 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>ことわざ錬成 ─ ことわざクラフトRPG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sumi:#0c1119; --sumi2:#131c2b; --panel:#16203247; --ai:#1b3a5c; --ai2:#2a5580;
+  --kin:#d9a441; --kin2:#8a6a26; --shu:#c8452f; --shu2:#8f2f20;
+  --kinari:#f3ead6; --aijiro:#a9c0d4; --gray:#8fa0b5; --take:#6fa96b;
+  --sky1:#16273f; --sky2:#0b111c; --ground:#25405e;
+  --notch: polygon(
+    8px 0, calc(100% - 8px) 0, calc(100% - 8px) 4px, calc(100% - 4px) 4px,
+    calc(100% - 4px) 8px, 100% 8px, 100% calc(100% - 8px),
+    calc(100% - 4px) calc(100% - 8px), calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 8px) calc(100% - 4px), calc(100% - 8px) 100%, 8px 100%,
+    8px calc(100% - 4px), 4px calc(100% - 4px), 4px calc(100% - 8px),
+    0 calc(100% - 8px), 0 8px, 4px 8px, 4px 4px, 8px 4px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0;padding:0;overflow:hidden}
+body{
+  background:var(--sumi); color:var(--kinari);
+  font-family:"DotGothic16","MS Gothic",monospace;
+  font-size:15px; line-height:1.5; letter-spacing:.02em;
+  -webkit-text-size-adjust:100%; image-rendering:pixelated; overscroll-behavior:none;
+  -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+}
+/* 麻の葉くずしの地紋 */
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:
+    repeating-linear-gradient(60deg,rgba(169,192,212,.06) 0 1px,transparent 1px 24px),
+    repeating-linear-gradient(-60deg,rgba(169,192,212,.06) 0 1px,transparent 1px 24px),
+    repeating-linear-gradient(0deg,rgba(169,192,212,.05) 0 1px,transparent 1px 24px);
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px);
+}
+#app{position:relative;z-index:1;height:100vh;height:100dvh;max-width:560px;margin:0 auto;
+  padding:6px 10px 8px;display:flex;flex-direction:column;min-height:0}
+.screen{flex:1;display:flex;flex-direction:column;min-height:0;gap:7px}
+.scr-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:7px}
+.scr-foot{flex:0 0 auto;display:flex;flex-direction:column;gap:6px}
+.pane{min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.hidden{display:none !important}
+.grow{flex:1;min-height:0}
+
+/* ---- 枠（金の二重線） ---- */
+.px{clip-path:var(--notch);background:var(--sumi2);border:4px solid var(--ai2);
+  box-shadow:inset 0 0 0 2px rgba(217,164,65,.28)}
+.panel{padding:10px 12px}
+.panel.dark{background:#0f1724}
+
+.hud{flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:2px 2px 4px}
+.hud .t{font-size:17px;color:var(--kin);text-shadow:2px 2px 0 #000}
+.hud .t::before{content:"◆";color:var(--shu);margin-right:6px;font-size:12px}
+.hud .spacer{flex:1}
+/* ハブ側の「まなびの基板」ボタン（左上固定）と見出しが重ならないようにする */
+body:has(#manabi-back) .hud{padding-left:118px}
+.tag{border:2px solid var(--ai2);background:#0f1724;color:var(--gray);font-size:11.5px;padding:0 7px}
+.label{font-size:12px;color:var(--kin)}
+.muted{color:var(--gray);font-size:12.5px}
+.hr{height:2px;background:var(--ai2);margin:8px 0;opacity:.7}
+.row{display:flex;gap:7px}.row>*{flex:1}
+
+.btn{appearance:none;font-family:inherit;font-size:15px;color:var(--kinari);
+  background:var(--ai);border:4px solid var(--ai2);clip-path:var(--notch);
+  padding:9px 10px;width:100%;cursor:pointer;box-shadow:inset 0 -4px 0 rgba(0,0,0,.3);touch-action:manipulation}
+@media (hover:hover){.btn:hover{background:#24557f}}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn.primary{background:var(--shu);border-color:var(--kin);color:#fff4e0;
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,.28),inset 0 0 0 2px rgba(255,255,255,.12)}
+@media (hover:hover){.btn.primary:hover{background:#dd5641}}
+.btn.ghost{background:#0f1724;border-color:var(--ai);color:var(--gray);font-size:13px;padding:6px 9px}
+.btn.snd{width:auto;padding:4px 8px;font-size:12px}
+.btn:disabled{opacity:.35;cursor:default;transform:none}
+.btn:focus-visible,.seal:focus-visible,.card:focus-visible,.k:focus-visible,.slot:focus-visible{outline:3px solid var(--kin);outline-offset:2px}
+
+/* ---- スプライト ---- */
+.spr{position:relative;display:inline-block;vertical-align:bottom}
+.spr img{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+.spr img:nth-child(1){animation:frA 1.1s steps(1,end) infinite}
+.spr img:nth-child(2){animation:frB 1.1s steps(1,end) infinite}
+@keyframes frA{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes frB{0%,49%{opacity:0}50%,100%{opacity:1}}
+.spr.flash img{filter:brightness(0) invert(1)}
+
+/* ---- 戦闘ステージ ---- */
+.stage{position:relative;flex:1;min-height:118px;overflow:hidden;
+  border:4px solid var(--ai2);clip-path:var(--notch);
+  background:linear-gradient(180deg,var(--sky1),var(--sky2))}
+.stage .moon{position:absolute;top:12px;right:16px;width:26px;height:26px;
+  background:#e8dcbb;box-shadow:0 0 0 4px rgba(232,220,187,.12)}
+.stage .wave{position:absolute;left:0;right:0;bottom:38px;height:46%;opacity:.3;
+  background-image:repeating-radial-gradient(circle at 50% 100%,transparent 0 9px,
+    rgba(169,192,212,.55) 9px 10px,transparent 10px 18px);
+  background-size:36px 18px}
+.stage .ground{position:absolute;left:0;right:0;bottom:0;height:38px;background:var(--ground);
+  border-top:4px solid rgba(217,164,65,.35)}
+.stage .ground::after{content:"";position:absolute;inset:0;
+  background-image:repeating-conic-gradient(rgba(0,0,0,.22) 0 25%,transparent 0 50%);
+  background-size:16px 16px}
+.stage .foe{position:absolute;left:50%;bottom:30px;transform:translateX(-50%)}
+.stage .foe .spr{width:100% !important;height:100% !important}
+.stage .foe{width:clamp(88px,19vh,168px);height:clamp(88px,19vh,168px)}
+.stage .shadow{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);
+  width:clamp(56px,12vh,110px);height:8px;background:rgba(0,0,0,.45)}
+.stage.shake{animation:shk .28s steps(2,end)}
+@keyframes shk{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.bubble{position:absolute;top:8px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  background:#0f1724;border:3px solid var(--shu);clip-path:var(--notch);
+  color:#f6c9bf;font-size:12px;padding:2px 10px}
+.dmg{position:absolute;bottom:56%;font-size:24px;color:var(--kin);
+  text-shadow:2px 2px 0 #000,-2px -2px 0 #000;animation:pop .9s steps(9,end) forwards;pointer-events:none}
+.dmg.weak{color:#ff7a63}
+@keyframes pop{0%{transform:translateY(8px);opacity:1}100%{transform:translateY(-40px);opacity:0}}
+
+/* ---- ゲージ ---- */
+.bar{position:relative;height:14px;background:#070b12;border:3px solid var(--ai2);padding:2px}
+.bar>i{display:block;height:100%;background:var(--take);transition:width .25s steps(6,end)}
+.bar.foe>i{background:var(--shu)}
+.bar::after{content:"";position:absolute;inset:2px;pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0 6px,rgba(0,0,0,.5) 6px 8px)}
+.pips{display:flex;gap:4px}
+.pip{width:13px;height:13px;background:#070b12;border:3px solid var(--ai2)}
+.pip.on{background:var(--kin);border-color:var(--kin)}
+.statline{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--gray)}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.chips span{font-size:11px;border:2px solid var(--kin);color:var(--kin);padding:0 5px}
+.chips span.bad{border-color:var(--shu);color:#f6b5a9}
+.log{font-size:12.5px;color:var(--aijiro);min-height:3.2em}
+.log b{color:var(--kin)}
+
+/* ---- 札 ---- */
+.hand{display:flex;gap:7px;overflow-x:auto;overflow-y:hidden;padding:11px 2px 6px}
+#s-battle .col-a{display:flex;flex-direction:column;gap:7px;min-height:0;flex:1}
+#s-map .col-a{display:flex;flex-direction:column;gap:7px;min-height:0;flex:1}
+#s-map .col-a>.px:first-child{flex:1;display:flex;flex-direction:column;justify-content:center}
+#s-map .col-b{flex:0 0 auto;padding:8px 10px}
+#s-map .route{margin:14px 0 4px}
+#s-map .tile .box{width:38px;height:38px}
+.seal{flex:0 0 auto;width:88px;height:72px;cursor:pointer;position:relative;touch-action:manipulation;
+  background:#e7dcc0;border:4px solid #6b4f27;clip-path:var(--notch);
+  color:#1d1a12;font-family:inherit;font-size:15px;line-height:1.2;padding:8px 5px 6px;
+  word-break:break-all;text-align:center;letter-spacing:0;
+  display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2)}
+.seal.long{font-size:13px}
+.seal .el{position:absolute;left:0;right:0;top:0;height:6px}
+.seal.sel{transform:translateY(-8px);border-color:var(--kin);box-shadow:inset 0 0 0 3px rgba(217,164,65,.5)}
+.seal{transition:transform .18s cubic-bezier(.22,1,.36,1)}
+.seal .ord{position:absolute;top:3px;right:3px;width:18px;height:18px;background:var(--shu);
+  color:#fff;font-size:12px;line-height:18px;text-align:center}
+.card{flex:0 0 auto;width:128px;min-height:72px;cursor:pointer;text-align:left;touch-action:manipulation;
+  background:#16233a;border:4px solid var(--ai2);clip-path:var(--notch);
+  color:var(--kinari);font-family:inherit;padding:7px 8px;
+  display:flex;flex-direction:column;justify-content:space-between;gap:3px}
+.card.sel{transform:translateY(-8px);border-color:var(--kin)}
+.card .name{font-size:16px;color:var(--kin)}
+.card .fx{font-size:12px;line-height:1.3;color:var(--aijiro)}
+.cardtop{display:flex;justify-content:space-between;align-items:center;gap:4px}
+.cost-badge{font-size:11px;color:#1d1a12;background:var(--kin);padding:0 5px}
+.el-badge{font-size:11px;padding:0 5px;color:#0c1119}
+.el-剛{background:var(--shu)}.el-柔{background:#4a7fb5}.el-智{background:var(--take)}
+.dot-剛{background:var(--shu)}.dot-柔{background:#4a7fb5}.dot-智{background:var(--take)}
+.actionbar{display:flex;gap:7px}.actionbar .btn{flex:1}
+
+/* ---- 道中 ---- */
+.route{display:flex;align-items:flex-end;margin:8px 0 2px}
+.tile{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;gap:4px}
+.tile .box{width:34px;height:34px;background:#0f1724;border:3px solid var(--ai2);
+  display:flex;align-items:center;justify-content:center}
+.tile.done .box{border-color:var(--kin2);opacity:.7}
+.tile.now .box{background:#3a2413;border-color:var(--kin);box-shadow:0 0 0 3px rgba(217,164,65,.22)}
+.tile .you{height:30px;display:flex;align-items:flex-end}
+.tile .n{font-size:10.5px;color:var(--gray)}
+.tile.now .n{color:var(--kin)}
+.tile::after{content:"";position:absolute;bottom:22px;left:63%;right:-37%;height:4px;
+  background:repeating-linear-gradient(90deg,var(--ai2) 0 4px,transparent 4px 8px)}
+.tile:last-child::after{display:none}
+.chaphead{display:flex;align-items:center;gap:9px}
+.chaphead .num{font-size:11.5px;color:#fff4e0;background:var(--shu);padding:1px 7px}
+.chaphead h2{margin:0;font-size:19px;font-weight:normal;letter-spacing:.08em}
+
+/* ---- 錬成所 ---- */
+.circle{position:relative;max-width:340px;margin:6px auto;display:grid;
+  grid-template-columns:1fr 1fr;gap:7px;padding:8px;background:#0f1724;
+  border:4px solid var(--ai2);clip-path:var(--notch)}
+.circle.ok{border-color:var(--kin);animation:glow .8s steps(2,end) infinite}
+@keyframes glow{0%,49%{box-shadow:inset 0 0 0 4px rgba(217,164,65,.4)}50%,100%{box-shadow:none}}
+.slot{min-height:52px;background:#080d15;border:3px dashed #2a5580;cursor:pointer;touch-action:manipulation;
+  display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1.25;padding:6px 8px;
+  text-align:center;word-break:break-all;color:#2a5580;position:relative}
+.slot .no{position:absolute;top:2px;left:5px;font-size:11px;color:#2a5580}
+.slot.filled .no{color:#8a6a3a}
+.slot.opt{border-style:dotted;opacity:.75}
+.slot.filled{background:#e7dcc0;border:3px solid #6b4f27;color:#1d1a12}
+.k .u{position:absolute;top:4px;left:3px;font-size:11px;font-weight:700;line-height:1}
+.u0{color:#c8452f}.u1{color:#2f6b3a}.u2{color:#8a7f66}.u3{color:#b9b0a0}
+.grouphead{font-size:12px;color:var(--kin);margin:8px 0 4px;border-bottom:1px solid var(--ai2);padding-bottom:2px}
+.grouphead:first-child{margin-top:0}
+.sortrow{display:flex;gap:6px;flex:0 0 auto}
+.sortrow .btn{flex:1;padding:5px 6px;font-size:12px}
+.inv{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+.k{min-height:50px;position:relative;cursor:pointer;font-family:inherit;font-size:14px;line-height:1.2;touch-action:manipulation;
+  background:#e7dcc0;border:3px solid #6b4f27;color:#1d1a12;padding:9px 6px 10px;word-break:break-all;text-align:center;
+  display:flex;align-items:center;justify-content:center}
+.k .n{position:absolute;bottom:0;right:3px;font-size:11px;color:#6b5236}
+.k .el{position:absolute;left:0;right:0;top:0;height:5px}
+.k.off{opacity:.3}
+
+/* ---- 図鑑 ---- */
+.foecard{display:flex;gap:9px;align-items:center;margin-top:4px}
+.foeinfo{flex:1;min-width:0;line-height:1.35}
+.foename{font-size:15px;color:var(--kin)}
+.foecard .statline{gap:6px;font-size:12px}
+.foecard .muted{font-size:11.5px}
+.dexgrid{display:grid;grid-template-columns:1fr;gap:6px}
+.dex-item{border:3px solid var(--ai2);background:#0f1724;padding:7px 10px}
+.dex-item.got{border-color:var(--kin);background:#16233a}
+.dex-word{font-size:20px;letter-spacing:.12em}
+.dex-word .mask{color:#2a3d55}
+.dex-yomi{font-size:11.5px;color:var(--gray)}
+.near{color:var(--kin);font-size:11.5px}
+.dextabs{display:flex;gap:6px;flex:0 0 auto}
+.dextabs .btn{flex:1;padding:6px 6px;font-size:13px;min-height:40px}
+.dextabs .btn.on{background:var(--kin);border-color:var(--kin);color:#1a1208}
+.kindtag{font-size:11px;color:var(--gray);border:2px solid var(--ai2);padding:0 5px;margin-left:6px;vertical-align:middle}
+.dex-word{font-size:17px;letter-spacing:.04em}
+.dex-word .mask{color:#2a3d55}
+.dex-item{display:flex;flex-direction:column;gap:2px}
+.dex-item .dex-mean{font-size:12.5px;color:var(--gray)}
+
+/* ---- 表紙 ---- */
+#s-title .wrap{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
+  align-items:center;text-align:center;gap:10px}
+.logo{display:flex;justify-content:center;gap:5px}
+.logo span{width:clamp(36px,6vh,50px);height:clamp(44px,7.6vh,60px);background:var(--shu);
+  border:4px solid var(--kin);color:#fff4e0;font-size:clamp(22px,3.8vh,30px);
+  display:flex;align-items:center;justify-content:center;clip-path:var(--notch);
+  text-shadow:2px 2px 0 rgba(0,0,0,.5);animation:drop .5s steps(4,end) backwards}
+.logo span:nth-child(2){animation-delay:.12s}
+.logo span:nth-child(3){animation-delay:.24s}
+.logo span:nth-child(4){animation-delay:.36s}
+.logo span:nth-child(5){animation-delay:.48s}
+.logo span:nth-child(6){animation-delay:.6s}
+.logo{gap:4px}
+@keyframes drop{from{transform:translateY(-20px);opacity:0}to{transform:none;opacity:1}}
+.blink{animation:bl 1s steps(1,end) infinite;color:var(--kin)}
+@keyframes bl{0%,49%{opacity:1}50%,100%{opacity:.15}}
+.parade{display:flex;justify-content:center;gap:12px}
+.celebox{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.celeinner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center}
+.celebrate{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+.celebrate i{position:absolute;top:-14px;width:8px;height:8px;animation-name:fall;
+  animation-timing-function:linear;animation-iteration-count:infinite}
+@keyframes fall{0%{transform:translateY(-14px) rotate(0deg);opacity:1}
+  100%{transform:translateY(420px) rotate(180deg);opacity:.2}}
+.scrollwrap{position:relative;width:100%;max-width:400px;height:76px;overflow:hidden;
+  border-top:2px solid var(--kin2);border-bottom:2px solid var(--kin2);margin:6px 0}
+.scrollin{position:absolute;left:0;right:0;top:100%;color:var(--kin);font-size:15px;
+  line-height:1.9;text-align:center;animation:scrollup 46s linear infinite}
+@keyframes scrollup{from{transform:translateY(0)}to{transform:translateY(-1400px)}}
+.shukuseal{width:52px;height:52px;background:var(--shu);border:4px solid var(--kin);
+  color:#fff4e0;font-size:28px;line-height:44px;margin-bottom:10px;clip-path:var(--notch);
+  animation:pulse .9s steps(2,end) infinite}
+@keyframes pulse{0%,49%{box-shadow:0 0 0 4px rgba(217,164,65,.35)}50%,100%{box-shadow:none}}
+.celetitle{font-size:20px;color:var(--kin);margin-top:8px}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(6,9,14,.85);
+  display:flex;align-items:center;justify-content:center;padding:20px}
+.modal .box{max-width:360px;width:100%}
+.hardtag{border-color:var(--shu);color:#f6b5a9}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:50;
+  background:#16233a;border:4px solid var(--kin);clip-path:var(--notch);
+  color:var(--kinari);padding:8px 14px;font-size:13px;max-width:88vw;text-align:center;
+  opacity:0;pointer-events:none;transition:opacity .2s steps(2,end)}
+.toast.show{opacity:1}
+
+/* ================= 画面サイズ別 ================= */
+/* スマホ（縦） */
+@media (max-width:599px){
+  body{font-size:14px}
+  .card{width:118px;min-height:66px}
+  .seal{width:80px;height:66px;font-size:14px}.seal.long{font-size:12.5px}
+  .log{min-height:2.6em;font-size:12px}
+  .panel{padding:8px 10px}
+  .dex-word{font-size:18px}
+}
+@media (max-height:640px){
+  .stage{min-height:96px}
+  .seal{height:60px}.card{min-height:60px}
+  .hud{padding:0}
+  .log{min-height:2.2em}
+}
+/* タブレット */
+@media (min-width:600px) and (max-width:1023px){
+  body{font-size:16px}
+  #app{max-width:720px;padding:10px 16px 12px}
+  body:has(#manabi-back) .hud{padding-left:clamp(0px,472px - 50vw,118px)}
+  .stage .foe{width:clamp(120px,24vh,210px);height:clamp(120px,24vh,210px)}
+  .seal{width:98px;height:80px;font-size:16px}.seal.long{font-size:14px}
+  .card{width:150px}
+  .dexgrid{grid-template-columns:1fr 1fr}
+  .inv{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}
+}
+/* PC：戦闘は二段組 */
+@media (min-width:1024px){
+  body{font-size:16px}
+  #app{max-width:1080px;padding:12px 22px 14px}
+  body:has(#manabi-back) .hud{padding-left:clamp(0px,646px - 50vw,106px)}
+  .stage .foe{width:clamp(140px,26vh,240px);height:clamp(140px,26vh,240px)}
+  .seal{width:100px;height:78px;font-size:16px}.seal.long{font-size:14px}
+  .card{width:158px}
+  .dexgrid{grid-template-columns:1fr 1fr 1fr}
+  .inv{grid-template-columns:repeat(auto-fill,minmax(108px,1fr))}
+  #s-battle .scr-body{flex-direction:row}
+  #s-battle .col-a{flex:1.35;display:flex;flex-direction:column;gap:7px;min-height:0}
+  #s-battle .col-b{flex:1;display:flex;flex-direction:column;gap:7px;min-height:0}
+  #s-battle .log{min-height:5em}
+  #s-map .scr-body{flex-direction:row}
+  #s-map .col-a{flex:1.7}
+  #s-map .col-b{flex:1;align-self:flex-start}
+  #s-craft .scr-body{flex-direction:row}
+  #s-craft .col-a{flex:1;min-height:0}#s-craft .col-b{flex:1.2;min-height:0;display:flex;flex-direction:column;gap:7px}
+  .route{margin:14px 0 6px}
+  .tile .box{width:40px;height:40px}
+}
+/* ---- 学年モード（ピルとラベル） ---- */
+.gradeRow .btn{min-height:44px;padding:7px 6px;font-size:14px;color:var(--gray)}
+.gradeRow .btn.on{background:var(--kin);border-color:var(--kin);color:#1a1208;box-shadow:inset 0 -4px 0 rgba(0,0,0,.2)}
+.gradetag{white-space:nowrap;flex:none;color:var(--kin);border-color:var(--kin)}
+.hud .t .gradetag{display:inline-block;font-size:11px;line-height:1.5;margin-left:7px;vertical-align:middle;text-shadow:none}
+/* ---- フェーズ4：長押しの意味表示・問の試練・石碑のバッジ・主撃破のスロー ---- */
+#ypop{position:fixed;z-index:55;max-width:min(300px,86vw);padding:8px 11px;pointer-events:none;
+  background:#0f1724;border:4px solid var(--kin);clip-path:var(--notch);color:var(--kinari);
+  opacity:0;transform:translateY(6px);transition:opacity .22s cubic-bezier(.22,1,.36,1),transform .22s cubic-bezier(.22,1,.36,1)}
+#ypop.show{opacity:1;transform:none}
+#ypop .w{font-size:17px;color:var(--kin);letter-spacing:.08em}
+#ypop .y{font-size:12px;color:var(--gray);margin-left:6px}
+#ypop .m{font-size:13px;line-height:1.45;margin-top:3px}
+#ypop .f{font-size:12px;line-height:1.4;color:var(--aijiro);margin-top:3px}
+.card.lp{border-color:var(--kin)}
+.tile .box .qm{font-size:19px;line-height:1;color:var(--kin)}
+.qseal{width:42px;height:42px;flex:0 0 auto;background:#0f1724;border:3px solid var(--kin);clip-path:var(--notch);
+  color:var(--kin);font-size:24px;display:flex;align-items:center;justify-content:center}
+.qmark{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 auto;
+  background:var(--shu);border:3px solid var(--kin);color:#fff4e0;font-size:16px;clip-path:var(--notch)}
+.qq{font-size:15px;line-height:1.55;color:var(--kinari);margin:8px 0 10px}
+.qq b{font-weight:normal;color:var(--kin);font-size:18px;letter-spacing:.08em}
+.qc{margin-top:7px;min-height:46px;text-align:left;font-size:14px;line-height:1.35;
+  display:flex;align-items:center;gap:9px;transition:background .2s cubic-bezier(.4,0,.2,1)}
+.qc.big{font-size:19px;letter-spacing:.1em}
+.qc .no{flex:0 0 auto;width:22px;height:22px;line-height:22px;text-align:center;font-size:12px;color:#1d1a12;background:var(--kin)}
+.qc:disabled{opacity:.45}
+.qc.right:disabled{opacity:1;background:#2e6b3a;border-color:var(--take)}
+.qc.wrong:disabled{opacity:1;background:var(--shu2);border-color:var(--shu)}
+.qexp{font-size:13px;line-height:1.5;color:var(--aijiro);margin:6px 0 0}
+.qexp b{font-weight:normal;color:var(--kin);font-size:17px;letter-spacing:.08em}
+.stage.slow .dmg{animation-duration:2.4s}
+.stage.slow.shake{animation-duration:.75s}
+.stage.slow .foe .spr img{animation-play-state:paused}
+.stage.slow .spr.flash img{transition:filter .5s}
+/* 石碑（バッジ一覧） */
+#s-stone .col-a{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto}
+.stonehead{display:flex;align-items:center;gap:12px;padding:4px 2px 8px;border-bottom:2px solid var(--ai2);margin-bottom:8px}
+.stonehead .ttl{flex:1;min-width:0}
+.stonehead .nm{font-size:22px;color:var(--kin);letter-spacing:.1em}
+.stonehead .ds{font-size:12.5px;color:var(--gray);margin-top:2px}
+.bgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-content:start}
+.bdg{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;
+  opacity:0;transform:translateY(10px);animation:bdgIn .4s cubic-bezier(.22,1,.36,1) forwards}
+.bdg .c{width:clamp(70px,13vmin,92px);height:clamp(70px,13vmin,92px);border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#16233a;border:4px solid var(--kin);box-shadow:inset 0 0 0 3px #0f1724,inset 0 0 0 5px rgba(217,164,65,.45)}
+.bdg.sq .c{border-radius:0;clip-path:var(--notch)}
+.bdg .c .v{font-size:clamp(18px,3.6vmin,24px);color:var(--kin);line-height:1.1}
+.bdg .c .u{font-size:12px;color:var(--aijiro)}
+.bdg .c .g{font-size:clamp(22px,4.2vmin,30px);color:var(--kin);letter-spacing:.06em;line-height:1}
+.bdg .t{font-size:13px;color:var(--kinari)}
+.bdg .d{font-size:12px;color:var(--gray);line-height:1.35}
+.bdg.off .c{border-color:#2a3d55;box-shadow:inset 0 0 0 3px #0f1724;background:#0f1724;opacity:.75}
+.bdg.off .c .g,.bdg.off .c .v{color:#3b5273}
+.bdg.off .t{color:var(--gray)}
+.bdg.titlebdg .c{width:clamp(86px,16vmin,110px);height:clamp(86px,16vmin,110px);background:var(--shu);border-color:var(--kin);
+  box-shadow:inset 0 0 0 3px #8f2f20,inset 0 0 0 5px rgba(217,164,65,.5)}
+.bdg.titlebdg .c .g{color:#fff4e0;font-size:clamp(18px,3.4vmin,22px)}
+@keyframes bdgIn{to{opacity:1;transform:none}}
+.stonetabs .btn.on{background:var(--kin);border-color:var(--kin);color:#1a1208}
+@media (max-width:599px){.bgrid{gap:6px}.bdg .d{display:none}.bdg .c{width:66px;height:66px}.bdg.titlebdg .c{width:80px;height:80px}}
+@media (max-height:640px){.bdg .d{display:none}.bgrid{gap:6px}.bdg{gap:3px}.bdg .c,.bdg.titlebdg .c{width:54px;height:54px}
+  .bdg .c .g,.bdg.titlebdg .c .g{font-size:17px}.bdg .c .v{font-size:17px}.bdg .c .u{display:none}.stonehead{padding-bottom:4px;margin-bottom:4px}.stonehead .nm{font-size:18px}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}.bdg{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ===== タイトル ===== -->
+<section id="s-title" class="screen">
+  <div class="wrap">
+    <div class="logo"><span>こ</span><span>と</span><span>わ</span><span>ざ</span><span>錬</span><span>成</span></div>
+    <div class="parade" id="title-parade"></div>
+    <div class="muted" id="legacy" style="font-size:11.5px;line-height:1.5;cursor:pointer" onclick="if(this.textContent)openStone('title')"></div>
+    <div class="muted" id="hubstate" style="font-size:11.5px"></div>
+    <div class="px panel" style="max-width:440px;text-align:left">
+      <p style="margin:0;font-size:13px;color:var(--aijiro)">
+        ことばの妖怪が国じゅうのことわざを食い散らかし、言葉はバラバラの語句になった。<br>
+        語句を拾い、正しい順に並べてことわざに錬成し、その意味の力で妖怪を討て。
+      </p>
+      <div class="hr"></div>
+      <div class="label">あそびかた</div>
+      <div class="muted" style="margin-top:4px">
+        一　道中で語句カードを拾う<br>
+        二　二〜四枚を正しい順に並べて「唱える」<br>
+        三　本物なら真価、ニセことわざなら弱い技になる
+      </div>
+    </div>
+  </div>
+  <div class="scr-foot">
+    <div class="row gradeRow" id="gradeRow" role="group" aria-label="学年">
+      <button class="btn" type="button" data-grade="1" onclick="setGrade(1)">中1　小学校で習う</button>
+      <button class="btn" type="button" data-grade="2" onclick="setGrade(2)">中2　中学で習うまで</button>
+      <button class="btn" type="button" data-grade="3" onclick="setGrade(3)">中3　発展まで</button>
+    </div>
+    <button class="btn primary" onclick="startGame()"><span class="blink">▶</span> はじめから</button>
+    <button class="btn hidden" id="hardbtn" onclick="startGame(true)">修羅道ではじめる</button>
+    <button class="btn hidden" id="contbtn" onclick="continueGame()">つづきから</button>
+    <button class="btn ghost" id="hubbtn" onclick="goHub()">まなびの基板にもどる</button>
+  </div>
+</section>
+
+<!-- ===== マップ ===== -->
+<section id="s-map" class="screen hidden"></section>
+
+<!-- ===== バトル ===== -->
+<section id="s-battle" class="screen hidden"></section>
+
+<!-- ===== 錬成所 ===== -->
+<section id="s-craft" class="screen hidden"></section>
+
+<!-- ===== 図鑑 ===== -->
+<section id="s-dex" class="screen hidden"></section>
+
+<!-- ===== 編成 ===== -->
+<section id="s-deck" class="screen hidden"></section>
+
+<!-- ===== 結果 ===== -->
+<section id="s-result" class="screen hidden"></section>
+
+<!-- ===== 石碑（称号・実績・記録） ===== -->
+<section id="s-stone" class="screen hidden"></section>
+
+</div>
+<div class="modal hidden" id="modal"></div>
+<div class="toast" id="toast"></div>
+<div id="ypop" aria-hidden="true"></div>
+
+<script src="config.js"></script>
+<script src="hub-progress.js"></script>
+<script src="manabi-juice.js"></script>
+<script src="manabi-connect.js"></script>
+<script>
+"use strict";
+
+/* =========================================================
+   ステップ2：データベース
+   ========================================================= */
+const PROVERBS = [
+ /* ===== ことわざ g1（小学校で習う）45 ===== */
+ {w:"猿も木から落ちる",p:["猿も","木から","落ちる"],y:"さるもきからおちる",kind:"ことわざ",g:1,el:"智",cost:1,mean:"どんな名人でも、ときには失敗することがあるということ",use:"いつも満点の先輩が計算ミスをした。猿も木から落ちるだね。",e:{d:14,sp:'gamble'}},
+ {w:"石の上にも三年",p:["石の上にも","三年"],y:"いしのうえにもさんねん",kind:"ことわざ",g:1,el:"柔",cost:2,mean:"つらくてもがまんして続ければ、やがて成しとげられるということ",use:"石の上にも三年というし、部活はもう少し続けてみよう。",e:{sp:'grind'}},
+ {w:"急がば回れ",p:["急がば","回れ"],y:"いそがばまわれ",kind:"ことわざ",g:1,el:"智",cost:1,mean:"急ぐときほど、危ない近道より安全で確実な道を選ぶほうが結局は早いということ",use:"急がば回れで、いつもの道を通ったほうが結局早く着くよ。",e:{sh:8,sp:'soften'}},
+ {w:"犬も歩けば棒に当たる",p:["犬も","歩けば","棒に","当たる"],y:"いぬもあるけばぼうにあたる",kind:"ことわざ",g:1,el:"剛",cost:1,mean:"何かをしていると、思いがけない幸運や災難に出会うものだということ",use:"散歩に出たら落とし物を見つけてお礼を言われた。犬も歩けば棒に当たるだ。",e:{d:8,sp:'drop'}},
+ {w:"花より団子",p:["花より","団子"],y:"はなよりだんご",kind:"ことわざ",g:1,el:"智",cost:1,mean:"風流なものより、実際に役に立つもののほうを選ぶこと",use:"お花見に来たのに食べてばかりで、まさに花より団子だ。",e:{hp:12,dr:1}},
+ {w:"七転び八起き",p:["七転び","八起き"],y:"ななころびやおき",kind:"ことわざ",g:1,el:"柔",cost:2,mean:"何度失敗しても、そのたびに立ち上がってがんばること",use:"七転び八起きの精神で、落ちても次の試合に向けて練習する。",e:{hp:22,sp:'endure'}},
+ {w:"塵も積もれば山となる",p:["塵も","積もれば","山となる"],y:"ちりもつもればやまとなる",kind:"ことわざ",g:1,el:"柔",cost:2,mean:"わずかなものでも、積み重なれば大きなものになるということ",use:"毎日十分の読書でも、塵も積もれば山となるで一年で何冊も読める。",e:{d:6,sp:'story'}},
+ {w:"早起きは三文の徳",p:["早起きは","三文の","徳"],y:"はやおきはさんもんのとく",kind:"ことわざ",g:1,el:"剛",cost:0,mean:"早起きをすると、何かしらよいことがあるということ",use:"早起きは三文の徳で、朝に勉強したらすらすら覚えられた。",e:{en:1,dr:1}},
+ {w:"良薬は口に苦し",p:["良薬は","口に","苦し"],y:"りょうやくはくちににがし",kind:"ことわざ",g:1,el:"智",cost:1,mean:"ためになる忠告は、聞くのがつらいものだということ",use:"先生の厳しい注意は良薬は口に苦しで、あとで役に立った。",e:{hp:18,sd:4}},
+ {w:"失敗は成功の元",p:["失敗は","成功の","元"],y:"しっぱいはせいこうのもと",kind:"ことわざ",g:1,el:"剛",cost:1,mean:"失敗しても原因を反省して改めれば、成功につながるということ",use:"実験に失敗したけれど、失敗は成功の元と思って原因を調べた。",e:{at:2,sp:'recycle'}},
+ {w:"石橋をたたいて渡る",p:["石橋を","たたいて","渡る"],y:"いしばしをたたいてわたる",kind:"ことわざ",g:1,el:"柔",cost:1,mean:"用心の上にも用心を重ねて、物事を慎重に行うこと",use:"兄は石橋をたたいて渡る性格で、提出前に三回も見直す。",e:{sh:16}},
+ {w:"二兎を追う者は一兎をも得ず",p:["二兎を追う者は","一兎をも","得ず"],y:"にとをおうものはいっとをもえず",kind:"ことわざ",g:1,el:"智",cost:2,mean:"二つのことを同時にしようとすると、どちらもうまくいかないということ",use:"二兎を追う者は一兎をも得ずだから、今日はまず数学だけに集中しよう。",e:{d:9,h:2}},
+ {w:"泣きっ面に蜂",p:["泣きっ面に","蜂"],y:"なきっつらにはち",kind:"ことわざ",g:1,el:"剛",cost:2,mean:"不運の上に、さらに不運が重なること",use:"遅刻した上に宿題も忘れて、泣きっ面に蜂だった。",e:{d:8,sp:'surround'}},
+ {w:"猫に小判",p:["猫に","小判"],y:"ねこにこばん",kind:"ことわざ",g:1,el:"智",cost:0,mean:"価値のわからない人に貴重なものをあたえても、むだだということ",use:"弟に高級な絵の具をあげても猫に小判で、すぐ飽きてしまった。",e:{sp:'toss'}},
+ {w:"馬の耳に念仏",p:["馬の耳に","念仏"],y:"うまのみみにねんぶつ",kind:"ことわざ",g:1,el:"智",cost:1,mean:"いくら言い聞かせても、まったく効き目がないこと",use:"何度注意しても馬の耳に念仏で、弟は片づけをしない。",e:{sp:'stun'}},
+ {w:"鬼に金棒",p:["鬼に","金棒"],y:"おににかなぼう",kind:"ことわざ",g:1,el:"剛",cost:2,mean:"ただでさえ強いものに、さらに強さが加わること",use:"足の速い彼がシュートまで上手くなったら鬼に金棒だ。",e:{d:14,at:6}},
+ {w:"知らぬが仏",p:["知らぬが","仏"],y:"しらぬがほとけ",kind:"ことわざ",g:1,el:"柔",cost:1,mean:"知れば腹が立つことも、知らなければ平気でいられるということ",use:"かげで何を言われていたか知らぬが仏で、楽しく過ごせた。",e:{sh:10,sp:'dispel'}},
+ {w:"住めば都",p:["住めば","都"],y:"すめばみやこ",kind:"ことわざ",g:1,el:"柔",cost:1,mean:"どんな所でも、住み慣れれば心地よく思えてくるということ",use:"引っこした当初は不安だったが、住めば都で今は気に入っている。",e:{hp:16}},
+ {w:"千里の道も一歩から",p:["千里の道も","一歩から"],y:"せんりのみちもいっぽから",kind:"故事成語",g:1,el:"剛",cost:1,mean:"大きな事業も、手近なことから始めて積み重ねることが大切だということ",use:"千里の道も一歩からというし、まずは英単語を一日五つ覚えよう。",e:{d:5,sp:'turnmul'}},
+ {w:"時は金なり",p:["時は","金なり"],y:"ときはかねなり",kind:"ことわざ",g:1,el:"智",cost:0,mean:"時間はお金と同じように貴重なものだから、むだにしてはいけないということ",use:"時は金なりだ、休み時間に少しでも宿題を進めよう。",e:{en:1,dr:1}},
+ {w:"継続は力なり",p:["継続は","力なり"],y:"けいぞくはちからなり",kind:"ことわざ",g:1,el:"剛",cost:2,mean:"何事も、こつこつ続けていけばやがて大きな力になるということ",use:"継続は力なりで、毎日の素振りがついに試合で実を結んだ。",e:{sp:'grind3'}},
+ {w:"備えあれば憂いなし",p:["備えあれば","憂いなし"],y:"そなえあればうれいなし",kind:"ことわざ",g:1,el:"柔",cost:1,mean:"ふだんから準備しておけば、いざというとき心配がないということ",use:"備えあれば憂いなし、遠足には雨具も持っていこう。",e:{sh:14,dr:1}},
+ {w:"笑う門には福来る",p:["笑う門には","福来る"],y:"わらうかどにはふくきたる",kind:"ことわざ",g:1,el:"柔",cost:2,mean:"いつも明るく笑っている家には、自然と幸福がやってくるということ",use:"笑う門には福来るというから、落ちこまず笑顔でいよう。",e:{hp:20,en:1}},
+ {w:"三人寄れば文殊の知恵",p:["三人寄れば","文殊の","知恵"],y:"さんにんよればもんじゅのちえ",kind:"ことわざ",g:1,el:"智",cost:2,mean:"平凡な人でも、三人集まって考えればよい知恵が出るということ",use:"三人寄れば文殊の知恵で、班で相談したら解き方がひらめいた。",e:{dr:3}},
+ {w:"弘法にも筆の誤り",p:["弘法にも","筆の","誤り"],y:"こうぼうにもふでのあやまり",kind:"ことわざ",g:1,el:"智",cost:1,mean:"その道の名人でも、ときには失敗することがあるということ",use:"書道の先生が字をまちがえるなんて、弘法にも筆の誤りだ。",e:{d:18,sd:4}},
+ {w:"口は災いの元",p:["口は","災いの","元"],y:"くちはわざわいのもと",kind:"ことわざ",g:1,el:"剛",cost:1,mean:"不用意な発言は災難を招くので、言葉には気をつけよということ",use:"口は災いの元というから、よく考えてから発言しよう。",e:{d:20,sd:5}},
+ {w:"灯台下暗し",p:["灯台","下暗し"],y:"とうだいもとくらし",kind:"ことわざ",g:1,el:"智",cost:1,mean:"身近なことは、かえって気づきにくいということ",use:"さがしていた鍵がポケットにあった。灯台下暗しだ。",e:{sp:'makeweak'}},
+ {w:"雨降って地固まる",p:["雨降って","地固まる"],y:"あめふってじかたまる",kind:"ことわざ",g:1,el:"柔",cost:2,mean:"もめごとの後は、かえって前より物事がうまく収まるということ",use:"けんかの後に本音を話せて、雨降って地固まるで前より仲良くなった。",e:{sh:14,at:3}},
+ {w:"焼け石に水",p:["焼け石に","水"],y:"やけいしにみず",kind:"ことわざ",g:1,el:"智",cost:0,mean:"わずかな助けでは、ほとんど効果がないこと",use:"テスト前夜に十分だけ勉強しても焼け石に水だ。",e:{d:4,dr:2}},
+ {w:"後悔先に立たず",p:["後悔","先に立たず"],y:"こうかいさきにたたず",kind:"ことわざ",g:1,el:"智",cost:1,mean:"終わってから悔やんでも、取り返しがつかないということ",use:"後悔先に立たずだ、提出前にしっかり見直しておこう。",e:{sp:'reflect'}},
+ {w:"短気は損気",p:["短気は","損気"],y:"たんきはそんき",kind:"ことわざ",g:1,el:"柔",cost:0,mean:"短気を起こすと、結局は自分が損をするということ",use:"短気は損気というから、かっとなる前に深呼吸しよう。",e:{ad:5}},
+ {w:"好きこそ物の上手なれ",p:["好きこそ","物の","上手なれ"],y:"すきこそもののじょうずなれ",kind:"ことわざ",g:1,el:"剛",cost:1,mean:"好きなことは熱心に取り組むので、自然に上達するということ",use:"好きこそ物の上手なれで、絵の好きな妹はどんどん上達した。",e:{at:6}},
+ {w:"論より証拠",p:["論より","証拠"],y:"ろんよりしょうこ",kind:"ことわざ",g:1,el:"剛",cost:1,mean:"あれこれ議論するより、証拠を示すほうが物事がはっきりするということ",use:"論より証拠、実際にやって見せたほうが早い。",e:{d:18}},
+ {w:"出る杭は打たれる",p:["出る杭は","打たれる"],y:"でるくいはうたれる",kind:"ことわざ",g:1,el:"智",cost:1,mean:"才能や行動が目立つ人は、人からねたまれたりじゃまされたりするということ",use:"目立つ発言をしたら反発された。出る杭は打たれるというやつだ。",e:{d:16,sd:4}},
+ {w:"類は友を呼ぶ",p:["類は","友を","呼ぶ"],y:"るいはともをよぶ",kind:"ことわざ",g:1,el:"柔",cost:1,mean:"気の合う者や似た者どうしは、自然に集まるということ",use:"類は友を呼ぶで、本好きの友だちばかりが集まった。",e:{dr:2,sh:6}},
+ {w:"身から出た錆",p:["身から","出た","錆"],y:"みからでたさび",kind:"ことわざ",g:1,el:"智",cost:2,mean:"自分のした悪い行いのせいで、自分が苦しむこと",use:"さぼっていて追試になったのは身から出た錆だ。",e:{sp:'poison'}},
+ {w:"鬼の目にも涙",p:["鬼の目にも","涙"],y:"おにのめにもなみだ",kind:"ことわざ",g:1,el:"柔",cost:1,mean:"冷酷な人でも、ときには情け深い心を見せることがあるということ",use:"厳しい監督が卒業式で泣いた。鬼の目にも涙だ。",e:{hp:12,ad:4}},
+ {w:"仏の顔も三度",p:["仏の顔も","三度"],y:"ほとけのかおもさんど",kind:"ことわざ",g:1,el:"剛",cost:2,mean:"どんなにおだやかな人でも、何度もひどいことをされれば怒るということ",use:"仏の顔も三度というし、いたずらもいいかげんにしないと怒られるよ。",e:{d:7,h:3}},
+ {w:"頭隠して尻隠さず",p:["頭隠して","尻隠さず"],y:"あたまかくしてしりかくさず",kind:"ことわざ",g:1,el:"智",cost:1,mean:"悪事や欠点の一部を隠しただけで、全部隠したつもりになっていること",use:"ゲームを隠したのにコードが出ている。頭隠して尻隠さずだ。",e:{d:12,sp:'guardbreak'}},
+ {w:"捕らぬ狸の皮算用",p:["捕らぬ狸の","皮算用"],y:"とらぬたぬきのかわざんよう",kind:"ことわざ",g:1,el:"智",cost:1,mean:"まだ手に入っていないものをあてにして、計画を立てること",use:"お年玉をもらう前から使い道を決めるのは捕らぬ狸の皮算用だ。",e:{d:20,sp:'gamble'}},
+ {w:"棚からぼたもち",p:["棚から","ぼたもち"],y:"たなからぼたもち",kind:"ことわざ",g:1,el:"智",cost:0,mean:"思いがけない幸運が舞いこむこと",use:"くじで景品が当たるなんて棚からぼたもちだ。",e:{dr:1,sp:'drop'}},
+ {w:"負けるが勝ち",p:["負けるが","勝ち"],y:"まけるがかち",kind:"ことわざ",g:1,el:"柔",cost:1,mean:"むりに争わず相手にゆずるほうが、結局は自分の得になるということ",use:"ここは負けるが勝ちで、言い争いはやめておこう。",e:{sp:'steal'}},
+ {w:"転ばぬ先の杖",p:["転ばぬ先の","杖"],y:"ころばぬさきのつえ",kind:"ことわざ",g:1,el:"柔",cost:1,mean:"失敗しないように、前もって用心しておくこと",use:"転ばぬ先の杖として、予備の電池を持っていこう。",e:{sh:10,hp:8}},
+ {w:"親しき仲にも礼儀あり",p:["親しき仲にも","礼儀あり"],y:"したしきなかにもれいぎあり",kind:"ことわざ",g:1,el:"柔",cost:1,mean:"どんなに親しい間がらでも、守るべき礼儀はあるということ",use:"親しき仲にも礼儀あり、借りた本にはお礼を言おう。",e:{sh:12,at:2}},
+ {w:"三度目の正直",p:["三度目の","正直"],y:"さんどめのしょうじき",kind:"ことわざ",g:1,el:"剛",cost:1,mean:"一度や二度は当てにならないが、三度目はうまくいくということ",use:"三度目の正直で、三回目の挑戦でやっと逆上がりができた。",e:{d:8,sp:'story'}},
+ {w:"一難去ってまた一難",p:["一難去って","また一難"],y:"いちなんさってまたいちなん",kind:"ことわざ",g:1,el:"剛",cost:1,mean:"一つの災難が過ぎたと思ったら、すぐにまた別の災難が起こること",use:"熱が下がったと思ったら今度は足をくじいて、一難去ってまた一難だ。",e:{d:10,h:2}},
+
+ /* ===== ことわざ g2（中学で習う）25 ===== */
+ {w:"聞くは一時の恥聞かぬは一生の恥",p:["聞くは","一時の恥","聞かぬは","一生の恥"],y:"きくはいっときのはじきかぬはいっしょうのはじ",kind:"ことわざ",g:2,el:"智",cost:2,mean:"知らないことを聞くのは一瞬恥ずかしいが、聞かずにいると一生恥をかくということ",use:"聞くは一時の恥聞かぬは一生の恥と思って、わからない所は先生に質問した。",e:{dr:2,en:1,sd:3}},
+ {w:"能ある鷹は爪を隠す",p:["能ある鷹は","爪を","隠す"],y:"のうあるたかはつめをかくす",kind:"ことわざ",g:2,el:"智",cost:2,mean:"本当に実力のある人は、むやみにそれを見せびらかさないということ",use:"ふだんは静かな彼が全国大会に出ていた。能ある鷹は爪を隠すだ。",e:{d:12,sp:'crit'}},
+ {w:"三つ子の魂百まで",p:["三つ子の","魂","百まで"],y:"みつごのたましいひゃくまで",kind:"ことわざ",g:2,el:"柔",cost:2,mean:"幼いころの性格は、年をとっても変わらないということ",use:"祖父は子どものころから負けずぎらいだったそうで、三つ子の魂百までだ。",e:{at:4,sh:10}},
+ {w:"立つ鳥跡を濁さず",p:["立つ鳥","跡を","濁さず"],y:"たつとりあとをにごさず",kind:"ことわざ",g:2,el:"柔",cost:1,mean:"去るときは、後始末をきちんとして見苦しくないようにすべきだということ",use:"立つ鳥跡を濁さずというから、引退前に部室をきれいに片づけた。",e:{sp:'redraw'}},
+ {w:"一寸の虫にも五分の魂",p:["一寸の虫にも","五分の","魂"],y:"いっすんのむしにもごぶのたましい",kind:"ことわざ",g:2,el:"剛",cost:1,mean:"どんなに小さく弱い者にも意地や誇りがあるので、あなどってはいけないということ",use:"一寸の虫にも五分の魂で、小柄な彼は大きな相手に食い下がった。",e:{d:12,sp:'lowhp'}},
+ {w:"果報は寝て待て",p:["果報は","寝て待て"],y:"かほうはねてまて",kind:"ことわざ",g:2,el:"柔",cost:2,mean:"幸運は人の力ではどうにもならないので、あせらず時を待つのがよいということ",use:"やるだけやったのだから、あとは果報は寝て待てだ。",e:{hp:14,en:1}},
+ {w:"可愛い子には旅をさせよ",p:["可愛い子には","旅を","させよ"],y:"かわいいこにはたびをさせよ",kind:"ことわざ",g:2,el:"剛",cost:1,mean:"子どもがかわいいなら、甘やかさず世の中の苦労を経験させたほうがよいということ",use:"可愛い子には旅をさせよと、父は私を一人で祖母の家に行かせた。",e:{d:12,at:3}},
+ {w:"河童の川流れ",p:["河童の","川流れ"],y:"かっぱのかわながれ",kind:"ことわざ",g:2,el:"智",cost:1,mean:"その道の達人でも、ときには失敗することがあるということ",use:"水泳部のエースが足をつるなんて河童の川流れだ。",e:{d:16,sp:'recoil1'}},
+ {w:"人の振り見て我が振り直せ",p:["人の振り見て","我が振り","直せ"],y:"ひとのふりみてわがふりなおせ",kind:"ことわざ",g:2,el:"智",cost:1,mean:"他人の行いを見て、自分の行いを反省し改めよということ",use:"人の振り見て我が振り直せで、友だちの遅刻を見て自分も気をつけた。",e:{sp:'mirror'}},
+ {w:"安物買いの銭失い",p:["安物買いの","銭失い"],y:"やすものがいのぜにうしない",kind:"ことわざ",g:2,el:"智",cost:1,mean:"安い物はすぐこわれたりして、結局は損になるということ",use:"安いイヤホンがすぐこわれた。安物買いの銭失いだ。",e:{d:18,sp:'recoil1'}},
+ {w:"渡る世間に鬼はない",p:["渡る世間に","鬼はない"],y:"わたるせけんにおにはない",kind:"ことわざ",g:2,el:"柔",cost:1,mean:"世の中には冷たい人ばかりでなく、親切な人もいるものだということ",use:"道に迷ったら知らない人が案内してくれた。渡る世間に鬼はないね。",e:{hp:16,sh:6}},
+ {w:"頭が下がる",p:["頭が","下がる"],y:"あたまがさがる",kind:"慣用句",g:1,el:"柔",cost:1,mean:"感心して、尊敬する気持ちになる",use:"毎朝だれより早く来て掃除する彼には頭が下がる。",e:{sh:8,at:3}},
+ {w:"豚に真珠",p:["豚に","真珠"],y:"ぶたにしんじゅ",kind:"ことわざ",g:2,el:"智",cost:1,mean:"価値のわからない者に貴重なものをあたえても、むだだということ",use:"読書ぎらいの彼に名作全集を贈っても豚に真珠だ。",e:{d:14,dr:1}},
+ {w:"二度あることは三度ある",p:["二度あることは","三度ある"],y:"にどあることはさんどある",kind:"ことわざ",g:2,el:"剛",cost:2,mean:"同じことが二度続けば、三度目も起こりやすいということ",use:"二度あることは三度あるというし、また忘れ物をしないよう前夜に準備しよう。",e:{d:8,sp:'repeat'}},
+ {w:"情けは人のためならず",p:["情けは","人の","ためならず"],y:"なさけはひとのためならず",kind:"ことわざ",g:2,el:"柔",cost:2,mean:"人に親切にしておけば、めぐりめぐって自分によい報いが返ってくるということ",use:"情けは人のためならずで、手伝った相手が今度は自分を助けてくれた。",e:{hp:14,sh:8,dr:1}},
+ {w:"急いては事を仕損じる",p:["急いては","事を","仕損じる"],y:"せいてはことをしそんじる",kind:"ことわざ",g:2,el:"柔",cost:1,mean:"あせって物事を行うと、かえって失敗するということ",use:"急いては事を仕損じるだ、落ち着いて問題文を読もう。",e:{sh:12,ad:3}},
+ {w:"明日は明日の風が吹く",p:["明日は","明日の風が","吹く"],y:"あしたはあしたのかぜがふく",kind:"ことわざ",g:2,el:"柔",cost:1,mean:"先のことを心配してもしかたがない、なるようになるということ",use:"明日は明日の風が吹くさ、今日はもう休もう。",e:{hp:10,dr:2}},
+ {w:"待てば海路の日和あり",p:["待てば","海路の","日和あり"],y:"まてばかいろのひよりあり",kind:"ことわざ",g:2,el:"柔",cost:2,mean:"あせらずに待っていれば、やがてよい機会がやってくるということ",use:"待てば海路の日和ありで、出番が来るまで練習を続けよう。",e:{sp:'revenge'}},
+ {w:"光陰矢の如し",p:["光陰","矢の如し"],y:"こういんやのごとし",kind:"ことわざ",g:2,el:"智",cost:1,mean:"月日のたつのは、矢のように早いということ",use:"光陰矢の如しで、入学したと思ったらもう三年生だ。",e:{d:12,dr:1}},
+ {w:"柳に風",p:["柳に","風"],y:"やなぎにかぜ",kind:"ことわざ",g:2,el:"柔",cost:1,mean:"相手に逆らわず、さらりと受け流すこと",use:"からかわれても柳に風と受け流す姉はかっこいい。",e:{sp:'fog'}},
+ {w:"飛んで火に入る夏の虫",p:["飛んで火に入る","夏の虫"],y:"とんでひにいるなつのむし",kind:"ことわざ",g:2,el:"剛",cost:2,mean:"自分から進んで、危険や災難の中に飛びこむこと",use:"怒っている先生に今話しかけるのは飛んで火に入る夏の虫だ。",e:{d:26,sd:8}},
+ {w:"風が吹けば桶屋が儲かる",p:["風が吹けば","桶屋が","儲かる"],y:"かぜがふけばおけやがもうかる",kind:"ことわざ",g:2,el:"智",cost:2,mean:"あることが起こると、めぐりめぐって思いがけないところに影響が出ること",use:"雨で試合が延びて友だちと勉強できたなんて、風が吹けば桶屋が儲かるだ。",e:{sp:'random'}},
+ {w:"案ずるより産むが易し",p:["案ずるより","産むが易し"],y:"あんずるよりうむがやすし",kind:"ことわざ",g:2,el:"剛",cost:1,mean:"物事は実際にやってみると、前もって心配していたより簡単にできるものだということ",use:"案ずるより産むが易しで、発表は思ったよりうまくいった。",e:{d:16,en:1}},
+ {w:"捨てる神あれば拾う神あり",p:["捨てる神あれば","拾う神あり"],y:"すてるかみあればひろうかみあり",kind:"ことわざ",g:2,el:"柔",cost:2,mean:"見捨てる人がいる一方で、助けてくれる人もいるということ",use:"選ばれなかったが別の先生が声をかけてくれた。捨てる神あれば拾う神ありだ。",e:{hp:18,dr:1}},
+ {w:"弱り目に祟り目",p:["弱り目に","祟り目"],y:"よわりめにたたりめ",kind:"ことわざ",g:2,el:"剛",cost:2,mean:"困っているときに、さらに悪いことが重なること",use:"かぜをひいている上に傘もこわれて、弱り目に祟り目だ。",e:{d:14,sp:'enemylow'}},
+ {w:"蓼食う虫も好き好き",p:["蓼食う虫も","好き好き"],y:"たでくうむしもすきずき",kind:"ことわざ",g:2,el:"智",cost:2,mean:"人の好みはさまざまだということ",use:"あの苦い野菜が好物だなんて、蓼食う虫も好き好きだね。",e:{d:5,h:4,sp:'varied'}},
+
+ /* ===== ことわざ g3（発展）10 ===== */
+ {w:"瓢箪から駒",p:["瓢箪から","駒"],y:"ひょうたんからこま",kind:"ことわざ",g:3,el:"智",cost:1,mean:"思いもよらないところから意外なものが出てくること。冗談が本当になること",use:"冗談で言った案が採用されるなんて瓢箪から駒だ。",e:{sp:'random'}},
+ {w:"天は自ら助くる者を助く",p:["天は","自ら助くる者を","助く"],y:"てんはみずからたすくるものをたすく",kind:"ことわざ",g:3,el:"剛",cost:2,mean:"他人に頼らず自分で努力する人には、天が味方して幸福をもたらすということ",use:"天は自ら助くる者を助くというから、まず自分で調べてみよう。",e:{d:14,at:5}},
+ {w:"艱難汝を玉にす",p:["艱難","汝を","玉にす"],y:"かんなんなんじをたまにす",kind:"ことわざ",g:3,el:"柔",cost:2,mean:"人はつらい経験を乗りこえることで、立派になるということ",use:"艱難汝を玉にすで、けがを乗りこえた彼は前より強くなった。",e:{sd:6,at:8}},
+ {w:"悪銭身に付かず",p:["悪銭","身に付かず"],y:"あくせんみにつかず",kind:"ことわざ",g:3,el:"智",cost:1,mean:"不正な手段で得た金は、むだづかいしてすぐなくなってしまうということ",use:"悪銭身に付かずというように、ずるをして得たものは長続きしない。",e:{d:12,sp:'recoil1'}},
+ {w:"正直の頭に神宿る",p:["正直の","頭に","神宿る"],y:"しょうじきのこうべにかみやどる",kind:"ことわざ",g:3,el:"柔",cost:2,mean:"正直な人には、必ず神の加護があるということ",use:"正直の頭に神宿るというし、落とし物はきちんと届けよう。",e:{hp:16,sh:10}},
+ {w:"君子危うきに近寄らず",p:["君子","危うきに","近寄らず"],y:"くんしあやうきにちかよらず",kind:"ことわざ",g:3,el:"柔",cost:1,mean:"教養のある立派な人は、危ないことにはじめから近づかないということ",use:"君子危うきに近寄らずで、あやしいサイトは開かないことにした。",e:{sh:18}},
+ {w:"蛇の道は蛇",p:["蛇の道は","蛇"],y:"じゃのみちはへび",kind:"ことわざ",g:3,el:"智",cost:1,mean:"同類のすることは、同類の者がよく知っているということ",use:"蛇の道は蛇で、元いたずらっ子の兄はすぐに犯人を見ぬいた。",e:{sp:'search'}},
+ {w:"鳶が鷹を生む",p:["鳶が","鷹を","生む"],y:"とびがたかをうむ",kind:"ことわざ",g:3,el:"剛",cost:2,mean:"平凡な親から、すぐれた子が生まれること",use:"兄弟でただ一人全国大会に出た彼を、親せきは鳶が鷹を生むと喜んだ。",e:{d:20,sp:'crit'}},
+ {w:"医者の不養生",p:["医者の","不養生"],y:"いしゃのふようじょう",kind:"ことわざ",g:3,el:"智",cost:1,mean:"正しいとわかっていながら、自分では実行しないこと",use:"保健委員なのに夜ふかしばかりで、医者の不養生だ。",e:{hp:14,sd:4}},
+ {w:"泣く子と地頭には勝てぬ",p:["泣く子と","地頭には","勝てぬ"],y:"なくことじとうにはかてぬ",kind:"ことわざ",g:3,el:"智",cost:1,mean:"道理の通じない相手には、何を言ってもかなわないということ",use:"泣く子と地頭には勝てぬで、駄々をこねる弟には折れるしかなかった。",e:{ad:6,sh:6}},
+
+ /* ===== 慣用句 g1 15 ===== */
+ {w:"猫の手も借りたい",p:["猫の手も","借りたい"],y:"ねこのてもかりたい",kind:"慣用句",g:1,el:"柔",cost:1,mean:"とても忙しくて、どんな手助けでもほしいこと",use:"文化祭の前日は猫の手も借りたいほど忙しかった。",e:{dr:3}},
+ {w:"油を売る",p:["油を","売る"],y:"あぶらをうる",kind:"慣用句",g:1,el:"智",cost:0,mean:"むだ話などをして、仕事をなまける",use:"油を売るのはやめて早く帰りなさいと、母に言われた。",e:{dr:2}},
+ {w:"骨が折れる",p:["骨が","折れる"],y:"ほねがおれる",kind:"慣用句",g:1,el:"剛",cost:1,mean:"苦労する。手間がかかる",use:"この資料を全部まとめるのは骨が折れる仕事だ。",e:{d:18,sd:4}},
+ {w:"腹を割る",p:["腹を","割る"],y:"はらをわる",kind:"慣用句",g:1,el:"剛",cost:1,mean:"本心を隠さず、打ち明ける",use:"友だちと腹を割る覚悟で話したら、誤解がとけた。",e:{d:14,dr:1}},
+ {w:"足を引っ張る",p:["足を","引っ張る"],y:"あしをひっぱる",kind:"慣用句",g:1,el:"智",cost:1,mean:"人の成功や前進のじゃまをする",use:"リレーでみんなの足を引っ張るまいと、必死に練習した。",e:{d:6,ad:5}},
+ {w:"手を焼く",p:["手を","焼く"],y:"てをやく",kind:"慣用句",g:1,el:"剛",cost:1,mean:"どう扱ってよいか困る。もてあます",use:"いたずらばかりする子犬に手を焼く毎日だ。",e:{d:12,sd:3}},
+ {w:"耳が痛い",p:["耳が","痛い"],y:"みみがいたい",kind:"慣用句",g:1,el:"智",cost:1,mean:"自分の弱点を指摘されて、聞くのがつらい",use:"忘れ物が多いと言われて耳が痛い。",e:{d:10,sd:4}},
+ {w:"目から鱗が落ちる",p:["目から","鱗が","落ちる"],y:"めからうろこがおちる",kind:"慣用句",g:1,el:"智",cost:1,mean:"あることをきっかけに、急に物事の真相や本質がわかるようになる",use:"先生の説明を聞いて目から鱗が落ちる思いだった。",e:{sp:'makeweak'}},
+ {w:"口が軽い",p:["口が","軽い"],y:"くちがかるい",kind:"慣用句",g:1,el:"智",cost:0,mean:"秘密などを、すぐ人にしゃべってしまう",use:"彼は口が軽いから、大事な話はしないほうがいい。",e:{d:8,sp:'recoil1'}},
+ {w:"首を長くする",p:["首を","長くする"],y:"くびをながくする",kind:"慣用句",g:1,el:"柔",cost:1,mean:"今か今かと待ちこがれる",use:"首を長くする思いで夏休みを待っている。",e:{en:2}},
+ {w:"鼻が高い",p:["鼻が","高い"],y:"はながたかい",kind:"慣用句",g:1,el:"剛",cost:1,mean:"得意である。誇らしい",use:"妹が賞をとって、兄として鼻が高い。",e:{at:5}},
+ {w:"水に流す",p:["水に","流す"],y:"みずにながす",kind:"慣用句",g:1,el:"柔",cost:1,mean:"過去のもめごとなどを、なかったことにする",use:"これまでのけんかは水に流すことにして、仲直りしよう。",e:{hp:8,sp:'dispel'}},
+ {w:"胸を張る",p:["胸を","張る"],y:"むねをはる",kind:"慣用句",g:1,el:"剛",cost:1,mean:"自信にあふれた態度をとる",use:"練習の成果を出せたのだから、胸を張るべきだ。",e:{at:4,sh:6}},
+ {w:"腕を磨く",p:["腕を","磨く"],y:"うでをみがく",kind:"慣用句",g:1,el:"剛",cost:1,mean:"技術や能力を向上させるために努力する",use:"大会に向けて、毎日腕を磨く日々が続いている。",e:{at:6}},
+
+ /* ===== 慣用句 g2 20 ===== */
+ {w:"二の足を踏む",p:["二の足を","踏む"],y:"にのあしをふむ",kind:"慣用句",g:2,el:"柔",cost:1,mean:"思い切って物事に取りかかれず、ためらう",use:"値段が高くて、買うのに二の足を踏む。",e:{sh:14,sp:'recoil1'}},
+ {w:"舌を巻く",p:["舌を","巻く"],y:"したをまく",kind:"慣用句",g:2,el:"智",cost:1,mean:"非常に感心したり、驚いたりする",use:"転校生のピアノのうまさに、みんな舌を巻くばかりだった。",e:{d:16,sp:'crit'}},
+ {w:"襟を正す",p:["襟を","正す"],y:"えりをただす",kind:"慣用句",g:2,el:"柔",cost:1,mean:"気持ちを引きしめて、真剣な態度になる",use:"校長先生の話に、思わず襟を正す気持ちになった。",e:{sh:12,at:2}},
+ {w:"火の車",p:["火の","車"],y:"ひのくるま",kind:"慣用句",g:2,el:"剛",cost:2,mean:"家計や経済状態が、ひどく苦しいこと",use:"今月は買い物をしすぎて、おこづかいは火の車だ。",e:{d:26,sd:8}},
+ {w:"立て板に水",p:["立て板に","水"],y:"たていたにみず",kind:"慣用句",g:2,el:"剛",cost:1,mean:"すらすらと、よどみなく話すこと",use:"彼の説明は立て板に水で、聞いていて気持ちがいい。",e:{d:6,h:3}},
+ {w:"板につく",p:["板に","つく"],y:"いたにつく",kind:"慣用句",g:2,el:"剛",cost:1,mean:"経験を積んで、態度や服装がその立場にふさわしくなる",use:"二年目になって、委員長の仕事もすっかり板につくようになった。",e:{d:4,sp:'turnmul'}},
+ {w:"息を呑む",p:["息を","呑む"],y:"いきをのむ",kind:"慣用句",g:2,el:"柔",cost:1,mean:"驚きや緊張で、一瞬息を止める",use:"山頂からの景色の美しさに、思わず息を呑む。",e:{sp:'stun'}},
+ {w:"腑に落ちない",p:["腑に","落ちない"],y:"ふにおちない",kind:"慣用句",g:2,el:"智",cost:1,mean:"納得がいかない",use:"どうして自分だけ注意されたのか、腑に落ちない。",e:{d:10,sp:'gamble'}},
+ {w:"肝に銘じる",p:["肝に","銘じる"],y:"きもにめいじる",kind:"慣用句",g:2,el:"柔",cost:1,mean:"心に深く刻みつけて、忘れないようにする",use:"安全第一という言葉を肝に銘じる。",e:{sh:10,sp:'recall'}},
+ {w:"歯が立たない",p:["歯が","立たない"],y:"はがたたない",kind:"慣用句",g:2,el:"智",cost:1,mean:"相手が強すぎて、とてもかなわない",use:"最後の応用問題には、まったく歯が立たない。",e:{ad:7}},
+ {w:"匙を投げる",p:["匙を","投げる"],y:"さじをなげる",kind:"慣用句",g:2,el:"剛",cost:2,mean:"見込みがないと、あきらめる",use:"難問に匙を投げるのはまだ早い、最後まで考えよう。",e:{d:30,sp:'recoil'}},
+ {w:"身を粉にする",p:["身を","粉にする"],y:"みをこにする",kind:"慣用句",g:2,el:"剛",cost:2,mean:"労をいとわず、一生懸命に働く",use:"母は家族のために身を粉にするようにして働いている。",e:{d:22,sd:6,at:2}},
+ {w:"白羽の矢が立つ",p:["白羽の矢が","立つ"],y:"しらはのやがたつ",kind:"慣用句",g:2,el:"剛",cost:1,mean:"多くの中から、特に選び出される",use:"合唱の指揮者として、彼女に白羽の矢が立つ。",e:{d:16,pi:1}},
+ {w:"釘を刺す",p:["釘を","刺す"],y:"くぎをさす",kind:"慣用句",g:2,el:"智",cost:1,mean:"あとで問題が起きないように、前もって念を押す",use:"遅れないようにと、集合の前に釘を刺す。",e:{d:8,sp:'stun'}},
+ {w:"水を差す",p:["水を","差す"],y:"みずをさす",kind:"慣用句",g:2,el:"智",cost:1,mean:"うまくいっている物事のじゃまをする",use:"盛り上がっている場に水を差すようなことは言わないでおこう。",e:{d:8,sp:'dispel'}},
+ {w:"心を鬼にする",p:["心を","鬼にする"],y:"こころをおににする",kind:"慣用句",g:2,el:"剛",cost:1,mean:"相手のためを思って、あえて厳しい態度をとる",use:"コーチは心を鬼にする覚悟で、選手に厳しい練習を課した。",e:{d:16,at:4}},
+ {w:"目に余る",p:["目に","余る"],y:"めにあまる",kind:"慣用句",g:2,el:"剛",cost:1,mean:"ひどすぎて、黙って見ていられない",use:"廊下を走る人が目に余るので、注意の貼り紙をした。",e:{d:14,sp:'enemylow'}},
+ {w:"固唾を呑む",p:["固唾を","呑む"],y:"かたずをのむ",kind:"慣用句",g:2,el:"柔",cost:1,mean:"事のなりゆきを、緊張して見守る",use:"逆転のチャンスに、全員が固唾を呑む。",e:{sh:10,en:1}},
+ {w:"一目置く",p:["一目","置く"],y:"いちもくおく",kind:"慣用句",g:2,el:"智",cost:1,mean:"相手が自分よりすぐれていると認めて、敬意を払う",use:"将棋の強い彼には、クラスのだれもが一目置く。",e:{at:3,dr:1}},
+ {w:"太鼓判を押す",p:["太鼓判を","押す"],y:"たいこばんをおす",kind:"慣用句",g:2,el:"剛",cost:1,mean:"まちがいないと保証する",use:"先生が太鼓判を押す作文を、コンクールに出した。",e:{d:20}},
+
+ /* ===== 慣用句 g3 5 ===== */
+ {w:"辛酸を嘗める",p:["辛酸を","嘗める"],y:"しんさんをなめる",kind:"慣用句",g:3,el:"柔",cost:2,mean:"つらく苦しい思いを経験する",use:"祖父は若いころ辛酸を嘗める日々を送ったが、今はおだやかに暮らしている。",e:{sd:5,sh:14,at:3}},
+ {w:"牙を研ぐ",p:["牙を","研ぐ"],y:"きばをとぐ",kind:"慣用句",g:3,el:"剛",cost:1,mean:"相手を倒そうと、機会をうかがって準備する",use:"去年負けた相手に勝つため、一年間牙を研ぐ思いで練習した。",e:{at:7}},
+ {w:"虚を突く",p:["虚を","突く"],y:"きょをつく",kind:"慣用句",g:3,el:"智",cost:1,mean:"相手の油断しているところを攻める",use:"相手の虚を突くパスで、見事にゴールが決まった。",e:{d:14,sp:'crit'}},
+ {w:"琴線に触れる",p:["琴線に","触れる"],y:"きんせんにふれる",kind:"慣用句",g:3,el:"柔",cost:1,mean:"心の奥に響いて、感動させる",use:"合唱コンクールの歌声が、聞く人の琴線に触れる。",e:{hp:14,dr:2}},
+ {w:"鎬を削る",p:["鎬を","削る"],y:"しのぎをけずる",kind:"慣用句",g:3,el:"剛",cost:2,mean:"互いに力をつくして、激しく競い争うこと",use:"決勝では二校が最後まで鎬を削る戦いを見せた。",e:{d:20,sd:5}},
+
+ /* ===== 故事成語 g1 5（千里の道も一歩から は上に）===== */
+ {w:"井の中の蛙大海を知らず",p:["井の中の蛙","大海を","知らず"],y:"いのなかのかわずたいかいをしらず",kind:"故事成語",g:1,el:"智",cost:1,mean:"狭い知識や考えにとらわれて、広い世界のことを知らないこと",use:"校内で一番でも県大会では通用せず、井の中の蛙大海を知らずだと思った。",e:{d:12,sp:'guardbreak'}},
+ {w:"五十歩百歩",p:["五十歩","百歩"],y:"ごじっぽひゃっぽ",kind:"故事成語",g:1,el:"智",cost:1,mean:"少しの違いはあっても、本質的には同じであること",use:"三十点と三十五点では五十歩百歩だ。",e:{d:5,sp:'handcount'}},
+ {w:"漁夫の利",p:["漁夫の","利"],y:"ぎょふのり",kind:"故事成語",g:1,el:"智",cost:1,mean:"二者が争っているすきに、第三者が利益を横取りすること",use:"二人が言い争っている間に、別の人が漁夫の利で最後のケーキを食べた。",e:{d:8,sp:'steal'}},
+ {w:"百聞は一見に如かず",p:["百聞は","一見に","如かず"],y:"ひゃくぶんはいっけんにしかず",kind:"故事成語",g:1,el:"智",cost:2,mean:"人から何度も聞くより、一度自分の目で見るほうが確かだということ",use:"百聞は一見に如かずで、実際に博物館で見たらよくわかった。",e:{d:16,pi:1}},
+
+ /* ===== 故事成語 g2 15 ===== */
+ {w:"人間万事塞翁が馬",p:["人間万事","塞翁が","馬"],y:"にんげんばんじさいおうがうま",kind:"故事成語",g:2,el:"智",cost:2,mean:"人生の幸不幸は予測できないものだということ",use:"人間万事塞翁が馬で、けがで休んだおかげで勉強が進んだ。",e:{d:14,sp:'gamble'}},
+ {w:"虎の威を借る狐",p:["虎の威を","借る","狐"],y:"とらのいをかるきつね",kind:"故事成語",g:2,el:"智",cost:1,mean:"強い者の力をたよりにして、いばる小者のこと",use:"先輩の名前を出してえらそうにするのは虎の威を借る狐だ。",e:{sp:'steal'}},
+ {w:"覆水盆に返らず",p:["覆水","盆に","返らず"],y:"ふくすいぼんにかえらず",kind:"故事成語",g:2,el:"智",cost:2,mean:"一度してしまったことは、取り返しがつかないということ",use:"覆水盆に返らずで、言ってしまった言葉は取り消せない。",e:{d:22,sp:'once'}},
+ {w:"背水の陣",p:["背水の","陣"],y:"はいすいのじん",kind:"故事成語",g:2,el:"剛",cost:2,mean:"一歩も引けない状況で、全力を尽くして事にあたること",use:"あとがない最終戦に、背水の陣でのぞんだ。",e:{d:14,sp:'lowhp'}},
+ {w:"蛍雪の功",p:["蛍雪の","功"],y:"けいせつのこう",kind:"故事成語",g:2,el:"柔",cost:2,mean:"苦労して学問に励んだ成果",use:"蛍雪の功が実って、姉は志望校に合格した。",e:{dr:2,at:3}},
+ {w:"他山の石",p:["他山の","石"],y:"たざんのいし",kind:"故事成語",g:2,el:"智",cost:1,mean:"他人のよくない言動も、自分を磨く助けになるということ",use:"隣のクラスの失敗を他山の石として、準備を見直した。",e:{sh:10,at:3}},
+ {w:"青は藍より出でて藍より青し",p:["青は","藍より出でて","藍より青し"],y:"あおはあいよりいでてあいよりあおし",kind:"故事成語",g:2,el:"剛",cost:2,mean:"弟子が師よりもすぐれること",use:"教え子が先生の記録をぬいた。青は藍より出でて藍より青しだ。",e:{d:10,at:8}},
+ {w:"水魚の交わり",p:["水魚の","交わり"],y:"すいぎょのまじわり",kind:"故事成語",g:2,el:"柔",cost:2,mean:"切っても切れない、親密な関係",use:"二人は幼いころからの水魚の交わりだ。",e:{hp:14,sh:10}},
+ {w:"一を聞いて十を知る",p:["一を聞いて","十を知る"],y:"いちをきいてじゅうをしる",kind:"故事成語",g:2,el:"智",cost:2,mean:"一部分を聞いただけで、全体を理解するほど賢いこと",use:"彼女は一を聞いて十を知るので、説明がすぐ終わる。",e:{dr:3,en:1}},
+ {w:"玉磨かざれば光なし",p:["玉","磨かざれば","光なし"],y:"たまみがかざればひかりなし",kind:"故事成語",g:2,el:"剛",cost:1,mean:"すぐれた素質があっても、努力しなければ立派にはなれないということ",use:"玉磨かざれば光なしで、才能があっても練習しなければ上達しない。",e:{at:5,dr:1}},
+ {w:"逆鱗に触れる",p:["逆鱗に","触れる"],y:"げきりんにふれる",kind:"故事成語",g:2,el:"剛",cost:1,mean:"目上の人を、ひどく怒らせる",use:"大事な書類をなくしたら、父の逆鱗に触れるだろう。",e:{d:24,sd:6}},
+ {w:"竹馬の友",p:["竹馬の","友"],y:"ちくばのとも",kind:"故事成語",g:2,el:"柔",cost:1,mean:"幼いころからの、親しい友人",use:"竹馬の友と十年ぶりに再会した。",e:{sh:10,dr:1}},
+ {w:"破竹の勢い",p:["破竹の","勢い"],y:"はちくのいきおい",kind:"故事成語",g:2,el:"剛",cost:2,mean:"止められないほど、激しい勢い",use:"わがチームは破竹の勢いで五連勝した。",e:{d:12,at:4}},
+ {w:"虎穴に入らずんば虎子を得ず",p:["虎穴に入らずんば","虎子を","得ず"],y:"こけつにいらずんばこじをえず",kind:"故事成語",g:2,el:"剛",cost:2,mean:"危険をおかさなければ、大きな成功は得られないということ",use:"虎穴に入らずんば虎子を得ずと、むずかしい課題に挑戦した。",e:{d:28,sd:7}},
+ {w:"朱に交われば赤くなる",p:["朱に交われば","赤くなる"],y:"しゅにまじわればあかくなる",kind:"故事成語",g:2,el:"智",cost:1,mean:"人は付き合う相手によって、良くも悪くもなるということ",use:"朱に交われば赤くなるで、勉強熱心な友だちといると自分もやる気が出る。",e:{d:7,sp:'allelem'}},
+
+ /* ===== 故事成語 g3 10 ===== */
+ {w:"株を守りて兎を待つ",p:["株を守りて","兎を","待つ"],y:"かぶをまもりてうさぎをまつ",kind:"故事成語",g:3,el:"智",cost:1,mean:"古い習慣や偶然の成功にこだわって、融通がきかないこと",use:"前と同じやり方にこだわるのは株を守りて兎を待つようなものだ。",e:{sh:16,sp:'recoil1'}},
+ {w:"木に縁りて魚を求む",p:["木に縁りて","魚を","求む"],y:"きによりてうおをもとむ",kind:"故事成語",g:3,el:"智",cost:1,mean:"方法をまちがえると、目的は達せられないということ",use:"辞書も引かずに英作文をするのは木に縁りて魚を求むだ。",e:{sp:'toss'}},
+ {w:"鶏口となるも牛後となるなかれ",p:["鶏口となるも","牛後と","なるなかれ"],y:"けいこうとなるもぎゅうごとなるなかれ",kind:"故事成語",g:3,el:"剛",cost:2,mean:"大きな集団の末端にいるより、小さな集団でも長となるほうがよいということ",use:"鶏口となるも牛後となるなかれと、小さな同好会の部長を引き受けた。",e:{d:24,sp:'slowdown'}},
+ {w:"李下に冠を正さず",p:["李下に","冠を","正さず"],y:"りかにかんむりをたださず",kind:"故事成語",g:3,el:"柔",cost:1,mean:"疑われるような行いは、避けるべきだということ",use:"李下に冠を正さずで、テスト中は消しゴムを拾うのも先生に声をかけた。",e:{sh:14,sp:'dispel'}},
+ {w:"羹に懲りて膾を吹く",p:["羹に懲りて","膾を","吹く"],y:"あつものにこりてなますをふく",kind:"故事成語",g:3,el:"柔",cost:1,mean:"一度の失敗にこりて、必要以上に用心深くなること",use:"一度遅刻してから一時間前に着くのは羹に懲りて膾を吹くだ。",e:{sh:20,sp:'recoil1'}},
+ {w:"大山鳴動して鼠一匹",p:["大山鳴動して","鼠一匹"],y:"たいざんめいどうしてねずみいっぴき",kind:"故事成語",g:3,el:"智",cost:2,mean:"大さわぎしたわりに、結果はごく小さいこと",use:"大事件かと思ったら消しゴムの紛失で、大山鳴動して鼠一匹だった。",e:{d:30,sp:'gamble'}},
+ {w:"蟷螂の斧",p:["蟷螂の","斧"],y:"とうろうのおの",kind:"故事成語",g:3,el:"剛",cost:1,mean:"弱い者が、力もないのに強い者に立ち向かうこと",use:"蟷螂の斧と言われても、強豪校に全力で挑んだ。",e:{d:10,sp:'mirror'}},
+ {w:"愚公山を移す",p:["愚公","山を","移す"],y:"ぐこうやまをうつす",kind:"故事成語",g:3,el:"剛",cost:2,mean:"どんな困難なことも、こつこつ努力を続ければ必ず成しとげられるということ",use:"愚公山を移すの気持ちで、一年かけて百冊の本を読みきった。",e:{d:4,sp:'turnmul'}},
+ {w:"烏合の衆",p:["烏合の","衆"],y:"うごうのしゅう",kind:"故事成語",g:3,el:"智",cost:1,mean:"規律も統一もない、人々の集まり",use:"作戦のないチームは烏合の衆で、すぐに負けてしまった。",e:{d:5,sp:'handcount'}},
+ {w:"青天の霹靂",p:["青天の","霹靂"],y:"せいてんのへきれき",kind:"故事成語",g:3,el:"剛",cost:2,mean:"突然起こる、思いがけない大事件",use:"転校の知らせは青天の霹靂だった。",e:{d:26,sp:'crit'}}
+];
+
+/* 語句カード（PARTS）：全ことわざの語句の集合。属性はその語句を含む最初のことわざから継承 */
+const PARTS = {};
+PROVERBS.forEach(o=>{ o.p.forEach(c=>{ if(!PARTS[c]) PARTS[c]={c:c,el:o.el}; }); });
+const PARTS_LIST = Object.keys(PARTS);
+const KIND_LIST = ["ことわざ","慣用句","故事成語"];
+
+/* ---------- 学年モード ----------
+   g=1 小学校で習う ／ g=2 中学で習う ／ g=3 発展（故事成語の難しいものなど）。
+   ピルは 中1＝g≤1、中2＝g≤2、中3＝全部。 */
+const GRADE_KEY = "manabi-grade:kotowaza-rensei";
+const GRADE_NAMES = {1:"中1", 2:"中2", 3:"中3"};
+const hubGrade = () => (window.LearnHub && LearnHub.grade) ? LearnHub.grade() : 3;
+function normGrade(g){ g = Number(g); return (g===1||g===2||g===3) ? g : 0; }
+let GRADE = (function(){ let g = 0; try{ g = normGrade(localStorage.getItem(GRADE_KEY)); }catch(e){} return g || normGrade(hubGrade()) || 3; })();
+function setGrade(g){
+  g = normGrade(g); if(!g) return;
+  GRADE = g; try{ localStorage.setItem(GRADE_KEY, String(g)); }catch(e){}
+  paintGrade();
+}
+function paintGrade(){
+  document.querySelectorAll("#gradeRow .btn").forEach(function(b){
+    const on = Number(b.dataset.grade)===GRADE;
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", on?"true":"false");
+  });
+}
+function gradeTag(){ return GRADE<3 ? '<span class="tag gradetag">'+GRADE_NAMES[GRADE]+'</span>' : ''; }
+function POOL(){ return PROVERBS.filter(o => o.g <= GRADE); }
+function dexTotal(){ return POOL().length; }
+function craftedInPool(){ return G.crafted.filter(function(w){ const o = idiomOf(w); return o && o.g <= GRADE; }).length; }
+let _gk = {};
+function gradeKanjiList(){
+  if(!_gk[GRADE]){ const set = {}; POOL().forEach(o => o.p.forEach(c => set[c]=1)); _gk[GRADE] = Object.keys(set); }
+  return _gk[GRADE];
+}
+/* 並びが学年の範囲内の実在語か／範囲外の実在語か */
+function findInPool(w){ return POOL().find(function(o){ return o.w===w; }) || null; }
+function findAny(w){ return PROVERBS.find(function(o){ return o.w===w; }) || null; }
+
+const CHAPTERS = [
+ {name:"言い間違いの森", nodes:["敵","宝","敵","泉","問","敵","主"],
+  foes:[
+   {n:"言い間違い蟲", g:"mushi", hp:46, atk:8,  weak:"剛", pat:["atk","atk","buff"]},
+   {n:"空耳の鬼火", g:"onibi", hp:54, atk:9,  weak:"智", pat:["atk","guard","big"]},
+   {n:"うろ覚えのけもの", g:"kemono", hp:58, atk:10, weak:"柔", pat:["atk","atk","drain"]}],
+  boss:{n:"早とちり蜘蛛", g:"kumo", hp:120, atk:12, weak:"剛", pat:["atk","buff","atk","big"]}},
+ {name:"早とちりの谷", nodes:["敵","宝","敵","泉","問","敵","主"],
+  foes:[
+   {n:"聞きかじりの影",   g:"kage", hp:64, atk:12, weak:"智", pat:["atk","big","guard"]},
+   {n:"早とちり猿", g:"saru", hp:62, atk:13, weak:"柔", pat:["atk","atk","drain"]},
+   {n:"揚げ足取り", g:"ashi", hp:70, atk:12, weak:"剛", pat:["guard","atk","buff","big"]}],
+  boss:{n:"曲解の大蛇", g:"orochi", hp:155, atk:15, weak:"柔", pat:["atk","buff","big","guard","atk"]}},
+ {name:"うろ覚えの塔", nodes:["敵","宝","敵","泉","問","敵","主"],
+  foes:[
+   {n:"うろ覚えの霧",   g:"kiri", hp:76, atk:14, weak:"柔", pat:["drain","atk","big"]},
+   {n:"白紙の写本", g:"shahon", hp:82, atk:15, weak:"剛", pat:["guard","atk","atk","big"]},
+   {n:"言葉喰い",   g:"kuchi", hp:88, atk:15, weak:"智", pat:["atk","buff","big","atk"]}],
+  boss:{n:"忘却の王", g:"ou", hp:190, atk:18, weak:"智", pat:["atk","buff","big","drain","atk","big"]}},
+ {name:"ホラ吹きの関", nodes:["敵","宝","敵","泉","問","敵","主"],
+  foes:[
+   {n:"出まかせ唐傘", g:"karakasa", hp:95,  atk:17, weak:"智", pat:["atk","drain","big"]},
+   {n:"尾ひれ魚",     g:"ohire",    hp:100, atk:18, weak:"柔", pat:["atk","atk","buff","big"]},
+   {n:"ホラ吹き法螺貝", g:"horagai",hp:105, atk:18, weak:"剛", pat:["guard","big","atk","buff"]}],
+  boss:{n:"ダジャレ天狗", g:"tengu", hp:225, atk:21, weak:"柔", pat:["atk","buff","big","guard","big","atk"]}},
+ {name:"口車の郷", nodes:["敵","宝","敵","泉","問","敵","主"],
+  foes:[
+   {n:"悪態の鬼",   g:"oni",    hp:115, atk:20, weak:"柔", pat:["atk","big","buff"]},
+   {n:"ねたみ般若", g:"hannya", hp:120, atk:21, weak:"剛", pat:["drain","atk","big","guard"]},
+   {n:"陰口の二口女", g:"futakuchi",  hp:125, atk:21, weak:"智", pat:["guard","atk","drain","big"]}],
+  boss:{n:"口車の九尾", g:"kitsune", hp:260, atk:24, weak:"剛", pat:["atk","drain","buff","big","guard","big"]}},
+ {name:"沈黙の淵", nodes:["敵","宝","敵","泉","問","敵","主"],
+  foes:[
+   {n:"無言地蔵", g:"jizo",   hp:135, atk:23, weak:"剛", pat:["drain","big","atk","guard"]},
+   {n:"空筆の付喪神", g:"fude", hp:140, atk:24, weak:"智", pat:["guard","big","atk","buff"]},
+   {n:"空言の鐘", g:"kane",  hp:150, atk:25, weak:"柔", pat:["atk","buff","big","big"]}],
+  boss:{n:"詭弁の龍", g:"ryu", hp:300, atk:28, weak:"智", pat:["atk","buff","big","guard","drain","big","atk"]}},
+ {name:"空言の砂海", nodes:["敵","宝","敵","泉","問","敵","主"],
+  foes:[
+   {n:"蜃気楼の大蛤", g:"shin",     hp:165, atk:27, weak:"智", pat:["drain","big","guard","atk"]},
+   {n:"鸚鵡返しの鏡",     g:"kagami",   hp:175, atk:28, weak:"剛", pat:["atk","buff","big","big"]},
+   {n:"化かしの狸",   g:"tanuki",   hp:185, atk:28, weak:"柔", pat:["guard","atk","drain","big","buff"]}],
+  boss:{n:"無知の鵺", g:"nue", hp:340, atk:32, weak:"剛", pat:["atk","buff","big","drain","guard","big","big"]}},
+ {name:"忘却の果て", nodes:["敵","宝","敵","泉","問","敵","主"],
+  foes:[
+   {n:"のっぺらぼう", g:"noppera", hp:200, atk:30, weak:"智", pat:["drain","atk","big","guard","big"]},
+   {n:"無字の石碑",   g:"hibun",   hp:210, atk:32, weak:"柔", pat:["guard","buff","big","atk","big"]},
+   {n:"言葉喰らいの餓鬼", g:"gaki",    hp:220, atk:33, weak:"剛", pat:["atk","big","buff","big","drain"]}],
+  boss:{n:"言祖の鳳凰", g:"houou", hp:400, atk:36, weak:"柔", pat:["atk","buff","big","guard","drain","big","big","atk"]}}
+];
+
+
+/* =========================================================
+   音（和楽器風シンセ・外部ファイルなし）
+   ========================================================= */
+const AU = {ctx:null, mas:null, on:true, timer:null, cur:null, step:0, next:0, nz:null};
+function actx(){
+  if(!AU.ctx){
+    const C = window.AudioContext || window.webkitAudioContext;
+    if(!C) return null;
+    try{
+      AU.ctx = new C();
+      AU.mas = AU.ctx.createGain(); AU.mas.gain.value = 0.22; AU.mas.connect(AU.ctx.destination);
+      const len = AU.ctx.sampleRate*0.5, buf = AU.ctx.createBuffer(1,len,AU.ctx.sampleRate), d = buf.getChannelData(0);
+      for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+      AU.nz = buf;
+    }catch(e){ return null; }
+  }
+  if(AU.ctx.state === "suspended") AU.ctx.resume();
+  return AU.ctx;
+}
+function envGain(src,t,a,d,peak){
+  const g = AU.ctx.createGain();
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.linearRampToValueAtTime(peak,t+a);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+a+d);
+  src.connect(g); g.connect(AU.mas); return g;
+}
+/* 箏・三味線風の撥弦音 */
+function pluck(f,t,dur,vol){
+  const c = actx(); if(!c||!AU.on||!f) return;
+  const o = c.createOscillator(); o.type = "triangle"; o.frequency.setValueAtTime(f,t);
+  const o2 = c.createOscillator(); o2.type = "sine"; o2.frequency.setValueAtTime(f*2.02,t);
+  envGain(o,t,0.004,dur,vol||0.16); envGain(o2,t,0.003,dur*0.35,(vol||0.16)*0.45);
+  o.start(t); o.stop(t+dur+0.05); o2.start(t); o2.stop(t+dur*0.4+0.05);
+}
+function tone(f,t,dur,type,vol){
+  const c = actx(); if(!c||!AU.on||!f) return;
+  const o = c.createOscillator(); o.type = type||"square"; o.frequency.setValueAtTime(f,t);
+  envGain(o,t,0.005,dur,vol||0.14); o.start(t); o.stop(t+dur+0.05);
+}
+function slide(f1,f2,t,dur,type,vol){
+  const c = actx(); if(!c||!AU.on) return;
+  const o = c.createOscillator(); o.type = type||"sawtooth";
+  o.frequency.setValueAtTime(f1,t); o.frequency.exponentialRampToValueAtTime(Math.max(30,f2),t+dur);
+  envGain(o,t,0.005,dur,vol||0.14); o.start(t); o.stop(t+dur+0.05);
+}
+/* 鼓・太鼓風 */
+function drum(t,dur,vol,cut,q){
+  const c = actx(); if(!c||!AU.on||!AU.nz) return;
+  const src = c.createBufferSource(); src.buffer = AU.nz;
+  const bq = c.createBiquadFilter(); bq.type = "bandpass"; bq.frequency.value = cut||1200; bq.Q.value = q||1.2;
+  src.connect(bq); envGain(bq,t,0.002,dur,vol||0.12); src.start(t); src.stop(t+dur+0.05);
+}
+function sfx(name){
+  const c = actx(); if(!c||!AU.on) return;
+  const t = c.currentTime;
+  switch(name){
+    case "tap":   tone(1046,t,0.05,"square",0.09); break;
+    case "slash": drum(t,0.09,0.16,2600,0.8); slide(760,220,t,0.14,"square",0.12); break;
+    case "idiom": [0,3,7,12].forEach(function(n,i){ pluck(392*Math.pow(2,n/12),t+i*0.055,0.32,0.16); }); break;
+    case "craft": [0,2,7,9,12].forEach(function(n,i){ pluck(523*Math.pow(2,n/12),t+i*0.07,0.5,0.17); });
+                  drum(t,0.4,0.1,600,0.6); break;
+    case "ng":    tone(180,t,0.12,"square",0.12); tone(140,t+0.13,0.2,"square",0.12); break;
+    case "hurt":  drum(t,0.16,0.2,320,0.7); slide(300,90,t,0.22,"sawtooth",0.13); break;
+    case "heal":  [0,4,7].forEach(function(n,i){ pluck(523*Math.pow(2,n/12),t+i*0.08,0.45,0.14); }); break;
+    case "get":   pluck(784,t,0.25,0.15); pluck(1046,t+0.09,0.35,0.15); break;
+    case "gong":  drum(t,1.2,0.22,180,0.5); tone(98,t,1.1,"sine",0.16); tone(147,t+0.02,0.9,"sine",0.08); break;
+    case "win":   [0,4,7,12,7,12].forEach(function(n,i){ pluck(523*Math.pow(2,n/12),t+i*0.11,0.5,0.18); });
+                  drum(t,0.5,0.14,500,0.6); break;
+    case "lose":  [0,-2,-5,-9].forEach(function(n,i){ tone(392*Math.pow(2,n/12),t+i*0.18,0.4,"triangle",0.13); }); break;
+  }
+}
+/* ---- BGM（ヨナ抜き音階＝道中／都節音階＝戦闘） ---- */
+const TUNES = {
+ field:{bpm:104, root:293.66, sc:[0,2,4,7,9],
+   mel:[0,-1,2,-1,4,-1,2,0,-1,4,5,-1,4,2,-1,-1],
+   bas:[0,-1,-1,-1,2,-1,-1,-1,4,-1,-1,-1,2,-1,-1,-1],
+   per:[2,0,1,0,2,0,1,0,2,0,1,0,2,0,1,1]},
+ battle:{bpm:142, root:261.63, sc:[0,1,5,7,8],
+   mel:[0,2,-1,3,2,-1,0,-1,3,4,-1,3,2,0,-1,-1],
+   bas:[0,-1,0,-1,3,-1,3,-1,2,-1,2,-1,0,-1,0,-1],
+   per:[2,1,1,0,2,0,1,1,2,1,1,0,2,1,2,1]},
+ clear:{bpm:100, root:261.63, sc:[0,2,4,7,9],
+   mel:[5,-1,6,7,-1,8,-1,9,10,-1,9,-1,8,-1,7,-1],
+   bas:[0,-1,2,-1,4,-1,2,-1,0,-1,2,-1,4,-1,4,-1],
+   per:[2,0,1,0,2,0,1,1,2,0,1,0,2,1,2,1]},
+ boss:{bpm:152, root:196.00, sc:[0,1,5,7,8],
+   mel:[5,-1,6,-1,5,-1,9,8,7,-1,6,-1,5,-1,4,-1],
+   bas:[0,0,-1,0,0,0,-1,0,1,1,-1,1,0,0,-1,0],
+   per:[2,0,2,0,2,1,2,1,2,0,2,0,2,1,2,2]}
+};
+function freqOf(t,d){
+  if(d<0) return 0;
+  const n = t.sc.length, oct = Math.floor(d/n);
+  return t.root*Math.pow(2,(t.sc[((d%n)+n)%n]+12*oct)/12);
+}
+function stopSeq(){ if(AU.timer){ clearInterval(AU.timer); AU.timer=null; } }
+function playBGM(name){
+  if(AU.cur===name && AU.timer) return;
+  AU.cur = name; stopSeq();
+  if(!name || !AU.on || !actx()) return;
+  AU.step = 0; AU.next = AU.ctx.currentTime+0.08;
+  AU.timer = setInterval(seqTick,25);
+}
+function seqTick(){
+  const t = TUNES[AU.cur]; if(!t||!AU.ctx){ stopSeq(); return; }
+  const spb = 60/t.bpm/2;
+  while(AU.next < AU.ctx.currentTime+0.16){
+    const i = AU.step%16, at = AU.next;
+    if(t.mel[i]>=0) pluck(freqOf(t,t.mel[i]),at,spb*1.7,0.15);
+    if(t.bas[i]>=0) tone(freqOf(t,t.bas[i])/2,at,spb*1.3,"triangle",0.12);
+    if(t.per[i]) drum(at,0.07,t.per[i]===2?0.14:0.08,t.per[i]===2?260:1500,t.per[i]===2?0.6:1.4);
+    AU.next += spb; AU.step++;
+  }
+}
+function toggleSound(){
+  AU.on = !AU.on;
+  try{ if(window.MJ) MJ.setMuted(!AU.on); }catch(e){}
+  if(!AU.on){ stopSeq(); }
+  else { const c = AU.cur; AU.cur = null; playBGM(c||"field"); }
+  const b = document.getElementById("sndbtn");
+  if(b) b.textContent = AU.on ? "音 ON" : "音 OFF";
+}
+
+/* =========================================================
+   ゲーム状態
+   ========================================================= */
+const SPR = {
+  mushi:{p:["#140f2b","#8fd94f","#4a9130","#f6efdc","#1b1430"],r:["..1111..1111..",".122221122221.","12222222222221","12452452222221","12222222222221","13222332223321","12222222222221",".122222222221.","..1111111111..","..1..1..1..1.."]},
+  onibi:{p:["#071026","#8fe9ff","#2f7ad6","#0b1a3a","#ffd166"],r:["....11....","...1221...","..122221..",".12233221.","1223223221","1233433321","1232332321","1233333321",".12333321.","..122221..","...1221...","....11...."]},
+  kemono:{p:["#160d1f","#d98a3f","#8a4f22","#ffe98a","#f6efdc"],r:["11........11","1221......1221","122211..112221","1222221122221","1222222222221","123342233421","122222222222","112222222211",".1225555221.",".1252552521.","..11222211.","...1....1..."]},
+  kumo:{p:["#0b1220","#4a6ea8","#26406b","#d24b3a"],r:["2............2",".22........22.","..22......22..","...12222221...","..1223333221..","..1234443221..","..1233333321..","..1223333221..","...12222221...","..22......22..",".22..2..2..22.","2...2....2...2"]},
+  kage:{p:["#05070c","#243a58","#16233a","#d24b3a","#6f8fb5"],r:["...111111...","..12222221..",".1233333321.","123333333321","123343343321","123333333321","122333333221","152222222251","122222222221",".1222222221.",".1211221121.","..1......1.."]},
+  saru:{p:["#1a0f14","#b06a3a","#f0c39a","#5c3218","#e34a3a"],r:["..11....11..",".1221..1221.","112211112211","122222222221","123333333321","123133331321","123333333321","123353353321","123333333321","112333333211",".112222221.","..11....11.."]},
+  ashi:{p:["#1a1024","#d8a878","#a06a40","#e34a3a"],r:[".11.11.11..","1421421421.","1221221221.","12212212211","12222222221","12222222221","13222222231",".1222222221",".122222221.","..1222221..","...11111..."]},
+  orochi:{p:["#0b1a10","#4fb36b","#8a2233","#ffd166","#0b1a10","#f6efdc"],r:["..1........1..",".121......121.",".122111111221.","11222222222211","12452222225421","12222222222221","11222222222211",".113333333311.","..136333631...","...11111111...",".122222222221.","11322222223311",".111111111111."]},
+  kiri:{p:["#0e1024","#b9c2e8","#6b74a8","#ffffff","#2a3050"],r:["..111111..",".12222221.","1222222221","1225225221","1222222221","1223223221","1222222221","1322222231","1122222211","1.122221.1","..1.11.1.."]},
+  shahon:{p:["#141024","#f6efdc","#b9ae90","#8a3f3f","#ffd166"],r:["..44444444..",".4122222214.","412222222214","412222222214","412233332214","412233332214","412222222214","412222222214",".4122222214.","..44444444..","...1....1..."]},
+  kuchi:{p:["#12081a","#6b1030","#e34a3a","#f6efdc","#ffd166"],r:["..111111..",".13333331.","1355335531","1333333331","1144444411","1424242421","1222222221","1242424241","1144444411",".13333331.","..111111.."]},
+  ou:{p:["#0a0f18","#f3ead6","#b3a888","#d9a441","#d24b3a"],r:[".4..4..4..4.",".4444444444.",".4434434344.","..11111111..",".1222222221.","122222222221","122552255221","122552255221","122222222221","122212212221",".1222222221.",".1121212211.","..11111111.."]},
+  hero:{p:["#0e1420","#f0c9a0","#4a7fb5","#1b3a5c","#d24b3a"],r:["..1111..",".144441.","1122221","1121121","11222211",".133331.","13333331","13333331",".133331.",".13..31.",".11..11."]},
+  oni:{p:["#1a0a0c","#c8452f","#8f2f20","#d9a441","#f3ead6"],r:["..1......1..",".121....121.",".1221111221.","112222222211","122222222221","122442244221","122222222221","122211112221","112555555211",".1251515121.","..11222211..","...111111..."]},
+  tengu:{p:["#12080a","#c8452f","#1b2436","#f3ead6","#e8776a"],r:["..33333333..",".3333333333.","133222222331","122222222221","122442244221","122225522221","122225522221","122225522221","112225522211",".1225555221.","..11222211..","...111111..."]},
+  hannya:{p:["#14101c","#e8dcc4","#b9a888","#d9a441","#c8452f"],r:["..1......1..",".121....121.",".1221111221.","112222222211","122222222221","122442244221","122212212221","122222222221","115555555511",".1525252521.","..11555511..","...111111..."]},
+  karakasa:{p:["#14101c","#c8452f","#8f2f20","#f3ead6","#6b4f27"],r:[".....1.....","....121....","...12221...","..1232321..",".123232321.","12323232321","11111111111","...14441...","...14341...","...14441...","....555....","...55555..."]},
+  ryu:{p:["#0a1418","#4a8fa8","#2a5f75","#d9a441","#f3ead6"],r:["..1........1..",".121......121.",".122111111221.","11222222222211","12244222244221","12222222222221","11222222222211","22.12222221.22","..1155555511..","..1535353531..","..1155555511..","...11111111..."]},
+  kitsune:{p:["#1a1014","#f3ead6","#d9a441","#c8452f","#b9a888"],r:["11..........11","1221......1221","1223......3221","12233333333221",".122222222221.",".122442244221.",".122222222221.",".112233332211.","..1122222211..","...11222211...","....112211....",".33..1111..33.","3.3........3.3"]},
+  nue:{p:["#0d0a14","#5a4a3a","#8a7050","#d9a441","#f3ead6"],r:["..1........1..",".121......121.",".12211111121.","11222222222211","12244222244221","12222222222221","11222332222211",".122555552221.",".112535352211.","..1122222211.",".12332222331.","11322222223311",".1.11111111.1."]},
+  ohire:{p:["#0b1a24","#4a9fd8","#2a6ea8","#f3ead6","#d9a441"],r:["...111111.11..","..12222211551.",".1222222211551","12242222215551","12222222215551",".1222222211551","..12222211551.","...111111.11.."]},
+  horagai:{p:["#1a1208","#d8b878","#8a6a3a","#f3ead6","#c8452f"],r:[".....11.....","....1221....","...122221...","..12233221..",".1223223221.","122342243221","122322232221",".1225555221.","..11222211..","...111111..."]},
+  futakuchi:{p:["#14101c","#f0d8c0","#1b2436","#c8452f","#14101c"],r:[".3333333333.","333333333333","334444444433","334141414433","334444444433",".3333333333.","..13333331..",".1122222211.","122552255221","122222222221",".1224444221.","..11111111.."]},
+  jizo:{p:["#101418","#b8b8ac","#8a8a80","#c8452f","#6a6a62"],r:["...111111...","..12222221..",".1222222221.","122222222221","122112211221","122222222221","122221122221",".1222222221.","..11111111..",".1444444441.","144444444441","122222222221",".1111111111."]},
+  fude:{p:["#14100c","#6b4f27","#f3ead6","#1b2436","#d9a441"],r:["..1221..","..1221..","..1221..","..1221..",".152251.",".133331.","13433431","13433431","13333331",".133331.","..1331..","...11..."]},
+  kane:{p:["#12100a","#8a7a3a","#5a4a1a","#d9a441","#f3ead6"],r:["....1111....","...122221...","..11111111..",".1222222221.","122222222221","122552255221","122222222221","124222222421","122222222221","125555555521","111111111111",".1111111111."]},
+  shin:{p:["#0a141c","#a9c0d4","#6a8098","#f3ead6","#4a8fa8"],r:["..1......1..","...144441...","..14444441..",".1444444441.","112222222211","122333333221","111111111111","122333333221","112222222211",".1111111111."]},
+  kagami:{p:["#12141c","#d9a441","#c8d8e8","#6a8098","#f3ead6"],r:["...222222...","..22222222..",".2233333322.","223333333322","223353353322","223333333322","223343433322",".2233333322.","..22222222..","...222222...","....1221....","....1221...."]},
+  tanuki:{p:["#140f0a","#8a6a4a","#f3ead6","#1b2436","#6fa96b"],r:[".....55.....","....1551....","1221....1221","112222222211","122222222221","122442244221","123333333321","123313133321","112333333211","122333333221","122233332221",".1122222211.","..11....11.."]},
+  noppera:{p:["#0e1018","#eae2d2","#b8ae9a","#1b2436","#2a3550"],r:["...444444...","..44444444..",".4422222244.","142222222241","122222222221","122222222221","122222222221","122222222221",".1222222221.","..12222221..","..15555551..",".1555555551."]},
+  hibun:{p:["#0e1218","#9aa3a8","#6a7378","#d9a441","#3a4348"],r:["..111111..",".12222221.","1222222221","1222222221","1223223221","1224224221","1222222221","1223333221","1222222221","1122222211","1111111111",".11111111."]},
+  gaki:{p:["#140a10","#a86a5a","#6a3a30","#d9a441","#f3ead6"],r:["...111111...","..12222221..",".1244224421.",".1222222221.",".1155555511.",".1152525511.","..11111111..","1.12222221.1",".1222222221.","122222222221","122333332221",".1122222211.","..1.1..1.1.."]},
+  houou:{p:["#1a1208","#d9a441","#8a6a26","#c8452f","#f3ead6"],r:["......11......",".....1441.....","....112211....","....124421....","...11222211...",".112222222211.","11222222222211","13222222222231",".132222222231.","..1132222311..","....122221....","...12.22.21...","..4..1221..4..",".4...4..4...4."]},
+  i_foe:{p:["#0d0a1c","#e6ecff","#8a86b8"],r:[".11111.","1222221","1212121","1222221","1121211",".12221.",".1.1.1."]},
+  i_box:{p:["#120c14","#a9702c","#d9a441","#6b4116"],r:[".111111.","13222231","12222221","11133111","12232221","12232221",".111111."]},
+  i_spa:{p:["#0b1a2a","#4ba3e8","#8fe9ff"],r:["...11...","..1221..",".122221.","12233221","12222221",".122221.","..1111.."]},
+  i_boss:{p:["#1a1020","#ffd166","#e34a3a"],r:["2.2.2.2","2222222",".22222.",".21112.",".22222.","..222..","...2..."]}
+};
+const SPRC = {};
+function sprURL(key,f){
+  const k = key+"|"+f; if(SPRC[k]) return SPRC[k];
+  const sp = SPR[key]; if(!sp) return "";
+  const W=16,H=16, c=document.createElement("canvas"); c.width=W; c.height=H;
+  const g=c.getContext("2d"); if(!g) return "";
+  const rows=sp.r, center=key.indexOf("i_")===0;
+  const top=(center?Math.floor((H-rows.length)/2):H-rows.length-1)+f;
+  rows.forEach(function(row,y){
+    const pad=Math.floor((W-row.length)/2);
+    for(let x=0;x<row.length;x++){
+      const ch=row[x]; if(ch===".") continue;
+      g.fillStyle=sp.p[+ch-1]||"#f0f"; g.fillRect(pad+x, top+y, 1, 1);
+    }
+  });
+  return SPRC[k]=c.toDataURL();
+}
+function sprHTML(key,size,id){
+  return '<span class="spr" '+(id?'id="'+id+'"':'')+' style="width:'+size+'px;height:'+size+'px">'+
+    '<img src="'+sprURL(key,0)+'" alt=""><img src="'+sprURL(key,1)+'" alt=""></span>';
+}
+function flashFoe(){
+  const el=document.getElementById("foe-spr"), st=document.getElementById("stage");
+  if(el&&el.classList){ el.classList.add("flash"); setTimeout(function(){el.classList.remove("flash");},110); }
+  if(st&&st.classList){ st.classList.remove("shake"); void st.offsetWidth; st.classList.add("shake"); }
+}
+function popDamage(d,weak){
+  const host=document.getElementById("stage"); if(!host||!host.appendChild) return;
+  const n=document.createElement("div"); n.className="dmg"+(weak?" weak":"");
+  n.textContent=d; n.style.left=(34+Math.random()*30)+"%";
+  host.appendChild(n); setTimeout(function(){ if(n.remove) n.remove(); },900);
+}
+function bar(cur,max,cls){
+  return '<div class="bar '+(cls||"")+'"><i style="width:'+Math.max(0,cur)/max*100+'%"></i></div>';
+}
+
+const G = {
+  chapter:0, node:0, hp:70, maxhp:70, retry:0, hard:false, endless:false, depth:0, bestN:0, bestH:0,
+  plus:{},
+  inv:{},          // 語句 -> 枚数
+  crafted:[],      // 錬成ずみことわざ（w）
+  deckKanji:[],    // デッキに入れた語句カード（重複あり）
+  deckIdiom:[],    // デッキに入れた完成カード（w）
+  cleared:false
+};
+const BASE_KANJI_DECK = 16, BASE_IDIOM_DECK = 8;
+const MIN_KANJI_DECK = 10;   // 語句カードの最低枚数（持ち札がこれ未満なら全部）
+function invTotal(){ let n=0; for(const c in G.inv) if(PARTS[c]) n += G.inv[c]; return n; }
+function minKanjiDeck(){ return Math.min(MIN_KANJI_DECK, invTotal()); }
+/* 編成の不備（null なら問題なし） */
+function deckProblem(){
+  const k = G.deckKanji.length, i = G.deckIdiom.length, need = minKanjiDeck();
+  if(k < need) return "語句カードを "+need+" 枚以上入れよう（いま "+k+" 枚）";
+  if(i > k) return "完成カードは語句カードの枚数まで（語句 "+k+" 枚／完成 "+i+" 枚）";
+  return null;
+}
+/* 不備があれば自動でととのえる（戦闘開始時の保険） */
+function fixDeck(){
+  if(G.deckKanji.length < minKanjiDeck()) refillDeck();
+  if(G.deckIdiom.length > G.deckKanji.length) G.deckIdiom = G.deckIdiom.slice(0, Math.max(1, G.deckKanji.length));
+}
+const MAX_PLUS = 5;
+/* 位は図鑑総数（学年ごとに 65語／125語／150語）に対する割合で決める */
+const RANKS = [
+  {p:0.25, t:"見習い語り部", d:"語句デッキ枠+2"},
+  {p:0.50, t:"語り部", d:"毎ターンの気力+1"},
+  {p:0.75, t:"言の葉の達人", d:"完成デッキ枠+2"},
+  {p:1.00, t:"ことわざ博士", d:"言葉の力+5"}
+];
+function rankNeed(i){ return Math.ceil(dexTotal()*RANKS[i].p); }
+/* 図鑑は石碑の記録（過去最高）と現在の多いほうで数える（段階内の語で） */
+function dexCount(){ return Math.max(craftedInPool(), Math.min(LEG.dex, dexTotal())); }
+function rankLv(){ let n=0; for(let i=0;i<RANKS.length;i++) if(dexCount()>=rankNeed(i)) n=i+1; return n; }
+function rankName(){ return rankLv()? RANKS[rankLv()-1].t : "無位"; }
+function maxKanjiDeck(){ return BASE_KANJI_DECK + (rankLv()>=1?2:0); }
+function maxIdiomDeck(){ return BASE_IDIOM_DECK + (rankLv()>=3?2:0); }
+function baseEnergy(){ return 3 + (rankLv()>=2?1:0); }
+function rankPower(){ return rankLv()>=4 ? 5 : 0; }
+
+/* 石碑：記憶を消しても残る功績 */
+const LEG_KEY = "kotowaza-rensei-legacy";
+let LEG = {bestN:0, bestH:0, depth:0, dex:0};
+function legSave(){
+  const old = {bestN:LEG.bestN, bestH:LEG.bestH, depth:LEG.depth, dex:LEG.dex};
+  LEG.bestN = Math.max(LEG.bestN, G.bestN); LEG.bestH = Math.max(LEG.bestH, G.bestH);
+  LEG.depth = Math.max(LEG.depth, G.depth); LEG.dex = Math.max(LEG.dex, G.crafted.length);
+  legNotice(old);
+  const t = JSON.stringify(LEG);
+  try{ if(window.storage && window.storage.set) window.storage.set(LEG_KEY, t); }catch(e){}
+  try{ localStorage.setItem(LEG_KEY, t); }catch(e){}
+}
+function legLoad(){
+  return Promise.resolve().then(function(){
+    if(window.storage && window.storage.get) return window.storage.get(LEG_KEY);
+    return null;
+  }).then(function(r){
+    let t = (r && r.value) ? r.value : null;
+    if(!t){ try{ t = localStorage.getItem(LEG_KEY); }catch(e){} }
+    if(t){ const d = JSON.parse(t); if(d) LEG = {bestN:d.bestN|0, bestH:d.bestH|0, depth:d.depth|0, dex:d.dex|0, q:d.q|0}; }
+  }).catch(function(){});
+}
+/* ---- フェーズ4：共通演出（manabi-juice.js）との連携 ----
+   称号は位（rankName）と連動、実績は MJ.achieve、自己ベスト更新は帯で知らせる。
+   MJ の効果音はゲーム固有の音と重ねないよう、称号・実績の通知中は MJ を消音する。 */
+let LEG_PEND = null, CUT_ON = false;
+const TITLE_DEFS = [{min:1,name:"見習い語り部"},{min:2,name:"語り部"},{min:3,name:"言の葉の達人"},{min:4,name:"ことわざ博士"}];
+const ACH = [
+  {id:"craft1",  t:"初錬成",   d:"ことわざをはじめて錬成する"},
+  {id:"nodmg",   t:"無傷討伐", d:"ダメージを受けずに妖怪をたおす"},
+  {id:"quiz10",  t:"問答十勝", d:"問の試練に合計10回正解する"},
+  {id:"clear",   t:"言葉の帰還", d:"通常の旅を踏破する"},
+  {id:"hard",    t:"修羅踏破", d:"修羅道を踏破する"},
+  {id:"depth10", t:"回廊十層", d:"無限回廊の第10層に到達する"},
+  {id:"kaiden",  t:"博士",     d:"言の葉の位がことわざ博士に至る"},
+  {id:"dexall",  t:"図鑑制覇", d:"図鑑のことわざをすべて錬成する"}
+];
+function mjQuiet(fn){
+  if(!window.MJ) return;
+  const m = MJ.muted(); if(!m) MJ.setMuted(true);
+  try{ fn(); }catch(e){}
+  if(!m) MJ.setMuted(false);
+}
+function mjAchieve(id){
+  const a = ACH.find(function(x){ return x.id===id; }); if(!a || !window.MJ) return false;
+  try{ if((MJ.achievements(HUB_KEY)||{})[id]) return false; }catch(e){}
+  let r = false; mjQuiet(function(){ r = MJ.achieve(HUB_KEY, a.id, a.t); });
+  return r;
+}
+let _titleLv = -1;
+function syncTitle(){
+  const lv = rankLv(); if(lv===_titleLv) return; _titleLv = lv;
+  mjQuiet(function(){ MJ.title(HUB_KEY, TITLE_DEFS, lv); });
+}
+function legNotice(old){
+  if(!window.MJ) return;
+  if(LEG.bestN>old.bestN){ MJ.record(HUB_KEY,"bestN",LEG.bestN); if(old.bestN) LEG_PEND = "新記録　通常 第"+LEG.bestN+"章"; }
+  if(LEG.bestH>old.bestH){ MJ.record(HUB_KEY,"bestH",LEG.bestH); if(old.bestH) LEG_PEND = "新記録　修羅道 第"+LEG.bestH+"章"; }
+  if(LEG.depth>old.depth){ MJ.record(HUB_KEY,"depth",LEG.depth); if(old.depth) LEG_PEND = "新記録　無限回廊 第"+LEG.depth+"層"; }
+  if(LEG.dex>old.dex) MJ.record(HUB_KEY,"dex",LEG.dex);
+  if(LEG.bestN>=STORY_LEN) mjAchieve("clear");
+  if(LEG.bestH>=STORY_LEN) mjAchieve("hard");
+  if(LEG.depth>=10) mjAchieve("depth10");
+  if(LEG.dex>=1) mjAchieve("craft1");
+  if(rankLv()>=4) mjAchieve("kaiden");
+  syncTitle();
+}
+function flushBanner(){
+  if(!LEG_PEND || !window.MJ) return;
+  const t = LEG_PEND; LEG_PEND = null;
+  MJ.banner(t, {color:"#8f2f20", ms:1700});
+}
+function legacyBonus(){
+  return {
+    hp: Math.min(60, 5*(LEG.bestN+LEG.bestH)) + Math.min(20, 2*LEG.depth),
+    kanji: Math.min(16, 2*LEG.bestN),
+    hard: LEG.bestH >= 8
+  };
+}
+function retryLimit(){ return G.hard ? 1 : 3; }
+const HARD = {hp:1.32, atk:1.2, power:2, drop:-1, spring:0.35};
+const STORY_LEN = 8;
+
+const SAVE_KEY = "kotowaza-rensei-save";
+let SAVED = null, MEM_SAVE = null;
+function saveText(){
+  return JSON.stringify({v:1,ch:G.chapter,nd:G.node,hp:G.hp,mx:G.maxhp,rt:G.retry,hd:G.hard?1:0,ed:G.endless?1:0,dp:G.depth,bn:G.bestN,bh:G.bestH,pl:G.plus,
+    inv:G.inv,cr:G.crafted,dk:G.deckKanji,di:G.deckIdiom});
+}
+function saveGame(silent){
+  const txt = saveText(); MEM_SAVE = txt; SAVED = txt; let ok = false;
+  try{ if(window.storage && window.storage.set){ window.storage.set(SAVE_KEY, txt); ok = true; } }catch(e){}
+  if(!ok){ try{ localStorage.setItem(SAVE_KEY, txt); ok = true; }catch(e){} }
+  if(!silent){
+    if(ok) modal("記録した","ここまでの歩みを書き残した。<br>このまま冒険を続けるか、表紙にもどるか選ぼう。",
+      [{label:"このまま続ける"},{label:"表紙にもどる",act:"goHome();"}]);
+    else toast("この画面では記録を残せない");
+  }
+  return ok;
+}
+function probeSave(){
+  return Promise.resolve().then(function(){
+    if(window.storage && window.storage.get) return window.storage.get(SAVE_KEY);
+    return null;
+  }).then(function(r){
+    if(r && r.value) return r.value;
+    try{ return localStorage.getItem(SAVE_KEY); }catch(e){ return null; }
+  }).catch(function(){
+    try{ return localStorage.getItem(SAVE_KEY); }catch(e){ return null; }
+  });
+}
+function toWord(x){ return x; }
+/* 壊れた項目を落として、読み込んだ記録を安全な状態にそろえる */
+function sanitizeSave(){
+  G.crafted = (G.crafted||[]).map(toWord).filter(function(w){ return !!idiomOf(w); });
+  G.crafted = G.crafted.filter(function(w,i){ return G.crafted.indexOf(w)===i; });
+  G.deckIdiom = (G.deckIdiom||[]).map(toWord)
+    .filter(function(w){ return idiomOf(w) && G.crafted.indexOf(w)>=0; })
+    .slice(0, maxIdiomDeck());
+  G.deckKanji = (G.deckKanji||[]).filter(function(c){ return !!PARTS[c]; }).slice(0, maxKanjiDeck());
+  const inv = {};
+  for(const c in G.inv){ if(PARTS[c] && G.inv[c]>0) inv[c] = G.inv[c]; }
+  G.inv = inv;
+  const pl = {};
+  for(const k in (G.plus||{})){ const w = toWord(k); if(idiomOf(w)) pl[w] = Math.min(MAX_PLUS, G.plus[k]|0); }
+  G.plus = pl;
+  G.rankShown = rankLv();
+}
+function applySave(txt){
+  try{
+    const d = JSON.parse(txt); if(!d) return false;
+    G.chapter=Math.min(d.ch||0, CHAPTERS.length-1); G.node=d.nd||0; G.hp=d.hp||70; G.maxhp=d.mx||70; G.retry=d.rt||0;
+    G.hard=!!d.hd; G.endless=!!d.ed; G.depth=d.dp||0; G.bestN=d.bn||0; G.bestH=d.bh||0; G.cleared=false; ensureLayers();
+    G.inv=d.inv||{}; G.crafted=d.cr||[]; G.deckKanji=d.dk||[]; G.deckIdiom=d.di||[];
+    G.plus=d.pl||{};
+    sanitizeSave();
+    return true;
+  }catch(e){ return false; }
+}
+function continueGame(){
+  const txt = SAVED || MEM_SAVE;
+  if(!txt || !applySave(txt)) return toast("記録が見つからない");
+  actx(); playBGM("field"); sfx("get"); renderMap();
+}
+function hubStatus(){
+  const el = document.getElementById("hubstate");
+  if(!el) return;
+  const H = window.LearnHub;
+  if(!H || typeof H.report !== "function"){ el.textContent = "まなびの基板：未接続（単体で遊べます）"; return; }
+  const on = (typeof H.online === "function") ? H.online() : false;
+  const q  = (typeof H.queued === "function") ? H.queued() : 0;
+  el.textContent = "まなびの基板：接続ずみ" + (on ? "" : "（記録は端末に保存）") +
+    (q ? "／送信待ち " + q + "件" : "") + "　得点 " + hubScore();
+}
+function paintLegacy(){
+  const el = document.getElementById("legacy");
+  if(!el) return;
+  const b = legacyBonus();
+  if(!LEG.dex && !LEG.bestN && !LEG.bestH){ el.innerHTML = ""; return; }
+  el.innerHTML = '<span class="label">石碑の記録</span>　'+
+    '通常'+LEG.bestN+'章／修羅道'+LEG.bestH+'章'+(LEG.depth?'／無限'+LEG.depth+'層':'')+
+    '　図鑑'+LEG.dex+'語'+(rankLv()?'（'+rankName()+'）':'')+' <span class="near">▶ 石碑</span>'+
+    (b.hp||b.kanji ? '<br>継承の恩恵：体力+'+b.hp+(b.kanji?'／はじめの語句+'+b.kanji+'枚':'') : '');
+  const hb = document.getElementById("hardbtn");
+  if(hb) hb.classList.toggle("hidden", !b.hard);
+}
+function showContinue(){
+  const b = document.getElementById("contbtn");
+  if(b && (SAVED||MEM_SAVE)) b.classList.remove("hidden");
+}
+function idiomOf(id){ return PROVERBS.find(function(o){ return o.w===id; }); }
+function invCount(){ return Object.values(G.inv).reduce((a,b)=>a+b,0); }
+function addKanji(c,n){
+  n = n||1; G.inv[c] = (G.inv[c]||0)+n; refillDeck();
+}
+function checkRank(){
+  const lv = rankLv();
+  if(lv > (G.rankShown||0)){
+    G.rankShown = lv;
+    const r = RANKS[lv-1];
+    sfx("craft");
+    modal("言の葉の位「"+esc(r.t)+"」",
+      "図鑑 "+dexCount()+" 語。<br>この位のあいだ <span class=\"near\">"+esc(r.d)+"</span>。",
+      [{label:"うけとる"}]);
+  }
+  if(craftedInPool() >= dexTotal() && !G.dexDone){
+    G.dexDone = true; G.dexPending = true;
+  }
+  legSave();
+}
+function refillDeck(){
+  for(const c in G.inv){
+    while(deckKanjiCount(c) < G.inv[c] && G.deckKanji.length < maxKanjiDeck()) G.deckKanji.push(c);
+  }
+}
+function removeFromDeckKanji(c){
+  const i = G.deckKanji.indexOf(c); if(i>=0) G.deckKanji.splice(i,1);
+}
+function deckKanjiCount(c){ return G.deckKanji.filter(x=>x===c).length; }
+
+/* 未錬成のことわざのうち、あと少しで完成するものの不足語句を優先して配る */
+function missingOf(idiom){
+  const need = {}; idiom.p.forEach(c=>need[c]=(need[c]||0)+1);
+  const miss = [];
+  for(const c in need){ const lack = need[c]-(G.inv[c]||0); for(let i=0;i<lack;i++) miss.push(c); }
+  return miss;
+}
+function rollKanji(){
+  const pool = POOL().filter(o=>!G.crafted.includes(o.w)).map(o=>({o,m:missingOf(o)})).filter(x=>x.m.length>0);
+  if(pool.length && Math.random()<0.7){
+    const min = Math.min(...pool.map(x=>x.m.length));
+    const near = pool.filter(x=>x.m.length<=min+1);
+    const pick = near[Math.floor(Math.random()*near.length)];
+    return pick.m[Math.floor(Math.random()*pick.m.length)];
+  }
+  const kl = gradeKanjiList();
+  return kl[Math.floor(Math.random()*kl.length)];
+}
+
+/* =========================================================
+   画面切り替え
+   ========================================================= */
+const SCREENS = ["title","map","battle","craft","dex","deck","result","stone"];
+function go(name){
+  SCREENS.forEach(s=>document.getElementById("s-"+s).classList.toggle("hidden", s!==name));
+  window.scrollTo(0,0);
+}
+let toastTimer=null;
+function modal(title,msg,btns){
+  const host = document.getElementById("modal");
+  if(!host) return;
+  let html = '<div class="px panel box"><div class="label">'+esc(title)+'</div>'+
+    '<p class="muted" style="margin:8px 0 12px">'+msg+'</p>';
+  btns.forEach(function(b,i){
+    html += '<button class="btn '+(i===0?"primary":"")+'" style="margin-top:'+(i?7:0)+'px" '+
+      'onclick="closeModal();'+(b.act||"")+'">'+esc(b.label)+'</button>';
+  });
+  host.innerHTML = html+'</div>';
+  host.classList.remove("hidden");
+}
+function closeModal(){
+  const host = document.getElementById("modal");
+  if(host){ host.classList.add("hidden"); host.innerHTML=""; }
+}
+function goHome(){
+  paintTitle(); showContinue(); report(); hubStatus(); paintLegacy(); playBGM("field"); go("title");
+}
+function toast(msg){
+  const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),1800);
+}
+function esc(s){ return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+function topbar(title, back){
+  return '<div class="hud"><div class="t">'+esc(title)+gradeTag()+'</div><div class="spacer"></div>'+
+    '<button class="btn ghost snd" id="sndbtn" onclick="toggleSound()">'+(AU.on?"音 ON":"音 OFF")+'</button>'+
+    (back?'<button class="btn ghost snd" onclick="'+back+'">もどる</button>':'')+'</div>';
+}
+
+/* はじめに持っている語句（学年ごと）。すぐ錬成できる短いことわざ数語ぶんと、あと一歩のもの。 */
+const STARTER_BY_GRADE = {
+  1: ["猫に","小判","花より","団子","鬼に","金棒","焼け石に","水","時は","金なり","住めば","都","石の上にも","三年","猿も","木から","落ちる","犬も","歩けば","棒に"],
+  2: ["猫に","小判","花より","団子","鬼に","金棒","焼け石に","水","時は","金なり","柳に","風","石の上にも","三年","猿も","木から","落ちる","立て板に","目から","鱗が"],
+  3: ["猫に","小判","花より","団子","鬼に","金棒","焼け石に","水","時は","金なり","瓢箪から","駒","石の上にも","三年","猿も","木から","落ちる","蛇の道は","目から","鱗が"]
+};
+function STARTER_LIST(){ return STARTER_BY_GRADE[GRADE] || STARTER_BY_GRADE[2]; }
+function paintTitle(){
+  const el = document.getElementById("title-parade");
+  if(el) el.innerHTML = ["mushi","onibi","kemono","kumo"].map(function(k){return sprHTML(k,44);}).join("");
+}
+function resetRun(hard){
+  G.chapter=0; G.node=0; G.retry=0; G.cleared=false; G.endless=false; G.hard=!!hard;
+  G.inv={}; G.crafted=[]; G.deckKanji=[]; G.deckIdiom=[]; G.plus={};
+  G.bestN=0; G.bestH=0; G.depth=0; G.dexDone=false; G.dexPending=false;
+  CRAFT=[]; B=null; CHAPTERS.length=STORY_LEN;
+}
+function startFresh(hard){
+  actx(); playBGM("field");
+  resetRun(hard);
+  const b = legacyBonus();
+  G.maxhp = 70 + b.hp; G.hp = G.maxhp;
+  STARTER_LIST().forEach(function(c){ addKanji(c); });
+  for(let i=0;i<b.kanji;i++) addKanji(rollKanji());
+  G.rankShown = rankLv();
+  saveGame(true);
+  renderMap();
+  if(b.hp || b.kanji || rankLv()){
+    modal("継承の恩恵",
+      "石碑に刻まれた功績が、新たな旅を助ける。<br>"+
+      (b.hp?"最大体力 <span class=\"near\">+"+b.hp+"</span>　":"")+
+      (b.kanji?"はじめの語句 <span class=\"near\">+"+b.kanji+"枚</span>　":"")+
+      (rankLv()?"言の葉の位 <span class=\"near\">"+rankName()+"</span>":"")+
+      "<br><span class=\"muted\">そのぶん、妖怪たちも手ごわくなっている。</span>",
+      [{label:"旅に出る"}]);
+  }
+}
+function startGame(hard){
+  actx();
+  const running = !!(SAVED || MEM_SAVE || invCount()>0);
+  if(!running) return startFresh(hard);
+  modal(hard ? "修羅道ではじめる" : "はじめから遊ぶ",
+    "いまの記録（進行と手持ちの語句・ことわざ）は消えて、第1章からやり直しになります。<br>"+
+    "石碑の功績と言の葉の位は残ります。<br><br>本当によろしいですか？",
+    [{label:"はじめる", act: hard ? "startFresh(true);" : "startFresh();"},
+     {label:"やめる"}]);
+}
+
+/* =========================================================
+   マップ画面
+   ========================================================= */
+const NODE_CAP = {"敵":"敵","宝":"宝","泉":"泉","問":"問","主":"主"};
+function foeScale(){
+  const r = rankLv(), leg = Math.min(16, LEG.bestN+LEG.bestH);
+  return {hp: 1 + r*0.05 + leg*0.012, atk: 1 + r*0.02 + leg*0.008};
+}
+function genLayer(i){
+  const d = i - STORY_LEN + 1;
+  const pool = [];
+  CHAPTERS.slice(0,STORY_LEN).forEach(function(c){
+    c.foes.forEach(function(f){ pool.push(f); });
+    pool.push(c.boss);
+  });
+  const els = ["剛","柔","智"];
+  const pick = function(){ return pool[Math.floor(Math.random()*pool.length)]; };
+  const mk = function(f,boss){
+    const hpS = 1 + (d-1)*0.34, atS = 1 + (d-1)*0.17;
+    return {n:(boss?"深奥の":"")+f.n, g:f.g,
+      hp:Math.round((boss?260:120)*hpS), atk:Math.round((boss?28:23)*atS),
+      weak:els[Math.floor(Math.random()*3)], pat:f.pat};
+  };
+  return {name:"無限回廊 第"+d+"層", endless:true, nodes:["敵","宝","敵","泉","問","敵","主"],
+    foes:[mk(pick()),mk(pick()),mk(pick())], boss:mk(pick(),true)};
+}
+function ensureLayers(){
+  while(G.endless && CHAPTERS.length <= G.chapter) CHAPTERS.push(genLayer(CHAPTERS.length));
+}
+function startEndless(){
+  G.endless = true; report();
+  G.endless = true; G.hard = true; G.cleared = false;
+  G.chapter = STORY_LEN; G.node = 0; G.retry = 0; G.hp = G.maxhp;
+  ensureLayers(); saveGame(true);
+  toast("無限回廊がひらいた");
+  renderMap();
+}
+function foeAt(ci,ni){
+  const ch = CHAPTERS[ci], t = ch.nodes[ni];
+  if(t==="主") return ch.boss;
+  if(t!=="敵") return null;
+  return ch.foes[Math.min(foeOrdinal(ch,ni), ch.foes.length-1)];
+}
+/* 章内で何体目の敵か（問ノードを足しても敵の順番が変わらないように） */
+function foeOrdinal(ch,ni){ let n=0; for(let i=0;i<ni;i++) if(ch.nodes[i]==="敵") n++; return n; }
+const PAT_TEXT = {atk:"攻撃",big:"渾身の一撃",buff:"力をためる",guard:"身を固める",drain:"気力を吸う"};
+function renderMap(){
+  if(G.dexPending) return renderDexClear();
+  ensureLayers();
+  if(G.chapter >= CHAPTERS.length){ G.cleared = true; return renderEnding(); }
+  const ch = CHAPTERS[G.chapter];
+  document.body.className = "ch"+G.chapter;
+  playBGM("field");
+  const icon = {"敵":"i_foe","宝":"i_box","泉":"i_spa","主":"i_boss"};
+  let tiles = "";
+  ch.nodes.forEach(function(t,i){
+    const cls = i<G.node?"done":(i===G.node?"now":"");
+    tiles += '<div class="tile '+cls+'">'+
+      '<div class="you">'+(i===G.node?sprHTML("hero",28):"")+'</div>'+
+      '<div class="box">'+(t==="問"?'<span class="qm">問</span>':sprHTML(icon[t],24))+'</div><div class="n">'+(i+1)+'</div></div>';
+  });
+  const t = ch.nodes[G.node];
+  const label = {"敵":"すすむ ▶ たたかう","宝":"すすむ ▶ 宝をあける","泉":"すすむ ▶ 泉で休む","問":"すすむ ▶ 問に答える","主":"すすむ ▶ 主に挑む"}[t];
+  const foe = foeAt(G.chapter, G.node);
+
+  let preview;
+  if(foe){
+    const pat = foe.pat.map(function(x){return PAT_TEXT[x];})
+      .filter(function(v,i,a){return a.indexOf(v)===i;}).join("・");
+    preview =
+      '<div class="label">この先にいる敵</div>'+
+      '<div class="foecard">'+sprHTML(foe.g,42)+
+        '<div class="foeinfo">'+
+          '<div class="foename">'+esc(foe.n)+(t==="主"?'　<span class="tag">主</span>':'')+'</div>'+
+          '<div class="statline">弱点 <span class="el-badge el-'+foe.weak+'">'+foe.weak+'</span>'+
+          '<span style="margin-left:8px">たいりょく '+foe.hp+'</span></div>'+
+          '<div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">行動：'+pat+'</div>'+
+        '</div>'+
+      '</div>';
+  }else if(t==="問"){
+    preview = '<div class="label">この先にあるもの</div>'+
+      '<div class="foecard"><div class="qseal">問</div>'+
+        '<div class="foeinfo"><div class="foename">問の試練</div>'+
+        '<div class="muted">ことわざの意味・使い方・読みに三択で答える。正解で語句1枚</div></div>'+
+      '</div>';
+  }else{
+    preview = '<div class="label">この先にあるもの</div>'+
+      '<div class="foecard">'+sprHTML(icon[t],42)+
+        '<div class="foeinfo"><div class="foename">'+(t==="宝"?"宝箱":"いやしの泉")+'</div>'+
+        '<div class="muted">'+(t==="宝"?"語句カードを6枚ひろえる":"たいりょくが半分ほど回復する")+'</div></div>'+
+      '</div>';
+  }
+  const rest = retryLimit() - G.retry;
+
+  document.getElementById("s-map").innerHTML =
+    '<div class="hud"><div class="t">ことわざ錬成</div>'+
+    (G.endless?'<span class="tag hardtag">無限回廊</span>':(G.hard?'<span class="tag hardtag">修羅道</span>':''))+'<div class="spacer"></div>'+
+    '<button class="btn ghost snd" onclick="saveGame()">記録する</button>'+
+    '<button class="btn ghost snd" id="sndbtn" onclick="toggleSound()">'+(AU.on?"音 ON":"音 OFF")+'</button></div>'+
+    '<div class="scr-body">'+
+      '<div class="col-a">'+
+        '<div class="px panel">'+
+          '<div class="chaphead"><span class="num">第'+(G.chapter+1)+'章</span><h2>'+ch.name+'</h2></div>'+
+          '<div class="route">'+tiles+'</div>'+
+        '</div>'+
+        '<div class="px panel dark" style="margin-top:7px">'+
+          '<div class="statline"><span class="label">たいりょく</span>'+
+          '<span style="margin-left:auto">'+G.hp+' / '+G.maxhp+'</span></div>'+
+          bar(G.hp,G.maxhp)+
+          '<div class="statline" style="margin-top:6px"><span class="muted">語句 '+invCount()+'枚／錬成 '+dexCount()+'・'+dexTotal()+'</span>'+
+          '<span class="tag" style="margin-left:auto">再挑戦のこり '+rest+'回</span></div>'+'<div class="statline" style="margin-top:4px">'+gradeTag()+'<span class="muted">'+(G.endless?'最深到達 第'+Math.max(G.depth,G.chapter-STORY_LEN)+'層　':'')+'位 '+rankName()+'　得点 '+hubScore()+'</span></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="px panel col-b">'+preview+'</div>'+
+    '</div>'+
+    '<div class="scr-foot">'+
+      '<button class="btn primary" onclick="enterNode()">'+label+'</button>'+
+      '<div class="row">'+
+        '<button class="btn" onclick="renderCraft()">錬成所</button>'+
+        '<button class="btn" onclick="renderDeck()">編成</button>'+
+        '<button class="btn" onclick="renderDex()">図鑑</button>'+
+        '<button class="btn" onclick="openStone(\'map\')">石碑</button></div>'+
+    '</div>';
+  go("map");
+  if(!CUT_ON) flushBanner();
+}
+
+function enterNode(){
+  const ch = CHAPTERS[G.chapter], t = ch.nodes[G.node];
+  if(t==="宝"){
+    const got=[]; for(let i=0;i<(G.hard?4:6);i++){ const c=rollKanji(); addKanji(c); got.push(c); }
+    sfx("get");
+    toast("宝箱：" + got.join("・") + " を手に入れた");
+    G.node++; renderMap(); return;
+  }
+  if(t==="泉"){
+    G.hp = Math.min(G.maxhp, G.hp+Math.floor(G.maxhp*(G.hard?HARD.spring:0.5)));
+    sfx("heal");
+    toast("泉で休んだ。体力が回復した");
+    G.node++; renderMap(); return;
+  }
+  if(t==="問"){ openQuiz(); return; }
+  const base = (t==="主") ? ch.boss : ch.foes[Math.min(foeOrdinal(ch,G.node), ch.foes.length-1)];
+  startBattle(base, t==="主");
+}
+
+/* =========================================================
+   ステップ1・4：バトル
+   ========================================================= */
+let B = null;
+
+function buildDeck(){
+  const d = [];
+  G.deckKanji.forEach(c=>d.push({t:"k", c:c, el:PARTS[c].el}));
+  G.deckIdiom.forEach(function(id){ if(idiomOf(id)) d.push({t:"i", id:id}); });
+  if(d.length===0) d.push({t:"k", c:"一", el:"剛"});
+  return shuffle(d);
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* 敵の底上げ（章が進むほど強く）。hp/atk 倍率 */
+function foeTune(){
+  const ch = Math.min(G.chapter, STORY_LEN+6);
+  return {hp: 1.25 + ch*0.06, atk: 1.1 + ch*0.035};
+}
+function startBattle(foe, isBoss){
+  fixDeck();
+  document.body.className = "ch"+G.chapter;
+  playBGM(isBoss?"boss":"battle"); if(isBoss) sfx("gong");
+  B = {
+    en:{n:foe.n,g:foe.g,
+        hp:Math.round(foe.hp*(G.hard?HARD.hp:1)*foeScale().hp*foeTune().hp),
+        maxhp:Math.round(foe.hp*(G.hard?HARD.hp:1)*foeScale().hp*foeTune().hp),
+        atk:Math.round(foe.atk*(G.hard?HARD.atk:1)*foeScale().atk*foeTune().atk),
+        weak:foe.weak,pat:foe.pat,pi:0,buff:0,guard:0},
+    boss:!!isBoss, turn:0, energy:baseEnergy(), maxEnergy:baseEnergy(), penalty:0,
+    draw:buildDeck(), hand:[], discard:[], exhaust:[],
+    atkBuff:G.chapter*(G.hard?HARD.power:3)+rankPower(), shield:0, grind:false, counter:null, poison:null,
+    fog:0, surround:0, storyN:0, grindOn:0, sel:[], log:[], over:false, rage:false, lastDmg:0, taken:0, endure:false, atkDownNext:0,
+    reshuffled:false
+  };
+  for(let i=0;i<5;i++) drawCard();
+  B.en.intent = B.en.pat[0];
+  startPlayerTurn(true);
+}
+
+function drawCard(){
+  if(B.hand.length>=9) return null;
+  if(B.draw.length===0){
+    if(B.discard.length===0) return null;
+    if(B.reshuffled){ if(!B.noDrawLogged){ B.noDrawLogged=true; log("山札が尽きた。この手番はもう引けない"); } return null; }
+    B.reshuffled = true;
+    B.draw = shuffle(B.discard); B.discard = [];
+  }
+  const c = B.draw.pop(); B.hand.push(c); return c;
+}
+function log(s){ B.log.unshift(s); B.log = B.log.slice(0,3); }
+
+function startPlayerTurn(first){
+  B.turn++;
+  B.reshuffled = false; B.noDrawLogged = false;
+  if(!first) for(let i=0;i<3;i++) drawCard();
+  B.energy = Math.max(0, B.maxEnergy - B.penalty); B.penalty = 0;
+  if(B.atkDownNext){ B.atkBuff = Math.max(0,B.atkBuff-B.atkDownNext); B.atkDownNext = 0; }
+  if(B.grind){ B.atkBuff += B.grind; log("積み重ねの力：攻撃力が上がった（+"+B.atkBuff+"）"); }
+  if(B.poison && B.poison.t>0){
+    B.en.hp -= B.poison.d; B.poison.t--;
+    log("身から出た錆：敵は自らの行いに <b>"+B.poison.d+"</b> ダメージ");
+    if(B.poison.t<=0) B.poison=null;
+    if(B.en.hp<=0) return victory();
+  }
+  if(B.counter){
+    B.counter.t--;
+    if(B.counter.t<=0){
+      const d = B.counter.stored*2; B.counter=null;
+      if(d>0){ hitEnemy(d,null,true); log("待てば海路：たえた痛みを <b>"+d+"</b> ダメージで返した"); }
+      else log("待てば海路：構えを解いた");
+      if(B.en.hp<=0) return victory();
+    }
+  }
+  if(B.fog>0) B.fog--;
+  if(B.surround>0) B.surround--;
+  B.sel = [];
+  renderBattle();
+}
+
+function hitEnemy(base, el, ignoreGuard, mul){
+  let d = base + B.atkBuff;
+  if(mul) d = Math.max(1, Math.floor(d*mul));
+  if(el && el===B.en.weak) d = Math.floor(d*1.5);
+  if(B.surround>0) d = Math.floor(d*1.4);
+  if(!ignoreGuard && B.en.guard>0){
+    const a = Math.min(B.en.guard, d); B.en.guard -= a; d -= a;
+  }
+  B.en.hp -= d; B.lastDmg = d;
+  flashFoe(); popDamage(d, !!(el && el===B.en.weak)); sfx("slash");
+  return d;
+}
+function hurtPlayer(raw){
+  let d = raw;
+  if(B.fog>0) d = Math.floor(d*0.6);
+  if(B.counter){ d = Math.floor(d*0.5); B.counter.stored += d; }
+  if(B.shield>0){ const a=Math.min(B.shield,d); B.shield-=a; d-=a; }
+  if(B.endure && G.hp-d<=0){ d = Math.max(0,G.hp-1); B.endure=false; log("七転び八起き：ぎりぎりで持ちこたえた"); }
+  G.hp -= d; B.taken += d; if(d>0) sfx("hurt"); return d;
+}
+
+/* --- カード選択 --- */
+function tapCard(i){
+  if(!B || B.over) return;
+  if(LP.fired){ LP.fired=false; return; }
+  sfx("tap");
+  const p = B.sel.indexOf(i);
+  if(p>=0){ B.sel.splice(p,1); }
+  else{
+    const c = B.hand[i];
+    if(c.t==="i"){ B.sel = [i]; }
+    else{ if(B.sel.some(j=>B.hand[j].t==="i")) B.sel=[]; if(B.sel.length<4) B.sel.push(i); }
+  }
+  renderBattle();
+}
+
+function selWord(){ return B.sel.map(i=>B.hand[i]).filter(c=>c.t==="k").map(c=>c.c).join(""); }
+
+function useSelected(){
+  if(!B || B.over || B.sel.length!==1) return;
+  const idx = B.sel[0], c = B.hand[idx];
+  if(c.t==="k"){
+    if(B.energy<1) return toast("気力が足りない");
+    B.energy--;
+    const d = hitEnemy(6, c.el);
+    log("「"+c.c+"」を投げつけた　<b>"+d+"</b> ダメージ");
+    B.discard.push(c); B.hand.splice(idx,1); B.sel=[];
+    afterAction();
+  }else{
+    playIdiom(idiomOf(c.id), idx);
+  }
+}
+
+/* 「唱える」：手札の語句カード 2〜4 枚を押した順に並べて発動する。
+   学年範囲内の実在語 → 真価（本来の効果。初回は図鑑登録＋編成に完成カード追加）
+   範囲外の実在語     → まだ知らぬ言葉（通常ダメージ、登録なし）
+   一致しない並び     → ニセことわざ（通常ダメージの 1/3、追加効果なし。正解は教えない） */
+const NORMAL_BASE = 10;
+function craftInBattle(){
+  if(!B || B.over) return;
+  const sel = B.sel.filter(i=>B.hand[i] && B.hand[i].t==="k");
+  if(sel.length<2 || sel.length>4) return;
+  const w = selWord();
+  if(B.energy<1) return toast("気力が足りない");
+  const found = findInPool(w), any = found || findAny(w);
+  B.energy--;
+  const firstEl = B.hand[sel[0]].el;
+  const idxs = sel.slice().sort((a,b)=>b-a);
+  idxs.forEach(i=>{ B.discard.push(B.hand[i]); B.hand.splice(i,1); });
+  B.sel=[];
+  if(!found){
+    if(any){
+      sfx("slash");
+      const d = hitEnemy(P(NORMAL_BASE), firstEl);
+      log("「"+w+"」……まだ知らぬ言葉だ　<b>"+d+"</b> ダメージ");
+    }else{
+      sfx("ng");
+      const d = hitEnemy(P(NORMAL_BASE), null, false, 1/3);
+      log("「"+w+"」……どこかちがう　<b>"+d+"</b> ダメージ");
+      try{ if(window.MJ){ const st=document.getElementById("stage"); if(st) MJ.shake(st, 3); } }catch(e){}
+    }
+    return afterAction();
+  }
+  sfx("craft");
+  log("<b>真価</b>　"+found.w+"（"+found.y+"）！");
+  try{ if(window.MJ){ const fs=document.getElementById("foe-spr"); if(fs) MJ.burst(fs,{count:12,color:"#d9a441",color2:"#f3ead6"}); } }catch(e){}
+  const newly = !G.crafted.includes(found.w);
+  if(newly){
+    G.crafted.push(found.w);
+    if(G.deckIdiom.length<maxIdiomDeck()) G.deckIdiom.push(found.w);
+    toast(found.w+" を図鑑に登録した");
+    checkRank();
+  }else if(plusOf(found) < MAX_PLUS){
+    G.plus[found.w] = plusOf(found)+1;
+    toast(found.w+" を練り上げた（+"+G.plus[found.w]+"）");
+  }
+  applyEffect(found);
+}
+
+function playIdiom(o, idx){
+  if(B.energy < o.cost) return toast("気力が足りない");
+  B.energy -= o.cost;
+  const card = B.hand[idx];
+  B.hand.splice(idx,1); B.sel=[];
+  if((o.e||{}).sp==="once") B.exhaust.push(card); else B.discard.push(card);
+  log("<b>"+o.w+"</b>（"+o.y+"）");
+  sfx("idiom");
+  applyEffect(o);
+}
+
+/* ことわざの威力は階層に応じて伸びる */
+function P(n){ return Math.max(1, Math.round(n*(1 + G.chapter*0.28))); }
+/* 練り上げ（同じことわざをもう一度錬成すると強くなる） */
+function plusOf(o){ return (G.plus && G.plus[o.w]) ? G.plus[o.w] : 0; }
+function P2(o,n){ return Math.max(1, Math.round(P(n)*(1 + 0.12*plusOf(o)))); }
+function plusTotal(){ let n=0; for(const k in (G.plus||{})) n += G.plus[k]; return n; }
+function cardName(o){ const pl = plusOf(o); return o.w + (pl? " +"+pl : ""); }
+const SP_DESC = {
+ drop:"語句を1枚ひろう", grind:"毎ターン攻撃力+2", grind3:"毎ターン攻撃力+3",
+ revenge:"3ターン被害半減。ためた分の2倍を返す", recoil:"次のターンの気力-2", recoil1:"次のターンの気力-1",
+ recall:"捨て札の完成カードを1枚手札へ", fog:"3ターン敵の攻撃-40%", poison:"4ターン継続ダメージ",
+ once:"1回の戦闘で一度きり", surround:"3ターン敵の被ダメージ+40%",
+ dispel:"敵の強化とまもりを消す", guardbreak:"敵のまもりを断ち切る", steal:"敵の強化を奪う",
+ random:"錬成ずみからランダムに1つ発動", toss:"1枚すてて2枚ひく", noshield:"自分のまもりは0になる",
+ stun:"敵の次の行動を空ぶらせる", redraw:"手札を5枚ひきなおす", search:"山札から完成カードを1枚手札へ",
+ recycle:"捨て札の語句を3枚山札へ", endure:"一度だけHP1で耐える", makeweak:"弱点属性の語句を1枚つくる",
+ slowdown:"次のターンは攻撃力-4", drain:"与えたダメージの半分を回復", soften:"敵の次の攻撃を半減", };
+const SP_DMG = {turnmul:1,handcount:1,lowhp:1,enemylow:1,story:1,mirror:1,
+  reflect:1,repeat:1,allelem:1,varied:1,gamble:1,crit:1};
+function dmgText(o){
+  const e = o.e||{}, v = e.d ? P2(o,e.d) : 0, h = e.h||1, sp = e.sp||"";
+  switch(sp){
+    case "turnmul":   return "経過ターン×"+v+"ダメージ";
+    case "handcount": return "手札の語句1枚につき"+v+"ダメージ";
+    case "lowhp":     return v+"〜"+(v+Math.floor(v*2.2))+"ダメージ（自分のHPが少ないほど大きい）";
+    case "enemylow":  return v+"〜"+(v+Math.floor(v*2.2))+"ダメージ（敵のHPが減っているほど大きい）";
+    case "story":     return "唱えるたび "+v+"→"+(v*2)+"→"+(v*3)+"→"+(v*4)+"ダメージと積み上がる";
+    case "mirror":    return "敵の攻撃力とおなじダメージ";
+    case "reflect":   return "これまで受けたダメージの4割を返す";
+    case "repeat":    return "直前にあたえたダメージをもう一度";
+    case "allelem":   return "剛・柔・智で"+v+"ダメージずつ";
+    case "varied":    return v+"ダメージ×"+h+"回（属性はランダム）";
+    case "gamble":    return "五分五分で "+Math.round(v*1.8)+" か "+Math.round(v*0.4)+"ダメージ（低いほうなら1枚ドロー）";
+    case "crit":      return v+"ダメージ。敵が渾身の一撃を狙っていれば "+(v*2);
+    default:          return v+"ダメージ"+(h>1?"×"+h+"回":"")+(e.pi?"（まもり無視）":"");
+  }
+}
+function fxText(o){
+  const e = o.e||{}, p = [];
+  if(e.d || SP_DMG[e.sp]) p.push(dmgText(o));
+  if(e.hp) p.push("HP"+P2(o,e.hp)+"回復");
+  if(e.sh) p.push("まもり+"+P2(o,e.sh));
+  if(e.sd) p.push("自分に"+P2(o,e.sd)+"ダメージ");
+  if(e.at) p.push("攻撃力+"+e.at);
+  if(e.ad) p.push("敵の攻撃力-"+e.ad);
+  if(e.dr) p.push(e.dr+"枚ひく");
+  if(e.en) p.push("気力+"+e.en);
+  if(e.sp && SP_DESC[e.sp]) p.push(SP_DESC[e.sp]);
+  return p.join("。")+"。";
+}
+function applyEffect(o){
+  const e = o.e||{}, sp = e.sp||"";
+  let dmg = e.d ? P2(o,e.d) : 0, hits = e.h||1, d = 0, note = "";
+
+  if(sp==="random"){
+    const pool = G.crafted.filter(function(x){ return x!==o.w; });
+    if(pool.length){
+      const pick = idiomOf(pool[Math.floor(Math.random()*pool.length)]);
+      log("思わぬ巡り合わせ →「"+pick.w+"」！");
+      return applyEffect(pick);
+    }
+    log("思わぬ巡り合わせ：何も起こらなかった"); return afterAction();
+  }
+  if(sp==="lowhp")    dmg = P2(o,e.d) + Math.floor((1-G.hp/G.maxhp)*P2(o,e.d)*2.2);
+  if(sp==="enemylow") dmg = P2(o,e.d) + Math.floor((1-Math.max(0,B.en.hp)/B.en.maxhp)*P2(o,e.d)*2.2);
+  if(sp==="turnmul")  dmg = P2(o,e.d)*B.turn;
+  if(sp==="handcount"){ hits = Math.max(1, B.hand.filter(function(c){return c.t==="k";}).length); }
+  if(sp==="mirror")   dmg = B.en.atk + B.en.buff;
+  if(sp==="reflect")  dmg = Math.floor(B.taken*0.4);
+  if(sp==="repeat")   dmg = B.lastDmg || P2(o,e.d||8);
+  if(sp==="story"){ B.storyN = Math.min(4,B.storyN+1); dmg = P2(o,e.d)*B.storyN;
+                    note = "（"+B.storyN+"段目）"; }
+  if(sp==="gamble"){ if(Math.random()<0.5){ dmg=Math.round(dmg*1.8); note="（大あたり）"; }
+                     else { dmg=Math.round(dmg*0.4); drawCard(); note="（不発・1枚ドロー）"; } }
+  if(sp==="crit" && B.en.intent==="big"){ dmg = dmg*2; note="（機先を制した）"; }
+  if(sp==="guardbreak") B.en.guard = 0;
+  if(sp==="dispel"){ B.en.guard = 0; B.en.buff = 0; }
+  if(sp==="steal"){ B.atkBuff += B.en.buff; B.en.buff = 0; }
+  if(sp==="fog") B.fog = 3;
+  if(sp==="surround") B.surround = 3;
+  if(sp==="poison") B.poison = {d:P2(o,6), t:4};
+  if(sp==="revenge") B.counter = {t:3, stored:0};
+  if(sp==="grind"){ B.grind = 2; B.atkBuff += 2; }
+  if(sp==="grind3"){ B.grind = 3; B.atkBuff += 3; }
+  if(sp==="endure") B.endure = true;
+  if(sp==="stun") B.en.intent = "none";
+  if(sp==="slowdown") B.atkDownNext = 4;
+  if(sp==="soften") B.soften = true;
+  if(sp==="recoil") B.penalty += 2;
+  if(sp==="recoil1") B.penalty += 1;
+  if(sp==="recall"){
+    let at = -1;
+    for(let i=B.discard.length-1;i>=0;i--){ if(B.discard[i].t==="i"){ at=i; break; } }
+    if(at>=0){ const c=B.discard[at]; B.discard.splice(at,1); B.hand.push(c);
+      note += "／"+idiomOf(c.id).w+" をもどした"; }
+  }
+  if(sp==="search"){
+    let at = -1;
+    for(let i=B.draw.length-1;i>=0;i--){ if(B.draw[i].t==="i"){ at=i; break; } }
+    if(at>=0){ const c=B.draw[at]; B.draw.splice(at,1); B.hand.push(c);
+      note += "／"+idiomOf(c.id).w+" をひき当てた"; }
+  }
+  if(sp==="recycle"){
+    let n = 0;
+    for(let i=B.discard.length-1;i>=0 && n<3;i--){
+      if(B.discard[i].t==="k"){ B.draw.push(B.discard[i]); B.discard.splice(i,1); n++; }
+    }
+    shuffle(B.draw); note += "／"+n+"枚もどした";
+  }
+  if(sp==="makeweak"){
+    const pool = gradeKanjiList().filter(function(c){ return PARTS[c].el===B.en.weak; });
+    const c = pool[Math.floor(Math.random()*pool.length)];
+    B.hand.push({t:"k", c:c, el:B.en.weak}); note += "／「"+c+"」を得た";
+  }
+  if(sp==="toss"){
+    if(B.hand.length){ const i=Math.floor(Math.random()*B.hand.length); B.discard.push(B.hand[i]); B.hand.splice(i,1); }
+    drawCard(); drawCard();
+  }
+  if(sp==="redraw"){
+    B.discard = B.discard.concat(B.hand); B.hand = [];
+    for(let i=0;i<5;i++) drawCard();
+  }
+  if(sp==="drop"){ const c = rollKanji(); addKanji(c); note += "／「"+c+"」を拾った"; }
+
+  if(dmg>0){
+    if(sp==="varied"){
+      const es = ["剛","柔","智"];
+      for(let i=0;i<hits;i++) d += hitEnemy(dmg, es[Math.floor(Math.random()*3)], e.pi);
+    }else if(sp==="allelem"){
+      ["剛","柔","智"].forEach(function(x){ d += hitEnemy(dmg, x, e.pi); });
+    }else{
+      for(let i=0;i<hits;i++) d += hitEnemy(dmg, o.el, e.pi);
+    }
+  }
+  if(sp==="drain" && d>0){ G.hp = Math.min(G.maxhp, G.hp+Math.floor(d*0.5)); sfx("heal"); }
+  if(e.sd) G.hp -= P2(o,e.sd);
+  if(e.hp){ G.hp = Math.min(G.maxhp, G.hp+P2(o,e.hp)); sfx("heal"); }
+  if(e.sh) B.shield += P2(o,e.sh);
+  if(sp==="noshield") B.shield = 0;
+  if(e.at) B.atkBuff += e.at;
+  if(e.ad) B.en.atk = Math.max(4, B.en.atk-e.ad);
+  if(e.dr) for(let i=0;i<e.dr;i++) drawCard();
+  if(e.en) B.energy += e.en;
+
+  log("<b>"+cardName(o)+"</b>"+note+(d>0 ? "　<b>"+d+"</b> ダメージ" : ""));
+  afterAction();
+}
+
+function afterAction(){
+  if(B.en.hp<=0){ B.en.hp=0; return victory(); }
+  if(B.boss && !B.rage && B.en.hp <= B.en.maxhp*0.3){
+    B.rage = true;
+    B.en.buff += Math.round(B.en.atk*0.12);
+    B.en.intent = "big";
+    B.energy += 1;
+    log("<b>"+B.en.n+"</b> は死力をふりしぼった！　こちらも気を引きしめた（気力+1）");
+    sfx("gong");
+  }
+  if(G.hp<=0){ G.hp=0; return defeat(); }
+  renderBattle();
+}
+
+function endTurn(){
+  if(B.over) return;
+  B.sel=[];
+  const it = B.en.intent;
+  if(it==="atk" || it==="big"){
+    let raw = Math.floor(B.en.atk*(it==="big"?1.7:1)) + B.en.buff;
+    if(B.soften){ raw = Math.floor(raw*0.5); B.soften = false; }
+    const d = hurtPlayer(raw);
+    log(B.en.n+"の"+(it==="big"?"渾身の一撃":"攻撃")+"　<b>"+d+"</b> ダメージ");
+  }else if(it==="buff"){ const up = 4+Math.floor(G.chapter/2); B.en.buff = Math.min(12+2*G.chapter, B.en.buff+up); log(B.en.n+"は力をためた（攻撃+"+up+"）"); }
+  else if(it==="guard"){ const gd = 14+3*G.chapter; B.en.guard += gd; log(B.en.n+"は身を固めた（守り+"+gd+"）"); }
+  else if(it==="drain"){ B.penalty += 1; log(B.en.n+"は言葉を吸い取った（次のターン気力-1）"); }
+  else { log(B.en.n+"は ようすを見ている"); }
+
+  if(G.hp<=0){ G.hp=0; return defeat(); }
+  B.en.pi = (B.en.pi+1) % B.en.pat.length;
+  B.en.intent = B.en.pat[B.en.pi];
+  startPlayerTurn(false);
+}
+
+/* --- バトル描画 --- */
+const INTENT_TEXT = {none:"ようすを見ている", atk:"攻撃してくる", big:"渾身の一撃をねらう", buff:"力をためている", guard:"身を固めようとしている", drain:"気力を吸おうとしている"};
+function renderBattle(){
+  const e = B.en;
+  let chips = "";
+  if(B.atkBuff>0) chips += '<span>言葉の力+'+B.atkBuff+'</span>';
+  if(B.shield>0) chips += '<span>まもり '+B.shield+'</span>';
+  if(B.counter) chips += '<span>待てば海路 '+B.counter.t+'</span>';
+  if(B.fog>0) chips += '<span>柳に風 '+B.fog+'</span>';
+  if(B.surround>0) chips += '<span>泣きっ面に蜂 '+B.surround+'</span>';
+  if(B.poison) chips += '<span>身から出た錆 '+B.poison.t+'</span>';
+  if(B.soften) chips += '<span>急がば回れ</span>';
+  if(B.endure) chips += '<span>七転び八起き</span>';
+  if(e.guard>0) chips += '<span class="bad">敵のまもり '+e.guard+'</span>';
+  if(e.buff>0) chips += '<span class="bad">敵の攻撃+'+e.buff+'</span>';
+  if(B.rage) chips += '<span class="bad">死力</span>';
+
+  let hand = "";
+  B.hand.forEach(function(c,i){
+    const sel = B.sel.indexOf(i);
+    if(c.t==="k"){
+      hand += '<button class="seal '+(sel>=0?"sel":"")+(c.c.length>=6?" long":"")+'" onclick="tapCard('+i+')">'+
+        '<span class="el dot-'+c.el+'"></span>'+c.c+
+        (sel>=0?'<span class="ord">'+(sel+1)+'</span>':'')+'</button>';
+    }else{
+      const o = idiomOf(c.id);
+      hand += '<button class="card '+(sel>=0?"sel":"")+'" data-w="'+o.w+'" onclick="tapCard('+i+')">'+
+        '<div class="cardtop"><span class="name">'+cardName(o)+'</span><span class="cost-badge">'+o.cost+'</span></div>'+
+        '<div class="fx">'+esc(fxText(o))+'</div>'+
+        '<div><span class="el-badge el-'+o.el+'">'+o.el+'</span></div></button>';
+    }
+  });
+
+  const w = selWord();
+  const nk = B.sel.filter(i=>B.hand[i].t==="k").length;
+  const canCraft = nk>=2 && nk<=4;
+  const one = B.sel.length===1 ? B.hand[B.sel[0]] : null;
+  let useLabel = "カードをえらぶ";
+  if(one) useLabel = one.t==="k" ? "「"+one.c+"」でこうげき" : idiomOf(one.id).w+" をとなえる";
+  let pips=""; for(let i=0;i<Math.max(3,B.energy);i++) pips += '<span class="pip '+(i<B.energy?"on":"")+'"></span>';
+
+  document.getElementById("s-battle").innerHTML =
+   '<div class="hud"><div class="t">'+esc(e.n)+gradeTag()+'</div><div class="spacer"></div>'+
+   '<span class="tag">'+B.turn+'ターン</span><span class="tag">山札 '+B.draw.length+'</span>'+
+   '<button class="btn ghost snd" id="sndbtn" onclick="toggleSound()">'+(AU.on?"音 ON":"音 OFF")+'</button></div>'+
+   '<div class="scr-body">'+
+     '<div class="col-a">'+
+       '<div class="stage" id="stage">'+
+         '<div class="moon"></div><div class="wave"></div><div class="ground"></div><div class="shadow"></div>'+
+         '<div class="foe">'+sprHTML(e.g,128,"foe-spr")+'</div>'+
+         '<div class="bubble">つぎの動き：'+INTENT_TEXT[e.intent]+'</div>'+
+       '</div>'+
+       '<div class="px panel dark" style="padding:7px 10px">'+
+         '<div class="statline"><span class="label">敵</span>'+
+         '<span class="el-badge el-'+e.weak+'">弱点 '+e.weak+'</span>'+
+         '<span style="margin-left:auto">'+Math.max(0,e.hp)+' / '+e.maxhp+'</span></div>'+
+         bar(e.hp,e.maxhp,"foe")+
+       '</div>'+
+     '</div>'+
+     '<div class="px panel col-b">'+
+       '<div class="statline"><span class="label">たいりょく</span><span style="margin-left:auto">'+G.hp+' / '+G.maxhp+'</span></div>'+
+       bar(G.hp,G.maxhp)+
+       '<div class="statline" style="margin-top:7px"><span class="label">きりょく</span><div class="pips">'+pips+'</div></div>'+
+       (chips?'<div class="chips">'+chips+'</div>':'')+
+       '<div class="hr"></div><div class="log">'+B.log.map(function(l){return "・"+l;}).join("<br>")+'</div>'+
+     '</div>'+
+   '</div>'+
+   '<div class="scr-foot">'+
+     '<div class="hand">'+hand+'</div>'+
+     '<div class="actionbar">'+
+       '<button class="btn primary" onclick="useSelected()" '+(B.sel.length===1?"":"disabled")+'>'+esc(useLabel)+'</button>'+
+       (B.sel.length>1 ? '<button class="btn primary" onclick="craftInBattle()" '+(canCraft?"":"disabled")+'>「'+esc(w.length>14?w.slice(0,13)+'…':w)+'」と唱える</button>':'')+
+     '</div>'+
+     '<button class="btn ghost" onclick="endTurn()">ターンをおえる</button>'+
+   '</div>';
+  go("battle");
+}
+
+function victory(){
+  B.over = true; hideYpop();
+  stopSeq(); AU.cur=null; sfx("win");
+  const drops = []; const n = (B.boss?7:4)+(G.hard?HARD.drop:0);
+  for(let i=0;i<n;i++){ const c=rollKanji(); addKanji(c); drops.push(c); }
+  if(B.boss) G.hp = G.maxhp;
+  if(B.taken===0) mjAchieve("nodmg");
+  /* 撃破の手ごたえ：控えめなパーティクル。主は 0.6 秒ほどスローにしてから結果へ */
+  const st = document.getElementById("stage"), fs = document.getElementById("foe-spr");
+  try{ if(window.MJ && fs) MJ.burst(fs, {count:B.boss?22:14, color:"#d9a441", color2:"#c8452f"}); }catch(e){}
+  let wait = 280;
+  if(B.boss && st){
+    wait = 700; st.classList.add("slow");
+    if(fs) setTimeout(function(){ fs.classList.add("flash"); setTimeout(function(){ fs.classList.remove("flash"); },480); },130);
+    st.classList.remove("shake"); void st.offsetWidth; st.classList.add("shake");
+  }
+  if(window.MJ && !MJ.reduced()) setTimeout(function(){ showVictory(drops); }, wait);
+  else showVictory(drops);
+}
+function showVictory(drops){
+  const tiles = drops.map(function(c){
+    return '<div class="k" style="min-width:84px"><span class="el dot-'+PARTS[c].el+'"></span>'+c+'</div>';
+  }).join("");
+  document.getElementById("s-result").innerHTML =
+    topbar("しょうり") +
+    '<div class="scr-body"><div class="px panel grow" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">'+
+      sprHTML(B.en.g,88)+
+      '<div style="font-size:18px;color:var(--kin);margin-top:8px">'+esc(B.en.n)+' をたおした</div>'+
+      '<div class="hr" style="width:80%"></div><div class="label">てにいれた語句</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px">'+tiles+'</div>'+
+    '</div></div>'+
+    '<div class="scr-foot"><button class="btn primary" onclick="nextNode()">さきへ進む</button>'+
+    '<div class="row"><button class="btn" onclick="renderCraft()">錬成所</button>'+
+    '<button class="btn" onclick="renderDex()">図鑑</button></div></div>';
+  go("result");
+}
+
+function defeat(){
+  B.over = true;
+  stopSeq(); AU.cur=null; sfx("lose");
+  const rest = retryLimit() - G.retry;
+  const canRetry = rest > 0;
+  document.getElementById("s-result").innerHTML =
+    topbar("ぜんめつ") +
+    '<div class="scr-body"><div class="px panel grow" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">'+
+      '<div style="font-size:19px">言葉がとどかなかった</div>'+
+      '<div class="hr" style="width:80%"></div>'+
+      (canRetry
+        ? '<p class="muted" style="margin:0">この階層で休めるのは あと <span class="near">'+rest+'回</span>。<br>使い切ると第'+(G.chapter+1)+'章の最初からやり直しになる。</p>'
+        : '<p class="muted" style="margin:0">休む力は尽きた。<br>第'+(G.chapter+1)+'章「'+CHAPTERS[G.chapter].name+'」の最初からやり直そう。</p>')+
+    '</div></div>'+
+    '<div class="scr-foot">'+
+      (canRetry
+        ? '<button class="btn primary" onclick="retryNode()">休んで再挑戦（のこり'+rest+'回）</button>'
+        : '<button class="btn primary" onclick="restartChapter()">第'+(G.chapter+1)+'章の最初から</button>')+
+      '<div class="row"><button class="btn" onclick="renderCraft()">錬成所</button>'+
+      '<button class="btn" onclick="renderDeck()">編成</button></div>'+
+    '</div>';
+  go("result");
+}
+
+function nextNode(){
+  G.node++;
+  if(G.node >= CHAPTERS[G.chapter].nodes.length){
+    G.chapter++; G.node = 0; G.retry = 0; G.maxhp += 15; G.hp = G.maxhp;
+    if(G.endless){
+      ensureLayers();
+      G.depth = Math.max(G.depth, G.chapter - STORY_LEN);
+    }else if(G.hard){
+      G.bestH = Math.max(G.bestH, Math.min(STORY_LEN, G.chapter));
+    }else{
+      G.bestN = Math.max(G.bestN, Math.min(STORY_LEN, G.chapter));
+    }
+    if(!G.endless && G.chapter >= CHAPTERS.length){ G.cleared = true; return renderEnding(); }
+    report(); saveGame(true);
+    if(window.MJ){
+      /* 章の切りかわり：地図を出してから章名のカットイン（結果画面には重ねない） */
+      CUT_ON = true; renderMap();
+      const ch = CHAPTERS[G.chapter];
+      MJ.cutin({title:ch.name, sub:(G.endless?"無限回廊":"第"+(G.chapter+1)+"章"), color:"#8f2f20", ms:1500})
+        .then(function(){ CUT_ON = false; flushBanner(); });
+      return;
+    }
+    toast("第"+(G.chapter+1)+"章「"+CHAPTERS[G.chapter].name+"」へ");
+  }
+  report(); saveGame(true);
+  renderMap();
+}
+function retryNode(){ G.retry++; G.hp = G.maxhp; saveGame(true); renderMap(); }
+function restartChapter(){
+  G.retry = 0; G.node = 0; G.hp = G.maxhp;
+  toast("第"+(G.chapter+1)+"章の最初からやり直し");
+  saveGame(true); renderMap();
+}
+
+function resetAll(){
+  resetRun(false);
+  G.maxhp=70; G.hp=70;
+  MEM_SAVE=null; SAVED=null;
+  try{ if(window.storage && window.storage.delete) window.storage.delete(SAVE_KEY); }catch(e){}
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  const b=document.getElementById("contbtn"); if(b) b.classList.add("hidden");
+  legSave();
+  toast("記憶を消した。石碑の功績は残る");
+  goHome();
+}
+function startHard(){
+  G.hard=true; G.endless=false; G.cleared=false; G.chapter=0;
+  G.maxhp = Math.max(G.maxhp, 70 + legacyBonus().hp); G.node=0; G.retry=0; G.maxhp=70; G.hp=70;
+  CRAFT=[]; refillDeck(); saveGame(true);
+  toast("修羅道がひらいた");
+  renderMap();
+}
+function renderDexClear(){
+  G.dexPending = false; LEG_PEND = null; mjAchieve("dexall");
+  stopSeq(); AU.cur = null; sfx("win"); playBGM("clear"); report();
+  const scroll = POOL().map(function(o){ return o.w; }).join("　");
+  document.getElementById("s-result").innerHTML =
+    topbar("図鑑 制覇") +
+    '<div class="scr-body"><div class="px panel grow celebox">'+ confetti() +
+      '<div class="celeinner" style="width:100%">'+
+        '<div class="shukuseal">言</div>'+
+        '<div class="celetitle">言祝ぎ</div>'+
+        '<div class="muted">'+dexTotal()+'語のことわざをすべて錬成した</div>'+
+        '<div class="hr" style="width:70%"></div>'+
+        '<div class="scrollwrap"><div class="scrollin">'+esc(scroll)+'</div></div>'+
+        '<div class="statline" style="justify-content:center;gap:14px;margin-top:6px">'+
+          '<span>位 <span class="near">'+rankName()+'</span></span>'+
+          '<span>得点 <span class="near">'+hubScore()+'</span></span>'+
+        '</div>'+
+      '</div>'+
+    '</div></div>'+
+    '<div class="scr-foot">'+
+      '<button class="btn primary" onclick="renderMap()">旅にもどる</button>'+
+      '<button class="btn ghost" onclick="renderDex()">図鑑をみる</button>'+
+    '</div>';
+  go("result");
+}
+function renderHardEnding(){
+  report(); LEG_PEND = null; mjAchieve("hard"); playBGM("clear");
+  document.getElementById("s-result").innerHTML =
+    topbar("修羅道 踏破") +
+    '<div class="scr-body"><div class="px panel grow celebox">'+ confetti() +
+      '<div class="celeinner">'+
+        '<div class="shukuseal">祝</div>'+
+        '<div class="logo"><span>こ</span><span>と</span><span>わ</span><span>ざ</span><span>錬</span><span>成</span></div>'+
+        '<div class="celetitle">修羅道を踏破した！</div>'+
+        '<div class="muted" style="margin-top:4px">言葉の力が、闇のすべてを照らしきった</div>'+
+        '<div class="hr" style="width:70%"></div>'+
+        '<div class="statline" style="justify-content:center;gap:14px">'+
+          '<span>錬成 <span class="near">'+craftedInPool()+' / '+dexTotal()+'</span></span>'+
+          '<span>体力 <span class="near">'+G.maxhp+'</span></span>'+'<span>得点 <span class="near">'+hubScore()+'</span></span>'+
+        '</div>'+
+        '<div class="muted" style="margin-top:8px;max-width:340px">この先に果てはない。<br>無限回廊は潜るほど敵が強くなり、記録だけが残る。</div>'+
+      '</div>'+
+    '</div></div>'+
+    '<div class="scr-foot">'+
+      '<button class="btn primary" onclick="startEndless()">無限回廊へ挑む</button>'+
+      '<button class="btn" onclick="resetAll()">記憶を消して 最初から</button>'+
+      '<button class="btn ghost" onclick="renderDex()">図鑑をみる</button>'+
+    '</div>';
+  go("result");
+}
+function confetti(){
+  const cols = ["#d9a441","#c8452f","#f3ead6","#4a8fa8","#6fa96b"];
+  let h = '<div class="celebrate">';
+  for(let i=0;i<22;i++){
+    h += '<i style="left:'+Math.round(Math.random()*96)+'%;background:'+cols[i%5]+
+         ';animation-duration:'+(1.6+Math.random()*1.8).toFixed(2)+'s;animation-delay:'+
+         (Math.random()*2).toFixed(2)+'s"></i>';
+  }
+  return h+'</div>';
+}
+function renderEnding(){
+  report(); stopSeq(); AU.cur=null; sfx("win");
+  if(G.hard) return renderHardEnding();
+  LEG_PEND = null; mjAchieve("clear");
+  document.getElementById("s-result").innerHTML =
+    topbar("クリア") +
+    '<div class="scr-body"><div class="px panel grow" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px">'+
+      '<div class="logo"><span>こ</span><span>と</span><span>わ</span><span>ざ</span><span>錬</span><span>成</span></div>'+
+      '<div style="font-size:18px;color:var(--kin)">'+(G.hard?"修羅道を踏破した":"ことわざが国にもどった")+'</div>'+
+      '<div class="muted">錬成したことわざ　'+craftedInPool()+' / '+dexTotal()+'</div>'+
+      (G.hard?'':'<p class="muted" style="margin:6px 0 0;max-width:340px">修羅道＝敵は強く・回復は乏しく・休めるのは一度きり。集めた語句とことわざはそのまま持ち越せる。</p>')+
+    '</div></div>'+
+    '<div class="scr-foot">'+
+      (G.hard
+        ? '<button class="btn primary" onclick="resetAll()">記憶を消して 最初から</button>'
+        : '<button class="btn primary" onclick="startHard()">記憶を継いで 修羅道へ</button>'+
+          '<button class="btn" onclick="resetAll()">記憶を消して 最初から</button>')+
+      '<button class="btn ghost" onclick="renderDex()">図鑑をみる</button>'+
+    '</div>';
+  go("result");
+}
+
+/* =========================================================
+   錬成所
+   ========================================================= */
+let CRAFT = [];
+let SORTM = 0, ONLYUSE = false;
+const SORT_NAMES = ["使える順","五十音順","属性順","枚数順"];
+const USE_MARK = ["◎","○","△","—"];
+const USE_LABEL = ["いま錬成できる","あと1語","まだ遠い","いま使い道なし"];
+/* 錬成または練り上げの対象になることわざ */
+function craftTargets(){
+  return POOL().filter(function(o){
+    return G.crafted.indexOf(o.w) < 0 || plusOf(o) < MAX_PLUS;
+  });
+}
+/* 語句ごとの使いみち 0:即 1:あと1語 2:まだ遠い 3:不要 */
+function useMap(){
+  const m = {};
+  craftTargets().forEach(function(o){
+    const miss = missingOf(o).length;
+    const r = miss===0 ? 0 : (miss===1 ? 1 : 2);
+    o.p.forEach(function(c){ if(m[c]===undefined || r<m[c]) m[c] = r; });
+  });
+  return m;
+}
+function useOf(m,c){ return m[c]===undefined ? 3 : m[c]; }
+function sortKanji(keys,m){
+  const eo = {"剛":0,"柔":1,"智":2};
+  return keys.slice().sort(function(a,b){
+    if(SORTM===0){ const d = useOf(m,a)-useOf(m,b); if(d) return d; }
+    if(SORTM===2){ const d = eo[PARTS[a].el]-eo[PARTS[b].el]; if(d) return d; }
+    if(SORTM===3){ const d = (G.inv[b]||0)-(G.inv[a]||0); if(d) return d; }
+    return a.localeCompare(b,"ja");
+  });
+}
+function cycleSort(){ SORTM = (SORTM+1)%SORT_NAMES.length; renderCraft(); }
+function toggleOnly(){ ONLYUSE = !ONLYUSE; renderCraft(); }
+function kanjiTile(c,m,onclick,extra){
+  const u = useOf(m,c);
+  const left = extra===undefined ? G.inv[c] : extra;
+  return '<button class="k '+(left<=0?"off":"")+'" onclick="'+onclick+'">'+
+    '<span class="el dot-'+PARTS[c].el+'"></span>'+esc(c)+
+    '<span class="u u'+u+'">'+USE_MARK[u]+'</span>'+
+    '<span class="n">'+left+'</span></button>';
+}
+const CRAFT_MAX = 4, CRAFT_MIN = 2;
+function renderCraft(){
+  playBGM("field");
+  const w = CRAFT.join("");
+  const hit = CRAFT.length>=CRAFT_MIN ? findInPool(w) : null;
+  const unknown = (!hit && CRAFT.length>=CRAFT_MIN) ? findAny(w) : null;
+  const has = hit ? G.crafted.indexOf(hit.w)>=0 : false;
+  const pl = hit ? plusOf(hit) : 0;
+  const maxed = has && pl>=MAX_PLUS;
+  let slots = "";
+  for(let i=0;i<CRAFT_MAX;i++){
+    const opt = i>=CRAFT_MIN && !CRAFT[i];
+    slots += '<div class="slot '+(CRAFT[i]?"filled":"")+(opt?" opt":"")+'" onclick="craftPop('+i+')">'+
+      '<span class="no">'+["一","二","三","四"][i]+'</span>'+(CRAFT[i]?esc(CRAFT[i]):"")+'</div>';
+  }
+
+  const m = useMap();
+  let keys = Object.keys(G.inv).filter(function(c){ return G.inv[c]>0; });
+  if(ONLYUSE) keys = keys.filter(function(c){ return useOf(m,c)<=1; });
+  keys = sortKanji(keys, m);
+
+  let inv = "";
+  if(!keys.length){
+    inv = '<p class="muted">'+(ONLYUSE?"すぐ使える語句がない。並びを「すべて」に戻そう。":"まだ語句がない。道中で拾ってこよう。")+'</p>';
+  }else if(SORTM===0){
+    [0,1,2,3].forEach(function(g){
+      const grp = keys.filter(function(c){ return useOf(m,c)===g; });
+      if(!grp.length) return;
+      inv += '<div class="grouphead"><span class="u u'+g+'">'+USE_MARK[g]+'</span> '+USE_LABEL[g]+'　<span class="muted">'+grp.length+'種</span></div>'+
+        '<div class="inv">'+grp.map(function(c){
+          const left = G.inv[c] - CRAFT.filter(function(x){return x===c;}).length;
+          return kanjiTile(c,m,"craftPush(this.dataset.c)",left).replace('<button class="k','<button data-c="'+esc(c)+'" class="k');
+        }).join("")+'</div>';
+    });
+  }else{
+    inv = '<div class="inv">'+keys.map(function(c){
+      const left = G.inv[c] - CRAFT.filter(function(x){return x===c;}).length;
+      return kanjiTile(c,m,"craftPush(this.dataset.c)",left).replace('<button class="k','<button data-c="'+esc(c)+'" class="k');
+    }).join("")+'</div>';
+  }
+
+  const near = craftTargets().map(function(o){ return {o:o, m:missingOf(o).length, up:G.crafted.indexOf(o.w)>=0}; })
+    .filter(function(x){ return x.m<=1; })
+    .sort(function(a,b){ return (a.m-b.m) || (a.up?1:0)-(b.up?1:0); }).slice(0,3);
+  let hint = near.map(function(x){
+    return '<div class="muted">・'+esc(x.up ? x.o.w+" を練り上げ" : x.o.mean)+
+      '　<span class="near">'+(x.m===0?"いまできる":"あと1語")+'</span></div>';
+  }).join("");
+  if(!hint) hint = '<div class="muted">・手がかりが少ない。語句を集めよう。</div>';
+
+  let label = "錬成する";
+  if(hit && maxed) label = hit.w+" は錬成しきった";
+  else if(hit && has) label = "練り上げる（+"+pl+" → +"+(pl+1)+"）";
+  else if(hit) label = hit.w+" を錬成する";
+
+  let center;
+  if(hit) center = '<p class="muted" style="text-align:center;margin:0">'+
+                 esc(has ? hit.w+"（"+hit.y+"）／練り上げると威力が12%ずつ上がる" : hit.mean)+'</p>';
+  else if(unknown) center = '<p class="muted" style="text-align:center;margin:0">その言葉はまだ知らぬ（上の学年で習う）。学年を変えると錬成できる。</p>';
+  else if(CRAFT.length>=CRAFT_MIN) center = '<p class="muted" style="text-align:center;margin:0">その並びの言葉は伝わっていない……</p>';
+  else center = '<div style="margin-top:4px">'+hint+'</div>';
+
+  document.getElementById("s-craft").innerHTML =
+    topbar("錬成所", "backFromSub()") +
+    '<div class="scr-body">'+
+      '<div class="px panel col-a">'+
+        '<div class="label">錬成陣　左上から順に 二〜四語（三・四は空でもよい）</div>'+
+        '<div class="circle '+(hit&&!maxed?"ok":"")+'">'+slots+'</div>'+
+        center+
+      '</div>'+
+      '<div class="px panel dark col-b grow" style="display:flex;flex-direction:column">'+
+        '<div class="sortrow">'+
+          '<button class="btn ghost" onclick="cycleSort()">並び：'+SORT_NAMES[SORTM]+'</button>'+
+          '<button class="btn ghost" onclick="toggleOnly()">'+(ONLYUSE?"◎○だけ":"すべて表示")+'</button>'+
+        '</div>'+
+        '<div class="pane grow" style="margin-top:6px">'+inv+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="scr-foot"><button class="btn primary" onclick="doCraft()" '+
+      (hit && !maxed ?"":"disabled")+'>'+esc(label)+'</button></div>';
+  go("craft");
+}
+function craftPush(c){
+  if(CRAFT.length>=CRAFT_MAX) return;
+  const left = G.inv[c] - CRAFT.filter(x=>x===c).length;
+  if(left<=0) return;
+  sfx("tap");
+  CRAFT.push(c); renderCraft();
+}
+function craftPop(i){ if(CRAFT[i]!==undefined){ CRAFT.splice(i,1); renderCraft(); } }
+function doCraft(){
+  const w = CRAFT.join("");
+  const found = findInPool(w);
+  if(!found){ sfx("ng"); toast("その並びの言葉は伝わっていない。並びを見直そう"); return; }
+  const has = G.crafted.includes(found.w);
+  const pl = plusOf(found);
+  if(has && pl >= MAX_PLUS){ toast(found.w+" はこれ以上 練り上げられない"); return; }
+  CRAFT.forEach(c=>{ G.inv[c]--; if(G.inv[c]<=0) delete G.inv[c]; removeFromDeckKanji(c); });
+  CRAFT = [];
+  if(has){
+    G.plus[found.w] = pl+1;
+  }else{
+    G.crafted.push(found.w);
+    if(G.deckIdiom.length<maxIdiomDeck()) G.deckIdiom.push(found.w);
+  }
+  refillDeck(); saveGame(true);
+  sfx("craft");
+  checkRank();
+  toast(has ? found.w+" を練り上げた（+"+(pl+1)+"）　威力+"+Math.round(12*(pl+1))+"%"
+            : found.w+"（"+found.y+"）を錬成した");
+  report();
+  renderCraft();
+}
+function backFromSub(){ if(B && !B.over) renderBattle(); else renderMap(); }
+
+/* =========================================================
+   編成
+   ========================================================= */
+function renderDeck(){
+  playBGM("field");
+  const keys = Object.keys(G.inv).filter(function(c){return G.inv[c]>0;}).sort();
+  let inv = keys.map(function(c){
+    const n = deckKanjiCount(c);
+    return '<button class="k '+(n?"":"off")+'" data-c="'+esc(c)+'" onclick="toggleKanji(this.dataset.c)">'+
+      '<span class="el dot-'+PARTS[c].el+'"></span>'+esc(c)+'<span class="n">'+n+'/'+G.inv[c]+'</span></button>';
+  }).join("") || '<p class="muted">語句がない。</p>';
+  let idm = G.crafted.map(function(id){
+    const o = idiomOf(id), on = G.deckIdiom.includes(id);
+    return '<button class="card" style="width:100%;margin-bottom:6px;opacity:'+(on?1:.35)+'" onclick="toggleIdiom(\''+id+'\')">'+
+      '<div class="cardtop"><span class="name">'+cardName(o)+'</span><span class="cost-badge">'+o.cost+'</span></div>'+
+      '<div class="fx">'+esc(fxText(o))+'</div></button>';
+  }).join("") || '<p class="muted">まだ完成カードがない。錬成所へ。</p>';
+  const prob = deckProblem();
+  document.getElementById("s-deck").innerHTML =
+    topbar("編成", "closeDeck()") +
+    '<div class="scr-body"><div class="pane grow">'+
+      (prob ? '<div class="px panel" style="margin-bottom:7px;border-color:var(--shu);color:var(--shu)">'+esc(prob)+'</div>' : '')+
+      '<div class="px panel" style="margin-bottom:7px"><div class="label">語句カード　'+G.deckKanji.length+' / '+maxKanjiDeck()+'（'+minKanjiDeck()+'枚以上）</div>'+
+        '<p class="muted" style="margin:5px 0 8px">戦闘中に二〜四枚を並べて唱える。完成カードは語句カードの枚数まで。</p>'+
+        '<div class="inv">'+inv+'</div></div>'+
+      '<div class="px panel dark"><div class="label">完成カード　'+G.deckIdiom.length+' / '+maxIdiomDeck()+'</div>'+
+        '<div style="margin-top:7px">'+idm+'</div></div>'+
+    '</div></div>'+
+    '<div class="scr-foot"><button class="btn'+(prob?'':' primary')+'" onclick="closeDeck()">とじる</button></div>';
+  go("deck");
+}
+function closeDeck(){
+  const prob = deckProblem();
+  if(prob){ sfx("ng"); toast(prob); return; }
+  saveGame(true);
+  backFromSub();
+}
+function toggleKanji(c){
+  const inDeck = deckKanjiCount(c);
+  if(inDeck < G.inv[c] && G.deckKanji.length < maxKanjiDeck()) G.deckKanji.push(c);
+  else if(inDeck>0) {
+    if(G.deckKanji.length - inDeck < minKanjiDeck()){ sfx("ng"); toast("語句カードは "+minKanjiDeck()+" 枚以上必要"); }
+    else { while(deckKanjiCount(c)>0) removeFromDeckKanji(c); }
+  }
+  else toast("デッキがいっぱい");
+  renderDeck();
+}
+function toggleIdiom(id){
+  const i = G.deckIdiom.indexOf(id);
+  if(i>=0) G.deckIdiom.splice(i,1);
+  else if(G.deckIdiom.length>=maxIdiomDeck()) toast("完成カードは"+maxIdiomDeck()+"枚まで");
+  else if(G.deckIdiom.length>=G.deckKanji.length){ sfx("ng"); toast("完成カードは語句カードの枚数（"+G.deckKanji.length+"）まで"); }
+  else G.deckIdiom.push(id);
+  renderDeck();
+}
+
+/* =========================================================
+   図鑑
+   ========================================================= */
+let DEX_TAB = 0;
+function dexTab(i){ DEX_TAB = i; sfx("tap"); renderDex(); }
+function renderDex(){
+  playBGM("field");
+  const kind = KIND_LIST[DEX_TAB];
+  const all = POOL().filter(function(o){ return o.kind===kind; });
+  const gotN = all.filter(function(o){ return G.crafted.includes(o.w); }).length;
+  const items = all.map(function(o){
+    const got = G.crafted.includes(o.w);
+    const miss = missingOf(o).length;
+    const word = got ? esc(o.w) : o.p.map(function(c){ return G.inv[c] ? esc(c) : '<span class="mask">'+"〇".repeat(Math.min(4,c.length))+'</span>'; }).join("");
+    return '<div class="dex-item '+(got?"got":"")+'">'+
+      '<div class="dex-word">'+word+(got&&plusOf(o)?' <span class="near">+'+plusOf(o)+'</span>':'')+
+        (o.g>1?'<span class="kindtag">'+(o.g===2?"中学":"発展")+'</span>':'')+'</div>'+
+      (got?'<div class="dex-yomi">'+esc(o.y)+'</div>':'')+
+      '<div class="dex-mean">'+esc(o.mean)+'</div>'+
+      (got?'<div class="muted" style="color:var(--aijiro)">効果：'+esc(fxText(o))+'</div>'
+          :'<div class="near">'+(miss===0?"いま錬成できる":"あと"+miss+"語")+'</div>')+
+    '</div>';
+  }).join("");
+  const tabs = KIND_LIST.map(function(k,i){
+    const n = POOL().filter(function(o){ return o.kind===k; });
+    const g = n.filter(function(o){ return G.crafted.includes(o.w); }).length;
+    return '<button class="btn'+(i===DEX_TAB?' on':'')+'" onclick="dexTab('+i+')">'+k+'　'+g+'/'+n.length+'</button>';
+  }).join("");
+  document.getElementById("s-dex").innerHTML =
+    topbar("ことわざ図鑑 "+craftedInPool()+"/"+dexTotal(), "backFromSub()") +
+    '<div class="scr-body"><div class="dextabs">'+tabs+'</div>'+
+    '<div class="pane grow"><div class="dexgrid">'+(items||'<p class="muted">この学年の'+kind+'はない。</p>')+'</div></div></div>'+
+    '<div class="scr-foot"><button class="btn" onclick="backFromSub()">とじる</button></div>';
+  go("dex");
+}
+
+/* =========================================================
+   フェーズ4①：手札の完成カードを長押しで意味を見る（PC はホバーでも可）
+   ========================================================= */
+const LP = {timer:null, el:null, fired:false, hover:false};
+function hideYpop(){
+  const p = document.getElementById("ypop");
+  if(p) p.classList.remove("show");
+  if(LP.el){ LP.el.classList.remove("lp"); LP.el = null; }
+  if(LP.timer){ clearTimeout(LP.timer); LP.timer = null; }
+}
+function showYpop(card){
+  const o = idiomOf(card.dataset.w); const p = document.getElementById("ypop");
+  if(!o || !p) return;
+  p.innerHTML = '<span class="w">'+o.w+'</span><span class="y">'+o.y+'</span>'+
+    '<div class="m">'+esc(o.mean)+'</div><div class="f">効果：'+esc(fxText(o))+'</div>';
+  const r = card.getBoundingClientRect();
+  p.style.left = "0px"; p.style.top = "0px";
+  const pw = p.offsetWidth, ph = p.offsetHeight, vw = window.innerWidth;
+  let x = r.left + r.width/2 - pw/2; x = Math.max(6, Math.min(vw-pw-6, x));
+  let y = r.top - ph - 8; if(y < 4) y = r.bottom + 8;
+  p.style.left = x+"px"; p.style.top = y+"px";
+  LP.el = card; card.classList.add("lp");
+  p.classList.add("show");
+}
+document.addEventListener("pointerdown", function(ev){
+  const card = ev.target.closest ? ev.target.closest("#s-battle .card[data-w]") : null;
+  hideYpop(); LP.fired = false;
+  if(!card) return;
+  if(ev.pointerType === "mouse" && LP.hover) return;
+  LP.timer = setTimeout(function(){ LP.timer = null; LP.fired = true; showYpop(card); }, 400);
+}, {passive:true});
+["pointerup","pointercancel"].forEach(function(n){
+  document.addEventListener(n, function(){ if(LP.timer){ clearTimeout(LP.timer); LP.timer=null; } if(LP.el) hideYpop(); }, {passive:true});
+});
+document.addEventListener("contextmenu", function(ev){ if(ev.target.closest && ev.target.closest("#s-battle .card")) ev.preventDefault(); });
+document.addEventListener("scroll", hideYpop, {passive:true, capture:true});
+/* PC：マウスを 350ms のせると表示（タップの選択はそのまま使える） */
+document.addEventListener("pointerover", function(ev){
+  if(ev.pointerType !== "mouse") return;
+  const card = ev.target.closest ? ev.target.closest("#s-battle .card[data-w]") : null;
+  if(!card || card === LP.el) return;
+  LP.hover = true;
+  if(LP.timer) clearTimeout(LP.timer);
+  LP.timer = setTimeout(function(){ LP.timer = null; showYpop(card); }, 350);
+});
+document.addEventListener("pointerout", function(ev){
+  if(ev.pointerType !== "mouse") return;
+  const card = ev.target.closest ? ev.target.closest("#s-battle .card[data-w]") : null;
+  if(!card) return;
+  if(ev.relatedTarget && card.contains(ev.relatedTarget)) return;
+  hideYpop();
+});
+
+/* =========================================================
+   フェーズ4②：問の試練（図鑑のことわざから三択を1問）
+   出題は PROVERBS の w / y / mean / use から機械的に作る（型は quizBuild の上のコメント）
+   ========================================================= */
+/* 意味が近い組（選択肢どうしが紛らわしくならないよう、同じ組からは出さない） */
+const SYN = [
+ ["猿も木から落ちる","弘法にも筆の誤り","河童の川流れ"],
+ ["猫に小判","豚に真珠","馬の耳に念仏"],
+ ["泣きっ面に蜂","弱り目に祟り目","一難去ってまた一難"],
+ ["石橋をたたいて渡る","転ばぬ先の杖","備えあれば憂いなし","羹に懲りて膾を吹く"],
+ ["急がば回れ","急いては事を仕損じる"],
+ ["石の上にも三年","継続は力なり","塵も積もれば山となる","愚公山を移す","千里の道も一歩から"],
+ ["覆水盆に返らず","後悔先に立たず"],
+ ["息を呑む","固唾を呑む"],
+ ["青は藍より出でて藍より青し","鳶が鷹を生む"],
+ ["蛍雪の功","玉磨かざれば光なし","腕を磨く"],
+ ["竹馬の友","水魚の交わり","類は友を呼ぶ"],
+ ["身を粉にする","骨が折れる"],
+ ["口は災いの元","口が軽い"],
+ ["良薬は口に苦し","耳が痛い"],
+ ["瓢箪から駒","棚からぼたもち","犬も歩けば棒に当たる"],
+ ["渡る世間に鬼はない","捨てる神あれば拾う神あり"],
+ ["襟を正す","勝って兜の緒を締めよ","肝に銘じる"],
+ ["七転び八起き","失敗は成功の元","艱難汝を玉にす"],
+ ["時は金なり","光陰矢の如し"],
+ ["人間万事塞翁が馬","風が吹けば桶屋が儲かる"],
+ ["負けるが勝ち","柳に風"],
+ ["待てば海路の日和あり","果報は寝て待て"],
+ ["好きこそ物の上手なれ","下手の横好き"],
+ ["鼻が高い","胸を張る"],
+ ["馬の耳に念仏","歯が立たない","焼け石に水"]
+];
+function synOf(w){ const g = SYN.find(function(a){ return a.indexOf(w)>=0; }); return g || [w]; }
+let QZ = null;
+/* 出題の型： 0 意味 → ことわざをえらぶ　1 使い方（例文の空欄）→ ことわざをえらぶ　2 ことわざ → 読みをえらぶ */
+function quizBuild(){
+  const pool = POOL(); if(pool.length < 3) return null;
+  const crafted = pool.filter(function(o){ return G.crafted.indexOf(o.w)>=0; });
+  let missed = [];
+  try{ if(window.MJ) missed = MJ.misses(HUB_KEY).map(function(m){ return idiomOf(m.id); }).filter(function(o){ return o && o.g<=GRADE; }); }catch(e){}
+  const src = (missed.length && Math.random()<0.4) ? missed : (crafted.length>=3 && Math.random()<0.75 ? crafted : pool);
+  const ans = src[Math.floor(Math.random()*src.length)];
+  const type = Math.floor(Math.random()*3);
+  const bad = synOf(ans.w);
+  const others = shuffle(pool.filter(function(o){
+    return o.w!==ans.w && bad.indexOf(o.w)<0 && o.mean!==ans.mean && o.y!==ans.y && (type!==1 || o.kind===ans.kind);
+  })).slice(0,2);
+  if(others.length<2) return null;
+  const opts = shuffle([ans].concat(others));
+  return {type:type, ans:ans, opts:opts, done:false};
+}
+function blankUse(o){ return esc(o.use).split(esc(o.w)).join('<b style="font-size:inherit;letter-spacing:0">（　　　　）</b>'); }
+function quizText(type,o){ return type===2 ? o.y : o.w; }
+function openQuiz(){
+  QZ = quizBuild();
+  if(!QZ){ toast("問いが見つからなかった"); G.node++; saveGame(true); renderMap(); return; }
+  sfx("tap");
+  renderQuiz();
+}
+function renderQuiz(){
+  const host = document.getElementById("modal"); if(!host) return;
+  const q = QZ, a = q.ans;
+  let ask;
+  if(q.type===0) ask = 'この意味の'+esc(a.kind)+'は？<br>「'+esc(a.mean)+'」';
+  else if(q.type===1) ask = '空欄に合う'+esc(a.kind)+'は？<br>「'+blankUse(a)+'」';
+  else ask = '<b>'+esc(a.w)+'</b> の読み方は？';
+  let html = '<div class="px panel box"><div class="label" style="display:flex;align-items:center;gap:8px"><span class="qmark">問</span>問の試練　'+gradeTag()+'</div>'+
+    '<div class="qq">'+ask+'</div>';
+  q.opts.forEach(function(o,i){
+    let cls = "btn qc"+(q.type!==2 && a.w.length<=8?" big":"");
+    if(q.done){ if(o.w===a.w) cls += " right"; else if(i===q.pick) cls += " wrong"; }
+    html += '<button class="'+cls+'" id="qc'+i+'" onclick="quizAnswer('+i+')" '+(q.done?'disabled':'')+'>'+
+      '<span class="no">'+["一","二","三"][i]+'</span><span>'+esc(quizText(q.type,o))+'</span></button>';
+  });
+  if(q.done){
+    const picked = q.opts[q.pick];
+    html += '<div class="qexp">'+(q.ok ? '正解。' : '残念。')+'<b>'+esc(a.w)+'</b>（'+esc(a.y)+'）<br>'+esc(a.mean)+
+      (q.ok ? '' : (q.type===2 ? '<br>「'+esc(picked.y)+'」は '+esc(picked.w)+' の読み' :
+                    '<br>えらんだ「'+esc(picked.w)+'」は「'+esc(picked.mean)+'」'))+'</div>'+
+      '<button class="btn primary" style="margin-top:10px" onclick="quizClose()">'+(q.ok?'語句をうけとって進む':'心にとめて進む')+'</button>';
+  }
+  host.innerHTML = html+'</div>';
+  host.classList.remove("hidden");
+}
+function quizAnswer(i){
+  const q = QZ; if(!q || q.done) return;
+  q.done = true; q.pick = i; q.ok = (q.opts[i].w === q.ans.w);
+  const btn = document.getElementById("qc"+i);
+  if(q.ok){
+    sfx("get");
+    LEG.q = (LEG.q|0)+1; if(LEG.q>=10) mjAchieve("quiz10");
+    try{ legSave(); }catch(e){}
+    try{ if(window.MJ){ MJ.hit(HUB_KEY, q.ans.w); if(btn) MJ.burst(btn, {count:16, color:"#d9a441", color2:"#6fa96b"}); } }catch(e){}
+    const c = rollKanji(); addKanji(c); q.reward = c;
+  }else{
+    sfx("ng");
+    try{ if(window.MJ){ MJ.flash("#c8452f"); MJ.miss(HUB_KEY, q.ans.w, {w:q.ans.w, y:q.ans.y}); if(btn) MJ.shake(btn, 5); } }catch(e){}
+  }
+  renderQuiz();
+  if(q.ok) toast("正解　語句「"+q.reward+"」を手に入れた");
+}
+function quizClose(){
+  closeModal(); QZ = null;
+  G.node++; saveGame(true); renderMap();
+}
+
+/* =========================================================
+   フェーズ4④：石碑 ── 称号・記録・実績をバッジで並べる（2ページ）
+   ========================================================= */
+let STONE = {from:"map", page:0};
+function openStone(from){ STONE.from = from||"map"; STONE.page = 0; renderStone(); }
+function stonePage(p){ STONE.page = p; sfx("tap"); renderStone(); }
+function closeStone(){ if(STONE.from==="title") goHome(); else backFromSub(); }
+function renderStone(){
+  const lv = rankLv(), rn = rankName();
+  const nextI = lv < RANKS.length ? lv : -1;
+  const ds = lv ? RANKS[lv-1].d : "ことわざを錬成して位を上げよう";
+  const next = nextI>=0 ? "次の位「"+RANKS[nextI].t+"」まで あと "+Math.max(0, rankNeed(nextI)-dexCount())+"語" : "すべての位に至った";
+  let body = "";
+  if(STONE.page===0){
+    const rec = [
+      {v:LEG.bestN, u:"章", t:"通常の旅", d:"到達した章"},
+      {v:LEG.bestH, u:"章", t:"修羅道", d:"到達した章"},
+      {v:LEG.depth, u:"層", t:"無限回廊", d:"最深到達"},
+      {v:Math.min(LEG.dex, PROVERBS.length), u:"語", t:"図鑑", d:"錬成したことわざ"}
+    ];
+    body = '<div class="stonehead">'+
+        '<div class="bdg titlebdg" style="animation-delay:.05s"><div class="c"><span class="g">'+esc(lv?rn:"無位")+'</span></div></div>'+
+        '<div class="ttl"><div class="label">称号（言の葉の位）</div><div class="nm">'+esc(lv?rn:"無位")+'</div>'+
+        '<div class="ds">'+esc(ds)+'　'+esc(next)+'</div></div>'+
+      '</div>'+
+      '<div class="label" style="margin-bottom:8px">記録</div>'+
+      '<div class="bgrid">'+rec.map(function(r,i){
+        return '<div class="bdg'+(r.v?'':' off')+'" style="animation-delay:'+(0.15+i*0.08).toFixed(2)+'s"><div class="c"><span class="v">'+r.v+'</span><span class="u">'+r.u+'</span></div>'+
+          '<div class="t">'+r.t+'</div><div class="d">'+r.d+'</div></div>';
+      }).join("")+'</div>'+
+      '<div class="label" style="margin:14px 0 8px">言の葉の位　図鑑 '+dexCount()+' / '+dexTotal()+'語</div>'+
+      '<div class="bgrid">'+RANKS.map(function(r,i){
+        const on = lv > i;
+        return '<div class="bdg sq'+(on?'':' off')+'" style="animation-delay:'+(0.5+i*0.08).toFixed(2)+'s"><div class="c"><span class="g">'+esc(["見習","語り","達人","博士"][i])+'</span></div>'+
+          '<div class="t">'+esc(r.t)+'</div><div class="d">'+rankNeed(i)+'語で '+esc(r.d)+'</div></div>';
+      }).join("")+'</div>';
+  }else{
+    let got = {}; try{ if(window.MJ) got = MJ.achievements(HUB_KEY) || {}; }catch(e){}
+    const n = ACH.filter(function(a){ return got[a.id]; }).length;
+    body = '<div class="label" style="margin-bottom:8px">実績　'+n+' / '+ACH.length+'</div>'+
+      '<div class="bgrid">'+ACH.map(function(a,i){
+        const on = !!got[a.id];
+        return '<div class="bdg sq'+(on?'':' off')+'" style="animation-delay:'+(0.05+i*0.07).toFixed(2)+'s"><div class="c"><span class="g">'+esc(a.t.slice(0,2))+'</span></div>'+
+          '<div class="t">'+esc(a.t)+'</div><div class="d">'+esc(a.d)+'</div></div>';
+      }).join("")+'</div>';
+  }
+  document.getElementById("s-stone").innerHTML =
+    topbar("石碑", "closeStone()") +
+    '<div class="scr-body"><div class="px panel col-a">'+body+'</div></div>'+
+    '<div class="scr-foot">'+
+      '<div class="row stonetabs">'+
+        '<button class="btn'+(STONE.page===0?' on':'')+'" onclick="stonePage(0)">称号・記録</button>'+
+        '<button class="btn'+(STONE.page===1?' on':'')+'" onclick="stonePage(1)">実績</button></div>'+
+      '<button class="btn" onclick="closeStone()">とじる</button>'+
+    '</div>';
+  go("stone");
+}
+
+/* =========================================================
+   まなびの基板への記録送信（あれば）
+   ========================================================= */
+try{ paintTitle(); paintGrade(); }catch(e){}
+try{ if(window.MJ) MJ.setMuted(!AU.on); }catch(e){}
+try{ probeSave().then(function(v){ SAVED = v; showContinue(); }); }catch(e){}
+try{ hubStatus(); window.addEventListener("load", hubStatus); }catch(e){}
+try{ legLoad().then(function(){ paintLegacy(); hubStatus(); syncTitle(); }); }catch(e){}
+const HUB_KEY = "kotowaza-rensei";
+const HUB_URL = "https://backtree-create.github.io/ManabiBox/";
+/* 通常クリア5000（8章に等分）／修羅道クリア100000（8章に等分）／無限回廊は1層3000 */
+function hubScore(){
+  const dex = 2000*rankLv() + (craftedInPool()>=dexTotal() ? 20000 : 0) + 200*Math.min(100, plusTotal());
+  return Math.round(5000/STORY_LEN*G.bestN + 100000/STORY_LEN*G.bestH + 3000*G.depth + dex);
+}
+function hubNote(){
+  return "通常"+G.bestN+"章 修羅道"+G.bestH+"章"+
+    (G.depth?" 無限"+G.depth+"層":"")+" 錬成"+dexCount()+"語"+(plusTotal()?"+"+plusTotal():"")+(rankLv()?"("+rankName()+")":"");
+}
+/* ハブ配点換算（古い hub-progress.js 向けフォールバック付き） */
+function hubScale(r, o){ return (window.LearnHub && LearnHub.scale) ? LearnHub.scale(r, o) : Math.round(Math.max(0,Math.min(1,r))*10000); }
+function hubEndless(r){ return (window.LearnHub && LearnHub.scaleEndless) ? LearnHub.scaleEndless(r) : Math.round(Math.max(0,Math.min(1,r))*30000); }
+/* 出来ばえ 0〜1： 通常章×250 + 修羅道章×500 + 図鑑率×2400 + 位×250 を 10000 で割る（四字錬成と同じ式） */
+function hubRatio(){
+  /* 図鑑の項は学年内の割合で（中1の65語でも満点に届く） */
+  return Math.min(1, (250*G.bestN + 500*G.bestH + 2400*Math.min(1, dexCount()/Math.max(1,dexTotal())) + 250*rankLv()) / 10000);
+}
+function hubDepth(){ return Math.max(G.depth|0, LEG.depth|0); }
+function report(){
+  try{ legSave(); }catch(e){}
+  try{
+    const H = window.LearnHub;
+    if(!H || typeof H.report !== "function") return;
+    const sc = hubScore();
+    const depth = hubDepth();
+    /* まなびの基板の仕様： {app, done, total, best, note, endless, raw} 。noteは40字まで */
+    const payload = {
+      app: HUB_KEY,
+      done: Math.min(STORY_LEN*2, G.bestN + G.bestH),
+      total: STORY_LEN*2,
+      best: hubScale(hubRatio(), {grade: GRADE}),
+      raw: sc,
+      grade: GRADE,
+      note: hubNote()
+    };
+    if(depth > 0) payload.endless = hubEndless(Math.min(1, depth/20));
+    H.report(payload);
+  }catch(e){}
+}
+function goHub(){
+  report();
+  try{ location.href = HUB_URL; }catch(e){}
+}
+</script>
+</body>
+</html>

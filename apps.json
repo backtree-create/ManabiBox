@@ -209,6 +209,17 @@
     "icon": "pen"
   },
   {
+    "key": "kotowaza-rensei",
+    "name": "ことわざ錬成",
+    "subject": "国語",
+    "file": "https://backtree-create.github.io/ManabiBox/kotowaza-rensei.html",
+    "desc": "語句カードを二〜四枚並べて唱え、本物のことわざなら真価、ニセことわざなら弱い技になるドット絵デッキ構築RPG。ことわざ・慣用句・故事成語150語・8章に加え、修羅道と無限回廊つき。",
+    "unit": "章",
+    "total": 16,
+    "color": "#6FA96B",
+    "icon": "book"
+  },
+  {
     "key": "world-conquest",
     "name": "世界陣取り合戦",
     "subject": "社会",
