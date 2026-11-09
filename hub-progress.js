@@ -344,4 +344,39 @@
 
   global.addEventListener('load', flush);
   global.addEventListener('online', flush);
+
+  /* ---- 権利表示（全ページ共通のフッター） ------------------------
+     画面右下に小さく固定。タップをさまたげないよう pointer-events は切る。
+     ページに <footer> があればそこに添える（ハブなど）。 */
+  var COPYRIGHT = '\u00A9 2026 Yuki Ushirokawa';
+  function addCopyright() {
+    var d = global.document;
+    if (!d || !d.body || d.getElementById('manabi-copyright')) return;
+    var foot = d.querySelector('footer');
+    if (foot) {
+      var sp = d.createElement('span');
+      sp.id = 'manabi-copyright';
+      sp.textContent = ' \u00B7 ' + COPYRIGHT;
+      foot.appendChild(sp);
+      return;
+    }
+    var css = d.createElement('style');
+    css.textContent =
+      '#manabi-copyright{position:fixed;z-index:2147482000;pointer-events:none;' +
+      'right:calc(6px + env(safe-area-inset-right));bottom:calc(4px + env(safe-area-inset-bottom));' +
+      'font-family:"Zen Kaku Gothic New","Hiragino Sans",sans-serif;font-size:12px;line-height:1;' +
+      'color:#fff;opacity:.5;text-shadow:0 0 3px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9);' +
+      'letter-spacing:.02em;white-space:nowrap;}';
+    d.head.appendChild(css);
+    var el = d.createElement('div');
+    el.id = 'manabi-copyright';
+    el.setAttribute('aria-hidden', 'true');
+    el.textContent = COPYRIGHT;
+    d.body.appendChild(el);
+  }
+  if (global.document && global.document.readyState === 'loading') {
+    global.addEventListener('DOMContentLoaded', addCopyright);
+  } else if (global.document) {
+    addCopyright();
+  }
 })(window);
