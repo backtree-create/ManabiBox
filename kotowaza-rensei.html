@@ -826,119 +826,222 @@ const CHAPTERS = [
 
 
 /* =========================================================
-   音（和楽器風シンセ・外部ファイルなし）
+   音（墨と朱の術式：低いドローン＋疎らな打楽器＋澄んだ単音。外部ファイルなし）
+   ---------------------------------------------------------
+   楽器はすべて WebAudio で合成する。
+     drone … 2〜3本のサイン／三角波をわずかにずらし、ローパスとゆっくり揺れる音量で鳴らし続ける
+     rin   … 鈴（高いサイン＋非整数倍音、長い減衰）
+     kane  … 梵鐘・銅鑼（基音＋2.76, 5.4, 8.9 倍の倍音、長い減衰、打音ノイズ）
+     taiko … 太鼓（ノイズのローパス＋サインのピッチダウン）
+     ki    … 拍子木・小鼓（短いノイズのバンドパス）
+     shaku … 尺八風（息ノイズ＋サイン、ゆっくり立ち上がる）
+     fude  … 筆の走り（ノイズのバンドパスを周波数スイープ）
+   BGM は「拍のグリッドに疎らに置く」逐次スケジューラ。切り替えは 0.4 秒でクロスフェード。
    ========================================================= */
-const AU = {ctx:null, mas:null, on:true, timer:null, cur:null, step:0, next:0, nz:null};
+const AU = {ctx:null, mas:null, on:true, timer:null, cur:null, step:0, next:0, nz:null,
+            bus:null, dr:null, sq:null, out:null};
+function mkNoise(c){
+  const len = Math.floor(c.sampleRate*1.0), buf = c.createBuffer(1,len,c.sampleRate), d = buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+  return buf;
+}
 function actx(){
   if(!AU.ctx){
     const C = window.AudioContext || window.webkitAudioContext;
     if(!C) return null;
     try{
       AU.ctx = new C();
-      AU.mas = AU.ctx.createGain(); AU.mas.gain.value = 0.22; AU.mas.connect(AU.ctx.destination);
-      const len = AU.ctx.sampleRate*0.5, buf = AU.ctx.createBuffer(1,len,AU.ctx.sampleRate), d = buf.getChannelData(0);
-      for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
-      AU.nz = buf;
+      AU.mas = AU.ctx.createGain(); AU.mas.gain.value = 0.24; AU.mas.connect(AU.ctx.destination);
+      AU.nz = mkNoise(AU.ctx);
     }catch(e){ return null; }
   }
-  if(AU.ctx.state === "suspended") AU.ctx.resume();
+  if(AU.ctx.state === "suspended"){ try{ const p = AU.ctx.resume(); if(p&&p.catch) p.catch(function(){}); }catch(e){} }
   return AU.ctx;
 }
-function envGain(src,t,a,d,peak){
+/* 検証用フック：OfflineAudioContext などへ差し替える（ゲーム本体では使わない） */
+AU.offline = function(c){ AU.ctx = c; AU.mas = c.createGain(); AU.mas.gain.value = 0.24; AU.mas.connect(c.destination); AU.nz = mkNoise(c); };
+
+/* ---- 基本部品 ---- */
+function outNode(){ return AU.out || AU.mas; }
+function env(node,t,a,d,peak,hold){
   const g = AU.ctx.createGain();
   g.gain.setValueAtTime(0.0001,t);
   g.gain.linearRampToValueAtTime(peak,t+a);
-  g.gain.exponentialRampToValueAtTime(0.0001,t+a+d);
-  src.connect(g); g.connect(AU.mas); return g;
+  if(hold) g.gain.setValueAtTime(peak,t+a+hold);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+a+(hold||0)+d);
+  node.connect(g); g.connect(outNode()); return g;
 }
-/* 箏・三味線風の撥弦音 */
-function pluck(f,t,dur,vol){
-  const c = actx(); if(!c||!AU.on||!f) return;
-  const o = c.createOscillator(); o.type = "triangle"; o.frequency.setValueAtTime(f,t);
-  const o2 = c.createOscillator(); o2.type = "sine"; o2.frequency.setValueAtTime(f*2.02,t);
-  envGain(o,t,0.004,dur,vol||0.16); envGain(o2,t,0.003,dur*0.35,(vol||0.16)*0.45);
-  o.start(t); o.stop(t+dur+0.05); o2.start(t); o2.stop(t+dur*0.4+0.05);
+function osc(type,f,t,end){ const o = AU.ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f,t); o.start(t); o.stop(end); return o; }
+function noise(t,end){ const s = AU.ctx.createBufferSource(); s.buffer = AU.nz; s.loop = true; s.start(t); s.stop(end); return s; }
+function filt(type,f,q){ const b = AU.ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q||1; return b; }
+
+/* ① ドローン（鳴り続ける。BGM ごとに 1 組だけ作る） */
+function droneStart(def,t){
+  const c = AU.ctx, g = c.createGain(), lp = filt("lowpass",def.cut||220,0.7), nodes = [];
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(def.vol||0.16,t+2.5);
+  lp.connect(g); g.connect(outNode());
+  def.f.forEach(function(f,i){
+    const o = c.createOscillator(); o.type = (def.type&&def.type[i])||"sine"; o.frequency.setValueAtTime(f,t);
+    const w = c.createGain(); w.gain.value = (def.w&&def.w[i])||1; o.connect(w); w.connect(lp); o.start(t); nodes.push(o);
+  });
+  /* ゆっくり揺れる音量（0.07Hz） */
+  const lfo = c.createOscillator(), dep = c.createGain(); lfo.frequency.value = def.lfo||0.07; dep.gain.value = (def.vol||0.16)*0.3;
+  lfo.connect(dep); dep.connect(g.gain); lfo.start(t); nodes.push(lfo);
+  return {g:g, nodes:nodes};
 }
-function tone(f,t,dur,type,vol){
-  const c = actx(); if(!c||!AU.on||!f) return;
-  const o = c.createOscillator(); o.type = type||"square"; o.frequency.setValueAtTime(f,t);
-  envGain(o,t,0.005,dur,vol||0.14); o.start(t); o.stop(t+dur+0.05);
+function droneStop(h,t){ if(!h) return; h.nodes.forEach(function(n){ try{ n.stop(t); }catch(e){} }); }
+/* ② 鈴 */
+function rin(f,t,vol,dur){
+  dur = dur||1.8; vol = vol||0.11;
+  env(osc("sine",f,t,t+dur+0.1),t,0.003,dur,vol);
+  env(osc("sine",f*2.51,t,t+dur*0.6+0.1),t,0.002,dur*0.6,vol*0.33);
+  env(osc("sine",f*4.17,t,t+dur*0.3+0.1),t,0.002,dur*0.3,vol*0.16);
 }
-function slide(f1,f2,t,dur,type,vol){
-  const c = actx(); if(!c||!AU.on) return;
-  const o = c.createOscillator(); o.type = type||"sawtooth";
-  o.frequency.setValueAtTime(f1,t); o.frequency.exponentialRampToValueAtTime(Math.max(30,f2),t+dur);
-  envGain(o,t,0.005,dur,vol||0.14); o.start(t); o.stop(t+dur+0.05);
+/* ③ 梵鐘・銅鑼（f が低いほど銅鑼に近づく） */
+function kane(f,t,vol,dur){
+  dur = dur||3; vol = vol||0.15;
+  [[1,1,1],[1.004,0.55,1],[2.76,0.42,0.55],[5.4,0.2,0.3],[8.93,0.08,0.15]].forEach(function(p){
+    env(osc("sine",f*p[0],t,t+dur*p[2]+0.1),t,0.004,dur*p[2],vol*p[1]);
+  });
+  const n = noise(t,t+0.12), b = filt("lowpass",Math.min(f*8,1200),1); n.connect(b); env(b,t,0.002,0.07,vol*0.6);
 }
-/* 鼓・太鼓風 */
-function drum(t,dur,vol,cut,q){
-  const c = actx(); if(!c||!AU.on||!AU.nz) return;
-  const src = c.createBufferSource(); src.buffer = AU.nz;
-  const bq = c.createBiquadFilter(); bq.type = "bandpass"; bq.frequency.value = cut||1200; bq.Q.value = q||1.2;
-  src.connect(bq); envGain(bq,t,0.002,dur,vol||0.12); src.start(t); src.stop(t+dur+0.05);
+/* ④ 太鼓 */
+function taiko(t,vol,f0,f1,dur){
+  f0 = f0||120; f1 = f1||50; dur = dur||0.35; vol = vol||0.3;
+  const o = osc("sine",f0,t,t+dur+0.1); o.frequency.exponentialRampToValueAtTime(f1,t+dur*0.45);
+  env(o,t,0.004,dur,vol);
+  const n = noise(t,t+0.12), b = filt("lowpass",340,0.8); n.connect(b); env(b,t,0.002,0.07,vol*0.6);
 }
+/* ⑤ 拍子木・小鼓（木の音） */
+function ki(t,vol,f,q,dur){
+  /* 狭いバンドパスを通ったノイズは小さくなるので内部で持ち上げる */
+  const n = noise(t,t+dur+0.05), b = filt("bandpass",f,q); n.connect(b); env(b,t,0.001,dur,vol*Math.sqrt(q)*1.6);
+}
+function kotsuzumi(t,vol){
+  ki(t,vol,1100,6,0.07);
+  const o = osc("sine",540,t,t+0.15); o.frequency.exponentialRampToValueAtTime(330,t+0.08); env(o,t,0.002,0.09,vol*0.5);
+}
+/* ⑥ 尺八風 */
+function shaku(f,t,dur,vol){
+  dur = Math.max(0.8,dur||1.6); vol = vol||0.09;
+  const hold = Math.max(0,dur-0.85);
+  const o = osc("sine",f*0.985,t,t+dur+0.2); o.frequency.linearRampToValueAtTime(f,t+0.35);
+  env(o,t,0.3,0.55,vol,hold);
+  env(osc("triangle",f*1.004,t,t+dur+0.2),t,0.3,0.55,vol*0.25,hold);
+  const n = noise(t,t+dur+0.2), b = filt("bandpass",f,14); n.connect(b); env(b,t,0.25,0.5,vol*0.6,hold);
+  const n2 = noise(t,t+dur+0.2), b2 = filt("bandpass",2600,1); n2.connect(b2); env(b2,t,0.2,0.5,vol*0.07,hold);
+}
+/* ⑦ 筆の走り */
+function fude(t,f1,f2,dur,vol){
+  const n = noise(t,t+dur+0.05), b = filt("bandpass",f1,2);
+  b.frequency.setValueAtTime(f1,t); b.frequency.exponentialRampToValueAtTime(f2,t+dur);
+  n.connect(b); env(b,t,0.01,dur,vol);
+}
+
+/* ---- 効果音 ---- */
 function sfx(name){
   const c = actx(); if(!c||!AU.on) return;
-  const t = c.currentTime;
+  const t = c.currentTime+0.005;
   switch(name){
-    case "tap":   tone(1046,t,0.05,"square",0.09); break;
-    case "slash": drum(t,0.09,0.16,2600,0.8); slide(760,220,t,0.14,"square",0.12); break;
-    case "idiom": [0,3,7,12].forEach(function(n,i){ pluck(392*Math.pow(2,n/12),t+i*0.055,0.32,0.16); }); break;
-    case "craft": [0,2,7,9,12].forEach(function(n,i){ pluck(523*Math.pow(2,n/12),t+i*0.07,0.5,0.17); });
-                  drum(t,0.4,0.1,600,0.6); break;
-    case "ng":    tone(180,t,0.12,"square",0.12); tone(140,t+0.13,0.2,"square",0.12); break;
-    case "hurt":  drum(t,0.16,0.2,320,0.7); slide(300,90,t,0.22,"sawtooth",0.13); break;
-    case "heal":  [0,4,7].forEach(function(n,i){ pluck(523*Math.pow(2,n/12),t+i*0.08,0.45,0.14); }); break;
-    case "get":   pluck(784,t,0.25,0.15); pluck(1046,t+0.09,0.35,0.15); break;
-    case "gong":  drum(t,1.2,0.22,180,0.5); tone(98,t,1.1,"sine",0.16); tone(147,t+0.02,0.9,"sine",0.08); break;
-    case "win":   [0,4,7,12,7,12].forEach(function(n,i){ pluck(523*Math.pow(2,n/12),t+i*0.11,0.5,0.18); });
-                  drum(t,0.5,0.14,500,0.6); break;
-    case "lose":  [0,-2,-5,-9].forEach(function(n,i){ tone(392*Math.pow(2,n/12),t+i*0.18,0.4,"triangle",0.13); }); break;
+    case "tap":   ki(t,0.3,1500,5,0.045); env(osc("sine",980,t,t+0.08),t,0.002,0.045,0.06); break;
+    case "slash": fude(t,500,3400,0.16,0.55); taiko(t+0.02,0.14,110,55,0.18); break;
+    case "idiom": rin(880,t,0.13,1.2); kane(147,t+0.15,0.16,0.6); break;
+    case "craft": [587.33,659.26,880].forEach(function(f,i){ rin(f,t+i*0.11,0.1,1.6); }); kane(98,t+0.32,0.14,2.2); break;
+    case "ng":    env(osc("triangle",110,t,t+0.1),t,0.004,0.08,0.13); env(osc("triangle",117,t,t+0.1),t,0.004,0.08,0.13);
+                  ki(t+0.01,0.14,650,2.5,0.07); break;
+    case "hurt":  taiko(t,0.4,110,45,0.4);
+                  (function(){ const a = osc("triangle",55,t,t+0.5), b = osc("triangle",57.5,t,t+0.5), lp = filt("lowpass",160,0.8);
+                     a.connect(lp); b.connect(lp); env(lp,t,0.02,0.4,0.12); })(); break;
+    case "heal":  rin(659.26,t,0.14,1.2); rin(880,t+0.14,0.14,1.5); break;
+    case "get":   ki(t,0.22,2400,8,0.035); ki(t+0.1,0.22,2700,8,0.035); break;
+    case "gong":  kane(82.41,t,0.2,3.5); break;
+    case "win":   kane(220,t,0.12,2);
+                  [0,2,5,7,9,12].forEach(function(n,i){ rin(587.33*Math.pow(2,n/12),t+0.05+i*0.18,0.1,1.6); }); break;
+    case "lose":  shaku(349.23,t,0.8,0.18); shaku(293.66,t+0.65,1.3,0.18); taiko(t+1.05,0.12,85,40,0.5); break;
   }
 }
-/* ---- BGM（ヨナ抜き音階＝道中／都節音階＝戦闘） ---- */
+
+/* ---- BGM（拍のグリッドに疎らに置く）----
+   grid = 1 ステップの秒数。step(i, at, S) が i 番目のステップを時刻 at に置く。S は曲ごとの状態。 */
+function pickOf(a){ return a[Math.floor(Math.random()*a.length)]; }
+const MIYAKO = [0,1,5,7,8], RITSU = [0,2,5,7,9];
 const TUNES = {
- field:{bpm:104, root:293.66, sc:[0,2,4,7,9],
-   mel:[0,-1,2,-1,4,-1,2,0,-1,4,5,-1,4,2,-1,-1],
-   bas:[0,-1,-1,-1,2,-1,-1,-1,4,-1,-1,-1,2,-1,-1,-1],
-   per:[2,0,1,0,2,0,1,0,2,0,1,0,2,0,1,1]},
- battle:{bpm:142, root:261.63, sc:[0,1,5,7,8],
-   mel:[0,2,-1,3,2,-1,0,-1,3,4,-1,3,2,0,-1,-1],
-   bas:[0,-1,0,-1,3,-1,3,-1,2,-1,2,-1,0,-1,0,-1],
-   per:[2,1,1,0,2,0,1,1,2,1,1,0,2,1,2,1]},
- clear:{bpm:100, root:261.63, sc:[0,2,4,7,9],
-   mel:[5,-1,6,7,-1,8,-1,9,10,-1,9,-1,8,-1,7,-1],
-   bas:[0,-1,2,-1,4,-1,2,-1,0,-1,2,-1,4,-1,4,-1],
-   per:[2,0,1,0,2,0,1,1,2,0,1,0,2,1,2,1]},
- boss:{bpm:152, root:196.00, sc:[0,1,5,7,8],
-   mel:[5,-1,6,-1,5,-1,9,8,7,-1,6,-1,5,-1,4,-1],
-   bas:[0,0,-1,0,0,0,-1,0,1,1,-1,1,0,0,-1,0],
-   per:[2,0,2,0,2,1,2,1,2,0,2,0,2,1,2,2]}
+ /* 地図・錬成所・編成：D の低音ドローン。3〜7 秒おきに鈴か尺八が都節の 1 音 */
+ field:{ drone:{f:[73.42,73.6,110.0], type:["sine","sine","triangle"], w:[1,0.8,0.35], cut:200, vol:0.15}, grid:0.5,
+   step:function(i,at,S){
+     if(at < S.ev) return;
+     const d = pickOf(MIYAKO);
+     if(Math.random() < 0.6) rin(587.33*Math.pow(2,d/12),at,0.09,2.6);
+     else shaku(293.66*Math.pow(2,d/12),at,1.4+Math.random()*1.2,0.07);
+     S.ev = at + 3 + Math.random()*4;
+   } },
+ /* 戦闘：♩=72。1・3 拍に太鼓、2・4 拍に小鼓。ドローンは半音下（C#）。4 小節に 1 回の銅鑼 */
+ battle:{ drone:{f:[69.30,69.5,103.83], type:["sine","sine","triangle"], w:[1,0.8,0.3], cut:210, vol:0.12}, grid:60/72,
+   step:function(i,at,S){
+     const b = i%16;
+     if(b===0) kane(65.41,at,0.12,3.5);
+     if(b%4===0) taiko(at,b===0?0.46:0.36,120,50,0.4);
+     else if(b%4===2) taiko(at,0.26,100,48,0.3);
+     else kotsuzumi(at,0.2);
+   } },
+ /* 主（ボス）：倍速の太鼓。ドローンは C# と D の短 2 度。2 小節ごとの鐘 */
+ boss:{ drone:{f:[69.30,73.42,103.83], type:["sine","triangle","triangle"], w:[1,0.7,0.3], cut:260, vol:0.13, lfo:0.12}, grid:60/144,
+   step:function(i,at,S){
+     const b = i%8;
+     if(b===0) kane(110,at,0.12,1.8);
+     if(b%4===0) taiko(at,b===0?0.46:0.36,120,50,0.35);
+     else if(b%4===2) taiko(at,0.28,100,48,0.28);
+     else kotsuzumi(at,0.2);
+     if(b===7) taiko(at+60/288,0.2,95,48,0.2);
+   } },
+ /* 踏破・結果：律音階の鈴がゆっくり降りてくる。ドローンは D・F#・A（長三度を含む） */
+ clear:{ drone:{f:[73.42,92.50,110.0], type:["sine","triangle","triangle"], w:[1,0.45,0.4], cut:240, vol:0.15}, grid:0.75,
+   step:function(i,at,S){
+     const b = i%16, seq = [21,19,17,14,12,9,7,5];
+     if(b < 8) rin(293.66*Math.pow(2,seq[b]/12),at,0.09,2.4);
+     else if(b===11 && Math.random()<0.5) rin(293.66*Math.pow(2,24/12),at,0.06,2.4);
+   } }
 };
-function freqOf(t,d){
-  if(d<0) return 0;
-  const n = t.sc.length, oct = Math.floor(d/n);
-  return t.root*Math.pow(2,(t.sc[((d%n)+n)%n]+12*oct)/12);
+function bgmStart(name,t){
+  const d = TUNES[name]; if(!d) return;
+  const c = AU.ctx, bus = c.createGain();
+  bus.gain.setValueAtTime(0.0001,t); bus.gain.linearRampToValueAtTime(1,t+0.4); bus.connect(AU.mas);
+  AU.bus = bus; AU.out = bus;
+  try{ AU.dr = droneStart(d.drone,t); } finally{ AU.out = null; }
+  AU.sq = {ev:t+1.5}; AU.step = 0; AU.next = t+0.1;
 }
-function stopSeq(){ if(AU.timer){ clearInterval(AU.timer); AU.timer=null; } }
+function bgmStep(d,at){
+  AU.out = AU.bus;
+  try{ d.step(AU.step,at,AU.sq); } finally{ AU.out = null; }
+  AU.step++;
+}
+function bgmFade(t){
+  const bus = AU.bus, dr = AU.dr; AU.bus = null; AU.dr = null; if(!bus) return;
+  bus.gain.cancelScheduledValues(t); bus.gain.setValueAtTime(Math.max(0.0001,bus.gain.value),t);
+  bus.gain.linearRampToValueAtTime(0.0001,t+0.4);
+  droneStop(dr,t+0.45);
+  setTimeout(function(){ try{ bus.disconnect(); }catch(e){} }, 900);
+}
+function stopSeq(){
+  if(AU.timer){ clearInterval(AU.timer); AU.timer = null; }
+  if(AU.ctx && AU.bus) bgmFade(AU.ctx.currentTime);
+}
 function playBGM(name){
   if(AU.cur===name && AU.timer) return;
   AU.cur = name; stopSeq();
-  if(!name || !AU.on || !actx()) return;
-  AU.step = 0; AU.next = AU.ctx.currentTime+0.08;
-  AU.timer = setInterval(seqTick,25);
+  if(!name || !AU.on || !actx() || !TUNES[name]) return;
+  bgmStart(name, AU.ctx.currentTime+0.02);
+  AU.timer = setInterval(seqTick,60);
 }
 function seqTick(){
-  const t = TUNES[AU.cur]; if(!t||!AU.ctx){ stopSeq(); return; }
-  const spb = 60/t.bpm/2;
-  while(AU.next < AU.ctx.currentTime+0.16){
-    const i = AU.step%16, at = AU.next;
-    if(t.mel[i]>=0) pluck(freqOf(t,t.mel[i]),at,spb*1.7,0.15);
-    if(t.bas[i]>=0) tone(freqOf(t,t.bas[i])/2,at,spb*1.3,"triangle",0.12);
-    if(t.per[i]) drum(at,0.07,t.per[i]===2?0.14:0.08,t.per[i]===2?260:1500,t.per[i]===2?0.6:1.4);
-    AU.next += spb; AU.step++;
-  }
+  const d = TUNES[AU.cur]; if(!d||!AU.ctx||!AU.bus){ stopSeq(); return; }
+  while(AU.next < AU.ctx.currentTime+0.25){ bgmStep(d,AU.next); AU.next += d.grid; }
 }
+/* タブを隠したら止め、戻ったら同じ曲を再開する */
+document.addEventListener("visibilitychange", function(){
+  if(document.hidden){ stopSeq(); }
+  else if(AU.cur && AU.on && !AU.timer){ const c = AU.cur; AU.cur = null; playBGM(c); }
+});
 function toggleSound(){
   AU.on = !AU.on;
   try{ if(window.MJ) MJ.setMuted(!AU.on); }catch(e){}
