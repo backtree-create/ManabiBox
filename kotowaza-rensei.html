@@ -186,10 +186,16 @@ body:has(#manabi-back) .hud{padding-left:118px}
 #s-battle .col-a{display:flex;flex-direction:column;gap:10px;min-height:0;flex:1}
 
 /* ---- 札（語句＝生成りの札、完成＝墨地に生成りの枠＋朱の印） ---- */
-.hand{display:flex;gap:16px;align-items:flex-end;overflow-x:auto;overflow-y:hidden;padding:16px 2px 4px;scrollbar-width:none}
-.hand::-webkit-scrollbar{display:none}
-.hand>:first-child{margin-left:auto}.hand>:last-child{margin-right:auto}
-.seal{flex:0 1 var(--cw);width:var(--cw);min-width:92px;height:var(--ch);position:relative;cursor:pointer;touch-action:manipulation;
+/* 手札：札の大きさは固定。収まらないときは横スクロール（外枠で中央寄せ、内側が実際にスクロールする）。
+   以前は中央寄せの margin:auto とスクロールの組み合わせで左端が切れて届かなかった。 */
+.hand{display:flex;justify-content:center;width:100%;min-width:0;padding:0 0 4px;box-sizing:border-box}
+.hand-in{display:flex;gap:16px;align-items:flex-end;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:18px 2px 6px;
+  touch-action:pan-x;scrollbar-width:thin;scrollbar-color:var(--k45) transparent;-webkit-overflow-scrolling:touch}
+.hand-in::-webkit-scrollbar{height:4px}.hand-in::-webkit-scrollbar-thumb{background:var(--k45)}
+.hand-in.over{mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent)}
+.hand-in.over.at-start{mask-image:linear-gradient(90deg,#000,#000 calc(100% - 24px),transparent);-webkit-mask-image:linear-gradient(90deg,#000,#000 calc(100% - 24px),transparent)}
+.hand-in.over.at-end{mask-image:linear-gradient(90deg,transparent,#000 24px,#000);-webkit-mask-image:linear-gradient(90deg,transparent,#000 24px,#000)}
+.seal{flex:0 0 var(--cw);width:var(--cw);height:var(--ch);position:relative;cursor:pointer;touch-action:manipulation;
   background:var(--paper);border:0;color:var(--ink);font-family:var(--min);font-weight:900;letter-spacing:.08em;line-height:1.15;
   font-size:clamp(17px,2.5vh,26px);padding:30px 6px 10px;display:flex;align-items:center;justify-content:center;
   transition:transform .18s var(--ez),background .2s var(--ez2),color .2s var(--ez2)}
@@ -442,7 +448,7 @@ body:has(#manabi-back) .hud{padding-left:118px}
   .hud .t{font-size:18px;gap:10px}.hud .t .chnum{font-size:32px}
   .hud{gap:14px}
   :root{--cw:100px;--ch:clamp(120px,22vh,160px)}
-  .hand{gap:10px}
+  .hand-in{gap:10px}
   .actionbar .btn.end{flex:0 0 140px}
   .btn.primary{font-size:17px;letter-spacing:.14em;min-height:54px}
   .chaphead .num{font-size:32px}.chaphead h2{font-size:18px}
@@ -1996,6 +2002,16 @@ function endTurn(){
 
 /* --- バトル描画 --- */
 const INTENT_TEXT = {none:"ようすを見ている", atk:"攻撃してくる", big:"渾身の一撃をねらう", buff:"力をためている", guard:"身を固めようとしている", drain:"気力を吸おうとしている"};
+/* 手札の端のぼかし：はみ出しているときだけ、スクロール位置に応じて左右を薄くする */
+function handScrollState(){
+  const h = document.getElementById("handin"); if(!h) return;
+  const over = h.scrollWidth > h.clientWidth+1;
+  h.classList.toggle("over", over);
+  h.classList.toggle("at-start", over && h.scrollLeft<=1);
+  h.classList.toggle("at-end", over && h.scrollLeft >= h.scrollWidth-h.clientWidth-1);
+  if(over && !h._hs){ h._hs = true; h.addEventListener("scroll", handScrollState, {passive:true}); }
+}
+window.addEventListener("resize", handScrollState);
 function renderBattle(){
   const e = B.en;
   let chips = "";
@@ -2062,7 +2078,7 @@ function renderBattle(){
      '</div>'+
    '</div>'+
    '<div class="scr-foot">'+
-     '<div class="hand">'+hand+'</div>'+
+     '<div class="hand"><div class="hand-in" id="handin">'+hand+'</div></div>'+
      '<div class="actionbar">'+
        (B.sel.length>1
          ? '<button class="btn primary" onclick="craftInBattle()" '+(canCraft?"":"disabled")+'>「'+esc(w.length>14?w.slice(0,13)+'…':w)+'」と唱える</button>'
@@ -2070,7 +2086,7 @@ function renderBattle(){
        '<button class="btn end" onclick="endTurn()">手番を終える</button>'+
      '</div>'+
    '</div>';
-  go("battle");
+  handScrollState(); go("battle");
 }
 
 function victory(){
